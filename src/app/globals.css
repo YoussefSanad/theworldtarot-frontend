@@ -1,0 +1,363 @@
+@import "tailwindcss";
+
+/*
+  Design tokens for The World Tarot.
+
+  Colours and type come from the client style sheet (TWT STYLE SHEET) and were
+  confirmed against the Figma homepage (node 102:3). Every size is fluid: the
+  clamp maximum equals the Figma value at a 1920px viewport, so the page is
+  1:1 with the design on a full-width desktop and scales down proportionally.
+*/
+@theme {
+  /* Brand palette */
+  --color-night: #081525; /* page base, sampled from the Figma solid-base fill */
+  --color-ink: #0a1421; /* brand blue: header and footer */
+  --color-ink-deep: #101b2e; /* label ink on gold */
+  --color-slate: #40484f; /* label ink on the product tile buttons */
+  --color-gold: #e4c46a;
+  --color-gold-deep: #d4af37;
+  --color-gold-soft: #c9b87c;
+  --color-champagne: #fff3d7;
+  --color-cream: #fdf4da;
+  --color-mist: #d0d1d4;
+  --color-mist-dim: #bfc4c8;
+  --color-ash: #cac8c8;
+  --color-snow: #fffcf6;
+
+  /* Type families */
+  --font-display: var(--font-magically), var(--font-cinzel), serif;
+  --font-serif: var(--font-cinzel), serif;
+  --font-sans: var(--font-gill), sans-serif;
+
+  /* Type scale — maximums match the Figma sizes at 1920px */
+  --text-hero: clamp(2.75rem, 5.2083vw, 6.25rem); /* 100px */
+  --text-hero--line-height: 1;
+  --text-hero-sm: clamp(2rem, 3.75vw, 4.5rem); /* 72px */
+  --text-hero-sm--line-height: 1.15;
+  --text-h1: clamp(1.875rem, 3.125vw, 3.75rem); /* 60px */
+  --text-h1--line-height: 1.15;
+  --text-h2: clamp(1.5rem, 2.2917vw, 2.75rem); /* 44px */
+  --text-h2--line-height: 1.1;
+  --text-h3: clamp(1.375rem, 2.1875vw, 2.625rem); /* 42px */
+  --text-h3--line-height: 1.2;
+  --text-lead: clamp(1.125rem, 2.0833vw, 2.5rem); /* 40px */
+  --text-lead--line-height: 1.2;
+  --text-body: clamp(1.0625rem, 1.875vw, 2.25rem); /* 36px */
+  --text-body--line-height: 1.15;
+  --text-nav: clamp(0.9375rem, 1.5625vw, 1.875rem); /* 30px */
+  --text-nav--line-height: 1.2;
+  --text-caption: clamp(0.8125rem, 1.1458vw, 1.375rem); /* 22px */
+  --text-caption--line-height: 1.36;
+  --text-note: clamp(0.875rem, 1.25vw, 1.5rem); /* 24px */
+  --text-note--line-height: 1.1;
+  --text-fine: clamp(0.75rem, 0.9375vw, 1.125rem); /* 18px */
+  --text-fine--line-height: 1.15;
+
+  /* Layout rhythm */
+  --spacing-gutter: clamp(1.25rem, 3.125vw, 3.75rem); /* 60px edge inset: header bleed, column gaps */
+  --spacing-section: clamp(3rem, 7.2917vw, 8.75rem); /* 140px section padding */
+  --spacing-stack: clamp(1rem, 2.1875vw, 2.625rem); /* 42px in-section gap */
+
+  /* Content widths as drawn in Figma; see the measures below for how they scale. */
+  --container-page: 1568px; /* product row width in Figma */
+  --container-hero: 1537px;
+  --container-measure: 1153px; /* the width the ornate divider was drawn at */
+  --container-copy: 1600px;
+  --container-value-props: 1267px; /* the three-prop row */
+
+  --radius-button: 0.625rem;
+  --radius-button-lg: 0.875rem;
+
+  --ease-veil: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+  Brand chrome that recurs across the page. Sampled from the Figma exports and
+  rebuilt as gradients so buttons and fields stay crisp at any size instead of
+  stretching a fixed-size bitmap.
+*/
+:root {
+  --gradient-gold: linear-gradient(
+    100deg,
+    #d6b661 0%,
+    #f5dc84 13%,
+    #f7e19c 25%,
+    #fae7b4 38%,
+    #fae7b7 50%,
+    #f7e29e 63%,
+    #f5db84 75%,
+    #e2c56f 88%,
+    #b18f49 100%
+  );
+  --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
+  --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
+  --veil-ink: rgba(15, 26, 39, 0.77); /* header and footer scrim */
+}
+
+/*
+  Measures.
+
+  Figma drew the page at 1920, where the content sits 176px in from each edge —
+  the page is not edge to edge. Below `lg` the design stops scaling and content
+  simply fills the screen inside the edge gutter. Above it, every measure keeps
+  the share of the frame it was drawn at, so the composition scales with the
+  viewport instead of stretching outward. A Figma width becomes vw by dividing
+  by 19.2.
+*/
+:root {
+  --measure-page: 100%;
+  --measure-hero: 100%;
+  --measure-narrow: 100%;
+  --measure-copy: 100%;
+  --measure-value-props: 100%;
+  --measure-flourish: 448px;
+  --measure-hairline: min(12rem, 100%);
+}
+
+@media (width >= 64rem) {
+  :root {
+    --measure-page: min(var(--container-page), 81.667vw);
+    --measure-hero: min(var(--container-hero), 80.052vw);
+    --measure-narrow: min(var(--container-measure), 60.052vw);
+    --measure-copy: min(var(--container-copy), 83.333vw);
+    --measure-value-props: min(var(--container-value-props), 65.99vw);
+    --measure-flourish: min(448px, 23.333vw);
+    --measure-hairline: min(368px, 19.167vw);
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-night);
+    color: var(--color-mist);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /*
+    Layered content without taking anything out of flow: children share one grid
+    cell, so the tallest child sets the size and the rest stack on top of it.
+    Used for the card videos, the hero glow and the header/footer scrims.
+  */
+  .stack {
+    display: grid;
+  }
+
+  .stack > * {
+    grid-area: 1 / 1;
+  }
+
+  /*
+    Measure. Each variant takes its width straight from a measure token, so the
+    content keeps its share of the frame as the viewport narrows. The gutter term
+    is the floor: it holds a comfortable edge inset on phones and caps the shell
+    on ultra-wide screens.
+  */
+  .shell {
+    margin-inline: auto;
+    width: min(var(--shell-width, 100%), 100% - 2 * var(--spacing-gutter));
+  }
+
+  .shell--page {
+    --shell-width: var(--measure-page);
+  }
+
+  .shell--hero {
+    --shell-width: var(--measure-hero);
+  }
+
+  .shell--measure {
+    --shell-width: var(--measure-narrow);
+  }
+
+  .shell--copy {
+    --shell-width: var(--measure-copy);
+  }
+
+  /*
+    Page atmosphere.
+
+    Figma stacks ten artwork layers behind the page. They are reproduced as
+    background layers on a single element. Width is a share of the viewport so
+    the composition scales with the screen; height is `auto` so each layer keeps
+    the aspect ratio it was drawn at — a second percentage would squash the art
+    whenever the page is taller or shorter than the Figma frame. Layer opacity is
+    baked into the alpha channel by scripts/optimize-figma-assets.mjs, since CSS
+    cannot dim an individual background layer. Listed top layer first (CSS paint
+    order is the reverse of Figma's).
+  */
+  .page-atmosphere {
+    background-color: var(--color-night);
+    background-image: url("/figma/card-backdrop.webp"), url("/figma/world-shine.webp"), url("/figma/world-globe.webp"),
+      url("/figma/section-1-bg.webp"), url("/figma/section-2-bg.webp"), url("/figma/section-1-2-bridge.webp"),
+      url("/figma/section-3-backdrop.webp"), url("/figma/section-2-3-bridge.webp"), url("/figma/footer-backdrop.webp");
+    background-repeat: no-repeat;
+    background-size: 59.38% auto, 121.93% auto, 100.21% auto, 100% auto, 152.08% auto, 100% auto, 101.2% auto,
+      102.03% auto, 101.82% auto;
+    background-position: 100.3% 3.5%, 61.3% 10%, 150% 7%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%,
+      14.3% 95.7%;
+  }
+
+  /* Buttons ---------------------------------------------------------------- */
+  .btn {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75em;
+    text-align: center;
+    transition:
+      box-shadow 300ms var(--ease-veil),
+      filter 300ms var(--ease-veil),
+      border-color 300ms var(--ease-veil),
+      color 300ms var(--ease-veil);
+  }
+
+  .btn-gold {
+    background-image: var(--gradient-gold);
+    border-radius: var(--radius-button);
+    color: var(--color-ink-deep);
+    font-family: var(--font-serif);
+  }
+
+  .btn-gold:hover:not(:disabled),
+  .btn-gold:focus-visible:not(:disabled) {
+    box-shadow: var(--glow-gold-strong);
+    filter: brightness(1.05);
+  }
+
+  .btn-gold:disabled {
+    filter: grayscale(0.55) brightness(0.8);
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    background-color: #0b1626;
+    border: 1px solid rgba(228, 196, 106, 0.55);
+    border-radius: var(--radius-button-lg);
+    color: var(--color-mist-dim);
+    font-family: var(--font-serif);
+  }
+
+  .btn-ghost:hover,
+  .btn-ghost:focus-visible {
+    border-color: var(--color-gold);
+    box-shadow: var(--glow-gold);
+    color: var(--color-champagne);
+  }
+
+  /* Ornament --------------------------------------------------------------- */
+  .divider {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    display: block;
+    width: 100%;
+  }
+
+  .divider--ornate {
+    aspect-ratio: 1153 / 124;
+    background-image: url("/figma/divider-ornate-wide.webp");
+    max-width: var(--measure-narrow);
+  }
+
+  .divider--flourish {
+    aspect-ratio: 448 / 68;
+    background-image: url("/figma/divider-flourish.webp");
+    max-width: var(--measure-flourish);
+  }
+
+  .divider--flourish-end {
+    aspect-ratio: 448 / 61;
+    background-image: url("/figma/divider-flourish-end.webp");
+    max-width: var(--measure-flourish);
+  }
+
+  .divider--hero {
+    aspect-ratio: 448 / 55;
+    background-image: url("/figma/divider-hero.webp");
+    max-width: var(--measure-flourish);
+  }
+
+  .divider--hairline {
+    aspect-ratio: 736 / 10;
+    background-image: url("/figma/divider-hairline.webp");
+    max-width: var(--measure-hairline); /* drawn at 368px under every value prop, whatever the column width */
+  }
+
+  .divider--tile {
+    aspect-ratio: 390 / 59;
+    background-image: url("/figma/product-divider-1.webp");
+  }
+
+  /* Surfaces --------------------------------------------------------------- */
+  .veil {
+    /* Header and footer artwork sits under a flat scrim in Figma. */
+    background-blend-mode: normal;
+    background-color: var(--veil-ink);
+    background-position: center;
+    background-size: cover;
+  }
+
+  /* Figma draws the newsletter fields as an open frame: transparent fill and a
+     light border. The gold haze is a focus cue rather than a resting fill. */
+  .field {
+    background-color: transparent;
+    border: 1px solid var(--color-ash);
+    color: var(--color-champagne);
+    font-family: var(--font-sans);
+    transition:
+      border-color 300ms var(--ease-veil),
+      box-shadow 300ms var(--ease-veil);
+    width: 100%;
+  }
+
+  .field::placeholder {
+    color: rgba(202, 200, 200, 0.5);
+  }
+
+  .field:focus,
+  .field:focus-visible {
+    border-color: var(--color-gold);
+    box-shadow: var(--glow-gold);
+    outline: none;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 46px rgba(255, 255, 255, 0.16);
+  }
+
+  .glow-text-soft {
+    text-shadow:
+      0 3px 2px rgba(74, 63, 64, 0.41),
+      0 0 13px rgba(255, 255, 255, 0.09);
+  }
+
+  /* Figma star rating halo (102:42): 0 0 13px — tighter than .glow-text headings */
+  .glow-star {
+    text-shadow: 0 0 13px rgba(255, 255, 255, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
