@@ -59,6 +59,10 @@ export const surfaces = {
 } as const;
 
 export const videos = {
-  cardBack: "/videos/card-back.mp4",
-  theStar: "/videos/17-the-star.mp4",
+  cardBack: "/videos/card-back-compressed.mp4",
+} as const;
+
+/** Still frames shown when a Living Tarot card is revealed on the homepage. */
+export const cardFaces = {
+  theStar: asset("/videos/17-the-star-last.png", 1280, 2120),
 } as const;
