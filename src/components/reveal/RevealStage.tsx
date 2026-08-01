@@ -12,42 +12,26 @@ const CROSSFADE_SECONDS = 1.4;
 
 /**
  * The card itself: a looping back-of-card video that crossfades into the
- * revealed card in the same frame. Both layers share one grid cell, so the
+ * revealed card face in the same frame. Both layers share one grid cell, so the
  * swap never moves anything on the page.
  *
- * The fade waits until the card video has pixels to show, otherwise the
- * crossfade lands on a black frame while the file buffers.
+ * The fade waits until the face image has pixels to show, otherwise the
+ * crossfade can land on an empty frame while the file loads.
  */
 export function RevealStage({ className }: { className?: string }) {
   const { status, card, restored, onRevealComplete } = useReveal();
   const backVideoRef = useRef<HTMLVideoElement>(null);
-  const cardVideoRef = useRef<HTMLVideoElement>(null);
+  const cardImageRef = useRef<HTMLImageElement>(null);
   const [cardReady, setCardReady] = useState(false);
   const reducedMotion = useReducedMotion();
 
   const cardMounted = status !== "idle";
 
   useEffect(() => {
-    const video = cardVideoRef.current;
-    if (!video || !cardMounted) return;
-
-    if (restored) {
-      // A card already revealed this visit is shown on its closing frame.
-      const freeze = () => {
-        video.currentTime = Math.max(0, video.duration - 0.05);
-      };
-      if (video.readyState >= 1) freeze();
-      else video.addEventListener("loadedmetadata", freeze, { once: true });
-      return;
-    }
-
-    // The reveal is user-initiated, so the browser allows sound here.
-    video.muted = false;
-    video.play().catch(() => {
-      video.muted = true;
-      void video.play();
-    });
-  }, [cardMounted, restored]);
+    const image = cardImageRef.current;
+    if (!image || !cardMounted) return;
+    if (image.complete) setCardReady(true);
+  }, [cardMounted, card.image.src]);
 
   useEffect(() => {
     if (cardReady) backVideoRef.current?.pause();
@@ -77,18 +61,17 @@ export function RevealStage({ className }: { className?: string }) {
       />
 
       {cardMounted ? (
-        <motion.video
-          ref={cardVideoRef}
+        <motion.img
+          ref={cardImageRef}
           className="size-full object-cover"
-          src={card.video}
-          playsInline
-          preload="auto"
-          aria-label={`${card.name}, your card`}
+          src={card.image.src}
+          width={card.image.width}
+          height={card.image.height}
+          alt={`${card.name}, your card`}
           initial={{ opacity: 0 }}
           animate={{ opacity: cardReady ? 1 : 0 }}
           transition={fade}
-          onPlaying={() => setCardReady(true)}
-          onSeeked={() => setCardReady(true)}
+          onLoad={() => setCardReady(true)}
           onAnimationComplete={handleFadeComplete}
         />
       ) : null}
