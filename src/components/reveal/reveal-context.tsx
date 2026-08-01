@@ -18,7 +18,7 @@ export type RevealStatus = "idle" | "revealing" | "revealed";
 type RevealContextValue = {
   status: RevealStatus;
   card: TarotCard;
-  /** True when the card was carried over from earlier in the visit, so it must not replay. */
+  /** True when the card was carried over from earlier in the visit. */
   restored: boolean;
   reveal: () => void;
   onRevealComplete: () => void;
