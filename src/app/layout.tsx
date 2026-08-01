@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Cinzel } from "next/font/google";
 import localFont from "next/font/local";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -11,12 +10,6 @@ import "./globals.css";
 const magically = localFont({
   src: "./fonts/MagicallyRegular.otf",
   variable: "--font-magically",
-  display: "swap",
-});
-
-const cinzel = Cinzel({
-  subsets: ["latin"],
-  variable: "--font-cinzel",
   display: "swap",
 });
 
@@ -39,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${magically.variable} ${cinzel.variable} ${gillSans.variable}`}>
+    <html lang="en" className={`${magically.variable} ${gillSans.variable}`}>
       <body className="page-atmosphere flex min-h-screen flex-col overflow-x-hidden">
         <SiteHeader />
         <main className="flex-1">{children}</main>

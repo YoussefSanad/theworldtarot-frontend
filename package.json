@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "pages:build": "next build",
     "lint": "eslint",
     "assets:fetch": "node scripts/fetch-figma-assets.mjs",
     "assets:optimize": "node scripts/optimize-figma-assets.mjs",
