@@ -6,24 +6,19 @@ import { useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
-import { brand, surfaces } from "@/lib/assets";
+import { brand } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 /**
  * Masthead: logo on the left, actions and navigation stacked on the right.
+ * Transparent so the page atmosphere continues behind it into the hero.
  * Below the large breakpoint the navigation collapses behind a menu button.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="stack">
-      <div
-        aria-hidden
-        className="veil size-full"
-        style={{ backgroundImage: `linear-gradient(var(--veil-ink), var(--veil-ink)), url(${surfaces.header})` }}
-      />
-
+    <header className="relative z-20">
       <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-2">
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
