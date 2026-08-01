@@ -14,6 +14,7 @@ export const primaryNav: NavLink[] = [
   { label: "READINGS", href: "/readings" },
   { label: "LIBRARY", href: "/library" },
   { label: "FAQ", href: "/faq" },
+  { label: "CONCEPT", href: "/concept/" },
 ];
 
 export const headerActions = {

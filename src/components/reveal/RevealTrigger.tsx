@@ -71,7 +71,6 @@ export function RevealTrigger({
               <Button
                 size="lg"
                 onClick={reveal}
-                aria-busy={status === "revealing"}
                 className="w-fit justify-start gap-[0.72em] pl-[0.4em] pr-[1.2em] font-bold tracking-[-0.01em] lg:w-full"
               >
                 <span aria-hidden className="stack size-[2em] shrink-0 place-items-center rounded-full bg-black">

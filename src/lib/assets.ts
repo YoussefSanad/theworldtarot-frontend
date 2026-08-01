@@ -49,6 +49,10 @@ export const artwork = {
   productThreeCard: asset("/figma/product-three-card.webp", 371, 583),
   productMonthAhead: asset("/figma/product-month-ahead.webp", 367, 589),
   productViewingRoom: asset("/figma/product-viewing-room.webp", 373, 563),
+  /** Hero sunrise layer — opacity/brightness driven by SunriseAtmosphere. */
+  worldShine: asset("/figma/world-shine.webp", 1600, 655),
+  /** World behind the sun — Motion opacity capped to match baked ~18%. */
+  worldGlobe: asset("/figma/world-globe.webp", 1600, 1215),
 } as const;
 
 /** Backgrounds referenced from CSS rather than markup. */

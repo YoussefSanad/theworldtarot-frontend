@@ -210,6 +210,20 @@
       14.3% 95.7%;
   }
 
+  /*
+    Concept demo atmosphere: shine/globe omitted — SunriseAtmosphere drives those
+    as DOM layers inside #concept-sky.
+  */
+  .page-atmosphere-concept {
+    background-color: var(--color-night);
+    background-image: url("/figma/card-backdrop.webp"), url("/figma/section-1-bg.webp"), url("/figma/section-2-bg.webp"),
+      url("/figma/section-1-2-bridge.webp"), url("/figma/section-3-backdrop.webp"), url("/figma/section-2-3-bridge.webp"),
+      url("/figma/footer-backdrop.webp");
+    background-repeat: no-repeat;
+    background-size: 59.38% auto, 100% auto, 152.08% auto, 100% auto, 101.2% auto, 102.03% auto, 101.82% auto;
+    background-position: 100.3% 1.5%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
+  }
+
   /* Buttons ---------------------------------------------------------------- */
   .btn {
     cursor: pointer;
