@@ -1,4 +1,4 @@
-import { artwork, cardFaces, videos, type ImageAsset } from "@/lib/assets";
+import { cardFaces, videoPosters, videos, type ImageAsset } from "@/lib/assets";
 
 /**
  * The Living Tarot cards available to the reveal.
@@ -16,7 +16,7 @@ export type TarotCard = {
 
 export const cardBack = {
   video: videos.cardBack,
-  poster: artwork.heroCardBack,
+  poster: videoPosters.cardBack,
 };
 
 export const livingTarot: TarotCard[] = [{ id: "17-the-star", name: "The Star", image: cardFaces.theStar }];

@@ -62,6 +62,14 @@ export const videos = {
   cardBack: "/videos/card-back-compressed.mp4",
 } as const;
 
+/**
+ * First decoded frame of each looping video, captured from that file so the
+ * load still matches playback pixel-for-pixel.
+ */
+export const videoPosters = {
+  cardBack: asset("/videos/card-back-poster.webp", 1280, 2120),
+} as const;
+
 /** Still frames shown when a Living Tarot card is revealed on the homepage. */
 export const cardFaces = {
   theStar: asset("/videos/17-the-star-last.png", 1280, 2120),
