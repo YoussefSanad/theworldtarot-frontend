@@ -19,9 +19,17 @@ export function Hero() {
                 <span className="block text-hero tracking-[0.02em]">{hero.titleMain}</span>
               </h1>
 
-              <p className="font-serif text-lead text-gold">{hero.tagline}</p>
+              {/* The divider centres on the tagline rather than on the column. Above lg
+                  the column is left-aligned and much wider than the line of text, so the
+                  group shrinks to the tagline's own width and `items-center` has
+                  something to centre the rule against; below lg it is full width and
+                  everything is centred anyway. The gap repeats the column's so the
+                  grouping costs no vertical rhythm. */}
+              <div className="flex w-full flex-col items-center gap-[0.6em] lg:w-fit">
+                <p className="font-serif text-lead text-gold">{hero.tagline}</p>
 
-              <Divider variant="hero" className="mx-auto lg:mx-0 lg:ml-[5%]" />
+                <Divider variant="hero" />
+              </div>
 
               <p className="max-w-[80%] text-body leading-[1.11] text-mist">{hero.body}</p>
 

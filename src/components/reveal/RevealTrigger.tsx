@@ -15,16 +15,18 @@ const ENTER_SECONDS = 0.5;
 /**
  * Drives the reveal, then yields to the card's name.
  *
- * After hydrate the CTA enters with the same blur/rise as the restored name.
+ * The CTA paints immediately — no enter animation. It is the first thing the
+ * hero asks the visitor to do, so it should already be there, not arrive.
  * On click the gold button exits (blur + lift) before the card name enters in
  * the same footprint. On a restored visit the button never mounts — only the
  * name enters — so there is no button flash and no gray disabled hold.
  *
- * The swap waits for `revealed`, not `revealing`: the card's crossfade has to
- * finish before the button gives way to the name, which is the order the client
- * asked for. `RevealStage` is what advances the status, when its fade completes.
- * A restored visit is already `revealed` on first render, so it still shows the
- * name immediately.
+ * The swap is keyed to `revealing`, i.e. the click itself, not to the card's
+ * crossfade finishing: the press has to feel answered right away rather than a
+ * second and a half later. `RevealStage` still drives `revealed` when its fade
+ * completes — that is what commits the card to the session — but nothing here
+ * waits for it. A restored visit is already `revealed` on first render, so it
+ * still shows the name immediately.
  */
 export function RevealTrigger({
   label = "REVEAL YOUR CARD",
@@ -38,7 +40,7 @@ export function RevealTrigger({
   const { status, card, ready, reveal } = useReveal();
   const reducedMotion = useReducedMotion();
 
-  const showName = status === "revealed";
+  const showName = status !== "idle";
   const skipMotion = Boolean(reducedMotion);
 
   const enterFrom = skipMotion ? false : { opacity: 0, y: 10, filter: "blur(4px)" };
@@ -65,14 +67,12 @@ export function RevealTrigger({
             <motion.div
               key="button"
               className="w-fit max-w-full"
-              initial={enterFrom}
-              animate={visible}
+              initial={false}
               exit={
                 skipMotion
                   ? { opacity: 0, transition: exitTransition }
                   : { opacity: 0, y: -8, filter: "blur(4px)", transition: exitTransition }
               }
-              transition={enterTransition}
             >
               <Button
                 size="lg"

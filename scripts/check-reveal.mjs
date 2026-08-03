@@ -44,10 +44,12 @@ await page.screenshot({ path: join(outDir, "reveal-1-idle.png"), clip: { x: 960,
 
 await trigger.click();
 
-// The trigger now waits for the crossfade before swapping, so the name cannot
-// be asserted until crossfade (1.4s) + enter (0.5s) have both run.
+// The trigger swaps on the click itself, not when the card's crossfade ends, so
+// one second in — still mid-crossfade — the button should already be gone and
+// the name already up. Both only take exit (0.45s) + enter (0.5s) to land.
 await page.waitForTimeout(1000);
-console.log("mid-crossfade, button still present:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 1);
+console.log("mid-crossfade, button gone:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 0);
+console.log("mid-crossfade, card name up:", await page.getByText(/·/).first().isVisible());
 
 await page.waitForTimeout(3000);
 

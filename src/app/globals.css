@@ -187,15 +187,19 @@
       the actual files in public/figma — world-shine.webp, world-globe.webp
       — not measured from the rendered page, so it holds at any width.
 
-      world-shine: T = 590.163px (native 10% at 1920px), f ≈ 0.40 of its
+      T is whatever the percentage above resolves to at exactly 1920px, so the
+      two rules meet without a jump — recompute it if that percentage changes:
+      T = pct × (pageHeight − imageHeight), page height 6895px at 1920px.
+
+      world-shine: T = 534.3px (9% of 5936.6), f ≈ 0.40 of its
       655/1600 aspect ratio → coefficient 0.40 × 1.2193 × 0.409375 = 0.19966.
-      world-globe: T = 377.905px (native 7% at 1920px), f ≈ 0.37 of its
+      world-globe: T = 320.6px (5.9% of 5433.9), f ≈ 0.37 of its
       1215/1600 aspect ratio → coefficient 0.37 × 1.0021 × 0.759375 = 0.28156.
     */
     background-position-y:
       3.5%,
-      calc(590.163px - (100vw - 1920px) * 0.19966),
-      calc(377.905px - (100vw - 1920px) * 0.28156),
+      calc(534.3px - (100vw - 1920px) * 0.19966),
+      calc(320.6px - (100vw - 1920px) * 0.28156),
       0%,
       34.4%,
       15.7%,
@@ -286,8 +290,16 @@
     /* card-backdrop (1st) frozen+centered on the hero card — see the comment above --atmosphere-width. */
     background-size: calc(var(--atmosphere-width) * 0.5938) auto, 121.93% auto, 100.21% auto, 100% auto,
       152.08% auto, 100% auto, 101.2% auto, 102.03% auto, 101.82% auto;
-    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 61.3% 10%,
-      150% 7%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
+    /*
+      world-shine (2nd) and world-globe (3rd) sit 60px higher at 1920px than the
+      Figma frame put them — 9% and 5.9% against their native 10% and 7%. The
+      masthead lost that much height (see SiteHeader), which lifted the hero off
+      the horizon it was composed against; this puts the sun and the earth back
+      under the card where the client approved them. They are one composition:
+      move them together, by the same pixels, or the glint slides off the globe.
+    */
+    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 61.3% 9%,
+      150% 5.9%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
   }
 
   /*

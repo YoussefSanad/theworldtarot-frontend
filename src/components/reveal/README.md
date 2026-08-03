@@ -33,9 +33,14 @@ once:
   stage's crossfade completes it calls `onRevealComplete`, which commits
   `revealed` and persists the card id. Swaps for the card's number + name and a
   prompt question in the same footprint via `AnimatePresence mode="wait"`.
-  The swap is keyed to `revealed`, **not** `revealing` — the client asked for
-  the button to give way only once the card's crossfade has finished, so the
-  stage is what drives this component's timing.
+  The swap is keyed to `revealing` — **the click itself**, not the end of the
+  card's crossfade — so the press is answered immediately instead of a second
+  and a half later. (It was keyed to `revealed` until the 08/03 revision; if
+  you are reading old commits or the 08/01 client notes, that is why the button
+  used to sit there through the whole fade.) The button also has no enter
+  animation: it is the hero's primary ask, so it paints already in place.
+  What still waits for the crossfade is the *commit* — `onRevealComplete`,
+  and with it the sessionStorage write and `HeroActions`' pulse.
 - **`RevealStage.tsx`** — the card itself. A looping back-of-card `<video>`
   and the revealed card share one `.stack` grid cell (see
   [`src/app/README.md`](../../app/README.md)) and crossfade opacity, so
