@@ -8,6 +8,15 @@ import { artwork } from "@/lib/assets";
 /**
  * Book plane is absolute so it keeps Figma’s 1540×543 size without stretching
  * the section or getting cropped by a content-sized background box.
+ *
+ * `max-w-[1540px]` freezes at a flat pixel value — unlike every other
+ * Figma-derived measure in this codebase, that freeze point is keyed to the
+ * *viewport* reaching 1540px, not 1920px, so past that (most laptop widths)
+ * it sits static while the screen keeps growing around it. Past 1920px it
+ * switches to the same `1540 / 19.2 = 80.2083vw` Figma ratio and keeps
+ * scaling instead, matching the frozen value exactly at 1920px so there's no
+ * jump — `max-w-none` is required alongside it, or the still-active
+ * `max-w-[1540px]` clamps the new width straight back down.
  */
 export function ArtistNote() {
   return (
@@ -24,7 +33,7 @@ export function ArtistNote() {
             alt=""
             width={1540}
             height={543}
-            className="h-auto w-full max-w-[1540px] opacity-58"
+            className="h-auto w-full max-w-[1540px] opacity-58 min-[1920px]:w-[80.2083vw] min-[1920px]:max-w-none"
           />
         </div>
 

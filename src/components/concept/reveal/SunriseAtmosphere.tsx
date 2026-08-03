@@ -24,6 +24,19 @@ const GLOBE = {
   opacityCap: 0.18,
 } as const;
 
+/** Figma homepage frame width — content caps here; atmosphere keeps growing past it. */
+const DESIGN_WIDTH = 1920;
+
+/**
+ * Absolute `top` that matches `posY` at DESIGN_WIDTH, then rises 1:1 with image
+ * height growth so the bottom edge stays put on ultra-wide viewports.
+ */
+function bottomLockedTop(posY: string, widthPct: number, asset: { width: number; height: number }) {
+  const aspect = asset.height / asset.width;
+  const heightAtDesign = (widthPct / 100) * DESIGN_WIDTH * aspect;
+  return `calc(${posY} + ${heightAtDesign}px - ${widthPct * aspect}vw)`;
+}
+
 const DAWN_SECONDS = 3;
 const GLOBE_FADE_SECONDS = 1.1;
 const REVEAL_SECONDS = 1.4;
@@ -109,7 +122,7 @@ export function SunriseAtmosphere() {
         style={{
           width: `${GLOBE.widthPct}%`,
           left: `calc((100% - ${GLOBE.widthPct}%) * ${GLOBE.posX})`,
-          top: GLOBE.posY,
+          top: bottomLockedTop(GLOBE.posY, GLOBE.widthPct, artwork.worldGlobe),
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: globeOpacity }}
@@ -131,7 +144,7 @@ export function SunriseAtmosphere() {
         style={{
           width: `${SHINE.widthPct}%`,
           left: `calc((100% - ${SHINE.widthPct}%) * ${SHINE.posX})`,
-          top: SHINE.posY,
+          top: bottomLockedTop(SHINE.posY, SHINE.widthPct, artwork.worldShine),
         }}
         initial={{ opacity: 0, filter: "brightness(0.45)", y: "6%" }}
         animate={shineAnimate}

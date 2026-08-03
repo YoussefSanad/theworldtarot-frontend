@@ -10,14 +10,17 @@ const SECTION_BG = { width: 2164, height: 1053 } as const;
 
 /**
  * Backdrop is absolute so it keeps its Figma aspect and bleed without driving
- * section height or cover-cropping inside a content-sized box.
+ * section height or cover-cropping inside a content-sized box. Uncapped
+ * `112.7vw` rather than `min(…, 2164px)` — it's centered on both axes, so it
+ * has no directional feature to drift, and capping it just replaces the bleed
+ * with a growing plain-background margin past 1920px.
  */
 export function ValueProps() {
   return (
     <div className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 z-0 w-[min(112.7vw,2164px)] -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute top-1/2 left-1/2 z-0 w-[112.7vw] -translate-x-1/2 -translate-y-1/2"
       >
         <Image
           src={surfaces.valueProps}

@@ -126,6 +126,77 @@
   }
 }
 
+/*
+  `card-backdrop` (the glow behind the hero card) is the one page-atmosphere
+  layer sized to frame a specific element rather than cover the viewport
+  (59.38% — always partial, by design). Left on a plain vw-relative
+  percentage it keeps ballooning past 1920px even though the hero card
+  itself freezes at `--measure-hero`'s cap and just centers — so the glow
+  grows out of proportion to the card it's meant to frame. `--atmosphere-width`
+  freezes it at the 1920px size (identical to the plain percentage below
+  1920px); `--atmosphere-margin` re-centers it at the same rate `.shell`'s
+  `margin-inline: auto` centers the frozen hero column, so the frozen glow
+  stays glued to the card instead of drifting from it. Do not reuse this for
+  a layer that needs to keep covering the full viewport — see `.page-atmosphere`
+  below for why `world-shine`/`world-globe` are handled differently.
+*/
+:root {
+  --atmosphere-width: min(100vw, 1920px);
+  --atmosphere-margin: calc((100vw - var(--atmosphere-width)) / 2);
+}
+
+/*
+  Atmosphere sinking, past 1920px.
+
+  Two fixes were tried and reverted here before landing on this one — see
+  git history on this block if you're revisiting it. Freezing every layer's
+  `background-size` at its 1920px value (to stop `auto` height growing
+  forever) seemed right, but `world-globe` and most of the other layers are
+  sized barely over 100% (globe is 100.21%) specifically so they always
+  fully cover the viewport — freezing their pixel size guarantees a gap
+  the moment a screen is wider than 1920px, which reads as a torn seam
+  where the next layer down shows through. Coverage must never be capped.
+
+  So sizing stays exactly as it always was — plain vw-relative percentages,
+  uncapped, identical at every width to the pre-bug original. What actually
+  needs fixing is `background-position-y`: 7 of the 9 layers are diffuse
+  nebula/starfield with no single identifiable feature, so their `auto`
+  height quietly growing past 1920px is invisible — nothing to fix. Only
+  `world-shine` (the sun glint) and `world-globe` (the earth horizon) have a
+  feature the eye actually tracks, and those two are what "sinks."
+*/
+@media (width >= 120rem) {
+  .page-atmosphere {
+    /*
+      Pin a fixed fraction of the image (not just its top edge) to a fixed
+      page position, so the visible feature holds still no matter how tall
+      `auto` makes the image. Native `Y% × (containerHeight − imageHeight)`
+      already gives the right offset at exactly 1920px — that's `T`. Past
+      1920px, imageHeight grows at `sizeWidth × aspectRatio` per px of
+      viewport width, so holding `T + f × imageHeight` constant means
+      subtracting `f × sizeWidth × aspectRatio` for every px past 1920.
+      `f` (how far down the source image the feature sits) was read off
+      the actual files in public/figma — world-shine.webp, world-globe.webp
+      — not measured from the rendered page, so it holds at any width.
+
+      world-shine: T = 590.163px (native 10% at 1920px), f ≈ 0.40 of its
+      655/1600 aspect ratio → coefficient 0.40 × 1.2193 × 0.409375 = 0.19966.
+      world-globe: T = 377.905px (native 7% at 1920px), f ≈ 0.37 of its
+      1215/1600 aspect ratio → coefficient 0.37 × 1.0021 × 0.759375 = 0.28156.
+    */
+    background-position-y:
+      3.5%,
+      calc(590.163px - (100vw - 1920px) * 0.19966),
+      calc(377.905px - (100vw - 1920px) * 0.28156),
+      0%,
+      34.4%,
+      15.7%,
+      68.2%,
+      62.8%,
+      95.7%;
+  }
+}
+
 @layer base {
   body {
     background-color: var(--color-night);
@@ -204,10 +275,11 @@
       url("/figma/section-1-bg.webp"), url("/figma/section-2-bg.webp"), url("/figma/section-1-2-bridge.webp"),
       url("/figma/section-3-backdrop.webp"), url("/figma/section-2-3-bridge.webp"), url("/figma/footer-backdrop.webp");
     background-repeat: no-repeat;
-    background-size: 59.38% auto, 121.93% auto, 100.21% auto, 100% auto, 152.08% auto, 100% auto, 101.2% auto,
-      102.03% auto, 101.82% auto;
-    background-position: 100.3% 3.5%, 61.3% 10%, 150% 7%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%,
-      14.3% 95.7%;
+    /* card-backdrop (1st) frozen+centered on the hero card — see the comment above --atmosphere-width. */
+    background-size: calc(var(--atmosphere-width) * 0.5938) auto, 121.93% auto, 100.21% auto, 100% auto,
+      152.08% auto, 100% auto, 101.2% auto, 102.03% auto, 101.82% auto;
+    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 61.3% 10%,
+      150% 7%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
   }
 
   /*
