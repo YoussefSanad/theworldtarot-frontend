@@ -18,6 +18,10 @@ import type { ImageAsset } from "@/lib/assets";
  * together. Both also apply on a restored visit, where the status is already
  * `revealed` on first render.
  *
+ * Neither effect may change this column's height: the hero grid centres it, so
+ * anything that grows here moves the title and the card name too. That is why
+ * the pulse is a shadow and the prompt is always in flow (see below).
+ *
  * This is a client component only because it reads the reveal status; it sits
  * inside `RevealProvider`'s subtree in the hero, so no provider change is
  * needed. `ConceptHero` keeps its own static copy of the action markup.
@@ -78,20 +82,26 @@ export function HeroActions() {
         ))}
       </div>
 
-      {revealed ? (
-        <motion.p
-          className="w-full text-center text-caption tracking-[0.01em] text-mist-dim"
-          initial={skipMotion ? false : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: skipMotion ? 0 : 0.6,
-            delay: skipMotion ? 0 : PROMPT_DELAY_SECONDS,
-            ease: "easeOut",
-          }}
-        >
-          {hero.returnPrompt}
-        </motion.p>
-      ) : null}
+      {/* The prompt holds its place in the flow from first paint and only its
+          opacity animates. Mounting it on reveal grew this column by a line of
+          text, and because the hero grid centres the column, everything above —
+          title, divider, the card name that had just appeared — jumped up half
+          that height the instant the crossfade landed. Reserving the line
+          instead of measuring one is also what keeps it right when the prompt
+          wraps to two lines on a narrow screen. */}
+      <motion.p
+        className="w-full text-center text-caption tracking-[0.01em] text-mist-dim"
+        aria-hidden={!revealed}
+        initial={skipMotion ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: revealed ? 1 : 0, y: revealed ? 0 : 6 }}
+        transition={{
+          duration: skipMotion ? 0 : 0.6,
+          delay: skipMotion || !revealed ? 0 : PROMPT_DELAY_SECONDS,
+          ease: "easeOut",
+        }}
+      >
+        {hero.returnPrompt}
+      </motion.p>
     </div>
   );
 }

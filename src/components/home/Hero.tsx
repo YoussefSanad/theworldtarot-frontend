@@ -34,8 +34,10 @@ export function Hero() {
               <p className="max-w-[80%] text-body leading-[1.11] text-mist">{hero.body}</p>
 
               {/* `self-center` overrides the column's `lg:items-start`: the client wants
-                  this one block centred while the actions below stay left-aligned. */}
-              <RevealTrigger className="mt-[0.55em] lg:self-center" />
+                  this one block centred while the actions below stay left-aligned. The
+                  margins are its own, not the column's `gap`, so the reveal keeps clear
+                  air around it whichever of its two states is showing. */}
+              <RevealTrigger className="mt-[0.8em] mb-[0.55em] lg:self-center" />
 
               <HeroActions />
             </div>

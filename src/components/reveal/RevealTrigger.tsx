@@ -57,7 +57,12 @@ export function RevealTrigger({
   return (
     <div
       className={cn(
-        "stack w-fit max-w-full min-h-[2.66em] place-items-center text-center text-nav lg:w-full lg:max-w-[28.0625rem]",
+        // The height is the button's (2.66em) plus room to breathe, and it is
+        // deliberately more than either state needs: both the button and the
+        // name block centre inside a box that never resizes, so the swap cannot
+        // move the hero column around it. Raise this, not the inner spacing, if
+        // the name block ever grows past it.
+        "stack w-fit max-w-full min-h-[3.4em] place-items-center text-center text-nav lg:w-full lg:max-w-[28.0625rem]",
         className,
       )}
     >
@@ -94,7 +99,7 @@ export function RevealTrigger({
           ) : (
             <motion.div
               key="name"
-              className="flex w-full flex-col justify-center gap-[0.15em]"
+              className="flex w-full flex-col justify-center gap-[0.3em]"
               initial={enterFrom}
               animate={visible}
               transition={enterTransition}

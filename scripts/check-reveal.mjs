@@ -37,9 +37,19 @@ await page.waitForTimeout(1500);
 
 const trigger = page.getByRole("button", { name: /reveal your card/i });
 const stage = page.locator("main video").first();
+// The prompt is always in the DOM holding its space open, so `isVisible()` says
+// true even while it is faded out — opacity is the only thing worth asserting.
+const promptOpacity = () =>
+  page.getByText(/return another day/i).evaluate((node) => Number(getComputedStyle(node).opacity).toFixed(2));
 
 console.log("idle label:", (await trigger.textContent())?.trim());
 console.log("back video playing:", await stage.evaluate((video) => !video.paused));
+console.log("idle, prompt faded out:", (await promptOpacity()) === "0.00");
+
+// Nothing may move when the button gives way to the name: the hero grid centres
+// this column, so any height change here shifts the title and card name too.
+const columnBox = () => page.locator("main h1").boundingBox();
+const boxBefore = await columnBox();
 await page.screenshot({ path: join(outDir, "reveal-1-idle.png"), clip: { x: 960, y: 240, width: 960, height: 840 } });
 
 await trigger.click();
@@ -69,7 +79,8 @@ console.log("card name visible:", await cardName.isVisible());
 console.log("question visible:", await question.isVisible());
 console.log("reveal button gone:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 0);
 console.log("actions pulsing:", await page.locator("main a.pulse-glow").count());
-console.log("return prompt visible:", await page.getByText(/return another day/i).isVisible());
+console.log("return prompt faded in:", (await promptOpacity()) === "1.00");
+console.log("hero held still through the swap:", (await columnBox()).y === boxBefore.y);
 
 // The name has to render exactly like the tagline above it.
 const typeMatch = await page.evaluate(() => {
@@ -99,7 +110,7 @@ console.log("after reload card name:", await page.getByText("XVII · The Star").
 console.log("after reload question:", await page.getByText("Why has this card appeared for you today?").isVisible());
 console.log("after reload reveal button gone:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 0);
 console.log("after reload actions pulsing:", await page.locator("main a.pulse-glow").count());
-console.log("after reload return prompt:", await page.getByText(/return another day/i).isVisible());
+console.log("after reload return prompt:", (await promptOpacity()) === "1.00");
 const restored = page.locator("main img[alt$=', your card']");
 console.log("restored card:", await restored.evaluate((img) => ({ src: img.currentSrc.split("/").pop(), opacity: getComputedStyle(img).opacity })));
 console.log("card mp4 re-requested on restore:", mp4Requests.length, mp4Requests.length === 0 ? "(good)" : "(should be 0)");

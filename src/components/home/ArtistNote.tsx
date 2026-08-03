@@ -22,7 +22,7 @@ export function ArtistNote() {
       <Divider variant="flourish" />
 
       <div className="relative">
-        <div aria-hidden className="pointer-events-none absolute top-1/2 left-0 z-0 w-[70vw] -translate-y-1/2">
+        <div aria-hidden className="pointer-events-none absolute top-1/2 left-0 z-0 w-[60vw] -translate-y-1/2">
           <Image
             src={artwork.book.src}
             alt=""
