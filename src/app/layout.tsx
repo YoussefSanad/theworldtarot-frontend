@@ -27,6 +27,19 @@ const gillSans = localFont({
   ],
   variable: "--font-gill",
   display: "swap",
+  /*
+    Gill Sans carries two disagreeing vertical metric sets — hhea 0.682/0.318/0.2
+    (what Safari and Chrome on macOS read) and OS/2 usWin 0.937/0.232 (what
+    Chrome, Edge and Firefox on Windows read) — with no USE_TYPO_METRICS bit to
+    break the tie, so the same line box put text 0.17em higher on Mac. These pin
+    every browser to the usWin numbers: Windows renders exactly as it did, and
+    Mac comes to meet it, which keeps the em offsets tuned on Windows valid.
+  */
+  declarations: [
+    { prop: "ascent-override", value: "93.7%" },
+    { prop: "descent-override", value: "23.2%" },
+    { prop: "line-gap-override", value: "0%" },
+  ],
 });
 
 export const metadata: Metadata = {

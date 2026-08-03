@@ -27,15 +27,25 @@ export function WhatsIncluded() {
               className="flex w-full max-w-[36rem] flex-col gap-[1.2em] font-light text-lead leading-[1.05] text-champagne lg:max-w-[38rem]"
             >
               {column.map((item) => (
-                <li key={item} className="flex items-start gap-[0.3em]">
+                /*
+                  Hanging indent (0.48em bullet + 0.3em gap) rather than flex, so the
+                  bullet can ride `vertical-align: middle` — baseline plus half the
+                  x-height, both read from the font. Gill Sans ships hhea and usWin
+                  metrics that disagree by 0.17em and no USE_TYPO_METRICS bit to settle
+                  it, so anything measured from the top of the line box lands correctly
+                  on one platform and low on the other. Measuring off the glyphs instead
+                  keeps the bullet with the text everywhere; -top is the optical nudge
+                  from x-height centre up toward the cap.
+                */
+                <li key={item} className="pl-[0.78em] indent-[-0.78em]">
                   <Image
                     src={brand.bulletStar.src}
                     alt=""
                     width={brand.bulletStar.width}
                     height={brand.bulletStar.height}
-                    className="mt-[0.29em] size-[0.48em] shrink-0 opacity-88"
+                    className="relative top-[-0.12em] mr-[0.3em] inline-block size-[0.48em] align-middle opacity-88"
                   />
-                  <span>{item}</span>
+                  {item}
                 </li>
               ))}
             </ul>
