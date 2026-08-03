@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
 
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
+import { SocialIcon } from "@/components/ui/SocialIcon";
 import { copyright, footerNav, socialLinks } from "@/content/site";
 import { surfaces } from "@/lib/assets";
 
@@ -23,15 +23,20 @@ export function SiteFooter() {
 
           <section className="flex flex-col items-center gap-[0.9em]">
             <h2 className="font-display text-h2 text-ash">FOLLOW THE JOURNEY:</h2>
+            {/*
+              Same gold as the newsletter's submit, so `.btn-gold` carries the
+              gradient, the ink-deep glyph colour and the hover glow rather than
+              this restating them.
+            */}
             <ul className="flex items-center gap-[1.5rem]">
               {socialLinks.map((item) => (
                 <li key={item.label}>
                   <Link
                     href={item.href}
                     aria-label={item.label}
-                    className="flex size-[2.75rem] items-center justify-center rounded-full border border-ash transition-[border-color,box-shadow,filter] duration-300 hover:border-gold hover:shadow-[var(--glow-gold)] hover:brightness-110"
+                    className="btn btn-gold size-[2.75rem] rounded-full [--btn-hover-scale:1.08]"
                   >
-                    <Image src={item.icon.src} alt="" width={item.icon.width} height={item.icon.height} className="size-[1.375rem]" />
+                    <SocialIcon name={item.icon} className="size-[1.5rem]" />
                   </Link>
                 </li>
               ))}
@@ -39,7 +44,11 @@ export function SiteFooter() {
           </section>
         </div>
 
-        <nav aria-label="Footer" className="flex flex-wrap items-center justify-center text-note text-ash">
+        {/* Margin rather than a wider column gap, which also sets nav-to-copyright. */}
+        <nav
+          aria-label="Footer"
+          className="mt-[clamp(0.75rem,1.6vw,1.875rem)] flex flex-wrap items-center justify-center text-note text-ash"
+        >
           {footerNav.map((link, index) => (
             <Fragment key={link.href}>
               {index > 0 ? <span aria-hidden className="px-[0.5em] opacity-70">I</span> : null}

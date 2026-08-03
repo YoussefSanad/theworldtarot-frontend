@@ -13,13 +13,23 @@ import { cn } from "@/lib/cn";
  * Masthead: logo on the left, actions and navigation stacked on the right.
  * Transparent so the page atmosphere continues behind it into the hero.
  * Below the large breakpoint the navigation collapses behind a menu button.
+ *
+ * This is the one place the page deliberately departs from the Figma frame,
+ * which drew a 225px-tall masthead — too much of a laptop viewport to spend
+ * before the hero starts. Type runs at 82.5% via `text-nav-sm` (see
+ * globals.css) and the action icons match it, but the logo goes further, to
+ * 70% (401px wide in Figma → 281px), because its height alone sets the
+ * header's: at parity with the rest it stayed the tallest thing here by a
+ * wide margin. Below `lg` the clamp floors take over and hold the logo near
+ * its old mobile size — the collapsed header is already short there, so
+ * shrinking the wordmark further only costs legibility.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="relative z-20">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-2">
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-1.5">
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
             src={brand.logo.src}
@@ -27,7 +37,7 @@ export function SiteHeader() {
             width={brand.logo.width}
             height={brand.logo.height}
             priority
-            className="w-[clamp(11rem,20.9vw,25.0625rem)]"
+            className="w-[clamp(8.5rem,14.64vw,17.5625rem)]"
           />
         </Link>
 
@@ -48,12 +58,12 @@ export function SiteHeader() {
             menuOpen ? "flex" : "hidden",
           )}
         >
-          <div className="flex flex-wrap items-center gap-[0.93em] text-nav lg:justify-end">
+          <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
             <ButtonLink
               href={headerActions.cta.href}
               variant="ghost"
               size="fluid"
-              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav text-champagne"
+              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
             >
               {headerActions.cta.label}
             </ButtonLink>
@@ -70,13 +80,13 @@ export function SiteHeader() {
                   alt=""
                   width={action.icon.width}
                   height={action.icon.height}
-                  className="h-[clamp(1.375rem,2.4vw,2.875rem)] w-auto"
+                  className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
                 />
               </Link>
             ))}
           </div>
 
-          <nav aria-label="Primary" className="flex flex-col gap-4 text-nav lg:flex-row lg:items-center lg:gap-[1.33em]">
+          <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
             {primaryNav.map((link) => (
               <Link
                 key={link.href}

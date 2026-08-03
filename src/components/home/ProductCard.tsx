@@ -13,12 +13,15 @@ import type { Product } from "@/content/home";
  *
  * The framed art and the price label share one link so the whole card navigates
  * like the CTA without nesting interactive elements.
+ *
+ * The grid runs the tiles edge to edge, so the hover lift needs a z-index to
+ * rise over its neighbours instead of being clipped between them.
  */
 export function ProductCard({ product }: { product: Product }) {
   const label = `${product.price} ${product.action}`;
 
   return (
-    <article className="group @container mx-auto flex w-[66.7%] max-w-[449px] flex-col items-center gap-[1.7%] lg:w-full lg:max-w-none">
+    <article className="group @container relative mx-auto flex w-[66.7%] max-w-[449px] flex-col items-center gap-[1.7%] transition-transform duration-300 hover:z-10 motion-safe:hover:scale-[1.015] lg:w-full lg:max-w-none">
       <Link
         href={product.href}
         className="flex w-full flex-col items-center gap-[1.7%] no-underline"
@@ -37,9 +40,16 @@ export function ProductCard({ product }: { product: Product }) {
 
           {/*
             The border art has to paint over the photo, which as replaced content
-            would otherwise draw above a later sibling's background.
+            would otherwise draw above a later sibling's background. It is its own
+            layer rather than the type container's background so the hover tint
+            lands on the frame and leaves the type it frames alone.
           */}
-          <div className="z-10 flex flex-col items-center bg-[url('/figma/product-frame.webp')] bg-[length:100%_100%] bg-no-repeat px-[3%] pt-[12%]">
+          <span
+            aria-hidden
+            className="tile-frame z-10 bg-[#dfc089] transition-colors duration-300 group-hover:bg-snow"
+          />
+
+          <div className="z-10 flex flex-col items-center px-[3%] pt-[12%]">
             <h3 className="text-center text-[9.77cqw] leading-none text-gold-soft">{product.title}</h3>
 
             <p className="mt-[1.3%] text-center text-[7.99cqw] leading-none text-cream">
@@ -54,7 +64,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        <span className="btn btn-gold w-[77.8%] px-[4%] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate">
+        <span className="btn btn-gold w-[77.8%] px-[4%] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate [--btn-hover-scale:1]">
           {label}
         </span>
       </Link>

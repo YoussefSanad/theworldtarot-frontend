@@ -1,30 +1,11 @@
 import Image from "next/image";
-import Link from "next/link";
 
+import { HeroActions } from "@/components/home/HeroActions";
 import { Container, Section } from "@/components/layout/Section";
 import { RevealProvider, RevealStage, RevealTrigger } from "@/components/reveal";
 import { Divider } from "@/components/ui/Divider";
 import { hero } from "@/content/home";
-import { artwork, type ImageAsset } from "@/lib/assets";
-
-/** Secondary hero action: icon beside a two-line Cinzel label. */
-function HeroAction({ href, icon, label }: { href: string; icon: ImageAsset; label: string[] }) {
-  return (
-    <Link
-      href={href}
-      className="btn btn-ghost w-fit min-h-[3.7em] justify-start gap-[0.75em] py-[0.65em] pr-[1.75em] pl-[1.1em] text-caption"
-    >
-      <Image src={icon.src} alt="" width={icon.width} height={icon.height} className="h-[2em] w-auto shrink-0" />
-      <span className="text-left leading-[1.36] tracking-[-0.02em]">
-        {label.map((line) => (
-          <span key={line} className="block whitespace-nowrap">
-            {line}
-          </span>
-        ))}
-      </span>
-    </Link>
-  );
-}
+import { artwork } from "@/lib/assets";
 
 export function Hero() {
   return (
@@ -44,13 +25,11 @@ export function Hero() {
 
               <p className="max-w-[80%] text-body leading-[1.11] text-mist">{hero.body}</p>
 
-              <RevealTrigger className="mt-[0.55em]" />
+              {/* `self-center` overrides the column's `lg:items-start`: the client wants
+                  this one block centred while the actions below stay left-aligned. */}
+              <RevealTrigger className="mt-[0.55em] lg:self-center" />
 
-              <div className="mt-[0.5em] flex w-full flex-col items-center gap-[1.25em] text-caption sm:flex-row sm:flex-wrap sm:justify-center lg:flex-nowrap lg:justify-start lg:gap-[1.5em]">
-                {hero.secondaryActions.map((action) => (
-                  <HeroAction key={action.href} href={action.href} icon={action.icon} label={action.label} />
-                ))}
-              </div>
+              <HeroActions />
             </div>
 
             <div className="stack mx-auto w-full max-w-[673px] place-items-center">

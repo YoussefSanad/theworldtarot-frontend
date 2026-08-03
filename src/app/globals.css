@@ -46,6 +46,14 @@
   --text-body--line-height: 1.15;
   --text-nav: clamp(0.9375rem, 1.5625vw, 1.875rem); /* 30px */
   --text-nav--line-height: 1.2;
+  /*
+    The masthead only: 17.5% under the Figma nav size, the one place the page
+    deliberately departs from the frame. Figma drew a 225px-tall header, which
+    eats too much of a laptop viewport before the hero starts. The floor stays
+    at 14px so the collapsed mobile menu keeps readable links.
+  */
+  --text-nav-sm: clamp(0.875rem, 1.2891vw, 1.5469rem); /* 24.75px = 30px × 0.825 */
+  --text-nav-sm--line-height: 1.2;
   --text-caption: clamp(0.8125rem, 1.1458vw, 1.375rem); /* 22px */
   --text-caption--line-height: 1.36;
   --text-note: clamp(0.875rem, 1.25vw, 1.5rem); /* 24px */
@@ -308,7 +316,8 @@
       box-shadow 300ms var(--ease-veil),
       filter 300ms var(--ease-veil),
       border-color 300ms var(--ease-veil),
-      color 300ms var(--ease-veil);
+      color 300ms var(--ease-veil),
+      transform 300ms var(--ease-veil);
   }
 
   .btn-gold {
@@ -318,10 +327,17 @@
     font-family: var(--font-serif);
   }
 
+  /*
+    `--btn-hover-scale` so a button can tune the lift to its own size: the wide
+    CTAs read at 1.02, but the footer's 44px circles need more to register, and
+    the product tile's price label opts out entirely because the whole tile is
+    already scaling underneath it.
+  */
   .btn-gold:hover:not(:disabled),
   .btn-gold:focus-visible:not(:disabled) {
     box-shadow: var(--glow-gold-strong);
     filter: brightness(1.05);
+    transform: scale(var(--btn-hover-scale, 1.02));
   }
 
   .btn-gold:disabled {
@@ -342,6 +358,36 @@
     border-color: var(--color-gold);
     box-shadow: var(--glow-gold);
     color: var(--color-champagne);
+  }
+
+  /*
+    The nudge the hero's secondary actions take once the card is revealed: the
+    resting ghost border swelling to the hover glow and back, slowly enough to
+    read as breathing rather than blinking.
+  */
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      border-color: rgba(228, 196, 106, 0.55);
+      box-shadow: 0 0 0 rgba(228, 196, 106, 0);
+    }
+    50% {
+      border-color: var(--color-gold);
+      box-shadow: var(--glow-gold);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2.4s var(--ease-veil) infinite;
+  }
+
+  /*
+    An animated property outranks a static one, so without this the pulse would
+    paint straight over `.btn-ghost:hover`. Pointing at the button is the
+    stronger signal — drop the pulse and let the hover state have it.
+  */
+  .pulse-glow:hover {
+    animation: none;
   }
 
   /* Ornament --------------------------------------------------------------- */
@@ -377,15 +423,36 @@
     max-width: var(--measure-flourish);
   }
 
+  /*
+    Drawn rather than exported. Figma gave us the line's bounding box with its
+    fill baked in — 736x10 with alpha 255 on 8 of its 10 rows — so it rendered
+    as a solid ~5px bar, and the aspect ratio tied that thickness to the column
+    width. A flat 1px height holds a true hairline at every viewport; the 0.45
+    alpha is the knob if it wants to be fainter or stronger.
+  */
   .divider--hairline {
-    aspect-ratio: 736 / 10;
-    background-image: url("/figma/divider-hairline.webp");
+    background-color: #ffffff;
+    height: 1.5px;
     max-width: var(--measure-hairline); /* drawn at 368px under every value prop, whatever the column width */
   }
 
   .divider--tile {
     aspect-ratio: 390 / 59;
     background-image: url("/figma/product-divider-1.webp");
+  }
+
+  /*
+    The product tile's border art. Painted through a mask rather than as a plain
+    background so its colour is a CSS property — the tile's hover state warms it
+    from the gold it was exported at toward a soft white.
+  */
+  .tile-frame {
+    -webkit-mask-image: url("/figma/product-frame.webp");
+    mask-image: url("/figma/product-frame.webp");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
   }
 
   /* Surfaces --------------------------------------------------------------- */
@@ -445,5 +512,16 @@
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+    The rules above only collapse the duration, which would snap the hover lift
+    into place rather than drop it. Movement is the thing this preference is
+    about, so the scale is removed outright. (The tile's own lift opts out via
+    Tailwind's `motion-safe:` variant instead.)
+  */
+  .btn-gold:hover:not(:disabled),
+  .btn-gold:focus-visible:not(:disabled) {
+    transform: none;
   }
 }

@@ -12,22 +12,28 @@ const STILL_HANDOFF_SECONDS = 0.35;
 
 /**
  * The card itself: a looping back-of-card video that crossfades into the
- * revealed card face in the same frame. Both layers share one grid cell, so the
+ * revealed card in the same frame. Both layers share one grid cell, so the
  * swap never moves anything on the page.
  *
  * The still sits above the back video (not as a native `poster`) so the handoff
  * is a controlled fade once playback has real frames — browsers otherwise snap
  * from poster to video and the card jitters on load.
  *
- * The reveal fade waits until the face image has pixels to show, otherwise the
- * crossfade can land on an empty frame while the file loads.
+ * The reveal fade waits until the face has pixels to show, otherwise the
+ * crossfade can land on a black frame while the file buffers.
  *
- * A restored visit still crossfades from the back into the face — the button
- * never appears, but the card entrance stays cinematic.
+ * The card video does not loop: it plays once and holds on its closing frame,
+ * which is where the card is meant to stay for the rest of the visit.
+ *
+ * A restored visit crossfades into `card.image` instead of the video. That
+ * image *is* the video's closing frame, so it looks identical to the state the
+ * visitor left — and it means a second page view in the same session doesn't
+ * re-download the whole MP4 just to seek it to the end.
  */
 export function RevealStage({ className }: { className?: string }) {
   const { status, card, restored, onRevealComplete } = useReveal();
   const backVideoRef = useRef<HTMLVideoElement>(null);
+  const cardVideoRef = useRef<HTMLVideoElement>(null);
   const cardImageRef = useRef<HTMLImageElement>(null);
   const [backReady, setBackReady] = useState(false);
   const [cardReady, setCardReady] = useState(false);
@@ -69,10 +75,25 @@ export function RevealStage({ className }: { className?: string }) {
   }, [showFace]);
 
   useEffect(() => {
-    const image = cardImageRef.current;
-    if (!image || !cardMounted) return;
-    if (image.complete) setCardReady(true);
-  }, [cardMounted, card.image.src]);
+    if (!cardMounted) return;
+
+    if (restored) {
+      // Already-seen card: the still is the closing frame, nothing to play.
+      const image = cardImageRef.current;
+      if (image?.complete) setCardReady(true);
+      return;
+    }
+
+    const video = cardVideoRef.current;
+    if (!video) return;
+
+    // The reveal is user-initiated, so the browser allows sound here.
+    video.muted = false;
+    video.play().catch(() => {
+      video.muted = true;
+      void video.play();
+    });
+  }, [cardMounted, restored, card.image.src, card.video]);
 
   useEffect(() => {
     if (showFace) backVideoRef.current?.pause();
@@ -116,19 +137,35 @@ export function RevealStage({ className }: { className?: string }) {
       />
 
       {cardMounted ? (
-        <motion.img
-          ref={cardImageRef}
-          className="size-full object-cover"
-          src={card.image.src}
-          width={card.image.width}
-          height={card.image.height}
-          alt={`${card.name}, your card`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showFace ? 1 : 0 }}
-          transition={fade}
-          onLoad={() => setCardReady(true)}
-          onAnimationComplete={handleFadeComplete}
-        />
+        restored ? (
+          <motion.img
+            ref={cardImageRef}
+            className="size-full object-cover"
+            src={card.image.src}
+            width={card.image.width}
+            height={card.image.height}
+            alt={`${card.name}, your card`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showFace ? 1 : 0 }}
+            transition={fade}
+            onLoad={() => setCardReady(true)}
+            onAnimationComplete={handleFadeComplete}
+          />
+        ) : (
+          <motion.video
+            ref={cardVideoRef}
+            className="size-full object-cover"
+            src={card.video}
+            aria-label={`${card.name}, your card`}
+            playsInline
+            preload="auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showFace ? 1 : 0 }}
+            transition={fade}
+            onPlaying={() => setCardReady(true)}
+            onAnimationComplete={handleFadeComplete}
+          />
+        )
       ) : null}
     </div>
   );

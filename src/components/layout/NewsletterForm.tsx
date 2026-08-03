@@ -19,6 +19,7 @@ export function NewsletterForm() {
           name="firstName"
           type="text"
           autoComplete="given-name"
+          maxLength={40}
           placeholder="First name"
           className="field w-full px-3 py-2 text-note lg:placeholder:text-transparent"
         />
@@ -32,6 +33,8 @@ export function NewsletterForm() {
           type="email"
           autoComplete="email"
           required
+          /* RFC 5321's maximum addressable length. */
+          maxLength={254}
           placeholder="Email"
           className="field w-full px-3 py-2 text-note lg:placeholder:text-transparent"
         />

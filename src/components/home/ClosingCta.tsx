@@ -22,7 +22,8 @@ export function ClosingCta() {
 
         <figure className="flex w-full flex-col items-center gap-[clamp(0.75rem,1.3vw,1.5625rem)]">
           <div className="flex flex-wrap items-center justify-center gap-x-[0.33em] gap-y-[0.25em] text-note">
-            <StarRating className="text-h2" />
+            {/* Inherits the row's `text-note` so the mark sits level with the quote beside it. */}
+            <StarRating />
 
             <blockquote className="leading-[1.084] text-cream">
               {closingCta.testimonial.quote.map((line) => (

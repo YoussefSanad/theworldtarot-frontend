@@ -19,10 +19,16 @@ const ENTER_SECONDS = 0.5;
  * On click the gold button exits (blur + lift) before the card name enters in
  * the same footprint. On a restored visit the button never mounts — only the
  * name enters — so there is no button flash and no gray disabled hold.
+ *
+ * The swap waits for `revealed`, not `revealing`: the card's crossfade has to
+ * finish before the button gives way to the name, which is the order the client
+ * asked for. `RevealStage` is what advances the status, when its fade completes.
+ * A restored visit is already `revealed` on first render, so it still shows the
+ * name immediately.
  */
 export function RevealTrigger({
   label = "REVEAL YOUR CARD",
-  question = "Why has this card appeared for you now?",
+  question = "Why has this card appeared for you today?",
   className,
 }: {
   label?: string;
@@ -32,7 +38,7 @@ export function RevealTrigger({
   const { status, card, ready, reveal } = useReveal();
   const reducedMotion = useReducedMotion();
 
-  const showName = status === "revealing" || status === "revealed";
+  const showName = status === "revealed";
   const skipMotion = Boolean(reducedMotion);
 
   const enterFrom = skipMotion ? false : { opacity: 0, y: 10, filter: "blur(4px)" };
@@ -49,7 +55,7 @@ export function RevealTrigger({
   return (
     <div
       className={cn(
-        "stack w-fit max-w-full min-h-[2.66em] items-center text-nav lg:w-full lg:max-w-[28.0625rem]",
+        "stack w-fit max-w-full min-h-[2.66em] place-items-center text-center text-nav lg:w-full lg:max-w-[28.0625rem]",
         className,
       )}
     >
@@ -94,7 +100,10 @@ export function RevealTrigger({
               transition={enterTransition}
               aria-live="polite"
             >
-              <p className="font-display text-h3 leading-none tracking-[0.01em] text-cream">{card.name}</p>
+              {/* Set to match the hero tagline above it exactly — same family, size and colour. */}
+              <p className="font-serif text-lead text-gold">
+                {card.number} · {card.name}
+              </p>
               <p className="text-caption leading-[1.2] text-mist">{question}</p>
             </motion.div>
           )}

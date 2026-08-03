@@ -1,4 +1,5 @@
-import { icons, social } from "@/lib/assets";
+import type { SocialIconName } from "@/components/ui/SocialIcon";
+import { icons } from "@/lib/assets";
 
 /**
  * Site-wide navigation and identity. Routes beyond the homepage are not built
@@ -35,11 +36,11 @@ export const footerNav: NavLink[] = [
   { label: "Refund Policy", href: "/refunds" },
 ];
 
-export const socialLinks = [
-  { label: "Facebook", href: "https://facebook.com", icon: social.facebook },
-  { label: "Instagram", href: "https://instagram.com", icon: social.instagram },
-  { label: "X", href: "https://x.com", icon: social.x },
-  { label: "YouTube", href: "https://youtube.com", icon: social.youtube },
+export const socialLinks: { label: string; href: string; icon: SocialIconName }[] = [
+  { label: "Facebook", href: "https://facebook.com", icon: "facebook" },
+  { label: "Instagram", href: "https://instagram.com", icon: "instagram" },
+  { label: "TikTok", href: "https://tiktok.com", icon: "tiktok" },
+  { label: "YouTube", href: "https://youtube.com", icon: "youtube" },
 ];
 
 export const newsletter = {

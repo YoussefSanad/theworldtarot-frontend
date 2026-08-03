@@ -28,11 +28,22 @@ When the full set lands:
    using `defaultRevealCard` — `findCard(id)` already exists for turning a
    restored session id back into a `TarotCard`, so the random-pick path and
    the restored-visit path both resolve through the same lookup.
-3. Card *faces* here are still images (`cardFaces.theStar`), not the full
-   video — `RevealStage` crossfades from the looping back video into a still.
-   Confirm with the client's asset delivery whether the reveal should
-   eventually crossfade into a **playing** card video instead before assuming
-   the still-image approach extends to all 22.
+3. Each card needs both a `video` (what plays on reveal) and an `image` (its
+   closing frame, which is what a restored visit shows — see
+   [`components/reveal/README.md`](../components/reveal/README.md)).
+
+## Where the videos come from
+
+This flipped twice. `10ad8ee` replaced the reveal's playing video with a still
+image; the client has since reversed that, so the reveal plays a video again.
+
+The videos are to be served from a **backend endpoint**, not `public/`.
+`TarotCard.video` is a plain URL string precisely so that switch costs nothing
+downstream — the seam is `RevealProvider` picking the card, which is what will
+fetch `{ id, number, name, video }`. The MP4 in `public/videos` is a
+placeholder standing in until that endpoint exists, compressed the same way
+`card-back-compressed.mp4` was (H.264 CRF 24, `+faststart` so playback can
+begin before the whole file lands).
 
 ## `site.ts` — routes that don't exist yet
 

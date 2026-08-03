@@ -33,18 +33,11 @@ export const icons = {
   talk: asset("/figma/talk-icon.webp", 56, 49),
 } as const;
 
-export const social = {
-  facebook: asset("/figma/social-facebook.svg", 22, 22),
-  instagram: asset("/figma/social-instagram.svg", 22, 22),
-  x: asset("/figma/social-x.svg", 22, 22),
-  youtube: asset("/figma/social-youtube.svg", 22, 22),
-} as const;
-
 export const artwork = {
   heroCardBack: asset("/figma/hero-card.webp", 449, 743),
   goldCircleLeft: asset("/figma/gold-circle-left.webp", 358, 685),
   goldCircleRight: asset("/figma/gold-circle-right.webp", 316, 683),
-  book: asset("/figma/book-image.webp", 1180, 543),
+  book: asset("/figma/book-image.webp", 1554, 557),
   productOneCard: asset("/figma/product-one-card.webp", 369, 572),
   productThreeCard: asset("/figma/product-three-card.webp", 371, 583),
   productMonthAhead: asset("/figma/product-month-ahead.webp", 367, 589),
@@ -64,6 +57,7 @@ export const surfaces = {
 
 export const videos = {
   cardBack: "/videos/card-back-compressed.mp4",
+  theStar: "/videos/17-the-star-compressed.mp4",
 } as const;
 
 /**

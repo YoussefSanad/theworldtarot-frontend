@@ -17,6 +17,8 @@ export const hero = {
     { label: ["explore the", "complete collection"], href: "/living-tarot", icon: icons.book },
     { label: ["ASK A QUESTION", "GET A PERSONAL READING"], href: "/readings", icon: icons.talk },
   ],
+  /** Shown under the secondary actions once the visit's one card has been revealed. */
+  returnPrompt: "Return another day to discover a new card.",
   closing: {
     lead: "ancient wisdom•timeless stories•endless discovery.",
     question: "Where will The World Tarot take you?",
@@ -114,7 +116,11 @@ export const artist = {
     "Serafina is an artist whose work weaves together art, symbolism, and intuitive insight, drawing inspiration from sacred places around the world.",
     "Her work is shaped by a lifelong study of tarot, myth, and visual storytelling — creating readings that feel intimate, thoughtful, and deeply personal.",
   ],
-  quote: "“Every reading, to me, is like standing before a living work of art - where fate, choice, and reflection meet through the language of symbols.”",
+  /** Broken after “choice,” so the two lines read evenly rather than wrapping ragged. */
+  quote: [
+    "“Every reading, to me, is like standing before a living work of art - where fate, choice,",
+    "and reflection meet through the language of symbols.”",
+  ],
 };
 
 export const closingCta = {
