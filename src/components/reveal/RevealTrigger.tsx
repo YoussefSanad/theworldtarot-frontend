@@ -37,7 +37,7 @@ export function RevealTrigger({
   question?: string;
   className?: string;
 }) {
-  const { status, card, ready, reveal } = useReveal();
+  const { status, card, ready, reveal, warm } = useReveal();
   const reducedMotion = useReducedMotion();
 
   const showName = status !== "idle";
@@ -82,6 +82,14 @@ export function RevealTrigger({
               <Button
                 size="lg"
                 onClick={reveal}
+                // Intent arrives before the click. Starting the film here means
+                // the crossfade lands on a rendition the connection has actually
+                // been measured against, instead of the cautious one adaptive
+                // streaming opens with. `pointerDown` covers touch, where there
+                // is no hover to read, and `focus` covers the keyboard.
+                onPointerEnter={warm}
+                onPointerDown={warm}
+                onFocus={warm}
                 className="w-fit justify-start gap-[0.72em] pl-[0.4em] pr-[1.2em] font-bold tracking-[-0.01em] lg:w-full"
               >
                 <span aria-hidden className="stack size-[2em] shrink-0 place-items-center rounded-full bg-black">
