@@ -57,10 +57,19 @@ once:
 The face is a `<video>` that plays once and is **not** looped, so it holds on
 its closing frame — that is where the card is meant to stay for the visit.
 
-A restored visit renders `card.image` instead. That still *is* the video's
-closing frame, so it is visually identical to the state the visitor left, and
-it avoids re-downloading ~19MB of MP4 on every page view in the session just to
-seek it to the end (which is what the pre-`10ad8ee` implementation did).
+A restored visit renders `card.image` instead, which avoids re-downloading the
+film on every page view in the session just to seek it to the end (which is what
+the pre-`10ad8ee` implementation did).
+
+For a card from the API that still is the **poster frame**, not the film's
+closing frame, so a restored visit is no longer pixel-identical to the state the
+visitor left. Taken deliberately on 5 August 2026: a second per-card upload is a
+lot of the client's time for one restored-visit state. The bundled fallback card
+keeps its true closing frame.
+
+There is also no choice about it. The playback URL is a credential that expires
+in two hours and must never be stored, so nothing about the film survives a
+reload even if we wanted it to.
 
 This flipped twice: `10ad8ee` replaced the video face with a still image
 outright, and the client has since reversed that. If you are wondering why
@@ -77,21 +86,107 @@ resolves and swaps it for the card name. `oncePerVisit={false}` (used
 anywhere else the trigger appears, e.g. a future paid reading flow) skips the
 gate entirely — `ready` is always `true`.
 
-## Adding the rest of the deck
+**`ready` now has a second condition, and only for a returning visitor.** The
+stored card used to resolve synchronously against the bundled deck; it now takes
+a request to `GET /cards/{id}`, so a visitor with a stored id also waits for that
+to settle or the button flashes and swaps, which is the exact thing this gate
+exists to prevent. A first-time visitor has no stored id and waits for nothing,
+so the hero's primary ask still paints immediately. The draw itself is never
+waited on: it is issued on mount and lands long before anyone reads the hero and
+clicks.
 
-Only **The Star** is wired up right now, so the client's "a random video
-plays" is a no-op until the rest arrive — worth saying out loud before anyone
-tests for randomness that cannot happen yet.
+## Where the card comes from
 
-The card videos are to be served from a **backend endpoint** rather than
-`public/`. `TarotCard.video` is deliberately a plain URL string so a remote URL
-drops in without touching a component; the seam is `RevealProvider` choosing
-the card (today always `defaultRevealCard`), which is what will do the fetch.
-`findCard(id)` already exists for turning a stored session id back into a
-`TarotCard`, which both the random-pick and restored-visit paths need.
+`RevealProvider` draws it from the backend on mount, through `drawCard()` in
+[`@/lib/api`](../../lib/api.ts). `GET /api/v1/{locale}/cards/draw` returns a
+random card **and a signed film**. A restored visit calls `GET /cards/{id}`
+instead, which returns the card and no film, because a restored visit shows the
+still and has nothing to play.
 
-The file currently in `public/videos` is the placeholder that stands in until
-that endpoint exists.
+**Three rules come with that URL, and each one fails as a bare 403:**
+
+1. **The film is signed against the viewer's IP address.** It works for the
+   person who asked for it and for nobody else
+2. **It must be fetched in the browser, never on a server or at build time.** A
+   server-side fetch binds the token to that machine and then refuses every real
+   visitor, while working perfectly wherever it was tested. This app is a static
+   export and has no server, which is the only reason it is currently safe.
+   Moving the draw into a server component would break playback for everyone
+3. **It cannot be opened in a browser tab.** The CDN refuses requests carrying no
+   referrer, which is exactly what pasting a URL into the address bar produces.
+   Never set `Referrer-Policy: no-referrer` on a page that plays video
+
+`NEXT_PUBLIC_API_BASE_URL` must point at a **deployed** backend even in
+development, for rule 1: a local backend sees `127.0.0.1` while your browser
+reaches the CDN from your public address.
+
+### It is HLS, not a file
+
+What this section used to say was that `TarotCard.video` is "deliberately a plain
+URL string so a remote URL drops in without touching a component". True of an
+MP4, **false of what the API returns**.
+
+Safari plays an `.m3u8` from `src` like anything else. Chrome and Firefox do not
+and need Media Source Extensions driven by a library.
+[`attachVideoSource`](../../lib/video-source.ts) picks the path and imports
+`hls.js` on demand, so Safari never downloads a byte of it. The bundled fallback
+is still an MP4 and takes the plain path.
+
+Playback also waits for the manifest before calling `play()`. Playing earlier
+does nothing, and spends the click that permitted sound.
+
+**`hls.js` is preferred wherever Media Source Extensions exist, even when the
+browser claims it can play HLS itself.** Chrome on macOS answers `"maybe"` to
+`canPlayType("application/vnd.apple.mpegurl")`, so trusting that check hands
+playback to a native player we cannot configure, on the platform where we most
+want to configure it. That is not hypothetical: it is what happened here, and it
+silently turned every setting below into dead code while still appearing to
+work. Only the iPhone, which has no MSE, takes the native path.
+
+### Warming, and why the opening seconds used to look soft
+
+Adaptive streaming opens cautiously and climbs as it measures the connection. For
+a stream that starts at the moment of the click, that climb happens underneath
+the crossfade, so the card arrives at the worst quality the film has. It opened
+at **240p** on a fast connection.
+
+Three things fix it, all in [`video-source.ts`](../../lib/video-source.ts):
+
+- **The film is fetched on hover, focus or `pointerdown`**, not on click, through
+  `warm()` on the context. Intent arrives before the press, and those few hundred
+  milliseconds are the whole difference
+- **The opening rendition is chosen, not guessed**, matched to the card's
+  rendered size. Only the first fragment is pinned; everything after is chosen by
+  measurement, so a slow connection drops back immediately
+- **Quality is capped to the player's size** and **loading stops once warm**.
+  Without the cap a fast connection climbs to 1080p for a panel a few hundred
+  pixels wide. Without the stop it quietly buffers the whole film for somebody
+  who only hovered, which is a smaller version of the 230MB page load this
+  project exists to fix
+
+Measured in Chrome against staging:
+
+| | opening | click to playing | fetched before the click |
+|---|---|---|---|
+| before | 240p, 212x352 | 488ms | none |
+| cold click | 360p, 386x640 | 558ms | none |
+| hovered first | 360p, 386x640 | **52ms** | 3 segments, 0.8MB |
+
+Warming is skipped entirely on Data Saver or a 2G-class connection, where
+spending bandwidth on a maybe makes the page worse rather than better.
+
+### The fallback is load-bearing
+
+`defaultRevealCard` still shows The Star, and it is no longer a placeholder. It
+takes over when the API cannot be reached, and when the API 404s because no card
+yet has both a finished film and a poster frame.
+
+The backend deliberately has no fallback of its own, so without this the hero of
+the homepage would be an error state until the client's films are uploaded. It is
+loud in the console and invisible to the visitor.
+
+`findCard(id)` still resolves a stored session id against the bundled deck, which
+is what a restored visit falls back to when the API is unavailable.
 
 ## A second, parallel copy exists
 
