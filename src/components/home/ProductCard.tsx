@@ -70,7 +70,13 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        <span className="btn btn-gold w-[77.8%] px-[4%] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate [--btn-hover-scale:1]">
+        {/*
+          `group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105`
+          repeat `.btn-gold:hover`'s own values (globals.css) so the whole tile
+          triggers the button's glow, not just hovering the button itself.
+          Keep the two in sync — tuning one won't update the other.
+        */}
+        <span className="btn btn-gold w-[77.8%] px-[4%] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate [--btn-hover-scale:1] group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105">
           {label}
         </span>
       </Link>

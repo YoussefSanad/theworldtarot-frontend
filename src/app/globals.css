@@ -420,6 +420,17 @@
     transform: scale(var(--btn-hover-scale, 1.02));
   }
 
+  /*
+    ProductCard.tsx's price label duplicates this box-shadow and brightness as
+    `group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105`, so
+    the whole tile — not just the button — can trigger the same glow. Tuning
+    the values here won't reach that duplicate on its own; update both, or the
+    tile's group-hover glow will silently drift from this one. It's a Tailwind
+    utility rather than a `.group:hover .btn-gold` rule here specifically so it
+    can't also light up some unrelated `.btn-gold` that ends up inside a
+    `.group` elsewhere on the site.
+  */
+
   .btn-gold:disabled {
     filter: grayscale(0.55) brightness(0.8);
     cursor: not-allowed;
