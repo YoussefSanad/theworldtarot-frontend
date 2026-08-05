@@ -44,10 +44,14 @@ export function ProductCarousel({
   const options: EmblaOptionsType = {
     active: false,
     align: "center",
-    // Default is 'trimSnaps', which pulls the first and last slide flush to
-    // the viewport edge; `false` lets every slide reach centre, so the two end
-    // tiles also peek a neighbour rather than only the inner ones doing so.
-    containScroll: false,
+    // Wraps past the last tile back to the first (and back again dragging the
+    // other way) rather than stopping dead at either end. `containScroll` is
+    // irrelevant once looping — Embla ignores it whenever `loop` is on, since
+    // there's no longer an edge to contain scrolling against — and 4 slides at
+    // 66.7% each comfortably clears the width Embla needs available outside
+    // any one slide to loop without a gap (canLoop() in embla-carousel's own
+    // source), so no fifth product is required to keep this working.
+    loop: true,
     breakpoints: {
       "(width < 40rem)": { active: true },
     },
