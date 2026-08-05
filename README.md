@@ -16,6 +16,7 @@ npm run dev     # http://localhost:3000
 | Framework   | Next.js 16 (App Router), React 19, TypeScript     |
 | Styling     | Tailwind CSS v4 with a design-token layer         |
 | Motion      | Motion (`motion/react`) for the reveal crossfade  |
+| Carousel    | Embla (`embla-carousel-react`) for the mobile product row |
 | Type        | Magically + Gill Sans (local), Cinzel via Google |
 
 ## How the styling works
@@ -44,6 +45,13 @@ card videos, the hero glow and the header/footer scrims.
 The product tiles are container queries: the tile is a `@container` and its type
 and insets are sized in `cqw`, so a tile keeps the proportions Figma drew at
 392px wide whether the grid is showing one column or four.
+
+Below `sm` that row becomes a swipeable strip instead of a fourth grid row —
+`components/home/ProductCarousel.tsx` hands Embla `active: false` with a
+breakpoint that switches it on under 640px, so there is one row of markup, not
+a duplicated mobile copy: Embla takes the grid over on phones and lets go of it
+everywhere else. `components/ui/Carousel.tsx` is the reusable half (viewport
+ref, track, slides, dots); see its doc comment before wiring up the next one.
 
 The page atmosphere — ten stacked artwork layers in Figma — is reproduced as
 background layers on a single element, with percentage sizes and positions so

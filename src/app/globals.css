@@ -341,9 +341,10 @@
 
   /*
     `--btn-hover-scale` so a button can tune the lift to its own size: the wide
-    CTAs read at 1.02, but the footer's 44px circles need more to register, and
-    the product tile's price label opts out entirely because the whole tile is
-    already scaling underneath it.
+    CTAs read at 1.02, and the footer's 44px circles need 1.08 to register at
+    all. The product tile's price label sets 1 — that tile answers hover with
+    light rather than movement, and a button growing inside a still card would
+    be the only thing on it that shifts.
   */
   .btn-gold:hover:not(:disabled),
   .btn-gold:focus-visible:not(:disabled) {
@@ -455,8 +456,11 @@
 
   /*
     The product tile's border art. Painted through a mask rather than as a plain
-    background so its colour is a CSS property — the tile's hover state warms it
-    from the gold it was exported at toward a soft white.
+    background so its colour is a CSS property — the tile's hover state lifts it
+    from the gold it was exported at to the brightest stop of `--gradient-gold`,
+    the same value the gold buttons catch the light with. Because the mask makes
+    the ornament the element's real shape, a `drop-shadow` on hover haloes the
+    arrows and rails themselves rather than boxing the tile.
   */
   .tile-frame {
     -webkit-mask-image: url("/figma/product-frame.webp");
@@ -465,6 +469,113 @@
     mask-repeat: no-repeat;
     -webkit-mask-size: 100% 100%;
     mask-size: 100% 100%;
+  }
+
+  /* Carousels -------------------------------------------------------------- */
+  /*
+    Four product tiles abreast is four screens of scrolling on a phone, so below
+    `sm` the row becomes a swipeable strip instead. Embla drives it and switches
+    *itself* off above that width (see components/ui/Carousel.tsx), so there is
+    one row of markup rather than two — this block is its CSS half.
+
+    40rem is Tailwind's `sm`, and `Carousel` hands Embla the same width as its
+    `breakpoints` key. The two have to describe the same moment: a width where
+    this block says "strip" but Embla has already stood down is an overflowing
+    flex row that nothing can scroll.
+  */
+  @media (width < 40rem) {
+    /*
+      Until Embla is live the strip is an ordinary scroll-snap container, so the
+      row swipes in the first paint and with JS off — otherwise the window would
+      clip three of the four products with no way to reach them. Embla sets
+      `data-carousel` when it takes over and the clipping becomes its transform's
+      job instead.
+    */
+    .carousel-window {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      /*
+        The global focus ring is 2px at 3px offset (see `:focus-visible`) and a
+        tile fills its slide top to bottom, so the clip would otherwise shave the
+        ring off whichever card has keyboard focus. Overflow clips at the padding
+        box, so 5px is exactly the room the ring needs. Nothing inline may be
+        added here: Embla measures the track to size its viewport, and horizontal
+        padding would shift the alignment maths under it.
+      */
+      padding-block: 5px;
+    }
+
+    .carousel-window::-webkit-scrollbar {
+      display: none;
+    }
+
+    .carousel-window[data-carousel] {
+      overflow: hidden;
+      scroll-snap-type: none;
+    }
+
+    /* Embla drags on x; vertical scrolling and pinch-zoom stay the browser's. */
+    .carousel-track {
+      touch-action: pan-y pinch-zoom;
+    }
+
+    /*
+      The slide owns its width so the thing inside it can simply fill it — which
+      is what lets a product tile, sized in `cqw` off its own box, drop into a
+      slide without changing a single value. `--carousel-slide` is the knob; the
+      next carousel sets its own rather than forking this class.
+    */
+    .carousel-slide {
+      flex: 0 0 var(--carousel-slide, 100%);
+      min-inline-size: 0;
+      scroll-snap-align: center;
+    }
+  }
+
+  /*
+    Position dots. Figma drew one 1920px frame and no carousel, so unlike
+    everything else here there is no measurement to convert — this is a
+    usability addition the design does not describe, like the mobile menu
+    button. The dot is sized in `em` off the page's smallest type step so it
+    moves with the type scale instead of pinning to a pixel, and the button
+    around it is 2.75rem square: the dot stays small without the target being
+    smaller than a thumb.
+  */
+  .carousel-dot {
+    align-items: center;
+    block-size: 2.75rem;
+    cursor: pointer;
+    display: flex;
+    font-size: var(--text-fine);
+    inline-size: 2.75rem;
+    justify-content: center;
+  }
+
+  .carousel-dot::before {
+    background-color: var(--color-gold-soft);
+    block-size: 0.75em;
+    border-radius: 9999px;
+    content: "";
+    inline-size: 0.75em;
+    opacity: 0.45;
+    transition:
+      background-color 300ms var(--ease-veil),
+      box-shadow 300ms var(--ease-veil),
+      opacity 300ms var(--ease-veil);
+  }
+
+  .carousel-dot:hover::before,
+  .carousel-dot:focus-visible::before {
+    opacity: 1;
+  }
+
+  /* The tile in the middle answers with light, like every other gold control. */
+  .carousel-dot[aria-current]::before {
+    background-color: var(--color-gold);
+    box-shadow: var(--glow-gold);
+    opacity: 1;
   }
 
   /* Surfaces --------------------------------------------------------------- */

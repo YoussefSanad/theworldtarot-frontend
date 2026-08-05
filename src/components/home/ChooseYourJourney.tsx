@@ -1,7 +1,9 @@
 import { Container, Section } from "@/components/layout/Section";
+import { CarouselSlide } from "@/components/ui/Carousel";
 import { journey, PRODUCTS_SECTION_ID, products } from "@/content/home";
 
 import { ProductCard } from "./ProductCard";
+import { ProductCarousel } from "./ProductCarousel";
 
 export function ChooseYourJourney() {
   return (
@@ -18,11 +20,20 @@ export function ChooseYourJourney() {
           </p>
         </header>
 
-        <div className="mt-[clamp(1.75rem,3.1vw,3.7rem)] grid grid-cols-1 gap-x-0 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+        <ProductCarousel
+          slideCount={products.length}
+          dotsLabel={journey.carousel.dotsLabel}
+          dotLabels={products.map((product) => `${journey.carousel.dotAction} ${product.title}`)}
+        >
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            // 66.7% is the tile's own mobile scale, relocated to the slide that
+            // now places it (see ProductCard's doc comment) — the peek on each
+            // side below `sm` is the leftover third, not extra chrome.
+            <CarouselSlide key={product.id} className="[--carousel-slide:66.7%]">
+              <ProductCard product={product} />
+            </CarouselSlide>
           ))}
-        </div>
+        </ProductCarousel>
       </Container>
     </Section>
   );

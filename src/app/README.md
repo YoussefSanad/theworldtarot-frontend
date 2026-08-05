@@ -94,6 +94,46 @@ showing (1–4 columns depending on breakpoint). If you add another component
 whose internal proportions are driven by its own box rather than the
 viewport, this is the pattern to copy — not another `clamp()`.
 
+This is also why the tile itself never sets its own width: `ProductCard`
+fills whatever box places it (a carousel slide below `sm`, a grid cell above
+it) and the `cqw` sizing re-resolves against that box automatically. Own the
+width at the placing element, not the tile.
+
+## Carousels
+
+The product row (`components/home/ProductCarousel.tsx`) is the first use of
+Embla, and is meant to be copied for the Living Tarot and Viewing Room rows
+planned after it. Two things to keep in sync if you do:
+
+- **The breakpoint is written in three places and all three must agree**:
+  `globals.css`'s `@media (width < 40rem)` "Carousels" block, the `max-sm:`/
+  `sm:` classes on the track, and Embla's own `breakpoints: { "(width <
+  40rem)": … } }` option in `ProductCarousel.tsx`. A mismatch doesn't error —
+  it leaves a flex row Embla no longer drives, or a grid Embla is still
+  trying to transform.
+- **Never put horizontal padding or margin on the carousel window or
+  track.** Embla measures the container's own border box to size itself; the
+  vertical padding on `.carousel-window` (there to keep the global gold focus
+  ring from being clipped by `overflow-hidden`) is safe for the same reason
+  horizontal padding isn't — it doesn't feed into Embla's axis.
+
+`components/ui/Carousel.tsx` holds the reusable wiring (viewport ref, track,
+slides, a dots list kept in sync with Embla's `select`/`reInit` events); the
+`carousel-window`/`carousel-track`/`carousel-slide`/`carousel-dot` classes
+here are its CSS half. Slide width is a `--carousel-slide` custom property
+set per call site (`[--carousel-slide:66.7%]` on the product tiles, the same
+66.7% the tile used to own itself) rather than baked into the shared
+classes — `cn` in this codebase doesn't merge conflicting Tailwind classes
+(see `lib/cn.ts`), so the primitive stays unstyled beyond structure and lets
+each carousel size its own slides.
+
+`.carousel-dot`'s 44px target is the one number in this file with no Figma
+source — the client's design has no carousel, so it's a usability addition in
+the same spirit as the mobile menu button, not a conversion from a frame
+measurement. The dot mark itself is `0.75em` off `--text-fine` (9px on any
+phone, since that token is pinned at its clamp floor below 640px) so it still
+moves with the type scale rather than sitting at its own fixed pixel size.
+
 ## Fonts
 
 Local: Magically (display headings) and Gill Sans (body — light/regular ×

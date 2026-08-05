@@ -14,14 +14,20 @@ import type { Product } from "@/content/home";
  * The framed art and the price label share one link so the whole card navigates
  * like the CTA without nesting interactive elements.
  *
- * The grid runs the tiles edge to edge, so the hover lift needs a z-index to
- * rise over its neighbours instead of being clipped between them.
+ * Nothing here moves on hover — the tile answers with light only. The grid runs
+ * the tiles edge to edge, so anything that grows has to overlap its neighbours
+ * to do it.
+ *
+ * Width is owned by whatever places the tile, not the tile itself: below `sm`
+ * that's a carousel slide (see `ChooseYourJourney`/`ProductCarousel`), from
+ * `sm` it's two thirds of a two-column cell, and from `lg` it's a whole quarter
+ * column — the `cqw` sizing means all three read as the same composition.
  */
 export function ProductCard({ product }: { product: Product }) {
   const label = `${product.price} ${product.action}`;
 
   return (
-    <article className="group @container relative mx-auto flex w-[66.7%] max-w-[449px] flex-col items-center gap-[1.7%] transition-transform duration-300 hover:z-10 motion-safe:hover:scale-[1.015] lg:w-full lg:max-w-none">
+    <article className="group @container flex w-full max-w-[449px] flex-col items-center gap-[1.7%] sm:mx-auto sm:w-[66.7%] lg:w-full lg:max-w-none">
       <Link
         href={product.href}
         className="flex w-full flex-col items-center gap-[1.7%] no-underline"
@@ -46,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
           */}
           <span
             aria-hidden
-            className="tile-frame z-10 bg-[#dfc089] transition-colors duration-300 group-hover:bg-snow"
+            className="tile-frame z-10 bg-[#dfc089] transition-[background-color,filter] duration-300 group-hover:bg-[#fae7b7] group-hover:drop-shadow-[0_0_6px_rgba(228,196,106,0.6)]"
           />
 
           <div className="z-10 flex flex-col items-center px-[3%] pt-[12%]">

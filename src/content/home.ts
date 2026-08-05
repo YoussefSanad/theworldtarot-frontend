@@ -88,6 +88,17 @@ export const products: Product[] = [
 export const journey = {
   heading: "Choose Your Journey:",
   subheading: ["Choose a personalized reading, or step inside the complete", "Living Tarot collection in the Viewing Room."],
+  /**
+   * Below `sm` the four tiles become a swipeable row. None of this is visible —
+   * they are the names a screen reader reads out for the position dots. The row
+   * itself is never announced as a carousel, because the same markup is a plain
+   * grid above `sm`; see `components/home/ProductCarousel.tsx`.
+   */
+  carousel: {
+    dotsLabel: "Choose a reading",
+    /** Prefixes each product title on its dot: “Show 1 CARD READING”. */
+    dotAction: "Show",
+  },
 };
 
 export const included = {
