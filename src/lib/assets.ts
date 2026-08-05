@@ -24,6 +24,7 @@ export const brand = {
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),
   revealStar: asset("/figma/reveal-icon-star.webp", 53, 52),
+  butterfly: asset("/figma/butterfly.webp", 87, 49),
 } as const;
 
 export const icons = {

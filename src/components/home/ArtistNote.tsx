@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Container, Section } from "@/components/layout/Section";
 import { Divider } from "@/components/ui/Divider";
 import { artist } from "@/content/home";
-import { artwork } from "@/lib/assets";
+import { artwork, brand } from "@/lib/assets";
 
 /**
  * Book plane is absolute so it keeps its aspect without stretching the section
@@ -38,6 +38,19 @@ export function ArtistNote() {
               {paragraph}
             </p>
           ))}
+
+          {/*
+            Margin is 1.4 × the lead size the copy is set in, so the ornament
+            keeps the same rhythm above it that the quote keeps below it — an
+            `em` here would resolve against the container's base size instead.
+          */}
+          <Image
+            src={brand.butterfly.src}
+            alt=""
+            width={brand.butterfly.width}
+            height={brand.butterfly.height}
+            className="mx-auto mt-[calc(1.4*var(--text-lead))] h-auto w-[clamp(2.5rem,4.53vw,5.4375rem)]"
+          />
 
           <p className="mt-[1.4em] font-light text-lead italic leading-[1.05] tracking-[-0.01em] text-gold">
             {artist.quote.map((line) => (
