@@ -316,6 +316,73 @@
     background-position: 100.3% 1.5%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
   }
 
+  /*
+    Production hero atmosphere: shine/globe omitted — SunriseAtmosphere (in
+    src/components/home) drives those as DOM layers portaled into #hero-sky.
+    Identical to .page-atmosphere for the remaining 7 layers, including the
+    card-backdrop's --atmosphere-width/--atmosphere-margin freeze-and-recenter
+    treatment. No @media (width >= 120rem) override: that block only ever
+    changed the shine/globe entries (2nd and 3rd) — every other value is
+    identical between the base rule and the override — so with those two
+    layers removed the override would be a no-op.
+  */
+  .page-atmosphere-hero {
+    background-color: var(--color-night);
+    background-image: url("/figma/card-backdrop.webp"), url("/figma/section-1-bg.webp"), url("/figma/section-2-bg.webp"),
+      url("/figma/section-1-2-bridge.webp"), url("/figma/section-3-backdrop.webp"), url("/figma/section-2-3-bridge.webp"),
+      url("/figma/footer-backdrop.webp");
+    background-repeat: no-repeat;
+    background-size: calc(var(--atmosphere-width) * 0.5938) auto, 100% auto, 152.08% auto, 100% auto, 101.2% auto,
+      102.03% auto, 101.82% auto;
+    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 50% 0%, 50% 34.4%,
+      50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
+  }
+
+  /*
+    DOM replacements for the world-shine/world-globe layers .page-atmosphere-hero
+    omits. `top` reproduces `background-position-y: Y%`'s real formula —
+    (Y/100) * (containerHeight - imageHeight), not just (Y/100) * containerHeight
+    — by subtracting the image-height term as a vw-relative offset (container
+    width ~= 100vw, same substitution the old ultra-wide fix below already
+    made). Constants: worldShine 1600x655 (aspect 0.409375), worldGlobe
+    1600x1215 (aspect 0.759375), against production's Y=9%/W=121.93% (shine)
+    and Y=5.9%/W=100.21% (globe):
+      shine coeff = 9 * 121.93 * 0.409375 / 100 = 4.49236
+      globe coeff = 5.9 * 100.21 * 0.759375 / 100 = 4.48972
+    left/width are a direct port — posX/widthPct match production's tuned
+    background-position-x / background-size values exactly. The >=120rem
+    block is copied verbatim from .page-atmosphere's own calc() expressions
+    (already raw <length> values, not percentages, so no re-derivation
+    needed) — see the comment above that block, higher in this file, for
+    where 534.3px/320.6px/0.19966/0.28156 come from. Move both rules together,
+    by the same pixels, or the glint slides off the globe.
+  */
+  .hero-sky-shine {
+    position: absolute;
+    max-width: none;
+    width: 121.93%;
+    left: calc((100% - 121.93%) * 0.613);
+    top: calc(9% - 4.49236vw);
+  }
+
+  .hero-sky-globe {
+    position: absolute;
+    max-width: none;
+    width: 100.21%;
+    left: calc((100% - 100.21%) * 1.5);
+    top: calc(5.9% - 4.48972vw);
+  }
+
+  @media (width >= 120rem) {
+    .hero-sky-shine {
+      top: calc(534.3px - (100vw - 1920px) * 0.19966);
+    }
+
+    .hero-sky-globe {
+      top: calc(320.6px - (100vw - 1920px) * 0.28156);
+    }
+  }
+
   /* Buttons ---------------------------------------------------------------- */
   .btn {
     cursor: pointer;

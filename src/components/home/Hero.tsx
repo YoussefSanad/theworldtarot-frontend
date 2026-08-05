@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { HeroActions } from "@/components/home/HeroActions";
+import { SunriseAtmosphere } from "@/components/home/SunriseAtmosphere";
 import { Container, Section } from "@/components/layout/Section";
 import { RevealProvider, RevealStage, RevealTrigger } from "@/components/reveal";
 import { Divider } from "@/components/ui/Divider";
@@ -12,6 +13,7 @@ export function Hero() {
     <Section padding="none" className="pt-[clamp(2rem,6.04vw,7.25rem)] pb-[clamp(2rem,4.7vw,5.6rem)]">
       <Container width="hero">
         <RevealProvider oncePerVisit>
+          <SunriseAtmosphere />
           <div className="grid items-center gap-gutter lg:grid-cols-[797fr_673fr]">
             <div className="flex flex-col items-center gap-[0.6em] text-center lg:items-start lg:text-left">
               <h1 className="font-display text-snow">
