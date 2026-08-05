@@ -27,10 +27,10 @@ export function ProductCard({ product }: { product: Product }) {
   const label = `${product.price} ${product.action}`;
 
   return (
-    <article className="group @container flex w-full max-w-[449px] flex-col items-center gap-[1.7%] sm:mx-auto sm:w-[66.7%] lg:w-full lg:max-w-none">
+    <article className="group @container flex w-full max-w-[449px] flex-col items-center gap-[3.4cqw] sm:mx-auto sm:w-[66.7%] lg:w-full lg:max-w-none">
       <Link
         href={product.href}
-        className="flex w-full flex-col items-center gap-[1.7%] no-underline"
+        className="flex w-full flex-col items-center gap-[4.2cqw] no-underline"
         aria-label={label}
       >
         <div className="stack aspect-[392/779] w-full transition-[filter] duration-300 group-hover:drop-shadow-[0_0_18px_rgba(228,196,106,0.35)]">
