@@ -18,7 +18,12 @@ export function ClosingCta() {
           {closingCta.heading}
         </h2>
 
-        <ButtonLink href={closingCta.action.href}>{closingCta.action.label}</ButtonLink>
+        <ButtonLink
+          href={closingCta.action.href}
+          className="my-[clamp(0.5rem,1.5vw,1.25rem)]"
+        >
+          {closingCta.action.label}
+        </ButtonLink>
 
         <figure className="flex w-full flex-col items-center gap-[clamp(0.75rem,1.3vw,1.5625rem)]">
           <div className="flex flex-wrap items-center justify-center gap-x-[0.33em] gap-y-[0.25em] text-note">
