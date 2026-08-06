@@ -278,8 +278,18 @@ export function RevealProvider({
       settled,
       onRevealComplete,
     }),
-    [restored, interaction, activeCard, ready, reveal, warm, warming, onFilmFailed, onRevealComplete],
-    [restored, interaction, activeCard, ready, reveal, warm, warming, settled, onRevealComplete],
+    [
+      restored,
+      interaction,
+      activeCard,
+      ready,
+      reveal,
+      warm,
+      warming,
+      onFilmFailed,
+      settled,
+      onRevealComplete,
+    ],
   );
 
   return <RevealContext.Provider value={value}>{children}</RevealContext.Provider>;
