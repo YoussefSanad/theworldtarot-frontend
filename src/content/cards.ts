@@ -1,28 +1,46 @@
-import { cardFaces, videoPosters, videos, type ImageAsset } from "@/lib/assets";
+import { cardFaces, videoPosters, videos } from "@/lib/assets";
 
 /**
  * The Living Tarot cards available to the reveal.
  *
- * Only The Star is wired up for now, so every reveal shows it. When the full
- * set of 22 cards is delivered they are added to `livingTarot` and the reveal
- * picks from the list instead of taking the first entry.
+ * **The deck now comes from the backend**, via `drawCard()` in `@/lib/api`. What
+ * is left here is the bundled fallback: the card the reveal shows when the API
+ * cannot be reached, so the hero of the homepage is never an error state.
  *
- * **These become a backend concern.** The card videos are to be served from an
- * endpoint rather than `public/`, so `video` is deliberately a plain URL string
- * — a remote URL drops straight in with no component change. The seam is
- * `RevealProvider` choosing the card (today always `defaultRevealCard`): that
- * is what will fetch `{ id, number, name, video }` instead. Nothing downstream
- * of it needs to know where the URL came from.
+ * The note that used to live here said a remote URL would "drop straight in with
+ * no component change". That was true of the MP4 this file ships and is **false
+ * of what the API returns**, which is HLS. Safari plays an `.m3u8` natively and
+ * Chrome and Firefox do not, so `RevealStage` carries a player for it. The seam
+ * was in the right place; it was just wider than expected.
  */
+
+export type CardImage = {
+  readonly src: string;
+  /**
+   * Absent for cards from the API, which sends a URL and no dimensions. The
+   * stage fixes its own aspect ratio and uses `object-cover`, so nothing shifts
+   * when these are unknown. Bundled cards keep theirs.
+   */
+  readonly width?: number;
+  readonly height?: number;
+};
 
 export type TarotCard = {
   id: string;
   /** Roman numeral, shown beside the name on reveal. */
   number: string;
   name: string;
-  video: string;
-  /** The video's closing frame — what a restored visit shows. See `RevealStage`. */
-  image: ImageAsset;
+  /**
+   * An HLS manifest from the API, or a bundled MP4 for the fallback card.
+   *
+   * Absent on a restored visit, which shows the still and never replays the
+   * film. The playback URL is a credential that expires in two hours and must
+   * not be stored, so there is nothing to carry across a reload even if we
+   * wanted to.
+   */
+  video?: string;
+  /** The frame a restored visit shows in place of replaying the film. */
+  image: CardImage;
 };
 
 export const cardBack = {
@@ -34,6 +52,14 @@ export const livingTarot: TarotCard[] = [
   { id: "17-the-star", number: "XVII", name: "The Star", video: videos.theStar, image: cardFaces.theStar },
 ];
 
+/**
+ * The card shown when the API cannot be reached, or has no film to draw yet.
+ *
+ * Not a placeholder any more, a fallback with a job: the reveal is the hero of
+ * the homepage, and the backend deliberately has no fallback of its own, so a
+ * deploy with no films uploaded would otherwise leave the first thing a visitor
+ * sees in an error state.
+ */
 export const defaultRevealCard = livingTarot[0];
 
 export function findCard(id: string | null): TarotCard | undefined {

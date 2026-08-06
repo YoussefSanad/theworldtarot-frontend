@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cardBack } from "@/content/cards";
 import { cn } from "@/lib/cn";
+import { attachVideoSource, type VideoSource } from "@/lib/video-source";
 
 import { REVEAL_CROSSFADE_SECONDS, useReveal } from "./reveal-context";
 
@@ -31,16 +32,23 @@ const STILL_HANDOFF_SECONDS = 0.35;
  * re-download the whole MP4 just to seek it to the end.
  */
 export function RevealStage({ className }: { className?: string }) {
-  const { status, card, restored, onRevealComplete } = useReveal();
+  const { status, card, restored, warming, onRevealComplete } = useReveal();
   const backVideoRef = useRef<HTMLVideoElement>(null);
   const cardVideoRef = useRef<HTMLVideoElement>(null);
   const cardImageRef = useRef<HTMLImageElement>(null);
+  const sourceRef = useRef<VideoSource | null>(null);
   const [backReady, setBackReady] = useState(false);
   const [cardReady, setCardReady] = useState(false);
+  const [sourceReady, setSourceReady] = useState(false);
   const reducedMotion = useReducedMotion();
 
   const cardMounted = status !== "idle";
-  const showFace = cardReady;
+
+  // The film is fetched before the click, so the element exists while the card
+  // back is still showing. Everything visible stays gated on the click.
+  const filmWanted = !restored && Boolean(card.video) && (warming || cardMounted);
+
+  const showFace = cardMounted && cardReady;
   const showBack = !showFace;
   const showStill = showBack && !backReady;
   const instant = Boolean(reducedMotion);
@@ -75,17 +83,47 @@ export function RevealStage({ className }: { className?: string }) {
   }, [showFace]);
 
   useEffect(() => {
-    if (!cardMounted) return;
+    if (!cardMounted || !restored) return;
 
-    if (restored) {
-      // Already-seen card: the still is the closing frame, nothing to play.
-      const image = cardImageRef.current;
-      if (image?.complete) setCardReady(true);
-      return;
-    }
+    // Already-seen card: the still stands in for the film, nothing to play.
+    const image = cardImageRef.current;
+    if (image?.complete) setCardReady(true);
+  }, [cardMounted, restored, card.image.src]);
+
+  // Fetching the film. Runs as soon as the visitor looks like they will press
+  // the button, which is what stops the crossfade landing on the lowest
+  // rendition. The source is attached here rather than through `src` because
+  // the API serves HLS and only Safari can take that from an attribute.
+  useEffect(() => {
+    const video = cardVideoRef.current;
+    if (!video || !filmWanted || !card.video) return;
+
+    const source = attachVideoSource(video, card.video);
+    sourceRef.current = source;
+
+    let cancelled = false;
+    void source.ready.then(() => {
+      if (!cancelled) setSourceReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+      sourceRef.current = null;
+      setSourceReady(false);
+      source.detach();
+    };
+  }, [filmWanted, card.video]);
+
+  // Playing it, once they have actually asked.
+  useEffect(() => {
+    if (!cardMounted || restored || !sourceReady) return;
 
     const video = cardVideoRef.current;
-    if (!video) return;
+    const source = sourceRef.current;
+    if (!video || !source) return;
+
+    // They are watching now, so the warm buffer cap comes off.
+    source.release();
 
     // The reveal is user-initiated, so the browser allows sound here.
     video.muted = false;
@@ -93,7 +131,7 @@ export function RevealStage({ className }: { className?: string }) {
       video.muted = true;
       void video.play();
     });
-  }, [cardMounted, restored, card.image.src, card.video]);
+  }, [cardMounted, restored, sourceReady]);
 
   useEffect(() => {
     if (showFace) backVideoRef.current?.pause();
@@ -136,36 +174,41 @@ export function RevealStage({ className }: { className?: string }) {
         transition={showFace ? fade : stillFade}
       />
 
-      {cardMounted ? (
-        restored ? (
-          <motion.img
-            ref={cardImageRef}
-            className="size-full object-cover"
-            src={card.image.src}
-            width={card.image.width}
-            height={card.image.height}
-            alt={`${card.name}, your card`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showFace ? 1 : 0 }}
-            transition={fade}
-            onLoad={() => setCardReady(true)}
-            onAnimationComplete={handleFadeComplete}
-          />
-        ) : (
-          <motion.video
-            ref={cardVideoRef}
-            className="size-full object-cover"
-            src={card.video}
-            aria-label={`${card.name}, your card`}
-            playsInline
-            preload="auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showFace ? 1 : 0 }}
-            transition={fade}
-            onPlaying={() => setCardReady(true)}
-            onAnimationComplete={handleFadeComplete}
-          />
-        )
+      {cardMounted && restored ? (
+        <motion.img
+          ref={cardImageRef}
+          className="size-full object-cover"
+          src={card.image.src}
+          width={card.image.width}
+          height={card.image.height}
+          alt={`${card.name}, your card`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showFace ? 1 : 0 }}
+          transition={fade}
+          onLoad={() => setCardReady(true)}
+          onAnimationComplete={handleFadeComplete}
+        />
+      ) : null}
+
+      {/*
+        Mounted while warming, which is before the click, so it is deliberately
+        transparent and inert until `showFace`. `showFace` requires the click,
+        so a film that finishes buffering early cannot reveal itself.
+      */}
+      {filmWanted ? (
+        <motion.video
+          ref={cardVideoRef}
+          className="size-full object-cover"
+          aria-label={`${card.name}, your card`}
+          aria-hidden={!cardMounted}
+          playsInline
+          preload="auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showFace ? 1 : 0 }}
+          transition={fade}
+          onPlaying={() => setCardReady(true)}
+          onAnimationComplete={handleFadeComplete}
+        />
       ) : null}
     </div>
   );
