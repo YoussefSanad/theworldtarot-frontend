@@ -32,7 +32,7 @@ const STILL_HANDOFF_SECONDS = 0.35;
  * re-download the whole MP4 just to seek it to the end.
  */
 export function RevealStage({ className }: { className?: string }) {
-  const { status, card, restored, warming, onFilmFailed, onRevealComplete } = useReveal();
+  const { status, card, restored, warming, settled, onFilmFailed, onRevealComplete } = useReveal();
   const backVideoRef = useRef<HTMLVideoElement>(null);
   const cardVideoRef = useRef<HTMLVideoElement>(null);
   const cardImageRef = useRef<HTMLImageElement>(null);
@@ -46,7 +46,12 @@ export function RevealStage({ className }: { className?: string }) {
 
   // The film is fetched before the click, so the element exists while the card
   // back is still showing. Everything visible stays gated on the click.
-  const filmWanted = !restored && Boolean(card.video) && (warming || cardMounted);
+  //
+  // **Unprompted warming waits for the backend to answer.** Until it does,
+  // `card` is the bundled fallback, and fetching that on spec would pull an
+  // 18MB MP4 for a card almost nobody will end up seeing. A click does not
+  // wait, because by then the visitor is owed something to watch.
+  const filmWanted = !restored && Boolean(card.video) && (cardMounted || (warming && settled));
 
   const showFace = cardMounted && cardReady;
   const showBack = !showFace;

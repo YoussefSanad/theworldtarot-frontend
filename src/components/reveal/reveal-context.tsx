@@ -29,6 +29,14 @@ export type RevealStatus = "idle" | "revealing" | "revealed";
 /** Card face crossfade duration. */
 export const REVEAL_CROSSFADE_SECONDS = 1.4;
 
+/**
+ * How long the unprompted warm will wait for a quiet moment before going ahead.
+ *
+ * Comfortably past a measured LCP of roughly 1.3s on a throttled phone, and far
+ * short of the time it takes anyone to read the hero and press the button.
+ */
+const WARM_CEILING_MS = 2000;
+
 type RevealContextValue = {
   status: RevealStatus;
   card: TarotCard;
@@ -51,6 +59,14 @@ type RevealContextValue = {
   warm: () => void;
   /** True once warming has been asked for. `RevealStage` attaches on this. */
   warming: boolean;
+  /**
+   * True once the backend has answered, one way or the other.
+   *
+   * Warming must wait for it. Before the answer arrives `card` is the bundled
+   * fallback, and fetching that unprompted would pull an 18MB MP4 nobody is
+   * going to watch, on the connections least able to afford it.
+   */
+  settled: boolean;
   /**
    * The drawn card's film couldn't actually play — a fatal HLS failure, not an
    * API failure (that's already handled by the fetch effect below). Routes
@@ -93,14 +109,14 @@ export function RevealProvider({
   // already has a card in session storage.
   const [drawn, setDrawn] = useState<TarotCard | null>(null);
   const [restoredCard, setRestoredCard] = useState<TarotCard | null>(null);
-  const [restoreSettled, setRestoreSettled] = useState(false);
+  const [settled, setSettled] = useState(false);
 
   // The idle button must not paint for somebody who already has a card, or it
   // flashes and swaps. Hydration alone used to answer that, because the stored
   // card was found synchronously. It now takes a request, so a visitor with a
   // stored id waits for it. A first-time visitor does not, and the hero's
   // primary ask still paints immediately.
-  const ready = oncePerVisit ? hydrated && (!storedId || restoreSettled) : true;
+  const ready = oncePerVisit ? hydrated && (!storedId || settled) : true;
 
   /**
    * **This runs in the browser and must keep doing so.** The film's URL is
@@ -166,7 +182,7 @@ export function RevealProvider({
         console.error("The reveal could not reach the API, falling back to the bundled card.", error);
       })
       .finally(() => {
-        if (!controller.signal.aborted) setRestoreSettled(true);
+        if (!controller.signal.aborted) setSettled(true);
       });
 
     return () => controller.abort();
@@ -204,6 +220,38 @@ export function RevealProvider({
     setDrawn(null);
   }, []);
 
+  /**
+   * Warm without waiting to be asked, because a phone has no hover.
+   *
+   * Hover is free, and it is also desktop-only: on a touch screen the first
+   * signal of intent is the tap itself, which is too late to help. So the film
+   * is fetched unprompted, which means paying for it on behalf of visitors who
+   * never press the button.
+   *
+   * **Deferred to the first idle moment, with a hard ceiling**, which is what
+   * makes that acceptable. The audit behind this whole project found 230MB
+   * loading on arrival and a 21.4 second mobile LCP, so video competing with the
+   * hero for bandwidth is the one thing this must not become. Measured LCP on a
+   * throttled phone is about 1.3s, so a ceiling above that costs nothing and
+   * still lands long before anyone has read the hero and reached for the button.
+   *
+   * **Deliberately not waiting for the `load` event.** That was the first
+   * attempt, and it pushed the fetch to 12 seconds on a throttled phone, because
+   * `load` waits for the looping card-back video. Correct about not competing
+   * and useless as a head start.
+   *
+   * The cost is bounded on the other side too: warming stops after one segment,
+   * and is skipped entirely on Data Saver or a 2G-class connection.
+   */
+  useEffect(() => {
+    const request =
+      window.requestIdleCallback ?? ((cb: IdleRequestCallback) => window.setTimeout(cb, WARM_CEILING_MS));
+
+    const idle = request(() => warm(), { timeout: WARM_CEILING_MS });
+
+    return () => window.cancelIdleCallback?.(idle);
+  }, [warm]);
+
   const reveal = useCallback(() => {
     // A click with no hover, from a touch screen or the keyboard. Warming now is
     // late but not useless: it still removes a round trip from the click path.
@@ -227,9 +275,11 @@ export function RevealProvider({
       warm,
       warming,
       onFilmFailed,
+      settled,
       onRevealComplete,
     }),
     [restored, interaction, activeCard, ready, reveal, warm, warming, onFilmFailed, onRevealComplete],
+    [restored, interaction, activeCard, ready, reveal, warm, warming, settled, onRevealComplete],
   );
 
   return <RevealContext.Provider value={value}>{children}</RevealContext.Provider>;
