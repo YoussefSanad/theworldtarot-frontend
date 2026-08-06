@@ -90,7 +90,7 @@ export function SiteHeader() {
           {menuOpen ? "Close" : "Menu"}
         </button>
 
-        <div className="hidden flex-col items-stretch gap-6 lg:flex lg:w-auto lg:flex-row lg:items-end lg:gap-0 lg:pb-0">
+        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
           <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
             <ButtonLink
               href={headerActions.cta.href}
