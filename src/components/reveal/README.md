@@ -192,7 +192,8 @@ is what a restored visit falls back to when the API is unavailable.
 
 [`src/components/concept/reveal`](../concept/reveal) is **not** a re-export
 of this folder — it is a deliberately separate copy with its own state model,
-built for the `/concept` route's sunrise-atmosphere experiment. See that
+built for the sunrise-atmosphere hero experiment (its `/concept` route has
+since been removed; the components remain unlinked, for reference). See that
 folder's README before assuming the two can be merged.
 
 ## Verifying changes

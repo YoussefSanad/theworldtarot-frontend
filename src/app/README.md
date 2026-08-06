@@ -68,7 +68,8 @@ background), which is why you won't find opacity values here even though the
 design clearly has some.
 
 `.page-atmosphere-concept` is the same idea with the sun/world layers
-omitted — the `/concept` route animates those as DOM elements instead. See
+omitted — the (now-unlinked) sunrise-hero experiment animated those as DOM
+elements instead. See
 [`src/components/concept/README.md`](../components/concept/README.md).
 
 ### The "sky freeze" hack

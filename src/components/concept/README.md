@@ -1,15 +1,17 @@
-# `/concept` — the sunrise-hero experiment
+# The sunrise-hero experiment (unlinked)
 
-A second, parallel homepage hero at the `/concept` route (`primaryNav` in
-[`src/content/site.ts`](../../content/site.ts) links to it as "CONCEPT"). It
-exists to demo an alternate treatment — a rising sun/world behind the hero
-that animates in on load and again on reveal, plus a full-bleed landing
-viewport with a retractable burger menu instead of the always-visible header —
-without touching the production homepage while it's under review.
+A second, parallel homepage hero that demos an alternate treatment — a rising
+sun/world behind the hero that animates in on load and again on reveal, plus
+a full-bleed landing viewport with a retractable burger menu instead of the
+always-visible header — without touching the production homepage while it
+was under review.
 
-**This is not dead code and not a stray duplicate.** If the direction is
-approved it likely replaces `(site)`'s Hero; until then, treat it as a
-sibling implementation that must be edited on its own terms.
+**The `/concept` route (`src/app/concept/`) has been removed** and the
+"CONCEPT" link dropped from `primaryNav` in
+[`src/content/site.ts`](../../content/site.ts), so this component tree is no
+longer reachable in the app. It's kept here in case the direction is
+revisited later — if so it likely replaces `(site)`'s Hero, and a new
+`app/concept/` (or equivalent) route would need to be re-added to mount it.
 
 ## What's different from production
 

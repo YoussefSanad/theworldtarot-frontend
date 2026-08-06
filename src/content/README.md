@@ -49,10 +49,12 @@ begin before the whole file lands).
 
 `primaryNav` and `footerNav` point at paths from the client's navigation
 document (`/world-tarot`, `/living-tarot`, `/readings`, `/library`, `/faq`,
-etc.). None of those routes are built — only `/` and `/concept` exist under
-`src/app`. The links are intentionally live/correct now so that adding a
-route later is just adding a page under `src/app`, not also hunting down
-every place that linked to it.
+etc.). None of those routes are built — only `/` exists under `src/app` (the
+`/concept` sunrise-hero experiment route was removed; its components remain
+under `src/components/concept` for reference — see that folder's README).
+The links are intentionally live/correct now so that adding a route later is
+just adding a page under `src/app`, not also hunting down every place that
+linked to it.
 
 ## Products (`home.ts`)
 
