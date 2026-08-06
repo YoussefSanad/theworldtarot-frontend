@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import { useReveal } from "./reveal-context";
 
 const EXIT_SECONDS = 0.45;
-const ENTER_SECONDS = 0.5;
+const ENTER_SECONDS = 1.5;
 
 /**
  * Drives the reveal, then yields to the card's name.

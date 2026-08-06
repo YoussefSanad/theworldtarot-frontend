@@ -50,7 +50,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${magically.variable} ${cinzel.variable} ${gillSans.variable}`}>
+    <html
+      lang="en"
+      className={`overflow-x-hidden ${magically.variable} ${cinzel.variable} ${gillSans.variable}`}
+    >
       <body className="relative flex min-h-screen flex-col overflow-x-hidden bg-night">{children}</body>
     </html>
   );

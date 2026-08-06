@@ -45,12 +45,18 @@ function HeroAction({
     <Link
       href={href}
       className={cn(
-        "btn btn-ghost w-fit min-h-[3.7em] justify-start gap-[0.75em] py-[0.65em] pr-[1.75em] pl-[1.1em] text-caption",
+        "btn btn-ghost w-fit min-h-[3em] justify-start gap-(--hero-action-gap) py-(--hero-action-py) pr-(--hero-action-pr) pl-(--hero-action-pl) text-caption lg:min-h-[3.7em]",
         pulsing && "pulse-glow",
       )}
     >
-      <Image src={icon.src} alt="" width={icon.width} height={icon.height} className="h-[2em] w-auto shrink-0" />
-      <span className="text-left leading-[1.36] tracking-[-0.02em]">
+      <Image
+        src={icon.src}
+        alt=""
+        width={icon.width}
+        height={icon.height}
+        className="h-[1.7em] w-auto shrink-0"
+      />
+      <span className="text-left leading-[1.15] tracking-[-0.02em] lg:leading-[1.36]">
         {label.map((line) => (
           <span key={line} className="block whitespace-nowrap">
             {line}
@@ -69,8 +75,8 @@ export function HeroActions() {
   const skipMotion = Boolean(reducedMotion);
 
   return (
-    <div className="mt-[0.5em] flex w-full flex-col items-center gap-[0.9em] lg:items-start">
-      <div className="flex w-full flex-col items-center gap-[1.25em] text-caption sm:flex-row sm:flex-wrap sm:justify-center lg:flex-nowrap lg:justify-start lg:gap-[1.5em]">
+    <div className="mt-[0.4em] flex w-full flex-col items-center gap-[0.9em] lg:mt-[0.5em] lg:items-start">
+      <div className="flex w-full flex-col items-center gap-(--hero-action-row-gap) text-caption sm:flex-row sm:flex-wrap sm:justify-center lg:flex-nowrap lg:justify-start">
         {hero.secondaryActions.map((action) => (
           <HeroAction
             key={action.href}

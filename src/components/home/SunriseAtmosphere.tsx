@@ -88,7 +88,7 @@ export function SunriseAtmosphere() {
   if (!portalTarget) return null;
 
   return createPortal(
-    <>
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-x-clip">
       <motion.div
         className="hero-sky-globe"
         initial={{ opacity: 0 }}
@@ -120,7 +120,7 @@ export function SunriseAtmosphere() {
           onLoad={() => markLoaded("shine")}
         />
       </motion.div>
-    </>,
+    </div>,
     portalTarget,
   );
 }

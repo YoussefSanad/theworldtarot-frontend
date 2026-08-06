@@ -13,6 +13,8 @@ export const hero = {
   titleMain: "The Living Tarot",
   tagline: "cinematic tarot, brought to life",
   body: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
+  /** Shorter variant shown below `sm`, where the full line wraps too tall. */
+  bodyMobile: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience its story.",
   secondaryActions: [
     { label: ["explore the", "complete collection"], href: "/living-tarot", icon: icons.book },
     { label: ["ASK A QUESTION", "GET A PERSONAL READING"], href: "/readings", icon: icons.talk },
@@ -109,7 +111,7 @@ export const included = {
   ],
 };
 
-export const placeStatement = ["A place where art, mysticism, and intention meet.", "A space between sky and stone."];
+export const placeStatement = ["A place where art, mysticism,", "and intention meet. A space between sky and stone."];
 
 export const valueProps = [
   { title: "Led by the Cards", body: "Each reading unfolds through the archetypes themselves" },

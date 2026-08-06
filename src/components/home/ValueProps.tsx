@@ -17,7 +17,7 @@ const SECTION_BG = { width: 2164, height: 1053 } as const;
  */
 export function ValueProps() {
   return (
-    <div className="relative">
+    <div className="relative overflow-x-clip">
       <div
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-1/2 z-0 w-[112.7vw] -translate-x-1/2 -translate-y-1/2"
@@ -33,19 +33,25 @@ export function ValueProps() {
 
       <Section padding="none" className="relative z-10">
         <Container className="py-[clamp(2rem,7.3vw,8.75rem)]">
-          {/* Column widths follow Figma, where the middle prop is wider so its title stays on one line. */}
-          <div className="mx-auto grid w-full max-w-(--measure-value-props) justify-center gap-[clamp(2rem,2vw,2.375rem)] md:grid-cols-[367fr_457fr_367fr] md:items-start">
+          {/*
+            Column widths follow Figma, where the middle prop is wider so its title usually
+            stays on one line. Below ~1400px it wraps anyway, so each article is `md:contents`
+            and the grid itself owns 4 explicit rows in `md:grid-flow-col`: image/title/divider/body
+            line up as shared rows across all three columns, and a row's height follows its tallest
+            cell. That keeps the dividers aligned even when only the middle title wraps to 2 lines.
+          */}
+          <div className="mx-auto grid w-full max-w-(--measure-value-props) justify-center gap-[clamp(2rem,2vw,2.375rem)] md:grid-cols-[367fr_457fr_367fr] md:grid-rows-[auto_auto_auto_auto] md:grid-flow-col md:items-start md:gap-x-[clamp(2rem,2vw,2.375rem)] md:gap-y-[0.3em]">
             {valueProps.map((prop) => (
               <article
                 key={prop.title}
-                className="mx-auto flex w-full max-w-[22rem] flex-col items-center gap-[0.3em] text-center md:max-w-none"
+                className="mx-auto flex w-full max-w-[22rem] flex-col items-center gap-[0.3em] text-center md:contents"
               >
                 <Image
                   src={brand.compass.src}
                   alt=""
                   width={brand.compass.width}
                   height={brand.compass.height}
-                  className="w-[clamp(6rem,9.9vw,11.875rem)] drop-shadow-[0_29px_32px_rgba(74,63,64,0.25)]"
+                  className="mx-auto w-[clamp(6rem,9.9vw,11.875rem)] drop-shadow-[0_29px_32px_rgba(74,63,64,0.25)]"
                 />
                 <h3 className="font-display text-h2 tracking-[0.01em] text-gold-deep">{prop.title}</h3>
                 <Divider variant="hairline" className="my-[0.4em]" />
