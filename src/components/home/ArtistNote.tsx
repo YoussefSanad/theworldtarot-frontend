@@ -21,7 +21,7 @@ export function ArtistNote() {
     <Section padding="none">
       <Divider variant="flourish" />
 
-      <div className="relative">
+      <div className="relative overflow-x-clip">
         <div aria-hidden className="pointer-events-none absolute top-1/2 left-0 z-0 w-[60vw] -translate-y-1/2">
           <Image
             src={artwork.book.src}

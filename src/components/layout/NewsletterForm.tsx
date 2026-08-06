@@ -54,7 +54,7 @@ export function NewsletterForm() {
           type="checkbox"
           name="consent"
           required
-          className="mt-[0.2em] size-[1.125em] shrink-0 appearance-none border border-ash bg-transparent checked:bg-gold"
+          className="size-[1.125em] shrink-0 appearance-none border border-ash bg-transparent checked:bg-gold"
         />
         <span>{newsletter.consent}</span>
       </label>

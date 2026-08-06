@@ -1,8 +1,17 @@
 /**
- * Walks the reveal: idle card back, crossfade to The Star video, then the
+ * Walks the reveal: idle card back, crossfade to the drawn card's film, then the
  * trigger fading into the card name and question, the secondary actions taking
  * their pulse and the return prompt arriving. Also reloads to confirm the card
  * is restored for the rest of the visit.
+ *
+ * **The card comes from the backend, so nothing here may assume which one it
+ * is.** It is found by the "<numeral> · <name>" shape rather than by name. A run
+ * that reports a different card each time is the endpoint working, not a fault.
+ *
+ * Needs `NEXT_PUBLIC_API_BASE_URL` pointing at a **deployed** backend. A local
+ * one signs the film against 127.0.0.1 while the browser fetches from your
+ * public address, so playback 403s and the reveal falls back to the bundled
+ * card. That looks like a broken crossfade and is not one.
  *
  * Chromium's open-source build has no H.264 decoder, so this prefers the
  * installed Chrome when there is one. Both the card back and the card face are
@@ -10,7 +19,7 @@
  * browser named in the first log line before believing a failure here.
  *
  * The face is a <video> on a fresh reveal and an <img> on a restored visit
- * (the still is the video's closing frame), so each path is queried separately.
+ * (the still is the poster frame), so each path is queried separately.
  */
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -73,8 +82,12 @@ console.log("card opacity:", await cardFace.evaluate((video) => getComputedStyle
 console.log("back opacity:", await stage.evaluate((video) => getComputedStyle(video).opacity));
 await page.screenshot({ path: join(outDir, "reveal-2-revealed.png"), clip: { x: 0, y: 240, width: 1100, height: 840 } });
 
-const cardName = page.getByText("XVII · The Star");
+// The card comes from the backend now, so nothing here may assume which one.
+// The name renders as "<numeral> · <name>", which is enough to find it by.
+const cardName = page.locator("main p").filter({ hasText: /\s·\s/ }).first();
+const drawnName = (await cardName.textContent())?.trim() ?? "";
 const question = page.getByText("Why has this card appeared for you today?");
+console.log("card drawn:", drawnName);
 console.log("card name visible:", await cardName.isVisible());
 console.log("question visible:", await question.isVisible());
 console.log("reveal button gone:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 0);
@@ -91,29 +104,32 @@ const typeMatch = await page.evaluate(() => {
   const tagline = [...document.querySelectorAll("main p")].find((p) =>
     p.textContent.includes("cinematic tarot, brought to life"),
   );
-  const name = [...document.querySelectorAll("main p")].find((p) => p.textContent.includes("The Star"));
+  const name = [...document.querySelectorAll("main p")].find((p) => / · /.test(p.textContent));
   return { tagline: pick(tagline), name: pick(name), same: pick(tagline) === pick(name) };
 });
 console.log("tagline:", typeMatch.tagline);
 console.log("card name:", typeMatch.name);
 console.log("type matches tagline:", typeMatch.same);
 
-// A restored visit must not re-download the MP4 — it shows the closing still.
-const mp4Requests = [];
+// A restored visit must not re-download the film, it shows the still. The film
+// is HLS from the CDN now, or the bundled MP4 when the API is unreachable, so
+// this watches for any of it rather than one filename.
+const filmRequests = [];
 page.on("request", (request) => {
-  if (request.url().includes("17-the-star") && request.url().endsWith(".mp4")) mp4Requests.push(request.url());
+  const url = request.url();
+  if (/\.(m3u8|ts|mp4)(\?|$)/.test(url) && !url.includes("card-back")) filmRequests.push(url);
 });
 
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2000);
-console.log("after reload card name:", await page.getByText("XVII · The Star").isVisible());
+console.log("after reload card name:", await page.locator("main p").filter({ hasText: /\s·\s/ }).first().isVisible());
 console.log("after reload question:", await page.getByText("Why has this card appeared for you today?").isVisible());
 console.log("after reload reveal button gone:", (await page.getByRole("button", { name: /reveal your card/i }).count()) === 0);
 console.log("after reload actions pulsing:", await page.locator("main a.pulse-glow").count());
 console.log("after reload return prompt:", (await promptOpacity()) === "1.00");
 const restored = page.locator("main img[alt$=', your card']");
 console.log("restored card:", await restored.evaluate((img) => ({ src: img.currentSrc.split("/").pop(), opacity: getComputedStyle(img).opacity })));
-console.log("card mp4 re-requested on restore:", mp4Requests.length, mp4Requests.length === 0 ? "(good)" : "(should be 0)");
+console.log("film re-requested on restore:", filmRequests.length, filmRequests.length === 0 ? "(good)" : "(should be 0)");
 await page.screenshot({ path: join(outDir, "reveal-3-restored.png"), clip: { x: 0, y: 240, width: 1100, height: 840 } });
 
 await browser.close();

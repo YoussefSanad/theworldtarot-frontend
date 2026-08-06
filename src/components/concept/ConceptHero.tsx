@@ -43,7 +43,10 @@ export function ConceptHero() {
 
               <Divider variant="hero" className="mx-auto lg:mx-0 lg:ml-[5%]" />
 
-              <p className="max-w-[80%] text-body leading-[1.11] text-mist">{hero.body}</p>
+              <p className="max-w-[80%] text-body leading-[1.11] text-mist">
+                <span className="sm:hidden">{hero.bodyMobile}</span>
+                <span className="hidden sm:inline">{hero.body}</span>
+              </p>
 
               <RevealTrigger className="mt-[0.55em]" />
 

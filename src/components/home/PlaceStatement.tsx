@@ -7,7 +7,7 @@ export function PlaceStatement() {
     <Section padding="none">
       <Divider variant="flourish" />
 
-      <Container width="measure" className="py-[clamp(1.25rem,2.9vw,3.5rem)]">
+      <Container width="copy" className="py-[clamp(1.25rem,2.9vw,3.5rem)]">
         <p className="text-center font-display text-h1 leading-[1.2] tracking-[-0.01em] text-gold">
           {placeStatement.map((line) => (
             <span key={line} className="block">

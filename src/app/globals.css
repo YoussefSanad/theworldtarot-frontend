@@ -209,6 +209,41 @@
   }
 }
 
+/*
+  Hero secondary-action sizing, 1024px → 1920px.
+
+  Below `lg` (1024px) these buttons sit in a full-width single column, so
+  their icon/padding/gap can stay at generous, comfortably-padded values.
+  Exactly at 1024px the hero grid switches to its two-column split
+  (`lg:grid-cols-[797fr_673fr]` in Hero.tsx), which drops the text column to
+  the smallest share of the frame it ever has — narrower, in px, than it
+  is on many phones, because it hasn't had room to scale back up yet. The
+  two buttons' natural width (icon + nowrap two-line label + padding)
+  doesn't fit that column at any reasonable padding, so a hard mobile→
+  desktop jump here (the pattern `--text-*` uses, anchored at 0) would land
+  its biggest padding values at the exact moment the column is tightest —
+  the label then silently overflows the shrunk flex item into the padding
+  box, since the line spans are `whitespace-nowrap` (see HeroActions.tsx).
+  Anchoring the ramp at 1024px instead of 0 means padding is smallest
+  exactly when the column is tightest, then grows in step with the column
+  up to the values these were drawn at, at 1920px — same anchored-`calc()`
+  technique as `.hero-sky-shine`/`.hero-sky-globe` above, just ramping up
+  instead of down. Slope = (1920px value − 1024px value) / 896.
+
+  This narrows the squeeze at exactly 1024px; it cannot fully clear it —
+  the column there is too narrow for this content at *any* padding down to
+  a sane minimum (verified by measuring at padding ≈ 0). Only widening the
+  column (e.g. delaying the grid's own two-column switch past 1024px) would
+  close the rest of the gap, and that's a layout change beyond this fix.
+*/
+:root {
+  --hero-action-py: clamp(0.365625rem, calc(0.365625rem + (100vw - 1024px) * 0.0131138), 1.1rem);
+  --hero-action-pr: clamp(1.1375rem, calc(1.1375rem + (100vw - 1024px) * 0.0226563), 2.40625rem);
+  --hero-action-pl: clamp(0.73125rem, calc(0.73125rem + (100vw - 1024px) * 0.0139509), 1.5125rem);
+  --hero-action-gap: clamp(0.4875rem, calc(0.4875rem + (100vw - 1024px) * 0.0047991), 0.75625rem);
+  --hero-action-row-gap: clamp(1.015625rem, calc(1.015625rem + (100vw - 1024px) * 0.0186942), 2.0625rem);
+}
+
 @layer base {
   body {
     background-color: var(--color-night);

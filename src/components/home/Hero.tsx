@@ -10,14 +10,14 @@ import { artwork } from "@/lib/assets";
 
 export function Hero() {
   return (
-    <Section padding="none" className="pt-[clamp(2rem,6.04vw,7.25rem)] pb-[clamp(2rem,4.7vw,5.6rem)]">
+    <Section padding="none" className="pt-5 pb-[clamp(2rem,4.7vw,5.6rem)] lg:pt-[clamp(2rem,6.04vw,7.25rem)]">
       <Container width="hero">
         <RevealProvider oncePerVisit>
           <SunriseAtmosphere />
           <div className="grid items-center gap-gutter lg:grid-cols-[797fr_673fr]">
             <div className="flex flex-col items-center gap-[0.6em] text-center lg:items-start lg:text-left">
               <h1 className="font-display text-snow">
-                <span className="block text-hero-sm tracking-[0.025em]">{hero.titleTop}</span>
+                <span className="block text-hero-sm leading-none tracking-[0.025em] lg:leading-[1.15]">{hero.titleTop}</span>
                 <span className="block text-hero tracking-[0.02em]">{hero.titleMain}</span>
               </h1>
 
@@ -33,13 +33,16 @@ export function Hero() {
                 <Divider variant="hero" />
               </div>
 
-              <p className="max-w-[80%] text-body leading-[1.11] text-mist">{hero.body}</p>
+              <p className="max-w-[80%] text-body leading-[1.05] text-mist lg:leading-[1.11]">
+                <span className="sm:hidden">{hero.bodyMobile}</span>
+                <span className="hidden sm:inline">{hero.body}</span>
+              </p>
 
               {/* `self-center` overrides the column's `lg:items-start`: the client wants
                   this one block centred while the actions below stay left-aligned. The
                   margins are its own, not the column's `gap`, so the reveal keeps clear
                   air around it whichever of its two states is showing. */}
-              <RevealTrigger className="mt-[0.8em] mb-[0.55em] lg:self-center" />
+              <RevealTrigger className="mt-[0.6em] mb-[0.4em] lg:mt-[0.8em] lg:mb-[0.55em] lg:self-center" />
 
               <HeroActions />
             </div>
