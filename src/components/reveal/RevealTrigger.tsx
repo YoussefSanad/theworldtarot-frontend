@@ -106,7 +106,11 @@ export function RevealTrigger({
             </motion.div>
           ) : (
             <motion.div
-              key="name"
+              // Keyed to the card, not a static "name": if the film fails after
+              // the click (no prior hover/focus warm) and the fallback swaps in
+              // the bundled card, this is what gives that swap its own
+              // enter/exit instead of the name abruptly substituting in place.
+              key={card.id}
               className="flex w-full flex-col justify-center gap-[0.3em]"
               initial={enterFrom}
               animate={visible}

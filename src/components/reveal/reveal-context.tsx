@@ -51,6 +51,13 @@ type RevealContextValue = {
   warm: () => void;
   /** True once warming has been asked for. `RevealStage` attaches on this. */
   warming: boolean;
+  /**
+   * The drawn card's film couldn't actually play — a fatal HLS failure, not an
+   * API failure (that's already handled by the fetch effect below). Routes
+   * through the same bundled-card fallback the API-unreachable case uses, so
+   * there is one fallback path, not two.
+   */
+  onFilmFailed: () => void;
   onRevealComplete: () => void;
 };
 
@@ -105,25 +112,51 @@ export function RevealProvider({
   useEffect(() => {
     const controller = new AbortController();
 
-    // The homepage draws once per visit. Anywhere else, every mount is a fresh
-    // card, so there is nothing to restore.
-    const seen = oncePerVisit ? revealedCard.get() : null;
+    async function load(): Promise<void> {
+      // The homepage draws once per visit. Anywhere else, every mount is a
+      // fresh card, so there is nothing to restore.
+      const seen = oncePerVisit ? revealedCard.get() : null;
 
-    const request = seen
-      ? fetchCard(seen, { signal: controller.signal }).then(setRestoredCard)
-      : drawCard({ signal: controller.signal }).then((card) => {
-          setDrawn(card);
+      if (!seen) {
+        const drawnCard = await drawCard({ signal: controller.signal });
+        setDrawn(drawnCard);
 
-          // Null is the backend saying no card has both a finished film and a
-          // poster frame yet. A real state rather than a fault, and worth
-          // separating from a broken API, because the two want very different
-          // responses from whoever reads this.
-          if (!card) {
-            console.info("No card has a film to draw yet, showing the bundled card.");
-          }
-        });
+        // Null is the backend saying no card has both a finished film and a
+        // poster frame yet. A real state rather than a fault, and worth
+        // separating from a broken API, because the two want very different
+        // responses from whoever reads this.
+        if (!drawnCard) {
+          console.info("No card has a film to draw yet, showing the bundled card.");
+        }
+        return;
+      }
 
-    request
+      const found = await fetchCard(seen, { signal: controller.signal });
+      if (found) {
+        setRestoredCard(found);
+        return;
+      }
+
+      // The stored card is no longer on the site — a 404, not a fault; see
+      // `fetchCard`'s doc comment. The visitor gets a fresh draw rather than
+      // silently landing on the bundled card every reload. This is stored via
+      // `setRestoredCard`, not `setDrawn`: `restored` is derived from
+      // `restoredCard`, and a visitor who already used their one reveal this
+      // session must not see the idle button reappear.
+      //
+      // The new id has to replace the stale one in `sessionStorage` right
+      // here: this path never reaches `onRevealComplete` (skipped whenever
+      // `restored` is true), the only other place a card id is normally
+      // written. Skipping this write would mean every reload this session
+      // 404s and redraws again, showing a different card each time.
+      console.info(`Stored card ${seen} is no longer on the site, drawing a fresh one.`);
+      const drawnCard = await drawCard({ signal: controller.signal });
+      setRestoredCard(drawnCard);
+      if (drawnCard) revealedCard.set(drawnCard.id);
+      else console.info("No card has a film to draw yet, showing the bundled card.");
+    }
+
+    load()
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
 
@@ -163,6 +196,14 @@ export function RevealProvider({
     setWarming(true);
   }, []);
 
+  const onFilmFailed = useCallback(() => {
+    // The API drew a card whose film can't actually play. `drawn` is what
+    // `activeCard` falls back from, so clearing it routes through the exact
+    // same bundled-card path already used when the API is unreachable — one
+    // fallback branch, not two.
+    setDrawn(null);
+  }, []);
+
   const reveal = useCallback(() => {
     // A click with no hover, from a touch screen or the keyboard. Warming now is
     // late but not useless: it still removes a round trip from the click path.
@@ -185,9 +226,10 @@ export function RevealProvider({
       reveal,
       warm,
       warming,
+      onFilmFailed,
       onRevealComplete,
     }),
-    [restored, interaction, activeCard, ready, reveal, warm, warming, onRevealComplete],
+    [restored, interaction, activeCard, ready, reveal, warm, warming, onFilmFailed, onRevealComplete],
   );
 
   return <RevealContext.Provider value={value}>{children}</RevealContext.Provider>;

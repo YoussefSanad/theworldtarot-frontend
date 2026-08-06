@@ -43,12 +43,24 @@ const PLAYING_BUFFER_SECONDS = 30;
 const ASSUMED_BANDWIDTH = 1_500_000;
 
 export type VideoSource = {
-  /** Resolves when the media can play. */
+  /**
+   * Resolves when the media can play. Rejects if it fails before that — a
+   * fatal hls.js error before the manifest parses, or MSE turning out not to
+   * actually work despite being present. Never left pending forever.
+   */
   ready: Promise<void>;
   /** Lifts the warm buffer cap. Call when playback actually starts. */
   release: () => void;
   /** Detaches the source and tears down any player. */
   detach: () => void;
+  /**
+   * Fires on a fatal failure that arrives after `ready` already settled — a
+   * promise can only reject once, and a segment can 403 well after the
+   * manifest parsed cleanly, which is exactly the referrer/CORS/IP-family risk
+   * this project's own migration plan calls out. `ready` alone cannot carry
+   * that; this is the second half of "this must never hang."
+   */
+  onFatalError: (handler: (error: Error) => void) => void;
 };
 
 /**
@@ -62,13 +74,22 @@ export type VideoSource = {
 function openingLevel(levels: readonly { width: number }[], video: HTMLVideoElement): number {
   if (levels.length === 0) return -1;
 
+  // hls.js sorts `levels` by bitrate, and width usually rises with it but
+  // isn't guaranteed to. Both "the largest available" and "the smallest that
+  // still fills the card" are looked up by width on a sorted copy, and
+  // translated back to hls.js's own index — never assumed from position.
+  const byWidth = levels
+    .map((level, index) => ({ index, width: level.width }))
+    .sort((a, b) => a.width - b.width);
+  const largest = byWidth[byWidth.length - 1].index;
+
   const rendered = video.getBoundingClientRect().width;
-  if (rendered === 0) return levels.length - 1;
+  if (rendered === 0) return largest;
 
   const wanted = rendered * (window.devicePixelRatio || 1);
-  const index = levels.findIndex((level) => level.width >= wanted);
+  const found = byWidth.find((entry) => entry.width >= wanted);
 
-  return index === -1 ? levels.length - 1 : index;
+  return found ? found.index : largest;
 }
 
 function isHls(src: string): boolean {
@@ -105,6 +126,9 @@ export function attachVideoSource(video: HTMLVideoElement, src: string): VideoSo
         video.removeAttribute("src");
         video.load();
       },
+      // No player of our own here, so nothing to fail beyond what `ready`
+      // already covers.
+      onFatalError: () => {},
     };
   }
 
@@ -112,14 +136,29 @@ export function attachVideoSource(video: HTMLVideoElement, src: string): VideoSo
   let release = () => {};
   let destroy = () => {};
 
-  const ready = new Promise<void>((resolve) => {
+  // A promise can only settle once, so a failure discovered after `ready` has
+  // already resolved — a segment 403ing well after the manifest parsed clean —
+  // has nowhere to go through `ready` alone. `fatalErrorHandler` is that second
+  // channel; `attachFatalErrorHandler` lets `RevealStage` register it before or
+  // after the failure, since attach order relative to the network isn't
+  // something a caller can guarantee.
+  let fatalErrorHandler: ((error: Error) => void) | null = null;
+  let readySettled = false;
+
+  const reportFatalError = (error: Error) => {
+    if (readySettled) fatalErrorHandler?.(error);
+  };
+
+  const ready = new Promise<void>((resolve, reject) => {
     void import("hls.js").then(({ default: Hls }) => {
       if (cancelled) return;
 
       if (!Hls.isSupported()) {
-        // Neither native HLS nor MSE. Nothing can play this, and there is no
-        // point pretending otherwise: leave the card back showing rather than
-        // crossfading to a video that will never have a frame.
+        // Neither native HLS nor MSE. Nothing can play this — reject rather
+        // than the old silent no-op, so the caller falls back to the bundled
+        // card instead of hanging on the card back forever.
+        readySettled = true;
+        reject(new Error("Media Source Extensions is not supported."));
         return;
       }
 
@@ -158,6 +197,7 @@ export function attachVideoSource(video: HTMLVideoElement, src: string): VideoSo
         hls.startLevel = openingLevel(hls.levels, video);
         hls.startLoad();
 
+        readySettled = true;
         resolve();
       });
 
@@ -170,6 +210,22 @@ export function attachVideoSource(video: HTMLVideoElement, src: string): VideoSo
 
         const buffered = video.buffered.length > 0 ? video.buffered.end(video.buffered.length - 1) : 0;
         if (buffered >= WARM_BUFFER_SECONDS) hls.stopLoad();
+      });
+
+      // hls.js retries non-fatal errors itself — those are just logged. A
+      // fatal one means it has given up, and the CDN's referrer/CORS/IP-family
+      // rules are exactly the kind of thing that shows up here as a 403 well
+      // after the manifest loaded fine.
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (cancelled || !data.fatal) return;
+
+        const error = new Error(`HLS playback failed fatally: ${data.details}`);
+        if (!readySettled) {
+          readySettled = true;
+          reject(error);
+        } else {
+          reportFatalError(error);
+        }
       });
 
       release = () => {
@@ -187,6 +243,9 @@ export function attachVideoSource(video: HTMLVideoElement, src: string): VideoSo
     detach: () => {
       cancelled = true;
       destroy();
+    },
+    onFatalError: (handler) => {
+      fatalErrorHandler = handler;
     },
   };
 }

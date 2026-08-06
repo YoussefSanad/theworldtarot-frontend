@@ -64,8 +64,11 @@ function toTarotCard(card: ApiCard | CardWithoutVideo): TarotCard {
     name: card.name,
 
     // An HLS manifest, not an MP4. See RevealStage. Absent from the single-card
-    // endpoint, which a restored visit uses and which serves no film.
-    video: "video" in card ? card.video.url : undefined,
+    // endpoint, which a restored visit uses and which serves no film. An empty
+    // string is normalized to absent here, not left for callers to notice,
+    // because `RevealStage`'s `filmWanted` gate (and anything else reading
+    // `card.video`) trusts absence to mean "no film," not "a film with no URL."
+    video: "video" in card && card.video.url ? card.video.url : undefined,
 
     // The poster is the frame the player rests on, which is the closest the API
     // offers to the closing frame a restored visit used to show. No dimensions
@@ -115,7 +118,9 @@ export async function drawCard(
  * option, since the playback URL expires and must never be stored.
  *
  * Returns null when the card is no longer on the website, in which case the
- * visitor gets a fresh draw rather than an error.
+ * visitor gets a fresh draw rather than an error. The redraw itself happens in
+ * `RevealProvider`'s restore effect, not here — this function only reports the
+ * 404, it doesn't recover from it.
  */
 export async function fetchCard(
   id: string,

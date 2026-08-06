@@ -32,7 +32,7 @@ const STILL_HANDOFF_SECONDS = 0.35;
  * re-download the whole MP4 just to seek it to the end.
  */
 export function RevealStage({ className }: { className?: string }) {
-  const { status, card, restored, warming, onRevealComplete } = useReveal();
+  const { status, card, restored, warming, onFilmFailed, onRevealComplete } = useReveal();
   const backVideoRef = useRef<HTMLVideoElement>(null);
   const cardVideoRef = useRef<HTMLVideoElement>(null);
   const cardImageRef = useRef<HTMLImageElement>(null);
@@ -102,9 +102,21 @@ export function RevealStage({ className }: { className?: string }) {
     sourceRef.current = source;
 
     let cancelled = false;
+
+    const handleFailure = (error: unknown) => {
+      if (cancelled) return;
+      // Falls back to the bundled card through the same path an unreachable
+      // API already uses — see `onFilmFailed`. Loud here, invisible to the
+      // visitor: the card back is still showing, so the swap underneath it
+      // is not.
+      console.error("The card's film could not play, falling back to the bundled card.", error);
+      onFilmFailed();
+    };
+
     void source.ready.then(() => {
       if (!cancelled) setSourceReady(true);
-    });
+    }, handleFailure);
+    source.onFatalError(handleFailure);
 
     return () => {
       cancelled = true;
@@ -112,7 +124,7 @@ export function RevealStage({ className }: { className?: string }) {
       setSourceReady(false);
       source.detach();
     };
-  }, [filmWanted, card.video]);
+  }, [filmWanted, card.video, onFilmFailed]);
 
   // Playing it, once they have actually asked.
   useEffect(() => {
