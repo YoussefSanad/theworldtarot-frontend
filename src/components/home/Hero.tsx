@@ -27,7 +27,7 @@ export function Hero() {
                   something to centre the rule against; below lg it is full width and
                   everything is centred anyway. The gap repeats the column's so the
                   grouping costs no vertical rhythm. */}
-              <div className="flex w-full flex-col items-center gap-[0.6em] lg:w-fit">
+              <div className="my-[-0.2em] flex w-full flex-col items-center gap-0 lg:my-0 lg:w-fit lg:gap-[0.6em]">
                 <p className="font-serif text-lead text-gold">{hero.tagline}</p>
 
                 <Divider variant="hero" />
