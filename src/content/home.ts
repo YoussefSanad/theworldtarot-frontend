@@ -16,8 +16,19 @@ export const hero = {
   /** Shorter variant shown below `sm`, where the full line wraps too tall. */
   bodyMobile: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience its story.",
   secondaryActions: [
-    { label: ["explore the", "complete collection"], href: "/living-tarot", icon: icons.book },
-    { label: ["ASK A QUESTION", "GET A PERSONAL READING"], href: "/readings", icon: icons.talk },
+    {
+      label: ["explore the", "complete collection"],
+      /** Shorter variant shown below `sm`, so both buttons fit on one row on phones. */
+      labelMobile: ["explore the", "collection"],
+      href: "/living-tarot",
+      icon: icons.book,
+    },
+    {
+      label: ["ASK A QUESTION", "GET A PERSONAL READING"],
+      labelMobile: ["GET A PERSONAL", "READING"],
+      href: "/readings",
+      icon: icons.talk,
+    },
   ],
   /** Shown under the secondary actions once the visit's one card has been revealed. */
   returnPrompt: "Return another day to discover a new card.",
