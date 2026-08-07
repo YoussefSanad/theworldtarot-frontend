@@ -85,7 +85,7 @@ export function SiteHeader() {
           aria-expanded={menuOpen}
           aria-controls={panelId}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="btn btn-ghost px-4 py-2 text-note lg:hidden"
+          className="btn btn-ghost z-60 px-4 py-2 text-note lg:hidden"
         >
           {menuOpen ? "Close" : "Menu"}
         </button>
@@ -172,32 +172,21 @@ export function SiteHeader() {
             />
 
             <div className="relative flex flex-1 flex-col gap-10 px-gutter py-[max(1.25rem,var(--spacing-gutter))]">
-              <div className="flex shrink-0 items-center justify-between gap-4">
-                <Link
-                  href="/"
-                  id={labelId}
-                  aria-label={`${siteName} home`}
-                  className="w-fit"
-                  onClick={closeMenu}
-                >
-                  <Image
-                    src={brand.logo.src}
-                    alt={siteName}
-                    width={brand.logo.width}
-                    height={brand.logo.height}
-                    className="w-[clamp(9.5rem,42vw,14rem)]"
-                  />
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={closeMenu}
-                  aria-label="Close menu"
-                  className="btn btn-ghost px-4 py-2 text-note"
-                >
-                  Close
-                </button>
-              </div>
+              <Link
+                href="/"
+                id={labelId}
+                aria-label={`${siteName} home`}
+                className="w-fit shrink-0"
+                onClick={closeMenu}
+              >
+                <Image
+                  src={brand.logo.src}
+                  alt={siteName}
+                  width={brand.logo.width}
+                  height={brand.logo.height}
+                  className="w-[clamp(9.5rem,42vw,14rem)]"
+                />
+              </Link>
 
               <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm">
                 <ButtonLink
