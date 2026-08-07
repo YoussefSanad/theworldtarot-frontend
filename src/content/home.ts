@@ -14,7 +14,7 @@ export const hero = {
   tagline: "cinematic tarot, brought to life",
   body: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
   /** Shorter variant shown below `sm`, where the full line wraps too tall. */
-  bodyMobile: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience its story.",
+  bodyMobile: "Discover a cinematic interpretation of the Major Arcana. Experience a card's story.",
   secondaryActions: [
     {
       label: ["explore the", "complete collection"],
