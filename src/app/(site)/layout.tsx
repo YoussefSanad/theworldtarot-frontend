@@ -14,8 +14,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <div id="hero-sky" aria-hidden className="page-atmosphere-hero pointer-events-none absolute inset-0 z-0" />
       <div className="relative z-10 flex min-h-screen flex-col">
         <SiteHeader />
-        {/* SiteHeader is fixed so it can grow on scroll without shoving the page
-            down. This reserves a small, independent minimum for the landing
+        {/* SiteHeader is fixed so it can grow on hover/focus without shoving the
+            page down. This reserves a small, independent minimum for its resting
             state — not the collapsed header's actual height. The collapsed logo
             is allowed to render taller than this and spill into the hero's own
             top padding; that overlap is intentional, not a bug. See the

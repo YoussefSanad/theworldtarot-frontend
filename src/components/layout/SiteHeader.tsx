@@ -11,45 +11,57 @@ import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
-const SCROLL_THRESHOLD = 200;
+const DESKTOP_QUERY = "(min-width: 64rem)"; // matches Tailwind's `lg`
 
 /**
  * Masthead: logo on the left, actions and navigation stacked on the right.
- * Fixed to the top of the viewport for the whole page, with two states.
+ * Fixed to the top of the viewport for the whole page, with a permanent glass
+ * scrim — but the size/reveal state only exists at `lg`+.
  *
- * At the very top of the page it is collapsed and transparent: a small logo,
- * tight padding, and nothing on the right but the nav links (the menu button
- * below `lg`). That buys the hero as much of the first viewport as possible,
- * which is the whole point — the reveal composition should land inside the
- * fold with minimal scrolling.
+ * At `lg`+, the trigger is the cursor (or keyboard focus) actually entering
+ * the header — not scroll position. `onMouseEnter`/`onMouseLeave` expand and
+ * collapse it directly; `onFocus`/`onBlur` do the same for keyboard users,
+ * checking `relatedTarget` against the header so tabbing between the logo,
+ * nav links, and the CTA/account/bag row all counts as "inside" (an
+ * `:focus-within`-style check) and it only collapses once focus actually
+ * leaves for something else on the page. Without that, someone tabbing
+ * through the page could never reach the CTA/account/bag row at all — it's
+ * unmounted, not just hidden, while collapsed. On expand: the row drops in
+ * above the nav links, the logo grows to full size, and the row padding
+ * opens up.
  *
- * Past `SCROLL_THRESHOLD` it becomes the full masthead: the CTA/account/bag
- * row drops in from above the nav links, the logo grows to full size, the row
- * padding opens up, and a glass scrim fades in so the header stays legible
- * over page content. Scrolling back to the top reverses all four together.
+ * Below `lg` none of that applies — there's no hover, and an external
+ * keyboard is rare enough not to design around, so `isDesktop` (tracked via
+ * `matchMedia`) gates the handlers above off entirely; the row was already
+ * `lg:hidden` regardless. The masthead there just stays at its collapsed
+ * logo/padding permanently — that's the whole of its "state."
  *
- * `fixed` rather than `sticky` is what makes the growth free: a sticky header
- * keeps its box in flow, so every state change would shove the page down
- * mid-scroll. Fixed takes it out of flow entirely, and app/(site)/layout.tsx
- * reserves only a small, independent minimum with a spacer — not the
- * collapsed header's real height. The collapsed logo is deliberately allowed
- * to render taller than that spacer and spill a little into the hero's own
- * top padding: that's what lets landing cost the page almost nothing, rather
- * than just less. `--header-height` and friends live in globals.css.
+ * The glass scrim (the leaf div right inside `<header>`) is permanently on at
+ * every breakpoint, not tied to `expanded` — legibility over page content
+ * doesn't depend on where the cursor is or how far the reader has scrolled.
+ * Hero.tsx carries its own extra top padding below `lg` so its heading clears
+ * the collapsed header/logo comfortably; that's the fix for tight landing
+ * space there, not a transparent-until-scrolled header.
  *
- * `SCROLL_THRESHOLD` is deliberately late (400px) so the collapsed state holds
- * through the initial scroll — the reader should be well past the hero, not
- * just past a stray wheel tick, before the full masthead comes back.
+ * `fixed` rather than `sticky` is what makes the `lg`+ growth free: a sticky
+ * header keeps its box in flow, so every state change would shove the page
+ * down mid-expand. Fixed takes it out of flow entirely, and
+ * app/(site)/layout.tsx reserves only a small, independent minimum with a
+ * spacer — not the collapsed header's real height. The collapsed logo is
+ * deliberately allowed to render taller than that spacer and spill a little
+ * into the hero's own top padding: that's what lets the header cost the page
+ * almost nothing at rest. `--header-height` and friends live in globals.css.
  *
  * The sizes are the one place the page deliberately departs from the Figma
  * frame, which drew a 225px-tall masthead — too much of a laptop viewport to
  * spend before the hero starts. Both states run smaller than that frame, with
- * the collapsed logo smaller again than the scrolled one — see the tokens in
+ * the collapsed logo smaller again than the expanded one — see the tokens in
  * globals.css for the exact clamps.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const reducedMotion = useReducedMotion();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasMenuOpen = useRef(false);
@@ -60,25 +72,12 @@ export function SiteHeader() {
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
 
   useEffect(() => {
-    let frame = 0;
-
-    const update = () => {
-      frame = 0;
-      const pastThreshold = window.scrollY > SCROLL_THRESHOLD;
-      setScrolled((prev) => (prev === pastThreshold ? prev : pastThreshold));
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
-    };
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const update = () => setIsDesktop(query.matches);
 
     update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -109,14 +108,27 @@ export function SiteHeader() {
 
   return (
     <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-20 transition-[background-color,backdrop-filter] duration-300 ease-[var(--ease-veil)]",
-        scrolled ? "bg-night/10 backdrop-blur-sm" : "bg-transparent backdrop-blur-none",
-      )}
+      className="fixed inset-x-0 top-0 z-20"
+      onMouseEnter={() => isDesktop && setExpanded(true)}
+      onMouseLeave={() => isDesktop && setExpanded(false)}
+      onFocus={() => isDesktop && setExpanded(true)}
+      onBlur={(event) => {
+        if (isDesktop && !event.currentTarget.contains(event.relatedTarget as Node | null)) setExpanded(false);
+      }}
     >
+      {/* `backdrop-filter` (like `filter`/`transform`) makes an element a containing
+          block for its `position: fixed` descendants — the mobile drawer backdrop and
+          panel below are both `fixed` and mean to cover the viewport. If the blur lived
+          on `<header>` itself, it would hijack their containing block down to the
+          header's own small box instead of the viewport, breaking the drawer. Keeping
+          it on this leaf div (no fixed/absolute descendants of its own) avoids that trap
+          entirely — permanently on at every breakpoint, since legibility over page
+          content doesn't depend on where the cursor is or how far the reader has
+          scrolled. */}
+      <div aria-hidden className="absolute inset-0 bg-night/10 backdrop-blur-sm" />
       <div
         className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter transition-[padding] duration-300 ease-[var(--ease-veil)]"
-        style={{ paddingBlock: scrolled ? "var(--header-pad-y)" : "var(--header-pad-y-collapsed)" }}
+        style={{ paddingBlock: expanded ? "var(--header-pad-y)" : "var(--header-pad-y-collapsed)" }}
       >
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           {/* Width rather than `scale`: the logo's box is what sets the header's
@@ -130,7 +142,7 @@ export function SiteHeader() {
             height={brand.logo.height}
             priority
             className="transition-[width] duration-300 ease-[var(--ease-veil)]"
-            style={{ width: scrolled ? "var(--header-logo-width)" : "var(--header-logo-width-collapsed)" }}
+            style={{ width: expanded ? "var(--header-logo-width)" : "var(--header-logo-width-collapsed)" }}
           />
         </Link>
 
@@ -141,14 +153,33 @@ export function SiteHeader() {
           aria-expanded={menuOpen}
           aria-controls={panelId}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="btn btn-ghost z-60 px-4 py-2 text-note lg:hidden"
+          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
         >
-          {menuOpen ? "Close" : "Menu"}
+          <span aria-hidden className="flex h-[0.75em] w-[1.25em] flex-col justify-between">
+            <span
+              className={cn(
+                "h-[0.1em] w-full origin-center rounded-full bg-current transition-transform duration-300 ease-[var(--ease-veil)]",
+                menuOpen && "translate-y-[0.325em] rotate-45",
+              )}
+            />
+            <span
+              className={cn(
+                "h-[0.1em] w-full rounded-full bg-current transition-opacity duration-200 ease-[var(--ease-veil)]",
+                menuOpen && "opacity-0",
+              )}
+            />
+            <span
+              className={cn(
+                "h-[0.1em] w-full origin-center rounded-full bg-current transition-transform duration-300 ease-[var(--ease-veil)]",
+                menuOpen && "-translate-y-[0.325em] -rotate-45",
+              )}
+            />
+          </span>
         </button>
 
         <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
           <AnimatePresence initial={false}>
-            {scrolled ? (
+            {expanded ? (
               <motion.div
                 key="actions-row"
                 initial={reducedMotion ? false : { height: 0, opacity: 0, y: -12 }}

@@ -191,15 +191,15 @@
       two rules meet without a jump — recompute it if that percentage changes:
       T = pct × (pageHeight − imageHeight), page height 6895px at 1920px.
 
-      world-shine: T = 534.3px (9% of 5936.6), f ≈ 0.40 of its
+      world-shine: T = 356.2px (6% of 5936.6), f ≈ 0.40 of its
       655/1600 aspect ratio → coefficient 0.40 × 1.2193 × 0.409375 = 0.19966.
-      world-globe: T = 320.6px (5.9% of 5433.9), f ≈ 0.37 of its
+      world-globe: T = 157.6px (2.9% of 5433.9), f ≈ 0.37 of its
       1215/1600 aspect ratio → coefficient 0.37 × 1.0021 × 0.759375 = 0.28156.
     */
     background-position-y:
       3.5%,
-      calc(534.3px - (100vw - 1920px) * 0.19966),
-      calc(320.6px - (100vw - 1920px) * 0.28156),
+      calc(356.2px - (100vw - 1920px) * 0.19966),
+      calc(157.6px - (100vw - 1920px) * 0.28156),
       0%,
       34.4%,
       15.7%,
@@ -258,29 +258,31 @@
 }
 
 /*
-  Masthead states. The header is fixed, so growing it on scroll costs the page
-  no reflow. On landing, though, it deliberately does NOT reserve its own real
-  height — `--header-height` is an independent, small constant (about one line
-  of nav text), not a sum derived from the collapsed logo's box. The collapsed
-  logo is allowed to render taller than that and spill a little into Hero's own
-  top padding; that's the point, not a bug — it's what lets the landing header
-  cost the page almost nothing. `--header-height-scrolled` stays a real sum
-  (logo box + padding) since it only feeds `scroll-padding-top`, where being
-  exact is what you want.
+  Masthead states. The header is fixed, so growing it on hover/focus costs the
+  page no reflow. At rest, though, it deliberately does NOT reserve its own
+  real height — `--header-height` is an independent, small constant (about one
+  line of nav text), not a sum derived from the collapsed logo's box. The
+  collapsed logo is allowed to render taller than that and spill a little into
+  Hero's own top padding; that's the point, not a bug — it's what lets the
+  header cost the page almost nothing at rest. `--header-height-expanded`
+  stays a real sum (logo box + padding) since it only feeds
+  `scroll-padding-top` — any anchor-link click necessarily originates from a
+  nav link inside the header, so the header is in fact expanded (cursor/focus
+  on it) during that scroll, and it's worth being exact there.
 */
 :root {
-  --header-logo-width: clamp(7rem, 12.4vw, 14.9rem); /* full/scrolled state, ~15% under the previous ceiling */
-  --header-logo-width-collapsed: clamp(6rem, 8vw, 9.5rem); /* landing state — free to be taller than --header-height now that overlap is allowed */
+  --header-logo-width: clamp(7rem, 12.4vw, 14.9rem); /* expanded state, ~15% under the previous ceiling */
+  --header-logo-width-collapsed: clamp(6rem, 8vw, 9.5rem); /* resting state — free to be taller than --header-height now that overlap is allowed */
   --header-logo-ratio: 0.52119; /* 209 / 401, the wordmark's aspect */
   --header-pad-y: clamp(0.375rem, 0.7vw, 0.875rem);
   --header-pad-y-collapsed: 0.25rem;
   --header-height: clamp(1.75rem, 2.4vw, 2.375rem); /* the reserved minimum, not the logo's box */
-  --header-height-scrolled: calc(var(--header-logo-width) * var(--header-logo-ratio) + 2 * var(--header-pad-y));
+  --header-height-expanded: calc(var(--header-logo-width) * var(--header-logo-ratio) + 2 * var(--header-pad-y));
 }
 
 @layer base {
   html {
-    scroll-padding-top: var(--header-height-scrolled);
+    scroll-padding-top: var(--header-height-expanded);
   }
 
   body {
@@ -365,14 +367,15 @@
       152.08% auto, 100% auto, 101.2% auto, 102.03% auto, 101.82% auto;
     /*
       world-shine (2nd) and world-globe (3rd) sit 60px higher at 1920px than the
-      Figma frame put them — 9% and 5.9% against their native 10% and 7%. The
+      Figma frame put them — 6% and 2.9% against their native 10% and 7%. The
       masthead lost that much height (see SiteHeader), which lifted the hero off
       the horizon it was composed against; this puts the sun and the earth back
-      under the card where the client approved them. They are one composition:
+      under the card where the client approved them, then lifts both a further
+      3 percentage points to clear the card better. They are one composition:
       move them together, by the same pixels, or the glint slides off the globe.
     */
-    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 61.3% 9%,
-      150% 5.9%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
+    background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 61.3% 6%,
+      150% 2.9%, 50% 0%, 50% 34.4%, 50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
   }
 
   /*
@@ -418,16 +421,16 @@
     — by subtracting the image-height term as a vw-relative offset (container
     width ~= 100vw, same substitution the old ultra-wide fix below already
     made). Constants: worldShine 1600x655 (aspect 0.409375), worldGlobe
-    1600x1215 (aspect 0.759375), against production's Y=9%/W=121.93% (shine)
-    and Y=5.9%/W=100.21% (globe):
-      shine coeff = 9 * 121.93 * 0.409375 / 100 = 4.49236
-      globe coeff = 5.9 * 100.21 * 0.759375 / 100 = 4.48972
+    1600x1215 (aspect 0.759375), against production's Y=6%/W=121.93% (shine)
+    and Y=2.9%/W=100.21% (globe):
+      shine coeff = 6 * 121.93 * 0.409375 / 100 = 2.99491
+      globe coeff = 2.9 * 100.21 * 0.759375 / 100 = 2.20681
     left/width are a direct port — posX/widthPct match production's tuned
     background-position-x / background-size values exactly. The >=120rem
     block is copied verbatim from .page-atmosphere's own calc() expressions
     (already raw <length> values, not percentages, so no re-derivation
     needed) — see the comment above that block, higher in this file, for
-    where 534.3px/320.6px/0.19966/0.28156 come from. Move both rules together,
+    where 356.2px/157.6px/0.19966/0.28156 come from. Move both rules together,
     by the same pixels, or the glint slides off the globe.
   */
   .hero-sky-shine {
@@ -435,7 +438,7 @@
     max-width: none;
     width: 121.93%;
     left: calc((100% - 121.93%) * 0.613);
-    top: calc(9% - 4.49236vw);
+    top: calc(6% - 2.99491vw);
   }
 
   .hero-sky-globe {
@@ -443,16 +446,16 @@
     max-width: none;
     width: 100.21%;
     left: calc((100% - 100.21%) * 1.5);
-    top: calc(5.9% - 4.48972vw);
+    top: calc(2.9% - 2.20681vw);
   }
 
   @media (width >= 120rem) {
     .hero-sky-shine {
-      top: calc(534.3px - (100vw - 1920px) * 0.19966);
+      top: calc(356.2px - (100vw - 1920px) * 0.19966);
     }
 
     .hero-sky-globe {
-      top: calc(320.6px - (100vw - 1920px) * 0.28156);
+      top: calc(157.6px - (100vw - 1920px) * 0.28156);
     }
   }
 
