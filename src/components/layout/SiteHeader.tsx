@@ -8,6 +8,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
+import { cn } from "@/lib/cn";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
@@ -85,9 +86,28 @@ export function SiteHeader() {
           aria-expanded={menuOpen}
           aria-controls={panelId}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="btn btn-ghost z-60 px-4 py-2 text-note lg:hidden"
+          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
         >
-          {menuOpen ? "Close" : "Menu"}
+          <span aria-hidden className="flex h-[0.75em] w-[1.25em] flex-col justify-between">
+            <span
+              className={cn(
+                "h-[0.1em] w-full origin-center rounded-full bg-current transition-transform duration-300 ease-[var(--ease-veil)]",
+                menuOpen && "translate-y-[0.325em] rotate-45",
+              )}
+            />
+            <span
+              className={cn(
+                "h-[0.1em] w-full rounded-full bg-current transition-opacity duration-200 ease-[var(--ease-veil)]",
+                menuOpen && "opacity-0",
+              )}
+            />
+            <span
+              className={cn(
+                "h-[0.1em] w-full origin-center rounded-full bg-current transition-transform duration-300 ease-[var(--ease-veil)]",
+                menuOpen && "-translate-y-[0.325em] -rotate-45",
+              )}
+            />
+          </span>
         </button>
 
         <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
