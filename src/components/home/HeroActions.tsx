@@ -56,7 +56,7 @@ function HeroAction({
     <Link
       href={href}
       className={cn(
-        "btn btn-ghost w-fit min-h-[3em] justify-start gap-[0.4em] py-[0.4em] pr-[1.05em] pl-[0.75em] sm:gap-(--hero-action-gap) sm:py-(--hero-action-py) sm:pr-(--hero-action-pr) sm:pl-(--hero-action-pl) lg:min-h-[3.7em]",
+        "btn btn-ghost min-w-[155px] min-h-[3em] justify-start gap-[0.4em] py-[0.4em] pr-[1.05em] pl-[0.75em] sm:min-w-(--hero-action-btn-min-w) sm:gap-(--hero-action-gap) sm:py-(--hero-action-py) sm:pr-(--hero-action-pr) sm:pl-(--hero-action-pl) lg:min-h-[3.7em]",
         pulsing && "pulse-glow",
       )}
     >
@@ -96,7 +96,7 @@ export function HeroActions() {
 
   return (
     <div className="mt-[0.4em] flex w-full flex-col items-center gap-[0.9em] lg:mt-[0.5em] lg:items-start">
-      <div className="flex w-full flex-row flex-wrap items-center justify-center gap-[0.55em] text-fine sm:gap-(--hero-action-row-gap) sm:text-caption lg:flex-nowrap lg:justify-start">
+      <div className="flex items-center gap-[0.55em] text-fine sm:gap-(--hero-action-row-gap) sm:text-caption">
         {hero.secondaryActions.map((action) => (
           <HeroAction
             key={action.href}
@@ -127,7 +127,9 @@ export function HeroActions() {
           ease: "easeOut",
         }}
       >
-        {hero.returnPrompt}
+        <span className="inline-block rounded-2xl bg-night/25 px-[1em] py-[0.35em] backdrop-blur-[2px]">
+          {hero.returnPrompt}
+        </span>
       </motion.p>
     </div>
   );
