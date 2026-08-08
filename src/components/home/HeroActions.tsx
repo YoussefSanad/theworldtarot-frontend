@@ -29,23 +29,34 @@ import type { ImageAsset } from "@/lib/assets";
 
 const PROMPT_DELAY_SECONDS = 0.5;
 
-/** Secondary hero action: icon beside a two-line Cinzel label. */
+/**
+ * Secondary hero action: icon beside a two-line Cinzel label.
+ *
+ * Below `sm` the row goes on one line even on phones, so the label swaps to
+ * `labelMobile` — shorter copy at a smaller inherited font (`text-fine` on
+ * the row wrapper) plus tighter icon/gap/padding here. Both label sets stay
+ * in the DOM with one hidden via CSS (matching the `body`/`bodyMobile`
+ * pattern in Hero.tsx) rather than picked in JS, so there's no
+ * hydration-dependent branch. From `sm` up this is identical to before.
+ */
 function HeroAction({
   href,
   icon,
   label,
+  labelMobile,
   pulsing,
 }: {
   href: string;
   icon: ImageAsset;
   label: string[];
+  labelMobile: string[];
   pulsing: boolean;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        "btn btn-ghost w-fit min-h-[3em] justify-start gap-(--hero-action-gap) py-(--hero-action-py) pr-(--hero-action-pr) pl-(--hero-action-pl) text-caption lg:min-h-[3.7em]",
+        "btn btn-ghost min-w-[155px] min-h-[3em] justify-start gap-[0.4em] py-[0.4em] pr-[1.05em] pl-[0.75em] sm:min-w-(--hero-action-btn-min-w) sm:gap-(--hero-action-gap) sm:py-(--hero-action-py) sm:pr-(--hero-action-pr) sm:pl-(--hero-action-pl) lg:min-h-[3.7em]",
         pulsing && "pulse-glow",
       )}
     >
@@ -57,11 +68,20 @@ function HeroAction({
         className="h-[1.7em] w-auto shrink-0"
       />
       <span className="text-left leading-[1.15] tracking-[-0.02em] lg:leading-[1.36]">
-        {label.map((line) => (
-          <span key={line} className="block whitespace-nowrap">
-            {line}
-          </span>
-        ))}
+        <span className="sm:hidden">
+          {labelMobile.map((line) => (
+            <span key={line} className="block whitespace-nowrap">
+              {line}
+            </span>
+          ))}
+        </span>
+        <span className="hidden sm:block">
+          {label.map((line) => (
+            <span key={line} className="block whitespace-nowrap">
+              {line}
+            </span>
+          ))}
+        </span>
       </span>
     </Link>
   );
@@ -76,13 +96,14 @@ export function HeroActions() {
 
   return (
     <div className="mt-[0.4em] flex w-full flex-col items-center gap-[0.9em] lg:mt-[0.5em] lg:items-start">
-      <div className="flex w-full flex-col items-center gap-(--hero-action-row-gap) text-caption sm:flex-row sm:flex-wrap sm:justify-center lg:flex-nowrap lg:justify-start">
+      <div className="flex items-center gap-[0.55em] text-fine sm:gap-(--hero-action-row-gap) sm:text-caption">
         {hero.secondaryActions.map((action) => (
           <HeroAction
             key={action.href}
             href={action.href}
             icon={action.icon}
             label={action.label}
+            labelMobile={action.labelMobile}
             pulsing={revealed}
           />
         ))}
@@ -106,7 +127,12 @@ export function HeroActions() {
           ease: "easeOut",
         }}
       >
-        {hero.returnPrompt}
+        <span className="inline-block rounded-2xl bg-night/20 px-[1em] py-[0.35em] backdrop-blur-[2px]">
+          <span aria-hidden className="text-gold">
+            ★{" "}
+          </span>
+          {hero.returnPrompt}
+        </span>
       </motion.p>
     </div>
   );

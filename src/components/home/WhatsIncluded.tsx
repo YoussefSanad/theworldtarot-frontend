@@ -13,8 +13,13 @@ export function WhatsIncluded() {
       <Container className="py-[clamp(1.5rem,3.1vw,3.7rem)]">
         <h2 className="text-center font-display text-h1 text-cream">{included.heading}</h2>
 
-        {/* Columns cap at 38rem each, so the row has ~352px of slack at 1920 to spend on this gap. */}
-        <div className="mt-stack flex flex-col items-center gap-[clamp(1.5rem,6.1vw,7.375rem)] lg:flex-row lg:items-start lg:justify-center lg:gap-[clamp(3rem,6.25vw,7.5rem)]">
+        {/*
+          Columns cap at 38rem each, so the row has ~352px of slack at 1920 to spend on this gap.
+          On tablet the columns are still stacked (row layout only starts at `lg`), so the gap
+          here sits between item 3 and item 4. `1.2*--text-lead` mirrors the `gap-[1.2em]` between
+          items inside each list, so that seam reads the same as every other item gap.
+        */}
+        <div className="mt-stack flex flex-col items-center gap-[clamp(1.5rem,6.1vw,7.375rem)] md:gap-y-[calc(1.2*var(--text-lead))] lg:flex-row lg:items-start lg:justify-center lg:gap-[clamp(3rem,6.25vw,7.5rem)]">
           {/*
             Type sits on the list, not the item, so the em gap between bullets
             resolves against the fluid `text-lead` rather than the inherited 16px.

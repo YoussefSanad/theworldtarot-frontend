@@ -37,7 +37,11 @@ type ApiCard = {
   long_description: string;
   image: string;
   in_viewing_room: boolean;
-  poster: string | null;
+  /**
+   * Optional because it is being removed from the backend. Nothing here reads
+   * it, so it can disappear without breaking anything.
+   */
+  poster?: string | null;
   video: { url: string; expires_at: string };
 };
 
@@ -70,10 +74,11 @@ function toTarotCard(card: ApiCard | CardWithoutVideo): TarotCard {
     // `card.video`) trusts absence to mean "no film," not "a film with no URL."
     video: "video" in card && card.video.url ? card.video.url : undefined,
 
-    // The poster is the frame the player rests on, which is the closest the API
-    // offers to the closing frame a restored visit used to show. No dimensions
-    // come with it, and the stage does not need them.
-    image: { src: card.poster ?? card.image },
+    // The card's own artwork, which is what a restored visit shows in place of
+    // replaying the film. It was the poster frame until the poster was dropped
+    // from the backend. No dimensions come with either, and the stage does not
+    // need them: it fixes its own aspect ratio and covers.
+    image: { src: card.image },
   };
 }
 

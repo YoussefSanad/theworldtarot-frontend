@@ -61,11 +61,14 @@ A restored visit renders `card.image` instead, which avoids re-downloading the
 film on every page view in the session just to seek it to the end (which is what
 the pre-`10ad8ee` implementation did).
 
-For a card from the API that still is the **poster frame**, not the film's
+For a card from the API that still is the **card's own artwork**, not the film's
 closing frame, so a restored visit is no longer pixel-identical to the state the
-visitor left. Taken deliberately on 5 August 2026: a second per-card upload is a
-lot of the client's time for one restored-visit state. The bundled fallback card
-keeps its true closing frame.
+visitor left.
+
+It was the poster frame briefly. The poster is being removed from the backend, so
+the artwork is what remains, and it is the one image every card is guaranteed to
+have: a card is not on the website without one. The bundled fallback card keeps
+its true closing frame.
 
 There is also no choice about it. The playback URL is a credential that expires
 in two hours and must never be stored, so nothing about the film survives a
