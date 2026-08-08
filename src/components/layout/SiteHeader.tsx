@@ -26,9 +26,17 @@ const DESKTOP_QUERY = "(min-width: 64rem)"; // matches Tailwind's `lg`
  * `:focus-within`-style check) and it only collapses once focus actually
  * leaves for something else on the page. Without that, someone tabbing
  * through the page could never reach the CTA/account/bag row at all — it's
- * unmounted, not just hidden, while collapsed. On expand: the row drops in
- * above the nav links, the logo grows to full size, and the row padding
- * opens up.
+ * still in the DOM while collapsed (see below), not unmounted; `inert` is
+ * what actually keeps it out of tab order and hit-testing. On expand: the
+ * row drops in above the nav links, the logo grows to full size, and the row
+ * padding opens up.
+ *
+ * The row's reveal is a plain CSS `grid-template-rows: 0fr → 1fr` transition,
+ * not a Framer height animation — that was tried first and made the nav
+ * below visibly snap into place once the JS-driven height tween finished,
+ * rather than moving with it. A native CSS transition is one continuous
+ * browser-driven animation, so the nav's flexbox reflow tracks it every
+ * frame for free, no extra library involvement needed.
  *
  * Below `lg` none of that applies — there's no hover, and an external
  * keyboard is rare enough not to design around, so `isDesktop` (tracked via
@@ -178,44 +186,54 @@ export function SiteHeader() {
         </button>
 
         <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          <AnimatePresence initial={false}>
-            {expanded ? (
-              <motion.div
-                key="actions-row"
-                initial={reducedMotion ? false : { height: 0, opacity: 0, y: -12 }}
-                animate={{ height: "auto", opacity: 1, y: 0 }}
-                exit={{ height: 0, opacity: 0, y: -12 }}
-                transition={{ duration: motionDuration, ease: EASE_VEIL }}
-                className="flex w-full flex-wrap items-center justify-end gap-[0.65em] overflow-hidden text-[calc(var(--text-nav-sm)*0.85)]"
+          {/* `grid-template-rows: 0fr → 1fr` instead of Framer's `height: "auto"`: a
+              plain CSS transition that the browser drives as one continuous native
+              animation, so the nav below reflows in lockstep with it every frame
+              instead of trailing a separate JS-driven height tween. `min-h-0` on the
+              grid item is required — grid items default to `min-height: auto`, which
+              would refuse to shrink below the content's own height regardless of the
+              track size. `inert` removes the CTA/account/bag links from tab order and
+              hit-testing while collapsed, since they're still in the DOM now (not
+              unmounted) — without it, keyboard focus could land on invisible controls. */}
+          <div
+            aria-hidden={!expanded}
+            inert={!expanded}
+            className="grid w-full overflow-hidden transition-[grid-template-rows] duration-300 ease-[var(--ease-veil)]"
+            style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
+          >
+            <div
+              className={cn(
+                "flex w-full min-h-0 flex-wrap items-center justify-end gap-[0.65em] text-[calc(var(--text-nav-sm)*0.85)] transition-opacity duration-300 ease-[var(--ease-veil)]",
+                expanded ? "opacity-100" : "opacity-0",
+              )}
+            >
+              <ButtonLink
+                href={headerActions.cta.href}
+                variant="ghost"
+                size="fluid"
+                className="min-h-[1.6em] px-[1.1em] py-[0.12em] text-champagne"
               >
-                <ButtonLink
-                  href={headerActions.cta.href}
-                  variant="ghost"
-                  size="fluid"
-                  className="min-h-[1.6em] px-[1.1em] py-[0.12em] text-champagne"
-                >
-                  {headerActions.cta.label}
-                </ButtonLink>
+                {headerActions.cta.label}
+              </ButtonLink>
 
-                {[headerActions.account, headerActions.bag].map((action) => (
-                  <Link
-                    key={action.href}
-                    href={action.href}
-                    aria-label={action.label}
-                    className="opacity-90 transition-opacity hover:opacity-100"
-                  >
-                    <Image
-                      src={action.icon.src}
-                      alt=""
-                      width={action.icon.width}
-                      height={action.icon.height}
-                      className="h-[clamp(0.8125rem,1.3vw,1.5rem)] w-auto"
-                    />
-                  </Link>
-                ))}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+              {[headerActions.account, headerActions.bag].map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  aria-label={action.label}
+                  className="opacity-90 transition-opacity hover:opacity-100"
+                >
+                  <Image
+                    src={action.icon.src}
+                    alt=""
+                    width={action.icon.width}
+                    height={action.icon.height}
+                    className="h-[clamp(0.8125rem,1.3vw,1.5rem)] w-auto"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
             {primaryNav.map((link) => (
