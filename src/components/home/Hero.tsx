@@ -33,7 +33,7 @@ export function Hero() {
                 <Divider variant="hero" />
               </div>
 
-              <p className="max-w-[80%] text-body leading-[1.05] text-mist lg:leading-[1.11]">
+              <p className="max-w-full text-body leading-[1.05] text-mist sm:max-w-[80%] lg:leading-[1.11]">
                 <span className="sm:hidden">{hero.bodyMobile}</span>
                 <span className="hidden sm:inline">{hero.body}</span>
               </p>
