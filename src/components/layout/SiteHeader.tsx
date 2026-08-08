@@ -11,7 +11,7 @@ import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
-const SCROLL_THRESHOLD = 400;
+const SCROLL_THRESHOLD = 200;
 
 /**
  * Masthead: logo on the left, actions and navigation stacked on the right.
