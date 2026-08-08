@@ -127,7 +127,12 @@ export function HeroActions() {
           ease: "easeOut",
         }}
       >
-        {hero.returnPrompt}
+        <span className="inline-block rounded-2xl bg-night/20 px-[1em] py-[0.35em] backdrop-blur-[2px]">
+          <span aria-hidden className="text-gold">
+            ★{" "}
+          </span>
+          {hero.returnPrompt}
+        </span>
       </motion.p>
     </div>
   );
