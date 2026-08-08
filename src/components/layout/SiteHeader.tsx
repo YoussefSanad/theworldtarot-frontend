@@ -8,27 +8,48 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
+import { cn } from "@/lib/cn";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
+const SCROLL_THRESHOLD = 400;
 
 /**
  * Masthead: logo on the left, actions and navigation stacked on the right.
- * Transparent so the page atmosphere continues behind it into the hero.
- * Below the large breakpoint the navigation collapses behind a menu button
- * that opens a right-side drawer.
+ * Fixed to the top of the viewport for the whole page, with two states.
  *
- * This is the one place the page deliberately departs from the Figma frame,
- * which drew a 225px-tall masthead — too much of a laptop viewport to spend
- * before the hero starts. Type runs at 82.5% via `text-nav-sm` (see
- * globals.css) and the action icons match it, but the logo goes further, to
- * 70% (401px wide in Figma → 281px), because its height alone sets the
- * header's: at parity with the rest it stayed the tallest thing here by a
- * wide margin. Below `lg` the clamp floors take over and hold the logo near
- * its old mobile size — the collapsed header is already short there, so
- * shrinking the wordmark further only costs legibility.
+ * At the very top of the page it is collapsed and transparent: a small logo,
+ * tight padding, and nothing on the right but the nav links (the menu button
+ * below `lg`). That buys the hero as much of the first viewport as possible,
+ * which is the whole point — the reveal composition should land inside the
+ * fold with minimal scrolling.
+ *
+ * Past `SCROLL_THRESHOLD` it becomes the full masthead: the CTA/account/bag
+ * row drops in from above the nav links, the logo grows to full size, the row
+ * padding opens up, and a glass scrim fades in so the header stays legible
+ * over page content. Scrolling back to the top reverses all four together.
+ *
+ * `fixed` rather than `sticky` is what makes the growth free: a sticky header
+ * keeps its box in flow, so every state change would shove the page down
+ * mid-scroll. Fixed takes it out of flow entirely, and app/(site)/layout.tsx
+ * reserves only a small, independent minimum with a spacer — not the
+ * collapsed header's real height. The collapsed logo is deliberately allowed
+ * to render taller than that spacer and spill a little into the hero's own
+ * top padding: that's what lets landing cost the page almost nothing, rather
+ * than just less. `--header-height` and friends live in globals.css.
+ *
+ * `SCROLL_THRESHOLD` is deliberately late (400px) so the collapsed state holds
+ * through the initial scroll — the reader should be well past the hero, not
+ * just past a stray wheel tick, before the full masthead comes back.
+ *
+ * The sizes are the one place the page deliberately departs from the Figma
+ * frame, which drew a 225px-tall masthead — too much of a laptop viewport to
+ * spend before the hero starts. Both states run smaller than that frame, with
+ * the collapsed logo smaller again than the scrolled one — see the tokens in
+ * globals.css for the exact clamps.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const reducedMotion = useReducedMotion();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasMenuOpen = useRef(false);
@@ -37,6 +58,28 @@ export function SiteHeader() {
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const pastThreshold = window.scrollY > SCROLL_THRESHOLD;
+      setScrolled((prev) => (prev === pastThreshold ? prev : pastThreshold));
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -65,16 +108,29 @@ export function SiteHeader() {
   const motionDuration = reducedMotion ? 0 : 0.32;
 
   return (
-    <header className="relative z-20">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-1.5">
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-20 transition-[background-color,backdrop-filter] duration-300 ease-[var(--ease-veil)]",
+        scrolled ? "bg-night/10 backdrop-blur-sm" : "bg-transparent backdrop-blur-none",
+      )}
+    >
+      <div
+        className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter transition-[padding] duration-300 ease-[var(--ease-veil)]"
+        style={{ paddingBlock: scrolled ? "var(--header-pad-y)" : "var(--header-pad-y-collapsed)" }}
+      >
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
+          {/* Width rather than `scale`: the logo's box is what sets the header's
+              height, so shrinking it has to be a real layout change for the
+              collapsed header to actually be short. Free to reflow here — the
+              header is out of flow. */}
           <Image
             src={brand.logo.src}
             alt={siteName}
             width={brand.logo.width}
             height={brand.logo.height}
             priority
-            className="w-[clamp(8.5rem,14.64vw,17.5625rem)]"
+            className="transition-[width] duration-300 ease-[var(--ease-veil)]"
+            style={{ width: scrolled ? "var(--header-logo-width)" : "var(--header-logo-width-collapsed)" }}
           />
         </Link>
 
@@ -91,33 +147,44 @@ export function SiteHeader() {
         </button>
 
         <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
-            <ButtonLink
-              href={headerActions.cta.href}
-              variant="ghost"
-              size="fluid"
-              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
-            >
-              {headerActions.cta.label}
-            </ButtonLink>
-
-            {[headerActions.account, headerActions.bag].map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                aria-label={action.label}
-                className="opacity-90 transition-opacity hover:opacity-100"
+          <AnimatePresence initial={false}>
+            {scrolled ? (
+              <motion.div
+                key="actions-row"
+                initial={reducedMotion ? false : { height: 0, opacity: 0, y: -12 }}
+                animate={{ height: "auto", opacity: 1, y: 0 }}
+                exit={{ height: 0, opacity: 0, y: -12 }}
+                transition={{ duration: motionDuration, ease: EASE_VEIL }}
+                className="flex w-full flex-wrap items-center justify-end gap-[0.65em] overflow-hidden text-[calc(var(--text-nav-sm)*0.85)]"
               >
-                <Image
-                  src={action.icon.src}
-                  alt=""
-                  width={action.icon.width}
-                  height={action.icon.height}
-                  className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-                />
-              </Link>
-            ))}
-          </div>
+                <ButtonLink
+                  href={headerActions.cta.href}
+                  variant="ghost"
+                  size="fluid"
+                  className="min-h-[1.6em] px-[1.1em] py-[0.12em] text-champagne"
+                >
+                  {headerActions.cta.label}
+                </ButtonLink>
+
+                {[headerActions.account, headerActions.bag].map((action) => (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    aria-label={action.label}
+                    className="opacity-90 transition-opacity hover:opacity-100"
+                  >
+                    <Image
+                      src={action.icon.src}
+                      alt=""
+                      width={action.icon.width}
+                      height={action.icon.height}
+                      className="h-[clamp(0.8125rem,1.3vw,1.5rem)] w-auto"
+                    />
+                  </Link>
+                ))}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
             {primaryNav.map((link) => (

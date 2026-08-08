@@ -244,7 +244,32 @@
   --hero-action-row-gap: clamp(1.015625rem, calc(1.015625rem + (100vw - 1024px) * 0.0186942), 2.0625rem);
 }
 
+/*
+  Masthead states. The header is fixed, so growing it on scroll costs the page
+  no reflow. On landing, though, it deliberately does NOT reserve its own real
+  height — `--header-height` is an independent, small constant (about one line
+  of nav text), not a sum derived from the collapsed logo's box. The collapsed
+  logo is allowed to render taller than that and spill a little into Hero's own
+  top padding; that's the point, not a bug — it's what lets the landing header
+  cost the page almost nothing. `--header-height-scrolled` stays a real sum
+  (logo box + padding) since it only feeds `scroll-padding-top`, where being
+  exact is what you want.
+*/
+:root {
+  --header-logo-width: clamp(7rem, 12.4vw, 14.9rem); /* full/scrolled state, ~15% under the previous ceiling */
+  --header-logo-width-collapsed: clamp(6rem, 8vw, 9.5rem); /* landing state — free to be taller than --header-height now that overlap is allowed */
+  --header-logo-ratio: 0.52119; /* 209 / 401, the wordmark's aspect */
+  --header-pad-y: clamp(0.375rem, 0.7vw, 0.875rem);
+  --header-pad-y-collapsed: 0.25rem;
+  --header-height: clamp(1.75rem, 2.4vw, 2.375rem); /* the reserved minimum, not the logo's box */
+  --header-height-scrolled: calc(var(--header-logo-width) * var(--header-logo-ratio) + 2 * var(--header-pad-y));
+}
+
 @layer base {
+  html {
+    scroll-padding-top: var(--header-height-scrolled);
+  }
+
   body {
     background-color: var(--color-night);
     color: var(--color-mist);
