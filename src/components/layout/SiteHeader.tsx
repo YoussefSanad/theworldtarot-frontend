@@ -132,8 +132,31 @@ export function SiteHeader() {
           it on this leaf div (no fixed/absolute descendants of its own) avoids that trap
           entirely — permanently on at every breakpoint, since legibility over page
           content doesn't depend on where the cursor is or how far the reader has
-          scrolled. */}
-      <div aria-hidden className="absolute inset-0 bg-night/10 backdrop-blur-sm" />
+          scrolled.
+
+          The tint fades via its own gradient, but `backdrop-blur-sm` doesn't — a blur is
+          either on or off at a pixel, so without a mask it stays fully sharp-to-fully-
+          blurred right up to the div's edge regardless of how the color above it fades,
+          which reads as its own hard line. Masking the whole div (blur included) with
+          the same fade is what actually removes the cutoff.
+
+          The div is deliberately taller than the header's own content (`+2.5rem` of
+          bleed below it, over whatever page content sits just past the header) and the
+          fade holds at full strength through exactly the header's real height, only
+          fading out across that extra 2.5rem. Two earlier attempts fading across the
+          header's own (short) box either faded out behind the text — the logo is the
+          tallest thing in the row and everything is vertically centered, so text sits
+          mid-height here, not at the bottom — or, once that was fixed by delaying the
+          fade to the last 20%, didn't leave enough physical pixels in the header's own
+          cramped height for the fade to read as anything but another hard cutoff.
+          Bleeding past the header's real edge gives the fade a fixed, generous amount of
+          room that doesn't depend on squeezing it into whatever the current state's
+          height happens to be — pointer-events-none since it now overlaps page content
+          the header itself doesn't occupy. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+2.5rem)] bg-[linear-gradient(to_bottom,rgba(8,21,37,0.06)_calc(100%-2.5rem),transparent_100%)] backdrop-blur-sm [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent_100%)] mask-[linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent_100%)]"
+      />
       <div
         className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter transition-[padding] duration-300 ease-[var(--ease-veil)]"
         style={{ paddingBlock: expanded ? "var(--header-pad-y)" : "var(--header-pad-y-collapsed)" }}
@@ -185,25 +208,35 @@ export function SiteHeader() {
           </span>
         </button>
 
-        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          {/* `grid-template-rows: 0fr → 1fr` instead of Framer's `height: "auto"`: a
-              plain CSS transition that the browser drives as one continuous native
-              animation, so the nav below reflows in lockstep with it every frame
-              instead of trailing a separate JS-driven height tween. `min-h-0` on the
-              grid item is required — grid items default to `min-height: auto`, which
-              would refuse to shrink below the content's own height regardless of the
-              track size. `inert` removes the CTA/account/bag links from tab order and
-              hit-testing while collapsed, since they're still in the DOM now (not
-              unmounted) — without it, keyboard focus could land on invisible controls. */}
+        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end">
+          {/* `max-height: 0 → 5rem` instead of Framer's `height: "auto"` or a
+              `grid-template-rows: 0fr` track: both of those lean on "automatic minimum
+              size" rules for flex/grid items that turned out not to reliably bottom out
+              at a true 0px here — the row kept contributing some residual height even
+              collapsed, which is what was pushing the nav below it visibly off-center.
+              `max-height` has no such minimum-size subtlety: it's a hard cap regardless
+              of what the content would otherwise prefer, so `0` is unambiguously 0.
+              `5rem` comfortably covers this row even if it wraps to two lines at a
+              narrow `lg` width — it only needs to exceed the content's real height, not
+              match it, since `overflow-hidden` clips the rest. `inert` removes the
+              CTA/account/bag links from tab order and hit-testing while collapsed, since
+              they're still in the DOM now (not unmounted) — without it, keyboard focus
+              could land on invisible controls.
+
+              The gap to the nav below lives here as `pb-6` on the content div, not as
+              `gap-6` on this column (a flex `gap` is a fixed distance between items
+              regardless of either one's rendered size, so it didn't shrink to 0 with
+              this row — that stranded 24px above the nav, mirrored by none below it, was
+              part of the same off-center symptom). */}
           <div
             aria-hidden={!expanded}
             inert={!expanded}
-            className="grid w-full overflow-hidden transition-[grid-template-rows] duration-300 ease-[var(--ease-veil)]"
-            style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
+            className="w-full overflow-hidden transition-[max-height] duration-300 ease-[var(--ease-veil)]"
+            style={{ maxHeight: expanded ? "5rem" : "0px" }}
           >
             <div
               className={cn(
-                "flex w-full min-h-0 flex-wrap items-center justify-end gap-[0.65em] text-[calc(var(--text-nav-sm)*0.85)] transition-opacity duration-300 ease-[var(--ease-veil)]",
+                "flex w-full flex-wrap items-center justify-end gap-[0.65em] pb-6 text-[calc(var(--text-nav-sm)*0.85)] transition-opacity duration-300 ease-[var(--ease-veil)]",
                 expanded ? "opacity-100" : "opacity-0",
               )}
             >
