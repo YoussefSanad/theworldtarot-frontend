@@ -12,7 +12,7 @@ function HeroAction({ href, icon, label }: { href: string; icon: ImageAsset; lab
   return (
     <Link
       href={href}
-      className="btn btn-ghost w-fit min-h-[3.7em] justify-start gap-[0.75em] py-[0.65em] pr-[1.75em] pl-[1.1em] text-caption"
+      className="btn btn-ghost min-w-(--hero-action-btn-min-w) min-h-[3.7em] justify-start gap-[0.75em] py-[0.65em] pr-[1.75em] pl-[1.1em] text-caption"
     >
       <Image src={icon.src} alt="" width={icon.width} height={icon.height} className="h-[2em] w-auto shrink-0" />
       <span className="text-left leading-[1.36] tracking-[-0.02em]">
@@ -43,14 +43,14 @@ export function ConceptHero() {
 
               <Divider variant="hero" className="mx-auto lg:mx-0 lg:ml-[5%]" />
 
-              <p className="max-w-[80%] text-body leading-[1.11] text-mist">
+              <p className="max-w-full text-body leading-[1.11] text-mist sm:max-w-[80%]">
                 <span className="sm:hidden">{hero.bodyMobile}</span>
                 <span className="hidden sm:inline">{hero.body}</span>
               </p>
 
               <RevealTrigger className="mt-[0.55em]" />
 
-              <div className="mt-[0.5em] flex w-full flex-col items-center gap-[1.25em] text-caption sm:flex-row sm:flex-wrap sm:justify-center lg:flex-nowrap lg:justify-start lg:gap-[1.5em]">
+              <div className="mt-[0.5em] flex w-full flex-col items-center gap-[1.25em] text-caption sm:flex-row sm:justify-center lg:justify-start lg:gap-[1.5em]">
                 {hero.secondaryActions.map((action) => (
                   <HeroAction key={action.href} href={action.href} icon={action.icon} label={action.label} />
                 ))}
