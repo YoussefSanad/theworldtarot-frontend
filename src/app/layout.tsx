@@ -43,9 +43,8 @@ const gillSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: `${siteName} — Enter The Living Tarot`,
-  description:
-    "A cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
+  title: `${siteName} — Coming Soon`,
+  description: "A new world of symbols, story, and transformation draws near. Join the opening list.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

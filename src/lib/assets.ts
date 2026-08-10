@@ -47,6 +47,16 @@ export const artwork = {
   worldShine: asset("/figma/world-shine.webp", 1600, 655),
   /** World behind the sun — Motion opacity capped to match baked ~18%. */
   worldGlobe: asset("/figma/world-globe.webp", 1600, 1215),
+  /**
+   * The coming-soon frame's own star/nebula layer (Figma node 270:65),
+   * cropped from its raw export. That export is much bigger than the frame
+   * that clips it and carries a vignette baked in for exactly that frame's
+   * window — outside the crop here, the vignette's edge shows as a hard seam
+   * and a grainy, unlit band sits above it, neither ever meant to be seen.
+   */
+  comingSoonStars: asset("/figma/coming-soon-stars.webp", 1772, 720),
+  /** Coming-soon backdrop, rotated infinitely via `.slow-spin`. */
+  flowerOfLife: asset("/figma/flower-of-life.webp", 1919, 1921),
 } as const;
 
 /** Backgrounds referenced from CSS rather than markup. */
@@ -59,6 +69,7 @@ export const surfaces = {
 export const videos = {
   cardBack: "/videos/card-back-compressed.mp4",
   theStar: "/videos/17-the-star-compressed.mp4",
+  comingSoon: "/videos/coming-soon-compressed.mp4",
 } as const;
 
 /**
@@ -67,6 +78,7 @@ export const videos = {
  */
 export const videoPosters = {
   cardBack: asset("/videos/card-back-poster.webp", 1280, 2120),
+  comingSoon: asset("/videos/coming-soon-poster.webp", 1280, 2120),
 } as const;
 
 /** Still frames shown when a Living Tarot card is revealed on the homepage. */

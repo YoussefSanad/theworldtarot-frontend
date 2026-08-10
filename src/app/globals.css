@@ -120,6 +120,7 @@
   --measure-value-props: 100%;
   --measure-flourish: 448px;
   --measure-hairline: min(12rem, 100%);
+  --measure-little: 100%;
 }
 
 @media (width >= 64rem) {
@@ -131,6 +132,7 @@
     --measure-value-props: min(var(--container-value-props), 65.99vw);
     --measure-flourish: min(448px, 23.333vw);
     --measure-hairline: min(368px, 19.167vw);
+    --measure-little: min(715px, 37.2396vw);
   }
 }
 
@@ -529,6 +531,35 @@
     animation: none;
   }
 
+  /*
+    The coming-soon flower-of-life backdrop. A wrapper owns this class and
+    position; the rotated image is its child, since `transform` from the
+    keyframe would otherwise clobber a centering translate on the same
+    element. `prefers-reduced-motion` below already forces
+    animation-iteration-count: 1 on everything, so reduced motion just parks
+    it on its start frame for free.
+  */
+  @keyframes slow-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .slow-spin {
+    animation: slow-spin 240s linear infinite;
+  }
+
+  /*
+    Guarantees a soft top edge for a background layer no matter which slice
+    of the source image its object-position lands on — belt-and-suspenders
+    for the coming-soon world/shine crop, where `world-globe.webp` has no
+    alpha channel of its own to fade with.
+  */
+  .fade-top {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%);
+    mask-image: linear-gradient(to bottom, transparent, black 20%);
+  }
+
   /* Ornament --------------------------------------------------------------- */
   .divider {
     background-position: center;
@@ -578,6 +609,12 @@
   .divider--tile {
     aspect-ratio: 390 / 59;
     background-image: url("/figma/product-divider-1.webp");
+  }
+
+  .divider--little {
+    aspect-ratio: 715 / 17;
+    background-image: url("/figma/divider-little.webp");
+    max-width: var(--measure-little);
   }
 
   /*
