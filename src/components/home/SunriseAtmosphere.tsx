@@ -14,7 +14,7 @@ import { artwork } from "@/lib/assets";
  * especially the lit surface detail lower in the frame. Constant, not
  * animated: the globe is "already there" from frame one. Tune by eye.
  */
-const GLOBE_OPACITY_CAP = 1;
+const GLOBE_OPACITY_CAP = 0.7;
 
 /** px — resolves against the shared wrapper, not either layer's own height, so it can't drift the two apart. */
 const RISE_PX = 48;
@@ -66,7 +66,9 @@ type SkyPhase = "approach" | "landed" | "full";
  * arrays with explicit `times`, not a single easing curve, and opacity and
  * filter each carry their own keyframe/timing arrays since they don't share
  * the same number of stops — `delay` is set once at the transition's top
- * level so both inherit it.
+ * level so both inherit it. Opacity does not overshoot, only brightness
+ * does; the peak (SHINE_PEAK_BRIGHTNESS) stays below the reveal's
+ * brightness(1), so the reveal keeps headroom.
  */
 export function SunriseAtmosphere() {
   const { status } = useReveal();
