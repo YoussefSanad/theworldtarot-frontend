@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { ComingSoonWorldComp } from "@/components/coming-soon/ComingSoonWorldComp";
 import { artwork } from "@/lib/assets";
 
 /**
@@ -34,11 +35,12 @@ import { artwork } from "@/lib/assets";
  * already-definite height (fixed independently by `<main>`) breaks the
  * circularity outright, regardless of whatever image fills this first slot.
  *
- * The flower wrapper is `position: absolute` for the same underlying
- * reason, belt-and-suspenders: on a landscape viewport `w-screen` +
- * `aspect-square` computes taller than the viewport, and grid excludes
- * absolutely-positioned items from row auto-sizing by spec, so it can't
- * reintroduce this even if the row template above is ever loosened.
+ * The flower's wrapper (now rendered inside ComingSoonWorldComp, alongside
+ * earth and glare — see that file) is `position: absolute` for the same
+ * underlying reason, belt-and-suspenders: on a landscape viewport
+ * `w-screen` + `aspect-square` computes taller than the viewport, and grid
+ * excludes absolutely-positioned items from row auto-sizing by spec, so it
+ * can't reintroduce this even if the row template above is ever loosened.
  *
  * Earth + shine box heights started from the Figma source — in frame 270:63
  * (1920×1440), WORLD sits at y=703 and Layer 2 (the glow) at y=952, each
@@ -64,6 +66,14 @@ import { artwork } from "@/lib/assets";
  * can't reappear from a crop tweak alone. `world-globe` additionally keeps
  * `opacity-25` since it has no alpha channel of its own — the mask hides the
  * hard edge, but not the flat rectangle of color it would otherwise be.
+ *
+ * The flower wrapper's `position: absolute` has a side effect worth
+ * flagging: it puts the flower into a later CSS paint step than an
+ * ordinary in-flow element, so without help it would paint *above*
+ * non-positioned content regardless of DOM order. Earth and glare carry
+ * `relative` themselves (see ComingSoonWorldComp) so all three share that
+ * paint step and DOM order — flower, then earth, then glare, the order
+ * ComingSoonWorldComp renders them in — is what determines stacking.
  */
 export function ComingSoonBackdrop() {
   return (
@@ -78,31 +88,7 @@ export function ComingSoonBackdrop() {
           className="size-full object-cover"
         />
 
-        <div className="absolute top-0 left-1/2 aspect-square w-screen -translate-x-1/2">
-          <Image
-            src={artwork.flowerOfLife.src}
-            alt=""
-            width={artwork.flowerOfLife.width}
-            height={artwork.flowerOfLife.height}
-            className="slow-spin size-full opacity-[0.08]"
-          />
-        </div>
-
-        <Image
-          src={artwork.worldGlobe.src}
-          alt=""
-          width={artwork.worldGlobe.width}
-          height={artwork.worldGlobe.height}
-          className="fade-top h-[38vh] w-full self-end object-cover object-[center_40%] opacity-25"
-        />
-
-        <Image
-          src={artwork.worldShine.src}
-          alt=""
-          width={artwork.worldShine.width}
-          height={artwork.worldShine.height}
-          className="fade-top h-[25vh] w-full self-end object-cover object-[center_55%]"
-        />
+        <ComingSoonWorldComp />
       </div>
     </div>
   );
