@@ -2,6 +2,7 @@
 
 import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
+import { useReducedMotion } from "motion/react";
 import { createContext, use, useCallback, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
@@ -27,6 +28,20 @@ type CarouselContextValue = {
 };
 
 const CarouselContext = createContext<CarouselContextValue | null>(null);
+
+/** Embla's own default (embla-carousel@8.6.0) — not part of its public API to import, so pinned here. */
+const EMBLA_DEFAULT_DURATION = 25;
+
+/**
+ * Embla animates a transform on rAF, so globals.css's reduced-motion block —
+ * which only collapses CSS transitions — can't reach it. `duration` is a frame
+ * count: 0 takes Embla's explicit "instant" branch. Passing `undefined` would
+ * disable scroll animation outright, since Embla's option merge overwrites a
+ * key whenever it's present, even with an undefined value.
+ */
+export function useCarouselDuration() {
+  return useReducedMotion() ? 0 : EMBLA_DEFAULT_DURATION;
+}
 
 function useCarousel(component: string) {
   const context = use(CarouselContext);

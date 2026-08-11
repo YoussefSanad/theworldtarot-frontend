@@ -529,6 +529,36 @@
     animation: none;
   }
 
+  /*
+    The compasses breathe. A single slow gold-white halo swelling and settling —
+    long enough (9s) and faint enough that it reads as the artwork catching light
+    rather than as an animation. drop-shadow, not box-shadow: the compass is a
+    transparent-alpha webp, so the halo has to follow the artwork's real shape
+    (same reason `.tile-frame` uses a mask instead of a background).
+
+    The Figma resting shadow (0 29px 32px rgba(74,63,64,0.25)) is repeated in
+    both keyframes AND as the static filter below. It has to be: an animated
+    `filter` replaces the static one entirely, and under prefers-reduced-motion
+    the global block below ends the animation after one iteration, dropping the
+    element back to this static value. Change the shadow and change it in all
+    three places — it used to live on the Image as a Tailwind `drop-shadow-[…]`
+    utility (ValueProps.tsx).
+  */
+  @keyframes compass-breathe {
+    0%,
+    100% {
+      filter: drop-shadow(0 29px 32px rgba(74, 63, 64, 0.25)) drop-shadow(0 0 8px rgba(252, 246, 214, 0.08));
+    }
+    50% {
+      filter: drop-shadow(0 29px 32px rgba(74, 63, 64, 0.25)) drop-shadow(0 0 24px rgba(252, 246, 214, 0.35));
+    }
+  }
+
+  .compass-breathe {
+    animation: compass-breathe 4s var(--ease-veil) infinite;
+    filter: drop-shadow(0 29px 32px rgba(74, 63, 64, 0.25));
+  }
+
   /* Ornament --------------------------------------------------------------- */
   .divider {
     background-position: center;
