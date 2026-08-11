@@ -8,8 +8,13 @@ import { createPortal } from "react-dom";
 import { useReveal } from "@/components/reveal";
 import { artwork } from "@/lib/assets";
 
-/** Same effective strength as the baked-alpha webp — see assets.ts. Constant, not animated: the globe is "already there" from frame one. */
-const GLOBE_OPACITY_CAP = 0.18;
+/**
+ * Was 0.18 to match the old baked-alpha webp's effective strength (see
+ * assets.ts) — raised because that read as washed out against the PSD,
+ * especially the lit surface detail lower in the frame. Constant, not
+ * animated: the globe is "already there" from frame one. Tune by eye.
+ */
+const GLOBE_OPACITY_CAP = 1;
 
 /** px — resolves against the shared wrapper, not either layer's own height, so it can't drift the two apart. */
 const RISE_PX = 48;
