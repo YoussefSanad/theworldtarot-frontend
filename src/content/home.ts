@@ -131,18 +131,6 @@ export const valueProps = [
 ];
 
 /**
- * Below `md` the three value props become a swipeable row (see
- * ValueProps.tsx / CompassCarousel.tsx) — same pattern as `journey.carousel`,
- * just a different breakpoint since this row's own grid already collapses to
- * one column at `md` rather than `sm`.
- */
-export const valuePropsCarousel = {
-  dotsLabel: "Browse the value props",
-  /** Prefixes each prop title on its dot: "Show Led by the Cards". */
-  dotAction: "Show",
-};
-
-/**
  * Below `sm` the three props become a swipeable row, same pattern as
  * `journey.carousel` for the product tiles — see ProductCarousel.tsx.
  */
