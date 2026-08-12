@@ -8,29 +8,72 @@ import { createPortal } from "react-dom";
 import { useReveal } from "@/components/reveal";
 import { artwork } from "@/lib/assets";
 
-/** Same effective strength as the baked-alpha webp — see assets.ts. */
-const GLOBE_OPACITY_CAP = 0.18;
+/**
+ * Was 0.18 to match the old baked-alpha webp's effective strength (see
+ * assets.ts) — raised because that read as washed out against the PSD,
+ * especially the lit surface detail lower in the frame. Constant, not
+ * animated: the globe is "already there" from frame one. Tune by eye.
+ */
+const GLOBE_OPACITY_CAP = 0.7;
 
-const DAWN_SECONDS = 3;
-const GLOBE_FADE_SECONDS = 1.1;
-/** Faster than the dawn-in — this is an echo of a moment already in progress, not a second reveal. */
+/** px — resolves against the shared wrapper, not either layer's own height, so it can't drift the two apart. */
+const RISE_PX = 48;
+const RISE_SECONDS = 1.6;
+/** easeOutCubic — settles, doesn't snap. */
+const RISE_EASE = [0.33, 1, 0.68, 1] as const;
+
+/** The beat of near-total dark before the glare begins its climb. */
+const SHINE_DELAY_SECONDS = 0.4;
+/** Deliberately much longer than the world's own rise — the glare is still working long after the world has landed. */
+const SHINE_SECONDS = 5.6;
+const SHINE_START_OPACITY = 0.12;
+const SHINE_START_BRIGHTNESS = 0.35;
+/** Today's dawn values, unchanged — the crescendo lands exactly where the old fade-in used to. */
+const SHINE_REST_OPACITY = 0.85;
+const SHINE_REST_BRIGHTNESS = 0.9;
+/** ~1.07x rest — the bloom the crescendo overshoots into before settling. */
+const SHINE_PEAK_BRIGHTNESS = 0.96;
+
+/** Faster than the crescendo — this is an echo of a moment already in progress, not a second reveal. */
 const REVEAL_SECONDS = 2.6;
 
-type SkyPhase = "night" | "dawn" | "full";
+type SkyPhase = "approach" | "landed" | "full";
 
 /**
- * Animates the hero's sun (world-shine) and earth (world-globe) in on load,
- * then brightens further when the card is revealed. Portals into #hero-sky
- * (src/app/(site)/layout.tsx) so it paints behind the header despite living
- * inside Hero.tsx's RevealProvider. Placement is entirely CSS
- * (.hero-sky-shine / .hero-sky-globe in globals.css) — Motion only ever
- * touches opacity, filter and a translateY nudge, so the resting placement
- * math can't be perturbed by the animation.
+ * Animates the hero's world arriving after page load: the earth and glare
+ * slide up into place from below over a short beat, while the sun's glare
+ * keeps climbing on its own much longer timeline — a slow crescendo that
+ * gathers speed and crests in a brief bloom before settling to today's
+ * resting values. Then brightens further when the card is revealed. Portals
+ * into #hero-sky (src/app/(site)/layout.tsx) so it paints behind the header
+ * despite living inside Hero.tsx's RevealProvider.
+ *
+ * .hero-sky-shine / .hero-sky-globe (globals.css) are two separately
+ * absolutely-positioned layers whose left/top/width are tuned calc()
+ * percentages, carrying their own warning: move both together, by the same
+ * pixels, or the glint slides off the globe. Both images are portaled
+ * inside one shared wrapper div, and the rise (a plain `y` translate) lives
+ * on THAT wrapper — pure translation needs no transform-origin and can't
+ * desync the two layers riding inside it, the way a scale would.
+ *
+ * The globe never fades — it renders at GLOBE_OPACITY_CAP from the first
+ * frame ("the world was already there"); its arrival is carried entirely by
+ * the wrapper's rise, which lands at RISE_SECONDS. The shine's own timeline
+ * is deliberately much longer (SHINE_SECONDS, starting after
+ * SHINE_DELAY_SECONDS of near-total dark) and keeps running well after the
+ * wrapper has landed — the glare is still visibly dim once the world has
+ * stopped moving, then gathers speed and blooms. That shape needs keyframe
+ * arrays with explicit `times`, not a single easing curve, and opacity and
+ * filter each carry their own keyframe/timing arrays since they don't share
+ * the same number of stops — `delay` is set once at the transition's top
+ * level so both inherit it. Opacity does not overshoot, only brightness
+ * does; the peak (SHINE_PEAK_BRIGHTNESS) stays below the reveal's
+ * brightness(1), so the reveal keeps headroom.
  */
 export function SunriseAtmosphere() {
   const { status } = useReveal();
   const reducedMotion = useReducedMotion();
-  const [phase, setPhase] = useState<SkyPhase>("night");
+  const [phase, setPhase] = useState<SkyPhase>("approach");
   const [mounted, setMounted] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
   const loaded = useRef({ globe: false, shine: false });
@@ -48,7 +91,7 @@ export function SunriseAtmosphere() {
 
   useEffect(() => {
     if (reducedMotion) {
-      setPhase(isFull ? "full" : "dawn");
+      setPhase(isFull ? "full" : "landed");
       return;
     }
 
@@ -57,30 +100,46 @@ export function SunriseAtmosphere() {
       return;
     }
 
-    setPhase("night");
+    setPhase("approach");
     if (!assetsReady) return;
 
-    const frame = requestAnimationFrame(() => setPhase("dawn"));
+    const frame = requestAnimationFrame(() => setPhase("landed"));
     return () => cancelAnimationFrame(frame);
   }, [isFull, reducedMotion, assetsReady]);
+
+  const wrapperTransition = reducedMotion ? { duration: 0 } : { duration: RISE_SECONDS, ease: RISE_EASE };
+
+  const wrapperAnimate = phase === "approach" && !isFull ? { y: RISE_PX } : { y: 0 };
 
   const shineTransition = reducedMotion
     ? { duration: 0 }
     : isFull
       ? { duration: REVEAL_SECONDS, ease: "easeInOut" as const }
-      : { duration: DAWN_SECONDS, ease: "easeOut" as const };
-
-  const globeTransition = reducedMotion
-    ? { duration: 0 }
-    : { duration: GLOBE_FADE_SECONDS, ease: "easeOut" as const };
+      : phase === "approach"
+        ? { duration: 0 }
+        : {
+            delay: SHINE_DELAY_SECONDS,
+            opacity: { duration: SHINE_SECONDS, times: [0, 0.6, 1], ease: ["linear", [0.4, 0, 0.2, 1]] as const },
+            filter: {
+              duration: SHINE_SECONDS,
+              times: [0, 0.6, 0.88, 1],
+              ease: ["linear", [0.4, 0, 0.2, 1], "easeOut"] as const,
+            },
+          };
 
   const shineAnimate = isFull
-    ? { opacity: 1, filter: "brightness(1)", y: "0%" }
-    : phase === "dawn"
-      ? { opacity: 0.85, filter: "brightness(0.9)", y: "0%" }
-      : { opacity: 0, filter: "brightness(0.45)", y: "6%" };
-
-  const globeOpacity = phase === "night" && !isFull ? 0 : GLOBE_OPACITY_CAP;
+    ? { opacity: 1, filter: "brightness(1)" }
+    : phase === "approach"
+      ? { opacity: SHINE_START_OPACITY, filter: `brightness(${SHINE_START_BRIGHTNESS})` }
+      : {
+          opacity: [SHINE_START_OPACITY, 0.28, SHINE_REST_OPACITY],
+          filter: [
+            `brightness(${SHINE_START_BRIGHTNESS})`,
+            "brightness(0.48)",
+            `brightness(${SHINE_PEAK_BRIGHTNESS})`,
+            `brightness(${SHINE_REST_BRIGHTNESS})`,
+          ],
+        };
 
   if (!mounted) return null;
 
@@ -88,26 +147,28 @@ export function SunriseAtmosphere() {
   if (!portalTarget) return null;
 
   return createPortal(
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-x-clip">
-      <motion.div
-        className="hero-sky-globe"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: globeOpacity }}
-        transition={globeTransition}
-      >
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 overflow-x-clip"
+      initial={{ y: RISE_PX }}
+      animate={wrapperAnimate}
+      transition={wrapperTransition}
+    >
+      <div className="hero-sky-globe">
         <Image
           src={artwork.worldGlobe.src}
           alt=""
           width={artwork.worldGlobe.width}
           height={artwork.worldGlobe.height}
           className="h-auto w-full max-w-none"
+          style={{ opacity: GLOBE_OPACITY_CAP }}
           onLoad={() => markLoaded("globe")}
         />
-      </motion.div>
+      </div>
 
       <motion.div
         className="hero-sky-shine"
-        initial={{ opacity: 0, filter: "brightness(0.45)", y: "6%" }}
+        initial={{ opacity: SHINE_START_OPACITY, filter: `brightness(${SHINE_START_BRIGHTNESS})` }}
         animate={shineAnimate}
         transition={shineTransition}
       >
@@ -120,7 +181,7 @@ export function SunriseAtmosphere() {
           onLoad={() => markLoaded("shine")}
         />
       </motion.div>
-    </div>,
+    </motion.div>,
     portalTarget,
   );
 }

@@ -130,6 +130,16 @@ export const valueProps = [
   { title: "Clarity in Motion", body: "Insight that illuminates your next chapter" },
 ];
 
+/**
+ * Below `sm` the three props become a swipeable row, same pattern as
+ * `journey.carousel` for the product tiles — see ProductCarousel.tsx.
+ */
+export const valuePropsCarousel = {
+  dotsLabel: "The World Tarot's promise",
+  /** Prefixes each prop title on its dot: "Show Led by the Cards". */
+  dotAction: "Show",
+};
+
 export const featuredTestimonial = {
   quote: "“It didn’t just speak to me - it shimmered.  I’ve kept it like a piece of art.”",
   attribution: "- Blake M., Big Sur, CA",
