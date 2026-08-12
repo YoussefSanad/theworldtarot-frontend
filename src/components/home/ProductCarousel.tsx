@@ -1,10 +1,9 @@
 "use client";
 
 import type { EmblaOptionsType } from "embla-carousel";
-import { useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
-import { Carousel, CarouselDots, CarouselTrack, CarouselViewport } from "@/components/ui/Carousel";
+import { Carousel, CarouselDots, CarouselTrack, CarouselViewport, useCarouselDuration } from "@/components/ui/Carousel";
 
 /**
  * The product row as a swipeable strip, below `sm` only.
@@ -25,9 +24,6 @@ import { Carousel, CarouselDots, CarouselTrack, CarouselViewport } from "@/compo
  * ships no extra client JS; only the carousel's own mechanics do.
  */
 
-/** Embla's own default (embla-carousel@8.6.0) — not part of its public API to import, so pinned here. */
-const DEFAULT_DURATION = 25;
-
 export function ProductCarousel({
   children,
   slideCount,
@@ -39,7 +35,7 @@ export function ProductCarousel({
   dotsLabel: string;
   dotLabels: string[];
 }) {
-  const reducedMotion = useReducedMotion();
+  const duration = useCarouselDuration();
 
   const options: EmblaOptionsType = {
     active: false,
@@ -55,14 +51,7 @@ export function ProductCarousel({
     breakpoints: {
       "(width < 40rem)": { active: true },
     },
-    // globals.css's reduced-motion block only collapses CSS transitions;
-    // Embla animates a transform on requestAnimationFrame, so it has to be
-    // told separately. `duration` is a frame count, not milliseconds — 0 takes
-    // Embla's explicit "instant" branch rather than dividing by it. (Passing
-    // `undefined` here instead of the real default would silently disable all
-    // scroll animation, not just under reduced motion — Embla's option merge
-    // overwrites a key whenever it's present, even with an undefined value.)
-    duration: reducedMotion ? 0 : DEFAULT_DURATION,
+    duration,
   };
 
   return (
