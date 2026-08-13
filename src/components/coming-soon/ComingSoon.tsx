@@ -42,7 +42,7 @@ export function ComingSoon() {
           width={brand.logo.width}
           height={brand.logo.height}
           priority
-          className="w-[clamp(11rem,16vw,18rem)]"
+          className="w-[clamp(12rem,18vw,20.5rem)]"
         />
 
         <Divider variant="little" />

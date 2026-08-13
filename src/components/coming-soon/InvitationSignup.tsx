@@ -91,13 +91,21 @@ export function InvitationSignup() {
   return (
     <>
       {/*
-        Two lines of text-caption at its 1.36 line-height is 2.72em, so this
-        reserves the confirmation's full height while the one-line lead-in is
-        still showing and the swap moves nothing. It holds for every width where
-        the lead-in is one line and the confirmation is two, which is all of
-        them down to about 360px; below that both states can wrap and the box
-        grows with whichever is taller. Raise this, not the copy, if the
-        confirmation ever gains a third line.
+        Two lines at the tightened 1.15 leading is 2.3em, so this reserves the
+        confirmation's full height while the one-line lead-in is still showing
+        and the swap moves nothing. It holds for every width where the lead-in
+        is one line and the confirmation is two, which is all of them down to
+        about 360px; below that both states can wrap and the box grows with
+        whichever is taller. Raise this, not the copy, if the confirmation ever
+        gains a third line.
+
+        That reservation is also what used to read as padding around the
+        lead-in: the box is always taller than the one line inside it, so the
+        column's `gap-2` was stacking on top of half an empty line above and
+        below. Tightening the leading from text-caption's 1.36 and pulling the
+        neighbours in with `-my-1` cuts that back — both are constants applied
+        in either state, so neither can move anything — and the height they give
+        up goes to the logo above.
 
         `aria-live` sits on this box rather than on the confirmation itself —
         unlike RevealTrigger, which puts it on the entering node. A live region
@@ -106,7 +114,7 @@ export function InvitationSignup() {
         ever updated.
       */}
       <div
-        className="stack min-h-[2.8em] w-full place-items-center text-balance text-caption text-champagne"
+        className="stack -my-1 min-h-[2.35em] w-full place-items-center text-balance text-caption leading-[1.15] text-champagne"
         aria-live="polite"
       >
         <AnimatePresence mode="wait">
