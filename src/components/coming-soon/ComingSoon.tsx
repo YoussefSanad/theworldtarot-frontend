@@ -34,7 +34,7 @@ export function ComingSoon() {
 
       <Container
         width="hero"
-        className="relative z-10 flex max-w-200 flex-col items-center gap-[clamp(0.75rem,1.5vw,1.25rem)] py-[clamp(1rem,2.5vw,2rem)]"
+        className="relative z-10 flex max-w-240 flex-col items-center gap-[clamp(0.75rem,1.5vw,1.25rem)] py-[clamp(1rem,2.5vw,2rem)]"
       >
         <Image
           src={brand.logo.src}
@@ -70,7 +70,7 @@ export function ComingSoon() {
               ))}
             </p>
 
-            <p className="text-caption text-champagne">{comingSoon.leadIn}</p>
+            <p className="text-balance text-caption text-champagne">{comingSoon.leadIn}</p>
             <p className="font-serif text-nav text-gold lowercase">{siteName}</p>
 
             <InvitationForm />

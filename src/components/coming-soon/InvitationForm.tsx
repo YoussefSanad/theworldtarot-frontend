@@ -53,7 +53,7 @@ export function InvitationForm() {
 
       <p className="rounded-full bg-night/25 px-[1.1em] py-[0.5em] text-center text-fine text-champagne">
         {comingSoon.finePrint.map((line) => (
-          <span key={line} className="block">
+          <span key={line} className="block text-balance">
             {line}
           </span>
         ))}
