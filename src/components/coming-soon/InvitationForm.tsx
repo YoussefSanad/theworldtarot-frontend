@@ -30,7 +30,7 @@ export function InvitationForm() {
           autoComplete="email"
           required
           /* RFC 5321's maximum addressable length. */
-          maxLength={254}
+          maxLength={50}
           className="field w-full px-3 py-2 text-note"
         />
       </div>
