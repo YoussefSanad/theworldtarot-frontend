@@ -34,6 +34,10 @@ import { artwork } from "@/lib/assets";
  * guessed from the markup. Pinning the row to `100%` of the container's own
  * already-definite height (fixed independently by `<main>`) breaks the
  * circularity outright, regardless of whatever image fills this first slot.
+ * Earth and shine now sit one level deeper — inside ComingSoonWorldComp's
+ * own mirroring wrapper, which is this row's other direct child — so that
+ * wrapper re-pins its own row to `100%` too; see the note there for why
+ * skipping it there would reintroduce the exact same bug.
  *
  * The flower's wrapper (now rendered inside ComingSoonWorldComp, alongside
  * earth and glare — see that file) is `position: absolute` for the same
@@ -64,7 +68,7 @@ import { artwork } from "@/lib/assets";
  * globals.css) is the belt-and-suspenders on top of that: it masks the box's
  * own top ~20% to transparent regardless of what lands there, so a seam
  * can't reappear from a crop tweak alone. `world-globe` additionally keeps
- * `opacity-25` since it has no alpha channel of its own — the mask hides the
+ * `opacity-35` since it has no alpha channel of its own — the mask hides the
  * hard edge, but not the flat rectangle of color it would otherwise be.
  *
  * The flower wrapper's `position: absolute` has a side effect worth
