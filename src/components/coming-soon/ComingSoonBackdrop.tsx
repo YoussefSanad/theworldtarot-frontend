@@ -15,8 +15,8 @@ import { artwork } from "@/lib/assets";
  * The flower's source art is a circle inscribed in its canvas — a circle's
  * silhouette is rotationally symmetric, so unlike a square layer it can spin
  * at any size without ever sweeping a straight edge through frame. That's
- * what lets it sit at a plain `w-screen`, full-bleed and centered, rather
- * than needing the oversized-square trick a non-circular layer would.
+ * what lets it sit at a plain `w-[90vw]`, centered, rather than needing the
+ * oversized-square trick a non-circular layer would.
  *
  * `grid-rows-[100%]` on `.stack` here isn't decorative — without it this
  * silently breaks. `.stack` sets no `grid-template-rows`, so its one

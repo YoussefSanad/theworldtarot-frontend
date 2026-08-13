@@ -59,8 +59,14 @@ const MotionImage = motion.create(Image);
  * to the comp's dawn rather than merely coincide with it by accident. It
  * fades in during the tail end of the shine's dawn (delay = DAWN_SECONDS −
  * FLOWER_LEAD_SECONDS − FLOWER_FADE_SECONDS), landing on its resting 0.12
- * shortly before the world comp finishes settling. It no longer rotates
- * (`.slow-spin` removed) — only the opacity fade-in remains.
+ * shortly before the world comp finishes settling. The image itself carries
+ * `.slow-spin` and keeps that rotation running throughout — only opacity
+ * fades in, so a fully-formed, already-turning flower simply becomes visible
+ * rather than spinning up from a standstill. The class sits on the image and
+ * not its wrapper because the wrapper owns the centering `-translate-x-1/2`,
+ * which the keyframe's own `transform` would clobber (see globals.css); the
+ * image has no transform of its own to lose, and Motion only writes the one
+ * property it animates here (opacity), so it never overwrites the spin.
  */
 export function ComingSoonWorldComp() {
   const reducedMotion = useReducedMotion();
@@ -96,7 +102,7 @@ export function ComingSoonWorldComp() {
           alt=""
           width={artwork.flowerOfLife.width}
           height={artwork.flowerOfLife.height}
-          className="size-full opacity-[0.12]"
+          className="slow-spin size-full opacity-[0.12]"
           initial={{ opacity: 0 }}
           animate={{ opacity: ready ? FLOWER_OPACITY : 0 }}
           transition={flowerTransition}
