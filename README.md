@@ -105,5 +105,28 @@ the flow layout resolving overlaps that the design draws as stacked boxes.
 ## Scope
 
 Homepage and reveal only. Navigation links point at routes from the navigation
-document that do not exist yet; the newsletter form has markup and validation
-but no endpoint.
+document that do not exist yet; the footer's newsletter form has markup and
+validation but no endpoint.
+
+### The invitation list
+
+The coming-soon page's form does submit — `requestInvitation()` in
+[`src/lib/api.ts`](src/lib/api.ts) posts `{ email, consent }` to
+`POST /api/v1/{locale}/subscribe`. **That route does not exist yet**, so on any
+deployed build every submission lands in the form's error state. This is
+deliberate: the alternative is telling a visitor their request was received when
+nothing received it.
+
+In `next dev` the post is replaced by
+[`invitation-sim.ts`](src/lib/invitation-sim.ts), so the success state can be
+looked at: the first attempt in a tab succeeds and every one after it fails
+(reload to submit again, new tab to get another success). It sits behind a
+`NODE_ENV` guard and a dynamic import, so no deployed build can reach it —
+`npm run build` leaves it out of the bundle entirely. Delete that file and the
+guard in `api.ts` once the route is live.
+
+The list is a Mailchimp list, and Mailchimp belongs **behind** that route. The
+browser must never call it directly — the API key would ship in the bundle, and
+Mailchimp's classic endpoint sends no CORS headers, leaving only their JSONP
+form, which reports success no matter what happened. Sending to Mailchimp is a
+backend deliverable, and is already scoped as one.

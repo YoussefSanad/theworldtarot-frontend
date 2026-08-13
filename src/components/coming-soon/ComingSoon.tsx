@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 import { ComingSoonBackdrop } from "@/components/coming-soon/ComingSoonBackdrop";
-import { InvitationForm } from "@/components/coming-soon/InvitationForm";
+import { InvitationSignup } from "@/components/coming-soon/InvitationSignup";
 import { Container } from "@/components/layout/Section";
 import { Divider } from "@/components/ui/Divider";
 import { comingSoon } from "@/content/coming-soon";
@@ -70,10 +70,14 @@ export function ComingSoon() {
               ))}
             </p>
 
-            <p className="text-balance text-caption text-champagne">{comingSoon.leadIn}</p>
-            <p className="font-serif text-nav text-gold lowercase">{siteName}</p>
-
-            <InvitationForm />
+            {/*
+              The lead-in, the site name and the form, in that order — one
+              component because the lead-in is what the form's confirmation
+              replaces. It renders a fragment, so those three are still direct
+              children of this column and its `gap-2` still applies to them
+              exactly as it did when they were written out here.
+            */}
+            <InvitationSignup />
           </div>
         </div>
       </Container>

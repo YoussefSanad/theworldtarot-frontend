@@ -1,7 +1,8 @@
 import type { TarotCard } from "@/content/cards";
 
 /**
- * The backend, for the homepage reveal.
+ * The backend. Mostly the homepage reveal, plus the coming-soon page's
+ * invitation list.
  *
  * **Everything here must run in the browser, never on a server or at build
  * time.** The playback URL the backend returns is signed against the address the
@@ -112,6 +113,59 @@ export async function drawCard(
   }
 
   return toTarotCard((await response.json()) as ApiCard);
+}
+
+/**
+ * Puts an address on the opening list, for the coming-soon page's invitation
+ * form.
+ *
+ * **The route does not exist yet.** It is a backend contract, written down here
+ * so the shape is settled: `POST /api/v1/{locale}/subscribe`, JSON body
+ * `{ email, consent }`, 2xx for accepted. Until it ships, every submission on a
+ * deployed build lands in the form's error state, which is deliberate — a
+ * visitor is never told their request was received when it was not. Development
+ * is the one exception, and simulates both outcomes; see the guard below.
+ *
+ * **Mailchimp lives behind this route, not in front of it.** The list is a
+ * Mailchimp list (see `NewsletterForm.tsx`, and the backend deliverables in the
+ * frontend proposal), but the browser must never call Mailchimp itself: the API
+ * key would have to ship in the bundle, and Mailchimp's classic endpoint sends
+ * no CORS headers, so the only browser-side route to it is their JSONP form,
+ * which reports success unconditionally. The backend forwards.
+ *
+ * Resolves on success and throws on anything else, so the caller's catch is the
+ * error state. Note the file-level rule applies here too: this runs in the
+ * browser.
+ */
+export async function requestInvitation(
+  email: string,
+  { locale = "en", signal }: { locale?: string; signal?: AbortSignal } = {},
+): Promise<void> {
+  // Until the route exists there is nothing to develop against, so `next dev`
+  // answers itself: first attempt in a tab succeeds, the rest fail. Dynamically
+  // imported so the simulation is provably absent from a production bundle
+  // rather than left to tree-shaking, and gated on NODE_ENV so no deployed
+  // build — staging included — can ever take this path. See `invitation-sim.ts`.
+  if (process.env.NODE_ENV !== "production") {
+    const { simulateInvitation } = await import("./invitation-sim");
+    return simulateInvitation();
+  }
+
+  const response = await fetch(`${baseUrl()}/api/v1/${locale}/subscribe`, {
+    method: "POST",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ email, consent: true }),
+    signal,
+  });
+
+  // Already on the list is not a failure worth showing anyone: they asked to be
+  // on it, and they are. Revisit if the backend gives 409 a second meaning.
+  if (response.status === 409) return;
+
+  if (!response.ok) {
+    throw new Error(`The invitation request failed with ${response.status}.`);
+  }
 }
 
 /**

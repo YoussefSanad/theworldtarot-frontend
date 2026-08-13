@@ -532,6 +532,19 @@
   }
 
   /*
+    One full rotation, shared by everything that turns. It was named `slow-spin`
+    back when the flower-of-life backdrop was its only caller, which described
+    that caller's 240s duration rather than the rotation itself — the duration
+    lives in the `animation` shorthand, so the two users below share this
+    outright.
+  */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /*
     The coming-soon flower-of-life backdrop. A wrapper owns this class and
     position; the rotated image is its child, since `transform` from the
     keyframe would otherwise clobber a centering translate on the same
@@ -539,14 +552,26 @@
     animation-iteration-count: 1 on everything, so reduced motion just parks
     it on its start frame for free.
   */
-  @keyframes slow-spin {
-    to {
-      transform: rotate(360deg);
-    }
+  .slow-spin {
+    animation: spin 240s linear infinite;
   }
 
-  .slow-spin {
-    animation: slow-spin 240s linear infinite;
+  /*
+    The invitation form's sending indicator, beside the submit button. A ring
+    with one lit quarter, gold on a faint gold track so it reads as belonging to
+    the button it sits next to. Sized by the element that carries it.
+
+    The same reduced-motion block that parks `.slow-spin` stops this too, so it
+    renders as a static ring rather than a spinning one. That is the intended
+    outcome, not a gap: the ring's presence is still the signal, the button is
+    disabled beneath it and carries `aria-busy`. Forcing it to keep spinning
+    would mean overriding a preference the visitor deliberately set.
+  */
+  .loader {
+    animation: spin 0.8s linear infinite;
+    border: 2px solid rgba(228, 196, 106, 0.3);
+    border-radius: 9999px;
+    border-top-color: var(--color-gold);
   }
 
   /*
@@ -802,6 +827,16 @@
     border-color: var(--color-gold);
     box-shadow: var(--glow-gold);
     outline: none;
+  }
+
+  /* The counterpart to `.btn-gold:disabled`, for the coming-soon invitation
+     form once the request has been sent. Without it a locked field is
+     indistinguishable from a live one, since `.field`'s resting state is
+     already just a border. */
+  .field:disabled {
+    border-color: rgba(202, 200, 200, 0.35);
+    color: var(--color-mist-dim);
+    cursor: not-allowed;
   }
 
   .glow-text {
