@@ -82,8 +82,13 @@ export function InvitationForm({
           autoComplete="email"
           required
           disabled={locked}
-          /* RFC 5321's maximum addressable length. */
-          maxLength={50}
+          /*
+           * RFC 5321's maximum addressable length, and the number the backend's
+           * own validation uses. Said 50 until 15 August 2026, which was not
+           * that limit and silently truncated a long address into one that then
+           * failed validation for a reason the visitor could not see.
+           */
+          maxLength={254}
           className="field w-full px-3 py-2 text-note"
         />
       </div>

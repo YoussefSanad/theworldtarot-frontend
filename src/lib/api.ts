@@ -119,12 +119,24 @@ export async function drawCard(
  * Puts an address on the opening list, for the coming-soon page's invitation
  * form.
  *
- * **The route does not exist yet.** It is a backend contract, written down here
- * so the shape is settled: `POST /api/v1/{locale}/subscribe`, JSON body
- * `{ email, consent }`, 2xx for accepted. Until it ships, every submission on a
- * deployed build lands in the form's error state, which is deliberate — a
- * visitor is never told their request was received when it was not. Development
- * is the one exception, and simulates both outcomes; see the guard below.
+ * **The route exists as of 15 August 2026**, and it is not the one this file
+ * predicted. `POST /api/v1/newsletter`, JSON body `{ email, consent }`, **202**
+ * for accepted. Two differences from the contract sketched here first, both
+ * deliberate on the backend's side:
+ *
+ * - **No locale segment.** Content routes carry one, `/api/v1/es/products`, and
+ *   a mailing list is not content: the same address joins the same list
+ *   whatever language the page was in
+ * - **No "already on the list" answer.** Every accepted address gets the same
+ *   202 with the same body, whether it is new, already subscribed, or one the
+ *   list will refuse later. A different answer for any of them would turn a
+ *   public endpoint into a way to ask whether a given person subscribed
+ *
+ * 202 rather than 201 is also deliberate: the address is handed to a queue and
+ * the response is sent before the list has been touched, so accepting is the
+ * strongest thing it can honestly claim. **A signup the list later refuses is
+ * therefore invisible to the person who made it**, which is the backend's
+ * documented trade and not something this form can detect or repair.
  *
  * **Mailchimp lives behind this route, not in front of it.** The list is a
  * Mailchimp list (see `NewsletterForm.tsx`, and the backend deliverables in the
@@ -139,30 +151,45 @@ export async function drawCard(
  */
 export async function requestInvitation(
   email: string,
-  { locale = "en", signal }: { locale?: string; signal?: AbortSignal } = {},
+  // No `locale`, unlike every other call in this file, because this route
+  // carries none.
+  { signal }: { signal?: AbortSignal } = {},
 ): Promise<void> {
-  // Until the route exists there is nothing to develop against, so `next dev`
-  // answers itself: first attempt in a tab succeeds, the rest fail. Dynamically
-  // imported so the simulation is provably absent from a production bundle
-  // rather than left to tree-shaking, and gated on NODE_ENV so no deployed
-  // build — staging included — can ever take this path. See `invitation-sim.ts`.
+  // `next dev` answers itself: first attempt in a tab succeeds, the rest fail.
+  //
+  // **The reason for this has changed and it is worth being precise about.** It
+  // was here because no route existed to develop against. The route exists now,
+  // and the simulation stays because staging and production share one Mailchimp
+  // audience — the one Jennifer mails — so a developer exercising this form
+  // against a real backend would be adding contacts to it. Remove the guard and
+  // dev signups become real ones.
+  //
+  // Dynamically imported so the simulation is provably absent from a production
+  // bundle rather than left to tree-shaking, and gated on NODE_ENV so no
+  // deployed build, staging included, can take this path. See
+  // `invitation-sim.ts`.
   if (process.env.NODE_ENV !== "production") {
     const { simulateInvitation } = await import("./invitation-sim");
     return simulateInvitation();
   }
 
-  const response = await fetch(`${baseUrl()}/api/v1/${locale}/subscribe`, {
+  // Flat, with no locale segment. See the note above.
+  const response = await fetch(`${baseUrl()}/api/v1/newsletter`, {
     method: "POST",
     cache: "no-store",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
+
+    // Hardcoded true, and honest: the checkbox carries `required` and the submit
+    // button stays disabled until it is ticked, so a submit event cannot happen
+    // without it. The backend validates it again regardless, since a checkbox in
+    // a browser gates a button and nothing more.
     body: JSON.stringify({ email, consent: true }),
     signal,
   });
 
-  // Already on the list is not a failure worth showing anyone: they asked to be
-  // on it, and they are. Revisit if the backend gives 409 a second meaning.
-  if (response.status === 409) return;
-
+  // No 409 branch. An earlier version of this file expected one for an address
+  // already on the list; the endpoint deliberately never distinguishes that
+  // case, so the branch was answering a question the backend refuses to ask.
   if (!response.ok) {
     throw new Error(`The invitation request failed with ${response.status}.`);
   }
