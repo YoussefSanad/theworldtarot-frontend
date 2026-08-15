@@ -4,7 +4,6 @@ A Next.js implementation of the World Tarot homepage built from the Figma design
 (`node 102:3`), together with the reusable card **Reveal** that the rest of the
 site will be built around.
 
-
 ```bash
 npm install
 npm run dev     # http://localhost:3000
