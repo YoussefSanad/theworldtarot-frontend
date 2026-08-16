@@ -29,7 +29,9 @@ const MotionImage = motion.create(Image);
  * homepage's wrapper-<motion.div> pattern: on the homepage the wrapper owns
  * position/left/top/width that Motion must never touch, but here the globe
  * and shine images themselves carry the layout (self-end, h-[Nvh],
- * .fade-top) as direct .stack children.
+ * .fade-top) as direct children of the .stack they sit in. The one thing
+ * their wrapper owns is the tablet lift — see the note on it below for why
+ * that could not live on the images themselves.
  *
  * The whole comp is mirrored horizontally via a plain (non-Motion) wrapper
  * div, not a Tailwind scale-x class on the images themselves: Motion writes
@@ -109,35 +111,72 @@ export function ComingSoonWorldComp() {
         />
       </div>
 
-      <MotionImage
-        src={artwork.worldGlobe.src}
-        alt=""
-        width={artwork.worldGlobe.width}
-        height={artwork.worldGlobe.height}
-        priority
-        className="fade-top relative h-[38vh] w-full self-end object-cover object-[center_40%] opacity-35"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: ready ? GLOBE_OPACITY : 0 }}
-        transition={globeTransition}
-        onLoad={() => markLoaded("globe")}
-      />
+      {/*
+        Earth and glare are lifted together across the tablet band. `self-end`
+        anchors them to the bottom of `<main>`, which is the bottom of the
+        *document*, not of the screen — on a phone those are the same thing,
+        but the tablet composition is taller than one viewport, so the world
+        settles below the card instead of meeting it. The client's standing
+        requirement is that it meet the card's bottom edge, so it comes up
+        here and is left alone at `lg`, where the two-column desktop
+        composition already lines up.
 
-      <MotionImage
-        src={artwork.worldShine.src}
-        alt=""
-        width={artwork.worldShine.width}
-        height={artwork.worldShine.height}
-        priority
-        className="fade-top relative h-[25vh] w-full self-end object-cover object-[center_55%]"
-        initial={{ opacity: 0, filter: "brightness(0.45)", y: "6%" }}
-        animate={
-          ready
-            ? { opacity: 1, filter: "brightness(1)", y: "0%" }
-            : { opacity: 0, filter: "brightness(0.45)", y: "6%" }
-        }
-        transition={shineTransition}
-        onLoad={() => markLoaded("shine")}
-      />
+        `vh` and not `%`: a percentage translate resolves against the
+        translated element's own height, which here is the document's height
+        and therefore moves whenever the copy rewraps. A `vh` lift is a fixed
+        fraction of the screen and holds. It is also the only knob — tune the
+        number, nothing else.
+
+        The lift belongs to this wrapper rather than the two images for two
+        reasons: the earth and the glare are different heights, so any
+        self-relative offset would move them by different amounts and pull
+        the composition apart; and Motion animates `y` on the glare and owns
+        its transform outright. The flower stays put one level up.
+
+        The lift is also what makes `--fade-bottom` necessary on the two
+        images below, and why that too is scoped to this band. Sitting on the
+        document's bottom edge, neither layer has a visible bottom — there is
+        nothing under it to cut against. Raising them puts that edge in the
+        middle of the page, where `world-globe.webp` in particular would show
+        it as a straight line, having no alpha of its own. Both feather over
+        the same 8vh so the pair still reads as one body of light.
+
+        `stack size-full grid-rows-[100%]` repeats for the reason its parent
+        carries it (see above, and ComingSoonBackdrop): `self-end` has to
+        resolve against a row pinned to the container's real height, not an
+        auto row sized to the tallest image inside it.
+      */}
+      <div className="stack size-full grid-rows-[100%] md:max-lg:translate-y-[-11vh]">
+        <MotionImage
+          src={artwork.worldGlobe.src}
+          alt=""
+          width={artwork.worldGlobe.width}
+          height={artwork.worldGlobe.height}
+          priority
+          className="fade-top relative h-[38vh] w-full self-end object-cover object-[center_40%] opacity-35 md:max-lg:[--fade-bottom:3vh]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: ready ? GLOBE_OPACITY : 0 }}
+          transition={globeTransition}
+          onLoad={() => markLoaded("globe")}
+        />
+
+        <MotionImage
+          src={artwork.worldShine.src}
+          alt=""
+          width={artwork.worldShine.width}
+          height={artwork.worldShine.height}
+          priority
+          className="fade-top relative h-[25vh] w-full self-end object-cover object-[center_55%] md:max-lg:[--fade-bottom:8vh]"
+          initial={{ opacity: 0, filter: "brightness(0.45)", y: "6%" }}
+          animate={
+            ready
+              ? { opacity: 1, filter: "brightness(1)", y: "0%" }
+              : { opacity: 0, filter: "brightness(0.45)", y: "6%" }
+          }
+          transition={shineTransition}
+          onLoad={() => markLoaded("shine")}
+        />
+      </div>
     </div>
   );
 }

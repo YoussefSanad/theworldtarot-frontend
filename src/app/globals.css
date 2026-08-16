@@ -579,10 +579,34 @@
     of the source image its object-position lands on — belt-and-suspenders
     for the coming-soon world/shine crop, where `world-globe.webp` has no
     alpha channel of its own to fade with.
+
+    The bottom edge is opt-in. `--fade-bottom` is how far up from the
+    element's own bottom the feather starts, and it defaults to zero — two
+    stops landing on the same position, which is the hard cut this class has
+    always had. That default is what keeps the layer flush when it is
+    anchored to the bottom of the page and there is no edge to see. Set the
+    variable at the breakpoint where the layer lifts away from that anchor
+    and suddenly has one (see ComingSoonWorldComp).
+
+    A length rather than a percentage is the point: two layers of different
+    heights sharing a bottom edge feather over the same distance and read as
+    one composition, where a percentage would give each its own falloff.
   */
   .fade-top {
-    -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%);
-    mask-image: linear-gradient(to bottom, transparent, black 20%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 20%,
+      black calc(100% - var(--fade-bottom, 0px)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 20%,
+      black calc(100% - var(--fade-bottom, 0px)),
+      transparent
+    );
   }
 
   /*
