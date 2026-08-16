@@ -30,8 +30,8 @@ const MotionImage = motion.create(Image);
  * position/left/top/width that Motion must never touch, but here the globe
  * and shine images themselves carry the layout (self-end, h-[Nvh],
  * .fade-top) as direct children of the .stack they sit in. The one thing
- * their wrapper owns is the tablet lift — see the note on it below for why
- * that could not live on the images themselves.
+ * their wrapper owns is the one-column lift — see the note on it below for
+ * why that could not live on the images themselves.
  *
  * The whole comp is mirrored horizontally via a plain (non-Motion) wrapper
  * div, not a Tailwind scale-x class on the images themselves: Motion writes
@@ -112,20 +112,22 @@ export function ComingSoonWorldComp() {
       </div>
 
       {/*
-        Earth and glare are lifted together across the tablet band. `self-end`
-        anchors them to the bottom of `<main>`, which is the bottom of the
-        *document*, not of the screen — on a phone those are the same thing,
-        but the tablet composition is taller than one viewport, so the world
-        settles below the card instead of meeting it. The client's standing
-        requirement is that it meet the card's bottom edge, so it comes up
-        here and is left alone at `lg`, where the two-column desktop
-        composition already lines up.
+        Earth and glare are lifted together everywhere the page is one column,
+        by an amount that answers to how far the card sits off the bottom
+        there. `self-end` anchors the pair to the bottom of `<main>`, which is
+        the bottom of the *document* rather than of the screen, and the
+        client's standing requirement is that they meet the card's bottom
+        edge. On a phone the card is nearly there already, so 3vh closes it.
+        From `md` the container opens up, the composition outgrows one
+        viewport and the world settles well below the card, so it takes 11vh.
+        At `xl` the two-column desktop composition lines up on its own and
+        neither applies.
 
         `vh` and not `%`: a percentage translate resolves against the
         translated element's own height, which here is the document's height
         and therefore moves whenever the copy rewraps. A `vh` lift is a fixed
-        fraction of the screen and holds. It is also the only knob — tune the
-        number, nothing else.
+        fraction of the screen and holds. These two numbers are the only
+        knobs — tune them, nothing else.
 
         The lift belongs to this wrapper rather than the two images for two
         reasons: the earth and the glare are different heights, so any
@@ -134,26 +136,30 @@ export function ComingSoonWorldComp() {
         its transform outright. The flower stays put one level up.
 
         The lift is also what makes `--fade-bottom` necessary on the two
-        images below, and why that too is scoped to this band. Sitting on the
-        document's bottom edge, neither layer has a visible bottom — there is
-        nothing under it to cut against. Raising them puts that edge in the
-        middle of the page, where `world-globe.webp` in particular would show
-        it as a straight line, having no alpha of its own. Both feather over
-        the same 8vh so the pair still reads as one body of light.
+        images below, which is why those track it band for band. Sitting on
+        the document's bottom edge neither layer has a visible bottom — there
+        is nothing under it to cut against. Raising them puts that edge in
+        open page, where `world-globe.webp` in particular would show it as a
+        straight line, having no alpha of its own. The further the lift, the
+        more open the ground it lands on and the more feather it takes to
+        stop reading as a line: 3vh for the phone's small move, and on the
+        glare 8vh for the tablet's larger one. Keeping the phone's feather
+        tight is also what protects the glare there, since 8vh would take a
+        third of its 25vh height and dim a horizon that is already right.
 
         `stack size-full grid-rows-[100%]` repeats for the reason its parent
         carries it (see above, and ComingSoonBackdrop): `self-end` has to
         resolve against a row pinned to the container's real height, not an
         auto row sized to the tallest image inside it.
       */}
-      <div className="stack size-full grid-rows-[100%] md:max-lg:translate-y-[-11vh]">
+      <div className="stack size-full grid-rows-[100%] max-md:translate-y-[-3vh] md:max-xl:translate-y-[-11vh]">
         <MotionImage
           src={artwork.worldGlobe.src}
           alt=""
           width={artwork.worldGlobe.width}
           height={artwork.worldGlobe.height}
           priority
-          className="fade-top relative h-[38vh] w-full self-end object-cover object-[center_40%] opacity-35 md:max-lg:[--fade-bottom:3vh]"
+          className="fade-top relative h-[38vh] w-full self-end object-cover object-[center_40%] opacity-35 max-xl:[--fade-bottom:3vh]"
           initial={{ opacity: 0 }}
           animate={{ opacity: ready ? GLOBE_OPACITY : 0 }}
           transition={globeTransition}
@@ -166,7 +172,7 @@ export function ComingSoonWorldComp() {
           width={artwork.worldShine.width}
           height={artwork.worldShine.height}
           priority
-          className="fade-top relative h-[25vh] w-full self-end object-cover object-[center_55%] md:max-lg:[--fade-bottom:8vh]"
+          className="fade-top relative h-[25vh] w-full self-end object-cover object-[center_55%] max-md:[--fade-bottom:3vh] md:max-xl:[--fade-bottom:8vh]"
           initial={{ opacity: 0, filter: "brightness(0.45)", y: "6%" }}
           animate={
             ready
