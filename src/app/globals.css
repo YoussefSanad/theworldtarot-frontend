@@ -1069,9 +1069,25 @@
     and one asset can't hold two directions.
   */
   .photo-fade {
-    --photo-fade-solid: 88%;
-    -webkit-mask-image: linear-gradient(var(--photo-fade-dir, to right), #000 var(--photo-fade-solid), transparent 100%);
-    mask-image: linear-gradient(var(--photo-fade-dir, to right), #000 var(--photo-fade-solid), transparent 100%);
+    /*
+      A lip, not a dissolve. 88% ate the last eighth of every photograph and
+      still read as a wipe; the client's own render holds solid until ~94–95%
+      and only then feathers. The mid-stop keeps that last few percent from
+      dumping straight to nothing.
+    */
+    --photo-fade-solid: 95%;
+    -webkit-mask-image: linear-gradient(
+      var(--photo-fade-dir, to right),
+      #000 var(--photo-fade-solid),
+      rgb(0 0 0 / 0.55) 98%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      var(--photo-fade-dir, to right),
+      #000 var(--photo-fade-solid),
+      rgb(0 0 0 / 0.55) 98%,
+      transparent 100%
+    );
   }
 
   /*
