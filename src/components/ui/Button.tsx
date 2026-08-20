@@ -18,11 +18,17 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   ghost: "btn-ghost",
 };
 
+/*
+  Figma drew both sizes at a fixed width — 305px and 449px — but that width is
+  dead space either side of the label, and the client wants a gold button to be
+  its own text plus its padding at every breakpoint. So only the height carries
+  over from the drawing; the width is always the content's.
+*/
 const SIZE_CLASS: Record<ButtonSize, string> = {
-  // 305 x 54 at 30px in Figma on desktop; content-sized and taller below lg.
-  md: "min-h-[2.2em] w-fit max-w-full px-[1em] py-[0.45em] text-nav whitespace-nowrap lg:min-h-[1.8em] lg:min-w-[19.0625rem] lg:px-[0.6em] lg:py-[0.3em]",
-  // 449 x 80 at 30px in Figma on desktop; content-sized below lg.
-  lg: "min-h-[2.66em] w-fit max-w-full px-[0.6em] py-[0.33em] text-nav whitespace-nowrap lg:w-full lg:max-w-[28.0625rem]",
+  // 54px tall at 30px type on desktop, taller below lg.
+  md: "min-h-[2.2em] w-fit max-w-full px-[1em] py-[0.45em] text-nav whitespace-nowrap lg:min-h-[1.8em] lg:py-[0.3em]",
+  // 80px tall at 30px type.
+  lg: "min-h-[2.66em] w-fit max-w-full px-[0.6em] py-[0.33em] text-nav whitespace-nowrap",
   fluid: "",
 };
 
