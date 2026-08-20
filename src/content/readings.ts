@@ -27,9 +27,9 @@ export const intro = {
   heading: "Readings",
   tagline: ["step into the parlor.", "leave the ordinary behind."],
   /**
-   * Two paragraphs in the frame, broken mid-sentence before "traditional" so
-   * the desktop measure lands on three even lines. Each wraps on its own below
-   * that.
+   * Two blocks in the frame, broken mid-sentence before "traditional" so the
+   * desktop measure lands on three even lines. Joined and balanced below `lg`
+   * — see ReadingsIntro — so the phone rag does not finish on two words.
    */
   body: [
     "Begin with our signature interactive experience, where the cards come to life and answer your question in real time. Or choose one of our",

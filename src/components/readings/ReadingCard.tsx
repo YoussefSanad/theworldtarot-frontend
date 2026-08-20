@@ -25,6 +25,15 @@ import { ornaments } from "@/lib/assets";
  *
  * The photograph dissolves into the card along whichever edge meets the copy:
  * rightwards in the row, downwards in the column. See `.photo-fade`.
+ *
+ * Hover frosts the parlour behind the card rather than filling it. The panel
+ * carries no background of its own, so a few pixels of blur settle that room
+ * behind the copy and let the gold come forward, without a tinted plate
+ * appearing over the picture the way a background colour would. It is set at
+ * `blur(0px)` at rest rather than left as `none`, because `none` is not a
+ * blur radius and the pair would snap instead of easing. The frost sits
+ * behind the photograph (see `.reading-card__frost`) so the picture itself
+ * stays sharp.
  */
 export function ReadingCard({ reading }: { reading: Reading }) {
   const label = `${reading.price} ${readingAction}`;
@@ -32,6 +41,10 @@ export function ReadingCard({ reading }: { reading: Reading }) {
 
   return (
     <Link href={reading.href} aria-label={`${fullTitle} — ${label}`} className="reading-card group no-underline">
+      <span
+        aria-hidden
+        className="reading-card__frost backdrop-blur-[0px] transition-[backdrop-filter] duration-300 group-hover:backdrop-blur-[2px]"
+      />
       <span aria-hidden className="reading-card__edge transition-[box-shadow] duration-300 group-hover:shadow-(--glow-gold)" />
 
       <span className="reading-card__media">

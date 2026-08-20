@@ -26,15 +26,14 @@ export function ReadingsIntro() {
         </p>
 
         {/*
-          Capped at the 1085px Figma sets this paragraph in, so its two blocks
-          wrap to the three lines the frame draws rather than running the full
-          measure and landing on two.
+          Two blocks in the frame, broken mid-sentence before "traditional" so
+          the 1085px desktop measure lands on three even lines. Below `lg` they
+          join and `text-balance` equalizes the rag. A narrower cap and glued
+          last words were tried; both pushed this onto five lines.
         */}
-        <div className="mt-[clamp(0.75rem,1.35vw,1.625rem)] w-full font-light text-[clamp(0.75rem,3.2vw,2.25rem)] leading-[1.17] tracking-[0.025em] text-champagne/73 lg:max-w-[min(67.8125rem,56.51vw)] lg:text-body lg:leading-[1.056]">
-          {intro.body.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
+        <p className="mt-[clamp(0.75rem,1.35vw,1.625rem)] w-full max-lg:text-balance font-light text-[clamp(0.75rem,3.2vw,2.25rem)] leading-[1.17] tracking-[0.025em] text-champagne/73 lg:max-w-[min(67.8125rem,56.51vw)] lg:text-body lg:leading-[1.056]">
+          {intro.body[0]} <span className="lg:block">{intro.body[1]}</span>
+        </p>
       </Container>
     </Section>
   );

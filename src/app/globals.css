@@ -979,6 +979,20 @@
   }
 
   /*
+    Frosts the parlour showing through the card. Behind the photograph
+    (`z-index: -1` stays inside `.reading-card`'s isolate) so the picture
+    stays sharp; clipped to the frame's curve so the blur does not leak
+    past the gold line.
+  */
+  .reading-card__frost {
+    border-radius: var(--ornate-radius);
+    grid-area: 1 / 1 / 2 / -1;
+    overflow: clip;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /*
     Clipped to the frame's own curve, so the corners can't drift out of
     register the way a radius baked into the image does. The inner corners
     need no thought: the photograph has faded out before it reaches them.
@@ -1015,7 +1029,8 @@
     }
 
     /* The border takes in the price as well, and the card becomes a column. */
-    .reading-card__edge {
+    .reading-card__edge,
+    .reading-card__frost {
       grid-area: 1 / 1 / -1 / -1;
     }
 
