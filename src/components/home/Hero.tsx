@@ -10,7 +10,10 @@ import { artwork } from "@/lib/assets";
 
 export function Hero() {
   return (
-    <Section padding="none" className="pt-5 pb-[clamp(2rem,4.7vw,5.6rem)] lg:pt-[clamp(2rem,6.04vw,7.25rem)]">
+    <Section
+      padding="none"
+      className="pt-[clamp(3rem,10vw,4rem)] pb-[clamp(2rem,4.7vw,5.6rem)] lg:pt-[clamp(2rem,6.04vw,7.25rem)]"
+    >
       <Container width="hero">
         <RevealProvider oncePerVisit>
           <SunriseAtmosphere />

@@ -11,25 +11,65 @@ import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
+const DESKTOP_QUERY = "(min-width: 64rem)"; // matches Tailwind's `lg`
 
 /**
  * Masthead: logo on the left, actions and navigation stacked on the right.
- * Transparent so the page atmosphere continues behind it into the hero.
- * Below the large breakpoint the navigation collapses behind a menu button
- * that opens a right-side drawer.
+ * Fixed to the top of the viewport for the whole page, with a permanent glass
+ * scrim — but the size/reveal state only exists at `lg`+.
  *
- * This is the one place the page deliberately departs from the Figma frame,
- * which drew a 225px-tall masthead — too much of a laptop viewport to spend
- * before the hero starts. Type runs at 82.5% via `text-nav-sm` (see
- * globals.css) and the action icons match it, but the logo goes further, to
- * 70% (401px wide in Figma → 281px), because its height alone sets the
- * header's: at parity with the rest it stayed the tallest thing here by a
- * wide margin. Below `lg` the clamp floors take over and hold the logo near
- * its old mobile size — the collapsed header is already short there, so
- * shrinking the wordmark further only costs legibility.
+ * At `lg`+, the trigger is the cursor (or keyboard focus) actually entering
+ * the header — not scroll position. `onMouseEnter`/`onMouseLeave` expand and
+ * collapse it directly; `onFocus`/`onBlur` do the same for keyboard users,
+ * checking `relatedTarget` against the header so tabbing between the logo,
+ * nav links, and the CTA/account/bag row all counts as "inside" (an
+ * `:focus-within`-style check) and it only collapses once focus actually
+ * leaves for something else on the page. Without that, someone tabbing
+ * through the page could never reach the CTA/account/bag row at all — it's
+ * still in the DOM while collapsed (see below), not unmounted; `inert` is
+ * what actually keeps it out of tab order and hit-testing. On expand: the
+ * row drops in above the nav links, the logo grows to full size, and the row
+ * padding opens up.
+ *
+ * The row's reveal is a plain CSS `grid-template-rows: 0fr → 1fr` transition,
+ * not a Framer height animation — that was tried first and made the nav
+ * below visibly snap into place once the JS-driven height tween finished,
+ * rather than moving with it. A native CSS transition is one continuous
+ * browser-driven animation, so the nav's flexbox reflow tracks it every
+ * frame for free, no extra library involvement needed.
+ *
+ * Below `lg` none of that applies — there's no hover, and an external
+ * keyboard is rare enough not to design around, so `isDesktop` (tracked via
+ * `matchMedia`) gates the handlers above off entirely; the row was already
+ * `lg:hidden` regardless. The masthead there just stays at its collapsed
+ * logo/padding permanently — that's the whole of its "state."
+ *
+ * The glass scrim (the leaf div right inside `<header>`) is permanently on at
+ * every breakpoint, not tied to `expanded` — legibility over page content
+ * doesn't depend on where the cursor is or how far the reader has scrolled.
+ * Hero.tsx carries its own extra top padding below `lg` so its heading clears
+ * the collapsed header/logo comfortably; that's the fix for tight landing
+ * space there, not a transparent-until-scrolled header.
+ *
+ * `fixed` rather than `sticky` is what makes the `lg`+ growth free: a sticky
+ * header keeps its box in flow, so every state change would shove the page
+ * down mid-expand. Fixed takes it out of flow entirely, and
+ * app/(site)/layout.tsx reserves only a small, independent minimum with a
+ * spacer — not the collapsed header's real height. The collapsed logo is
+ * deliberately allowed to render taller than that spacer and spill a little
+ * into the hero's own top padding: that's what lets the header cost the page
+ * almost nothing at rest. `--header-height` and friends live in globals.css.
+ *
+ * The sizes are the one place the page deliberately departs from the Figma
+ * frame, which drew a 225px-tall masthead — too much of a laptop viewport to
+ * spend before the hero starts. Both states run smaller than that frame, with
+ * the collapsed logo smaller again than the expanded one — see the tokens in
+ * globals.css for the exact clamps.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const reducedMotion = useReducedMotion();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasMenuOpen = useRef(false);
@@ -38,6 +78,15 @@ export function SiteHeader() {
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
+
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const update = () => setIsDesktop(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -66,16 +115,65 @@ export function SiteHeader() {
   const motionDuration = reducedMotion ? 0 : 0.32;
 
   return (
-    <header className="relative z-20">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-1.5">
+    <header
+      className="fixed inset-x-0 top-0 z-20"
+      onMouseEnter={() => isDesktop && setExpanded(true)}
+      onMouseLeave={() => isDesktop && setExpanded(false)}
+      onFocus={() => isDesktop && setExpanded(true)}
+      onBlur={(event) => {
+        if (isDesktop && !event.currentTarget.contains(event.relatedTarget as Node | null)) setExpanded(false);
+      }}
+    >
+      {/* `backdrop-filter` (like `filter`/`transform`) makes an element a containing
+          block for its `position: fixed` descendants — the mobile drawer backdrop and
+          panel below are both `fixed` and mean to cover the viewport. If the blur lived
+          on `<header>` itself, it would hijack their containing block down to the
+          header's own small box instead of the viewport, breaking the drawer. Keeping
+          it on this leaf div (no fixed/absolute descendants of its own) avoids that trap
+          entirely — permanently on at every breakpoint, since legibility over page
+          content doesn't depend on where the cursor is or how far the reader has
+          scrolled.
+
+          The tint fades via its own gradient, but `backdrop-blur-sm` doesn't — a blur is
+          either on or off at a pixel, so without a mask it stays fully sharp-to-fully-
+          blurred right up to the div's edge regardless of how the color above it fades,
+          which reads as its own hard line. Masking the whole div (blur included) with
+          the same fade is what actually removes the cutoff.
+
+          The div is deliberately taller than the header's own content (`+2.5rem` of
+          bleed below it, over whatever page content sits just past the header) and the
+          fade holds at full strength through exactly the header's real height, only
+          fading out across that extra 2.5rem. Two earlier attempts fading across the
+          header's own (short) box either faded out behind the text — the logo is the
+          tallest thing in the row and everything is vertically centered, so text sits
+          mid-height here, not at the bottom — or, once that was fixed by delaying the
+          fade to the last 20%, didn't leave enough physical pixels in the header's own
+          cramped height for the fade to read as anything but another hard cutoff.
+          Bleeding past the header's real edge gives the fade a fixed, generous amount of
+          room that doesn't depend on squeezing it into whatever the current state's
+          height happens to be — pointer-events-none since it now overlaps page content
+          the header itself doesn't occupy. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+2.5rem)] bg-[linear-gradient(to_bottom,rgba(8,21,37,0.06)_calc(100%-2.5rem),transparent_100%)] backdrop-blur-sm [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent_100%)] mask-[linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent_100%)]"
+      />
+      <div
+        className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter transition-[padding] duration-300 ease-[var(--ease-veil)]"
+        style={{ paddingBlock: expanded ? "var(--header-pad-y)" : "var(--header-pad-y-collapsed)" }}
+      >
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
+          {/* Width rather than `scale`: the logo's box is what sets the header's
+              height, so shrinking it has to be a real layout change for the
+              collapsed header to actually be short. Free to reflow here — the
+              header is out of flow. */}
           <Image
             src={brand.logo.src}
             alt={siteName}
             width={brand.logo.width}
             height={brand.logo.height}
             priority
-            className="w-[clamp(8.5rem,14.64vw,17.5625rem)]"
+            className="transition-[width] duration-300 ease-[var(--ease-veil)]"
+            style={{ width: expanded ? "var(--header-logo-width)" : "var(--header-logo-width-collapsed)" }}
           />
         </Link>
 
@@ -110,33 +208,64 @@ export function SiteHeader() {
           </span>
         </button>
 
-        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
-            <ButtonLink
-              href={headerActions.cta.href}
-              variant="ghost"
-              size="fluid"
-              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
-            >
-              {headerActions.cta.label}
-            </ButtonLink>
+        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end">
+          {/* `max-height: 0 → 5rem` instead of Framer's `height: "auto"` or a
+              `grid-template-rows: 0fr` track: both of those lean on "automatic minimum
+              size" rules for flex/grid items that turned out not to reliably bottom out
+              at a true 0px here — the row kept contributing some residual height even
+              collapsed, which is what was pushing the nav below it visibly off-center.
+              `max-height` has no such minimum-size subtlety: it's a hard cap regardless
+              of what the content would otherwise prefer, so `0` is unambiguously 0.
+              `5rem` comfortably covers this row even if it wraps to two lines at a
+              narrow `lg` width — it only needs to exceed the content's real height, not
+              match it, since `overflow-hidden` clips the rest. `inert` removes the
+              CTA/account/bag links from tab order and hit-testing while collapsed, since
+              they're still in the DOM now (not unmounted) — without it, keyboard focus
+              could land on invisible controls.
 
-            {[headerActions.account, headerActions.bag].map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                aria-label={action.label}
-                className="opacity-90 transition-opacity hover:opacity-100"
+              The gap to the nav below lives here as `pb-6` on the content div, not as
+              `gap-6` on this column (a flex `gap` is a fixed distance between items
+              regardless of either one's rendered size, so it didn't shrink to 0 with
+              this row — that stranded 24px above the nav, mirrored by none below it, was
+              part of the same off-center symptom). */}
+          <div
+            aria-hidden={!expanded}
+            inert={!expanded}
+            className="w-full overflow-hidden transition-[max-height] duration-300 ease-[var(--ease-veil)]"
+            style={{ maxHeight: expanded ? "5rem" : "0px" }}
+          >
+            <div
+              className={cn(
+                "flex w-full flex-wrap items-center justify-end gap-[0.65em] pb-6 text-[calc(var(--text-nav-sm)*0.85)] transition-opacity duration-300 ease-[var(--ease-veil)]",
+                expanded ? "opacity-100" : "opacity-0",
+              )}
+            >
+              <ButtonLink
+                href={headerActions.cta.href}
+                variant="ghost"
+                size="fluid"
+                className="min-h-[1.6em] px-[1.1em] py-[0.12em] text-champagne"
               >
-                <Image
-                  src={action.icon.src}
-                  alt=""
-                  width={action.icon.width}
-                  height={action.icon.height}
-                  className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-                />
-              </Link>
-            ))}
+                {headerActions.cta.label}
+              </ButtonLink>
+
+              {[headerActions.account, headerActions.bag].map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  aria-label={action.label}
+                  className="opacity-90 transition-opacity hover:opacity-100"
+                >
+                  <Image
+                    src={action.icon.src}
+                    alt=""
+                    width={action.icon.width}
+                    height={action.icon.height}
+                    className="h-[clamp(0.8125rem,1.3vw,1.5rem)] w-auto"
+                  />
+                </Link>
+              ))}
+            </div>
           </div>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
