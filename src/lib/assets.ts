@@ -64,7 +64,7 @@ export const artwork = {
   productViewingRoom: asset("/figma/product-viewing-room.webp", 373, 563),
   /** Hero sunrise layer — opacity/brightness driven by SunriseAtmosphere. */
   worldShine: asset("/figma/world-shine.webp", 1600, 655),
-  /** World behind the sun — Motion opacity capped to match baked ~18%. */
+  /** World behind the sun — opacity capped in SunriseAtmosphere, tuned by eye against the PSD. */
   worldGlobe: asset("/figma/world-globe.webp", 1600, 1215),
 } as const;
 

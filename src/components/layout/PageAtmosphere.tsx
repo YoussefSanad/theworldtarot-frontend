@@ -13,11 +13,19 @@ import { cn } from "@/lib/cn";
  * `id` matters for `hero`: SunriseAtmosphere portals the animated sun and
  * globe into `#hero-sky` (see src/components/home/SunriseAtmosphere.tsx), so
  * that variant has to keep the id the portal looks for.
+ *
+ * `overflow-clip` on hero is load-bearing. SunriseAtmosphere's rise animates a
+ * `translateY` on a child that's itself `inset-0` here — during that animation
+ * the child's painted box extends past this element's bottom edge, and
+ * scrollable overflow is computed from painted (post-transform) position, not
+ * layout position. Without a clip boundary here, that briefly grows the page's
+ * real scroll height, popping a scrollbar in and out for the animation's
+ * duration.
  */
 export type AtmosphereVariant = "hero" | "readings";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
-  hero: { className: "page-atmosphere-hero", id: "hero-sky" },
+  hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
   readings: { className: "page-atmosphere-readings" },
 };
 
