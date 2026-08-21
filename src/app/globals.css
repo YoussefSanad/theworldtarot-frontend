@@ -13,6 +13,7 @@
   --color-night: #081525; /* page base, sampled from the Figma solid-base fill */
   --color-ink: #0a1421; /* brand blue: header and footer */
   --color-ink-deep: #101b2e; /* label ink on gold */
+  --color-ghost: #0b1626; /* fill of every bordered control, and of the menus they open */
   --color-slate: #40484f; /* label ink on the product tile buttons */
   --color-gold: #e4c46a;
   --color-gold-deep: #d4af37;
@@ -99,6 +100,7 @@
   );
   --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
   --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
+  --edge-gold: rgba(228, 196, 106, 0.55); /* resting border of a bordered control */
   --veil-ink: rgba(15, 26, 39, 0.77); /* header and footer scrim */
 }
 
@@ -485,8 +487,8 @@
   }
 
   .btn-ghost {
-    background-color: #0b1626;
-    border: 1px solid rgba(228, 196, 106, 0.55);
+    background-color: var(--color-ghost);
+    border: 1px solid var(--edge-gold);
     border-radius: var(--radius-button-lg);
     color: var(--color-mist-dim);
     font-family: var(--font-serif);
@@ -507,7 +509,7 @@
   @keyframes pulse-glow {
     0%,
     100% {
-      border-color: rgba(228, 196, 106, 0.55);
+      border-color: var(--edge-gold);
       box-shadow: 0 0 0 rgba(228, 196, 106, 0);
     }
     50% {
@@ -527,6 +529,105 @@
   */
   .pulse-glow:hover {
     animation: none;
+  }
+
+  /* Header selectors ------------------------------------------------------- */
+  /*
+    The language and currency pills are `.btn-ghost`s, and the menu one opens is
+    drawn in the same fill behind the same gold edge — so the panel reads as the
+    button growing rather than as a second surface arriving over the page. The
+    only thing it adds is a shadow, because unlike the button it floats.
+  */
+  .menu-panel {
+    background-color: var(--color-ghost);
+    border: 1px solid var(--edge-gold);
+    border-radius: var(--radius-button-lg);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  /*
+    One row of that menu. Resting ink matches the nav links and hover matches
+    every other gold control; the chosen row keeps the gold rather than
+    borrowing it for the length of a pointer visit. Box metrics are the
+    caller's — this is colour only.
+  */
+  .menu-option {
+    color: var(--color-mist-dim);
+    cursor: pointer;
+    font-family: var(--font-serif);
+    text-align: left;
+    transition:
+      background-color 300ms var(--ease-veil),
+      color 300ms var(--ease-veil);
+    white-space: nowrap;
+  }
+
+  /*
+    The panel clips to its own curve, so the global focus ring — 2px at 3px
+    outside the box — would be cut off along every edge of a row. Drawn inside
+    instead, where the same ring is whole.
+  */
+  .menu-option:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .menu-option:hover,
+  .menu-option:focus-visible {
+    background-color: rgba(228, 196, 106, 0.08);
+    color: var(--color-champagne);
+  }
+
+  .menu-option[aria-selected="true"] {
+    color: var(--color-gold);
+  }
+
+  /*
+    The mark on the chosen row, in the same language as
+    `.carousel-dot[aria-current]`: a small gold point carrying the glow. It is
+    always in the layout and only ever changes opacity, so choosing a different
+    row cannot shift the text beside it.
+  */
+  .menu-option-dot {
+    background-color: currentColor;
+    border-radius: 9999px;
+    height: 0.36em;
+    opacity: 0;
+    transition: opacity 300ms var(--ease-veil);
+    width: 0.36em;
+  }
+
+  .menu-option[aria-selected="true"] .menu-option-dot {
+    box-shadow: var(--glow-gold);
+    opacity: 1;
+  }
+
+  /*
+    The same choice laid out flat, which is what the mobile drawer uses: every
+    option on screen at once and one tap to switch, rather than a second layer
+    opening inside a panel that is already one.
+  */
+  .segment {
+    border: 1px solid var(--edge-gold);
+    border-radius: var(--radius-button);
+    color: var(--color-mist-dim);
+    cursor: pointer;
+    font-family: var(--font-serif);
+    transition:
+      border-color 300ms var(--ease-veil),
+      box-shadow 300ms var(--ease-veil),
+      color 300ms var(--ease-veil);
+  }
+
+  .segment:hover,
+  .segment:focus-visible {
+    border-color: var(--color-gold);
+    color: var(--color-champagne);
+  }
+
+  .segment[aria-pressed="true"] {
+    border-color: var(--color-gold);
+    box-shadow: var(--glow-gold);
+    color: var(--color-gold);
   }
 
   /* Ornament --------------------------------------------------------------- */
