@@ -1,8 +1,11 @@
-# The World Tarot — homepage & reveal
+# The World Tarot
 
-A Next.js implementation of the World Tarot homepage built from the Figma design
-(`node 102:3`), together with the reusable card **Reveal** that the rest of the
-site will be built around.
+A Next.js implementation of the World Tarot site, built from the Figma designs
+converted from the client's PSDs. Two pages so far: the homepage (`node 102:3`),
+together with the reusable card **Reveal** the rest of the site is built around,
+and **Readings** (`node 300:68`) — see
+[`src/components/readings/README.md`](src/components/readings/README.md) for what
+that frame's conversion gets wrong and how the bordered panels are built.
 
 ```bash
 npm install
@@ -103,6 +106,12 @@ the flow layout resolving overlaps that the design draws as stacked boxes.
 
 ## Scope
 
-Homepage and reveal only. Navigation links point at routes from the navigation
+Homepage, the reveal, and the Readings index. Navigation links — including the
+four reading products and the gift panel — point at routes from the navigation
 document that do not exist yet; the newsletter form has markup and validation
 but no endpoint.
+
+Each page owns its own backdrop: `<PageAtmosphere>` renders as the page's first
+element and fills the layout column behind the header, main and footer. The site
+layout carries `isolate` so that layer can sit at `-z-10` without every section
+needing a z-index; see `src/components/layout/PageAtmosphere.tsx`.

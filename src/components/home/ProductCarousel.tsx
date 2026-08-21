@@ -1,10 +1,9 @@
 "use client";
 
 import type { EmblaOptionsType } from "embla-carousel";
-import { useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
-import { Carousel, CarouselDots, CarouselTrack, CarouselViewport } from "@/components/ui/Carousel";
+import { Carousel, CarouselDots, CarouselTrack, CarouselViewport, useCarouselDuration } from "@/components/ui/Carousel";
 
 /**
  * The product row as a swipeable strip, below `sm` only.
@@ -25,9 +24,6 @@ import { Carousel, CarouselDots, CarouselTrack, CarouselViewport } from "@/compo
  * ships no extra client JS; only the carousel's own mechanics do.
  */
 
-/** Embla's own default (embla-carousel@8.6.0) — not part of its public API to import, so pinned here. */
-const DEFAULT_DURATION = 25;
-
 export function ProductCarousel({
   children,
   slideCount,
@@ -39,7 +35,7 @@ export function ProductCarousel({
   dotsLabel: string;
   dotLabels: string[];
 }) {
-  const reducedMotion = useReducedMotion();
+  const duration = useCarouselDuration();
 
   const options: EmblaOptionsType = {
     active: false,
@@ -55,22 +51,31 @@ export function ProductCarousel({
     breakpoints: {
       "(width < 40rem)": { active: true },
     },
-    // globals.css's reduced-motion block only collapses CSS transitions;
-    // Embla animates a transform on requestAnimationFrame, so it has to be
-    // told separately. `duration` is a frame count, not milliseconds — 0 takes
-    // Embla's explicit "instant" branch rather than dividing by it. (Passing
-    // `undefined` here instead of the real default would silently disable all
-    // scroll animation, not just under reduced motion — Embla's option merge
-    // overwrites a key whenever it's present, even with an undefined value.)
-    duration: reducedMotion ? 0 : DEFAULT_DURATION,
+    duration,
   };
 
   return (
-    <Carousel options={options} initialSnapCount={slideCount} className="mt-[clamp(1.75rem,3.1vw,3.7rem)]">
+    <Carousel
+      options={options}
+      initialSnapCount={slideCount}
+      // The tile count is not fixed: it comes from the API, so a product
+      // withdrawn since the build drops out after the fetch. See `Carousel`.
+      slideCount={slideCount}
+      className="mt-[clamp(1.75rem,3.1vw,3.7rem)]"
+    >
       <CarouselViewport>
         <CarouselTrack className="grid gap-x-0 gap-y-10 max-sm:flex sm:grid-cols-2 lg:grid-cols-4">{children}</CarouselTrack>
       </CarouselViewport>
-      <CarouselDots groupLabel={dotsLabel} label={(index) => dotLabels[index]} className="mt-stack sm:hidden" />
+      {/*
+        `?? dotsLabel` covers the single frame where Embla has re-measured to a
+        new slide count but this render's labels are the old, shorter list. An
+        empty `aria-label` would be worse than a general one.
+      */}
+      <CarouselDots
+        groupLabel={dotsLabel}
+        label={(index) => dotLabels[index] ?? dotsLabel}
+        className="mt-stack sm:hidden"
+      />
     </Carousel>
   );
 }
