@@ -52,6 +52,7 @@ function useCarousel(component: string) {
 export function Carousel({
   options,
   initialSnapCount = 0,
+  slideCount,
   className,
   children,
   ...props
@@ -64,6 +65,17 @@ export function Carousel({
    * slide); otherwise Embla's own count wins the moment it initialises.
    */
   initialSnapCount?: number;
+  /**
+   * How many slides `children` currently holds, when that can change after
+   * mount. Leave it out for a fixed set.
+   *
+   * **Embla does not notice slides being added or removed.** It re-measures on
+   * resize and when its options change, and on nothing else, so a track whose
+   * children React has just rewritten keeps the old snap list: dots that scroll
+   * nowhere, or slides with no dot at all. Passing the count is what triggers
+   * the re-measure.
+   */
+  slideCount?: number;
   children: ReactNode;
 } & ComponentPropsWithoutRef<"div">) {
   const [viewportRef, api] = useEmblaCarousel(options);
@@ -85,6 +97,21 @@ export function Carousel({
     api.on("reInit", onReInit).on("select", onSelect);
     return () => void api.off("reInit", onReInit).off("select", onSelect);
   }, [api, onReInit, onSelect]);
+
+  // Skipped on mount, where Embla has just measured the slides itself and a
+  // second pass would only risk throwing away the position it settled on.
+  const measured = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!api || slideCount === undefined) return;
+
+    if (measured.current !== undefined && measured.current !== slideCount) {
+      // Fires the `reInit` event above, which is what resyncs the dots.
+      api.reInit();
+    }
+
+    measured.current = slideCount;
+  }, [api, slideCount]);
 
   return (
     <CarouselContext value={{ viewportRef, api, snapCount, selectedIndex }}>

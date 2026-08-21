@@ -8,6 +8,22 @@ client, a designer rather than a developer, working from a PSD — can move to
 a CMS later without touching layout or JSX. If you're adding a new piece of
 homepage copy, it belongs in `home.ts`, not inlined in a component.
 
+## "A CMS later" has started, for products
+
+**`products` in `home.ts` is no longer where the tile copy comes from.** Name,
+description and price are read from `GET /api/v1/{locale}/products` at runtime
+and the bundled entries are the fallback for when the backend can't be reached.
+See [`docs/plans/products-api-wiring.md`](../../docs/plans/products-api-wiring.md).
+
+What stayed here, because none of it is in the product contract and none of it
+is coming: `key`, `action`, `href` and `image`. A tile can't render without its
+artwork, so **this list still decides which tiles exist and in what order** —
+the API only decides what they say. Publishing a fifth product doesn't put it on
+the homepage; adding it here does.
+
+Nothing else on the page is wired this way yet. The rest of `home.ts` is still
+the only source for its own copy.
+
 ## `cards.ts` and the one-card constraint
 
 Only **The Star** (`livingTarot[0]`) is wired up. This isn't a placeholder
@@ -60,7 +76,13 @@ linked to it.
 
 The four `products` (One Card, Three Card, Month Ahead, Viewing Room) look
 like four equally-custom flows, but per the client only two actually differ
-in workflow:
+in workflow.
+
+A fifth reading, **In Depth**, exists in the backend catalogue and is seeded and
+priced, so it comes back from `/products`. It has no tile here and no artwork,
+so the merge ignores it. Giving it one is a frontend change, not a backend one.
+
+The workflows:
 
 - **Three Card** and **Month Ahead** (plus a future "In-Depth" reading, not
   yet in this list) share one page template and one fulfillment path: the

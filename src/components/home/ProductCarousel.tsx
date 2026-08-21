@@ -55,11 +55,27 @@ export function ProductCarousel({
   };
 
   return (
-    <Carousel options={options} initialSnapCount={slideCount} className="mt-[clamp(1.75rem,3.1vw,3.7rem)]">
+    <Carousel
+      options={options}
+      initialSnapCount={slideCount}
+      // The tile count is not fixed: it comes from the API, so a product
+      // withdrawn since the build drops out after the fetch. See `Carousel`.
+      slideCount={slideCount}
+      className="mt-[clamp(1.75rem,3.1vw,3.7rem)]"
+    >
       <CarouselViewport>
         <CarouselTrack className="grid gap-x-0 gap-y-10 max-sm:flex sm:grid-cols-2 lg:grid-cols-4">{children}</CarouselTrack>
       </CarouselViewport>
-      <CarouselDots groupLabel={dotsLabel} label={(index) => dotLabels[index]} className="mt-stack sm:hidden" />
+      {/*
+        `?? dotsLabel` covers the single frame where Embla has re-measured to a
+        new slide count but this render's labels are the old, shorter list. An
+        empty `aria-label` would be worse than a general one.
+      */}
+      <CarouselDots
+        groupLabel={dotsLabel}
+        label={(index) => dotLabels[index] ?? dotsLabel}
+        className="mt-stack sm:hidden"
+      />
     </Carousel>
   );
 }

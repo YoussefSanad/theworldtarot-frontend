@@ -58,12 +58,56 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="z-10 flex flex-col items-center px-[3%] pt-[12%]">
             <h3 className="text-center text-[9.77cqw] leading-none text-gold-soft">{product.title}</h3>
 
-            <p className="mt-[1.3%] text-center text-[7.99cqw] leading-none text-cream">
-              {product.subtitle.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
+            {/*
+              `text-balance` rather than the two hard-wrapped lines this used to
+              render. The copy arrives from the API as one sentence, and where it
+              breaks is a layout decision this tile has to make four times over —
+              it is laid out at a carousel slide's width, two thirds of a
+              two-column cell, a full quarter column, and its own 449px cap. A
+              break baked into the copy would be right at one of those and ragged
+              at the rest, and would have to be re-typed by every translator in a
+              language where it balances differently.
+
+              `max-w-[19ch]` is what makes it two lines rather than one.
+              **`balance` only redistributes text that already wraps — it never
+              forces a wrap**, so without a measure the shortest subtitle ("One
+              Question, Three Cards") sat on a single line while the longer three
+              broke, and the row lost its alignment. The measure guarantees the
+              break; balance puts it in the right place.
+
+              In `ch` rather than `cqw` so it is tied to the type: the font size
+              is itself `cqw`, so this tracks the tile's width automatically and
+              survives the type being retuned.
+
+              **19ch is not arbitrary — it is the middle of a measured window.**
+              Advance widths taken from gill-sans-regular.otf, where 1ch is
+              exactly 0.5em:
+
+                >= 16.55ch  or "Complete Cinematic" will not fit on one line and
+                            the Viewing Room tile breaks into three
+                <  22.61ch  or "One Question, Three Cards" fits on one line and
+                            never wraps at all
+
+              Both failures have already happened once each. If you retune this,
+              stay inside that window, and re-measure it if the copy changes —
+              the bounds come from the longest desired first line and the
+              shortest full subtitle respectively.
+
+              `whitespace-pre-line` keeps a newline working as a deliberate
+              override for when a specific break really is wanted. Browsers
+              without `text-wrap: balance` just wrap normally.
+
+              `line-clamp-2` is the floor under all of that. The measure above
+              guarantees two lines for the four subtitles in the bundle, but the
+              copy is the client's from the first edit onward and a translation
+              is longer again — a third line pushes this block and the divider
+              23.5px down over the artwork, and one three-line tile beside three
+              two-line ones breaks the row's shared baseline, which is the whole
+              thing the measure exists to hold. Clamping makes that structural
+              rather than a comment asking the next person to re-measure.
+            */}
+            <p className="mt-[1.3%] line-clamp-2 max-w-[19ch] text-center text-[7.99cqw] leading-none text-balance whitespace-pre-line text-cream">
+              {product.subtitle}
             </p>
 
             <Divider variant="tile" className="-mt-[3.8%]" />
