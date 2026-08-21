@@ -90,7 +90,7 @@ export function RevealTrigger({
                 onPointerEnter={warm}
                 onPointerDown={warm}
                 onFocus={warm}
-                className="w-fit justify-start gap-[0.72em] pl-[0.4em] pr-[1.2em] font-bold tracking-[-0.01em] lg:w-full"
+                className="w-fit justify-start gap-[0.72em] pl-[0.4em] pr-[1.2em] font-bold tracking-[-0.01em]"
               >
                 <span aria-hidden className="stack size-[2em] shrink-0 place-items-center rounded-full bg-black">
                   <Image

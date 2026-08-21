@@ -36,6 +36,19 @@
   --text-hero-sm--line-height: 1.15;
   --text-h1: clamp(1.875rem, 3.125vw, 3.75rem); /* 60px */
   --text-h1--line-height: 1.15;
+  /*
+    Three steps the Readings page adds between h1 and h2. They look close
+    enough to merge, and merging them would be wrong: 56 is the one panel
+    title that outranks the rest of that page, 50 is its closing saying, 48
+    is a reading card's own title, and the design sets all three against each
+    other on one screen. Same derivation as every step here — Figma px / 19.2.
+  */
+  --text-h1-sm: clamp(1.75rem, 2.9167vw, 3.5rem); /* 56px */
+  --text-h1-sm--line-height: 1.15;
+  --text-h2-lg: clamp(1.5625rem, 2.6042vw, 3.125rem); /* 50px */
+  --text-h2-lg--line-height: 1.15;
+  --text-h2-md: clamp(1.5rem, 2.5vw, 3rem); /* 48px */
+  --text-h2-md--line-height: 1.15;
   --text-h2: clamp(1.5rem, 2.2917vw, 2.75rem); /* 44px */
   --text-h2--line-height: 1.1;
   --text-h3: clamp(1.375rem, 2.1875vw, 2.625rem); /* 42px */
@@ -72,6 +85,14 @@
   --container-measure: 1153px; /* the width the ornate divider was drawn at */
   --container-copy: 1600px;
   --container-value-props: 1267px; /* the three-prop row */
+  /*
+    Readings. Figma drew the signature panel 1493px wide and the reading-card
+    row below it 1502px, offset from each other by 4-5px on either edge — the
+    two are plainly meant to be flush and the PSD conversion lost it, so both
+    take the wider of the pair.
+  */
+  --container-readings: 1502px;
+  --container-readings-gift: 1191px; /* the Gift a Reading frame */
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -83,10 +104,14 @@
   Brand chrome that recurs across the page. Sampled from the Figma exports and
   rebuilt as gradients so buttons and fields stay crisp at any size instead of
   stretching a fixed-size bitmap.
+
+  The gold runs on a 45deg diagonal: the sheen crosses a button corner to corner
+  rather than sweeping it flat from edge to edge, so the highlight reads as a
+  tilted band on the wide CTAs and still catches the round ones.
 */
 :root {
   --gradient-gold: linear-gradient(
-    100deg,
+    45deg,
     #d6b661 0%,
     #f5dc84 13%,
     #f7e19c 25%,
@@ -99,6 +124,12 @@
   );
   --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
   --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
+  /*
+    The same light as `--glow-gold`, tuned for `drop-shadow` on a 2px line
+    rather than `box-shadow` around a filled box: far less source to spread,
+    so it is tighter and stronger to read at all.
+  */
+  --glow-gold-line: 0 0 6px rgba(248, 242, 176, 0.85);
   --veil-ink: rgba(15, 26, 39, 0.77); /* header and footer scrim */
 }
 
@@ -118,7 +149,18 @@
   --measure-narrow: 100%;
   --measure-copy: 100%;
   --measure-value-props: 100%;
+  /*
+    Her mobile mockup insets every panel about 35px on a 375px screen — 305 of
+    375, or 81.33% — where the page gutter's floor would leave 20px. That extra
+    30px is not just margin: the cards size their type and insets in `cqw`, so
+    a card 10% too wide renders every word in it 10% too large. Narrowing the
+    measure puts the button label back on the 18px she sets it at, without
+    touching a type value. The gutter still floors it on a very narrow screen.
+  */
+  --measure-readings: 81.33%;
+  --measure-readings-gift: 81.33%;
   --measure-flourish: 448px;
+  --measure-flourish-wide: 538px;
   --measure-hairline: min(12rem, 100%);
 }
 
@@ -129,7 +171,10 @@
     --measure-narrow: min(var(--container-measure), 60.052vw);
     --measure-copy: min(var(--container-copy), 83.333vw);
     --measure-value-props: min(var(--container-value-props), 65.99vw);
+    --measure-readings: min(var(--container-readings), 78.229vw);
+    --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
     --measure-flourish: min(448px, 23.333vw);
+    --measure-flourish-wide: min(538px, 28.021vw);
     --measure-hairline: min(368px, 19.167vw);
   }
 }
@@ -317,6 +362,14 @@
     --shell-width: var(--measure-copy);
   }
 
+  .shell--readings {
+    --shell-width: var(--measure-readings);
+  }
+
+  .shell--readings-gift {
+    --shell-width: var(--measure-readings-gift);
+  }
+
   /*
     Page atmosphere.
 
@@ -384,6 +437,62 @@
       102.03% auto, 101.82% auto;
     background-position: calc(var(--atmosphere-margin) + var(--atmosphere-width) * 0.40742) 3.5%, 50% 0%, 50% 34.4%,
       50% 15.7%, -2.2% 68.2%, 23.1% 62.8%, 14.3% 95.7%;
+  }
+
+  /*
+    Readings atmosphere.
+
+    Figma stacks two layers: a flat #0a1421 fill — exactly `--color-ink`, so it
+    ships as a colour rather than a second 1920x3293 export — and the parlour
+    photograph over it at 66%, baked into the webp's alpha the way the homepage
+    layers are.
+
+    The artwork stands on the floor of the page at its own aspect and dissolves
+    into the flat colour at the top, which is what the client's mobile mockup
+    draws: the room in the bottom 42% of a 375px screen, flat above it. That
+    same rule reads correctly at every width, because the only thing that
+    changes with the viewport is how much of the page the room reaches — at
+    1920 it clears all but the masthead, at 1280 the lower two thirds, on a
+    phone the bottom eighth. It is also why the artwork is width-driven rather
+    than `cover`: `cover` has to crop to fill, which on a page three times
+    taller than the frame means cropping the room down to a vertical slice.
+    Nothing is ever cropped here, and no edge is ever cut — the feather is on
+    the only edge that can meet flat colour.
+
+    The image is its own element rather than a background on this one, so the
+    feather can be a mask in the artwork's terms (a percentage of the picture)
+    without also masking the flat colour underneath it.
+  */
+  .page-atmosphere-readings {
+    background-color: var(--color-ink);
+    overflow: clip; /* the artwork runs taller than the page on a narrow desktop */
+  }
+
+  .page-atmosphere-readings::after {
+    /*
+      As tall as the artwork's own aspect makes it, but never taller than the
+      page it stands in — past that it crops from the top with `cover` rather
+      than overflowing, which keeps the feather inside the box where it can be
+      seen. Cropping height costs nothing: at these widths the scale is already
+      set by the width, so nothing is squeezed and nothing is zoomed.
+    */
+    background-image: url("/figma/readings-parlor.webp");
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    /*
+      Height is `vw` rather than an `aspect-ratio`, which looks like the tidier
+      way to write it and isn't: pairing `aspect-ratio` with a height cap makes
+      the browser hold the ratio by shrinking the *width* instead, and the
+      artwork came out 1610px wide on a 1920px screen. 171.51vw is the same
+      number — the artwork's height at full width, 3293/1920.
+    */
+    block-size: min(171.51vw, 100%);
+    content: "";
+    inset: auto 0 0 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
+    position: absolute;
   }
 
   /*
@@ -529,6 +638,534 @@
     animation: none;
   }
 
+  /* Framed panels ---------------------------------------------------------- */
+  /*
+    The Readings page sets its content inside bordered panels: a 2px gold
+    rounded rectangle, on three of them with a diamond ornament breaking the
+    top edge. Figma exports each as a bitmap (482x775, 1493x479, 1191x261),
+    which is the one part that can't be used — a hairline stretched to a
+    responsive box goes soft and uneven, and a fixed-aspect image can't follow
+    a card that grows when its copy wraps to another line. So the rectangle is
+    rebuilt from tokens, the way the gold buttons are, and only the ornament
+    ships as artwork (cropped out of that same export).
+
+    Every panel clips what it holds to its own curve. Figma rounds each
+    photograph's frame-facing corners in the alpha channel instead, which
+    cannot stay in register: a baked curve is fixed in image pixels and scales
+    with the photo, while the frame's is set by the panel, so the two only ever
+    agree at one width and open a wedge of backdrop at the corner everywhere
+    else. Clipping makes the frame the single source of that curve, so it can
+    never disagree with itself — the photographs ship opaque and square, and
+    fill their box.
+
+    Radii are container-relative so a panel keeps the proportion Figma drew
+    (50px on a 482px card) rather than a fixed pixel corner on a card that is
+    half that width on a phone. That's also why the radius can't live on the
+    panel itself — an element can't query the container it establishes — hence
+    the `@container` wrapper every panel carries.
+  */
+  .ornate-frame {
+    --ornate-line: 2px;
+  }
+
+  .ornate-frame--card {
+    --ornate-radius: 10.37cqw; /* 50px at the 482px reading card */
+  }
+
+  /*
+    One value for the two wide panels: Figma drew the signature frame's corner
+    at 70px on 1493 and the gift frame's at 52px on 1191 — 4.69% and 4.37% of
+    their own width. Three pixels apart is not a distinction worth a second
+    token.
+  */
+  .ornate-frame--panel {
+    --ornate-radius: 4.5cqw;
+  }
+
+  /*
+    All four sides. The border is a ring of its own rather than on this box,
+    so the glow can follow the line — see `.panel-hover__frame`. This box
+    keeps the radius and the clip, which is what holds a photograph to the
+    frame's curve.
+  */
+  .ornate-frame--closed {
+    border-radius: var(--ornate-radius);
+    overflow: clip;
+  }
+
+  .ornate-frame__ring {
+    border: var(--ornate-line) solid var(--color-gold);
+    border-radius: var(--ornate-radius);
+    pointer-events: none;
+    /*
+      Said outright because the box it rings frosts, and a `backdrop-filter` —
+      even `blur(0px)` — makes that box its own stacking context, which paints
+      it over a plain sibling. The border disappeared under the photograph at
+      rest and snapped back over it on hover, when the ring picked up a filter
+      of its own and was promoted in turn. Grid items take a z-index without
+      being positioned; the wrapper's `isolate` keeps it local.
+    */
+    z-index: 1;
+  }
+
+  /*
+    The signature panel, whose top edge parts for its heading.
+
+    Three columns, and a first row with no height at all. That zero-height row
+    *is* the top edge: a heading placed in it with `align-self: center`
+    straddles the line exactly as Figma draws it, and the middle column is the
+    gap — so it is the heading's own width that opens the border, with no
+    measurement to keep in sync as the type scales or the words wrap.
+
+    Both edge pieces span the full height of the panel, which is the point.
+    The obvious construction — rules that carry the corners inside the heading
+    row, and a body that carries the sides — breaks visibly: the corner arc
+    reaches a radius below the line while the body's straight side border
+    starts half a heading below it, so the two cross and leave a lens-shaped
+    nick in every corner. Here no arc is ever met by a border that began
+    somewhere else.
+  */
+  .ornate-frame--open {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 0 auto;
+    isolation: isolate;
+  }
+
+  /*
+    Spans the frame the three edge pieces draw, so it can carry their glow.
+    Both axes, explicitly: with only a row named it auto-places into the first
+    column and frosts a strip down the panel's left edge instead of the panel.
+  */
+  .ornate-frame__surface {
+    border-radius: var(--ornate-radius);
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .ornate-frame__edge {
+    border-block: var(--ornate-line) solid var(--color-gold);
+    grid-row: 1 / -1;
+    pointer-events: none;
+    /*
+      Grid items take a z-index without being positioned. The body is an
+      ordinary in-flow box and its photograph is replaced content, which paints
+      later than any sibling's border would — so the frame has to be lifted to
+      draw over the picture's edge the way Figma draws it, and the heading
+      lifted again to clear both.
+    */
+    z-index: 1;
+  }
+
+  .ornate-frame__edge--start {
+    border-end-start-radius: var(--ornate-radius);
+    border-inline-start: var(--ornate-line) solid var(--color-gold);
+    border-start-start-radius: var(--ornate-radius);
+    grid-column: 1;
+  }
+
+  /* The gap the heading sits in: no top border, but the bottom runs through. */
+  .ornate-frame__edge--gap {
+    border-block-end: var(--ornate-line) solid var(--color-gold);
+    border-block-start: 0;
+    grid-column: 2;
+  }
+
+  .ornate-frame__edge--end {
+    border-end-end-radius: var(--ornate-radius);
+    border-inline-end: var(--ornate-line) solid var(--color-gold);
+    border-start-end-radius: var(--ornate-radius);
+    grid-column: 3;
+  }
+
+  /*
+    The row's own font size is the heading's, so the ornaments and the air
+    around them are `em` off the words they bracket rather than off the panel;
+    a bracket that drifted away from its heading as the panel narrowed would
+    stop reading as one.
+  */
+  /*
+    The border runs through the heading's *first* line, not through the middle
+    of the block — which is the same thing while the heading is one line, and
+    the difference between right and wrong once it wraps to two on a phone. So
+    the legend hangs from the line and is pulled back half a line, rather than
+    being centred on it: line one straddles the border at every width and the
+    rest hangs below, which is how the mobile mockup draws it.
+  */
+  .ornate-legend {
+    /*
+      How far the heading hangs above the border, and the number the marks
+      position themselves from.
+
+      Half a line would put the border on the *line box's* centre. Cinzel's
+      capitals ride high in their line box, so that lands the rule three
+      pixels under the middle of the letters at 18px — she runs it through
+      them. 0.383em is half a line less that offset, measured off the rendered
+      type rather than the font tables, which disagree with each other for
+      this face.
+    */
+    --ornate-legend-lift: 0.383em;
+    /*
+      Items hang from the top, not the row's middle: the border runs through
+      the first line, so a mark centred on a two-line block would float
+      between the lines. Each mark then offsets itself back onto the line by
+      its own half-height — see `OrnateMark`.
+    */
+    align-items: flex-start;
+    align-self: start;
+    display: flex;
+    grid-area: 1 / 2 / 2 / 3;
+    line-height: 1.1;
+    margin-block-start: calc(-1 * var(--ornate-legend-lift));
+    z-index: 2;
+  }
+
+  /*
+    The body starts on the line, so the heading's lower half hangs over it —
+    that is what putting a heading on a border means. This is the room it needs
+    to clear the artwork beneath: half a line of the legend's own type, which
+    is 24px against Figma's 18px at the frame's width, close enough on a gap
+    the design draws as "the descenders don't touch the photograph" and, unlike
+    a fixed 18px, still correct when the type scales.
+
+    The clip is what lets the artwork inside run into the corners: it follows
+    the frame's own curve at the frame's own box, so the two can never disagree
+    the way a radius baked into an image does. Padding doesn't move it — the
+    clip edge is the padding box, which here is the border box.
+  */
+  .ornate-frame--open > .ornate-frame__body {
+    border-radius: var(--ornate-radius);
+    grid-area: 2 / 1 / -1 / -1;
+    overflow: clip;
+    padding-block-start: calc(0.78 * var(--text-h2));
+  }
+
+  /*
+    Below `lg` the panel keeps everything the desktop frame has — the open top
+    edge, the heading on the border, the photograph beside the copy. The one
+    thing the mobile mockup changes is that the price steps *outside* the
+    frame, which is also the one thing a border can't be asked to do while it
+    still wraps the price.
+
+    So below `lg` the body and the copy both stop being boxes: `display:
+    contents` drops their children into the panel's own grid, where the price
+    can be handed a row the border doesn't span. The grid gains two column
+    lines to make that work — the photograph's edge at 45.8% and the border's
+    gap at 14% and 88% are all lines in one template, so it can place the top
+    edge's three pieces and the row of content beneath them at once. Above
+    `lg` the columns go back to `1fr auto 1fr` and the gap is the heading's own
+    width again.
+
+    The body was carrying the frame's radius and clip; with it dissolved, the
+    photograph carries its own.
+  */
+  @media (width < 64rem) {
+    .ornate-frame--open {
+      /*
+        Her mobile frame opens its top edge from 14% to 87% and puts the
+        photograph's edge at 45%, so all three are lines in one template.
+      */
+      grid-template-columns: 14% 31% 41.7% 13.3%;
+      grid-template-rows: 0 auto auto;
+    }
+
+    /* 21px on the 304px frame she draws, against the wide panels' 4.5%. */
+    .ornate-frame--panel {
+      --ornate-radius: 6.9cqw;
+    }
+
+    /*
+      Both wrappers dissolve, not just the outer one: `OrnateFrame` owns the
+      body and the panel owns the row inside it, so the children only reach the
+      panel's grid when neither is a box.
+    */
+    .ornate-frame--open > .ornate-frame__body,
+    .signature-body {
+      display: contents;
+    }
+
+    .ornate-frame__edge {
+      grid-row: 1 / 3;
+    }
+
+    /* Stops short of the price, which steps outside the frame down here. */
+    .ornate-frame__surface {
+      grid-row: 1 / 3;
+    }
+
+    .ornate-frame__edge--gap {
+      grid-column: 2 / 4;
+    }
+
+    .ornate-frame__edge--end {
+      grid-column: 4;
+    }
+
+    .ornate-legend {
+      grid-area: 1 / 2 / 2 / 4;
+    }
+
+    /*
+      The top border's straight run, from the column edge in to the heading.
+
+      Above `lg` the gap between the edge pieces is a grid column sized by the
+      heading itself, so the border meets it with nothing in between. Down here
+      the columns have to carry the photograph's edge as well, so the gap is a
+      fixed share of the panel and the heading floats inside it — the border
+      stopped 22px clear of the marks. These fill that run: `flex: 1` from the
+      column edge up to whatever the heading leaves, which lands them on the
+      marks, since the marks are the ends of its first line.
+
+      The heading has to be allowed to shrink to its own lines for that to
+      work; see the phrases in `SignatureExperience`.
+    */
+    .ornate-legend__rule {
+      align-self: start;
+      border-block-start: var(--ornate-line) solid var(--color-gold);
+      flex: 1;
+      margin-block-start: var(--ornate-legend-lift);
+      min-inline-size: 0;
+    }
+
+    .signature-copy {
+      display: contents;
+    }
+
+    /*
+      The heading's lower half hangs into the panel, so both halves of the row
+      start below it — the mockup leaves the same band above its photograph.
+    */
+    .signature-media,
+    .signature-text {
+      margin-block-start: calc(2 * clamp(0.875rem, 4.8vw, 1.375rem));
+    }
+
+    .signature-media {
+      border-end-start-radius: var(--ornate-radius);
+      grid-area: 2 / 1 / 3 / 3;
+      overflow: clip;
+    }
+
+    .signature-text {
+      grid-area: 2 / 3 / 3 / -1;
+    }
+
+    .signature-cta {
+      grid-area: 3 / 1 / -1 / -1;
+    }
+  }
+
+  /*
+    The trio of diamonds astride a frame's top edge. It sits outside the frame
+    rather than in it — sharing a `.stack` cell with the whole panel on a
+    closed one, a grid row on a reading card — because a panel clips what it
+    holds and this is the one mark meant to escape.
+
+    Her two frames draw it at different proportions, 26x16 on the phone and
+    36x33 on the desktop, so each width has its own share of the frame and its
+    own lift; the markup ships both crops for the same reason.
+  */
+  .ornate-crest,
+  .reading-card__crest {
+    inline-size: 8.52cqw; /* 26px of the 305px mobile frame */
+    margin-block-start: -2.3cqw; /* the 7px of it above the line */
+    place-self: start center;
+    /*
+      Sitting later in the `.stack` is not enough to keep it on top. The
+      photograph under it brightens on hover, and a filter both makes that
+      image its own stacking context and gets it promoted to its own
+      compositing layer while the transition runs — at which point it can paint
+      over a sibling whose order was only ever implicit, so the crest vanishes
+      under the picture on hover and reappears on the way out. Grid items take
+      a z-index without being positioned, so saying it outright fixes the order
+      in every state; the wrapper carries `isolate` to keep the raised item
+      from escaping the panel.
+    */
+    z-index: 1;
+  }
+
+  /*
+    A reading card is two quite different objects sharing one DOM. At `lg` and
+    up it is the column Figma's desktop frame draws — photograph, copy, price —
+    with the price inside the border. Below that the client's mobile mockup
+    turns it on its side: photograph left, copy right, and the price *outside*
+    the frame, full width underneath it.
+
+    Which is why the border is its own element rather than a box around the
+    content. A border can only wrap what it contains, and this one has to hold
+    the price at one width and let it go at another; as a grid item it just
+    spans a different area, and the card keeps one link, one button and one set
+    of copy at every width instead of rendering two of each and hiding one.
+
+    Numbers are `cqw` off the card's own box, as on the homepage tiles — the
+    mobile figures over the 305px the client drew, the desktop ones over 482px.
+  */
+  .reading-card {
+    --ornate-radius: 6.9cqw; /* 21px on the 305px mobile card */
+    --photo-fade-dir: to right; /* the copy sits beside the photograph here */
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: 44.6% 1fr; /* 136px of that card is photograph */
+    grid-template-rows: auto auto;
+    isolation: isolate;
+  }
+
+  .reading-card__edge {
+    border: var(--ornate-line, 2px) solid var(--color-gold);
+    border-radius: var(--ornate-radius);
+    grid-area: 1 / 1 / 2 / -1;
+    pointer-events: none;
+    transition: box-shadow 300ms var(--ease-veil);
+    z-index: 1;
+  }
+
+  /*
+    Frosts the parlour showing through the card. Behind the photograph
+    (`z-index: -1` stays inside `.reading-card`'s isolate) so the picture
+    stays sharp; clipped to the frame's curve so the blur does not leak
+    past the gold line.
+  */
+  .reading-card__frost {
+    border-radius: var(--ornate-radius);
+    grid-area: 1 / 1 / 2 / -1;
+    overflow: clip;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /*
+    Clipped to the frame's own curve, so the corners can't drift out of
+    register the way a radius baked into the image does — but only on the two
+    corners that actually meet the frame. The photograph's other edges are
+    interior, and rounding those bites a visible crescent out of it: on the
+    desktop card the media box ends halfway down, so its bottom corners sat in
+    the middle of the card. That went unnoticed while the fade ran to 68% and
+    dissolved the bottom third; tightening it to the 88% her PSD measures put
+    the corners back in fully opaque artwork.
+
+    In the row the photograph is on the left, so it rounds down that side; in
+    the column it is on top, so it rounds across the top instead.
+  */
+  .reading-card__media {
+    border-end-start-radius: var(--ornate-radius);
+    border-start-start-radius: var(--ornate-radius);
+    grid-area: 1 / 1 / 2 / 2;
+    overflow: clip;
+  }
+
+  .reading-card__copy {
+    grid-area: 1 / 2 / 2 / 3;
+  }
+
+  .reading-card__crest {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  .reading-card__cta {
+    grid-area: 2 / 1 / 3 / -1;
+    margin-block-start: 3.28cqw; /* 10px under the mobile frame */
+  }
+
+  @media (width >= 64rem) {
+    .reading-card {
+      --ornate-radius: 10.37cqw; /* 50px on the 482px desktop card */
+      --photo-fade-dir: to bottom; /* and under it here */
+      grid-template-columns: 1fr;
+      /*
+        The copy row takes the slack, so three cards abreast whose copy runs to
+        two or three lines still finish their prices on one line.
+      */
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* The border takes in the price as well, and the card becomes a column. */
+    .reading-card__edge,
+    .reading-card__frost {
+      grid-area: 1 / 1 / -1 / -1;
+    }
+
+    .reading-card__media {
+      border-end-start-radius: 0;
+      border-start-end-radius: var(--ornate-radius);
+      grid-area: 1 / 1 / 2 / -1;
+    }
+
+    .reading-card__copy {
+      grid-area: 2 / 1 / 3 / -1;
+    }
+
+    .ornate-crest,
+    .reading-card__crest {
+      inline-size: 7.47cqw; /* 36px of the 482px desktop card */
+      margin-block-start: -2.9cqw; /* the 14px of it above the line */
+    }
+
+    .reading-card__cta {
+      grid-area: 3 / 1 / -1 / -1;
+      justify-self: center;
+      margin-block: 7.05cqw 11.83cqw; /* Figma's 34px above the price, 57px below */
+    }
+  }
+
+  /*
+    Photography inside a panel dissolves along the edge where it meets the
+    copy — down when the copy sits under it, sideways when the copy sits beside
+    it. The client's PSD does this and the Figma conversion drops it, leaving
+    the artwork cut off against the panel's interior on a hard line.
+
+    It has to be a mask rather than a gradient laid over the top, because a
+    panel has no fill: the parlour backdrop shows through it, and in the PSD
+    you can see the room through the dissolving edge of the photograph. Fading
+    to a colour would paint a band that isn't there. It is a mask rather than
+    alpha baked into the webp because the direction changes with the layout,
+    and one asset can't hold two directions.
+  */
+  .photo-fade {
+    /*
+      A lip, not a dissolve. 88% ate the last eighth of every photograph and
+      still read as a wipe; the client's own render holds solid until ~94–95%
+      and only then feathers. The mid-stop keeps that last few percent from
+      dumping straight to nothing.
+    */
+    --photo-fade-solid: 95%;
+    -webkit-mask-image: linear-gradient(
+      var(--photo-fade-dir, to right),
+      #000 var(--photo-fade-solid),
+      rgb(0 0 0 / 0.55) 98%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      var(--photo-fade-dir, to right),
+      #000 var(--photo-fade-solid),
+      rgb(0 0 0 / 0.55) 98%,
+      transparent 100%
+    );
+  }
+
+  /*
+    A heading flanked by gold rules that end in a diamond mark pointing back at
+    the words — Figma's "Traditional Tarot Readings" row, drawn as a pair of
+    359x18 bitmaps. The line inside those is 2px at 75% alpha; scaled to a
+    responsive column it would go sub-pixel, so the rule is a border here and
+    only the mark ships as artwork. The mark is sized in `em` off the heading
+    rather than off the column, so the bracket keeps its relationship to the
+    words at every width — and the rules, being `flex: 1`, simply take whatever
+    the heading leaves, which is what lets it wrap on a phone with the bracket
+    still around it.
+  */
+  .flanked {
+    align-items: center;
+    display: flex;
+  }
+
+  .flanked__rule {
+    border-block-start: 2px solid rgba(228, 196, 106, 0.75);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   /*
     The compasses breathe. A single slow gold-white halo swelling and settling —
     long enough (9s) and faint enough that it reads as the artwork catching light
@@ -557,6 +1194,127 @@
   .compass-breathe {
     animation: compass-breathe 4s var(--ease-veil) infinite;
     filter: drop-shadow(0 29px 32px rgba(74, 63, 64, 0.25));
+  }
+
+  /*
+    One hover for every panel on the Readings page.
+
+    Defined here rather than as four Tailwind utilities repeated across three
+    components, because "the same on all of them" is the whole requirement and
+    three copies of it drift — `ProductCard` on the homepage already carries a
+    warning about exactly that, having duplicated `.btn-gold:hover`'s values by
+    hand. There is one definition and each panel names its parts.
+
+    `__surface` spans the panel with its border radius and frosts the parlour
+    showing through the frame. `__frame` is whatever actually draws the
+    border, and it takes the glow — as a `drop-shadow`, which follows the
+    rendered shape rather than the box.
+
+    That distinction is the whole point on the signature panel, whose top edge
+    is deliberately open for its heading. A `box-shadow` there rings the box,
+    so it painted a bright band straight across the gap and through the words:
+    a border glowing where there is no border. `drop-shadow` lights the lines
+    that exist and leaves the opening dark, which is also why the closed
+    panels draw their border as a ring of their own rather than on the box
+    they clip — one shape of glow for all five.
+  */
+  .panel-hover__surface {
+    /*
+      `blur(0px)` at rest rather than the `none` it would otherwise default
+      to: `none` is not a blur radius, so the pair has nothing to interpolate
+      and the frost snaps on instead of easing in.
+    */
+    backdrop-filter: blur(0px);
+    transition:
+      backdrop-filter 300ms var(--ease-veil),
+      box-shadow 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__surface {
+    backdrop-filter: blur(2px);
+  }
+
+  .panel-hover__frame {
+    transition: filter 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__frame {
+    filter: drop-shadow(var(--glow-gold-line));
+  }
+
+  .panel-hover__photo {
+    transition: filter 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__photo {
+    filter: brightness(1.1);
+  }
+
+  /*
+    The price answers with the same light `.btn-gold:hover` gives it, so the
+    whole panel lights it rather than only pointing at the button — and holds
+    still, because a button growing inside a motionless card would be the one
+    thing on it that moves.
+  */
+  .panel-hover__cta {
+    --btn-hover-scale: 1;
+  }
+
+  .panel-hover:hover .panel-hover__cta {
+    box-shadow: var(--glow-gold-strong);
+    filter: brightness(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-hover:hover .panel-hover__surface {
+      backdrop-filter: none;
+    }
+  }
+
+  /*
+    The readings page's gold buttons — the signature price, the three reading
+    card prices and the closing call to action.
+
+    On a phone the client draws all five as one button: the full width of the
+    panel it belongs to, at the same 18px label, and a height that follows from
+    the type because the padding is `em`. So the box is stated once here rather
+    than five times in the markup.
+
+    It has to be one value. The reading cards size themselves in `cqw` off
+    their own box while the other two read `vw` off the screen, and those two
+    scales agree only because the panel is 81.33% of the viewport: 5.9cqw and
+    4.8vw are both her 18px on the 375px frame she drew. Written separately
+    they only held at that one width — the `vw` pair stopped at 18px where the
+    clamp closes and the cards' `cqw` kept going, so on any phone wider than
+    375px the same button was rendering at two sizes, and by tablet widths the
+    card price was half again as large as the one above it.
+
+    Above `lg` they part company as Figma draws them, each hugging its own
+    label at its own size, so only the width carries up and every caller states
+    its own type and height there.
+  */
+  /*
+    The box every gold button on this page shares. Only the padding differs
+    between them, and only because Figma draws them at three heights — 81px on
+    the signature panel, 70px on a reading card, 68px at the foot of the page.
+
+    A caller overriding the size with `text-nav` must pass `leading-none` with
+    it: that theme utility sets a line height as well as a size, and a utility
+    outranks this layer, so the `line-height` here is silently replaced and the
+    button grows 6px. Two of the three did exactly that.
+  */
+  .readings-cta {
+    font-size: clamp(0.9375rem, 4.8vw, 1.125rem);
+    inline-size: 100%;
+    line-height: 1;
+    padding: 0.72em 0.9em;
+  }
+
+  @media (width >= 64rem) {
+    .readings-cta {
+      inline-size: fit-content;
+      max-inline-size: 100%;
+    }
   }
 
   /* Ornament --------------------------------------------------------------- */
@@ -590,6 +1348,18 @@
     aspect-ratio: 448 / 55;
     background-image: url("/figma/divider-hero.webp");
     max-width: var(--measure-flourish);
+  }
+
+  /*
+    Same artwork, drawn 20% larger. The Readings masthead is the only place
+    Figma scales this rule up (538x66 against the 448x55 it uses everywhere
+    else) — a second export would be the identical file, so it is the measure
+    that changes, not the image.
+  */
+  .divider--hero-wide {
+    aspect-ratio: 538 / 66;
+    background-image: url("/figma/divider-hero.webp");
+    max-width: var(--measure-flourish-wide);
   }
 
   /*

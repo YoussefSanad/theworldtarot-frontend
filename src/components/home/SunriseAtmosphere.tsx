@@ -45,8 +45,8 @@ type SkyPhase = "approach" | "landed" | "full";
  * keeps climbing on its own much longer timeline — a slow crescendo that
  * gathers speed and crests in a brief bloom before settling to today's
  * resting values. Then brightens further when the card is revealed. Portals
- * into #hero-sky (src/app/(site)/layout.tsx) so it paints behind the header
- * despite living inside Hero.tsx's RevealProvider.
+ * into #hero-sky (PageAtmosphere's hero variant) so it paints behind the
+ * header despite living inside Hero.tsx's RevealProvider.
  *
  * .hero-sky-shine / .hero-sky-globe (globals.css) are two separately
  * absolutely-positioned layers whose left/top/width are tuned calc()

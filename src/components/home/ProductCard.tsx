@@ -115,12 +115,16 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/*
+          The label sets the width, as it does on the reading cards — Figma drew
+          the tile's CTA at a fixed 77.8% of the tile and the client wants a gold
+          button to be its own text plus its padding.
+
           `group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105`
           repeat `.btn-gold:hover`'s own values (globals.css) so the whole tile
           triggers the button's glow, not just hovering the button itself.
           Keep the two in sync — tuning one won't update the other.
         */}
-        <span className="btn btn-gold w-[77.8%] px-[4%] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate [--btn-hover-scale:1] group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105">
+        <span className="btn btn-gold w-fit max-w-full px-[0.9em] py-[0.78em] text-[5.33cqw] leading-none font-bold tracking-[0.01em] text-slate [--btn-hover-scale:1] group-hover:shadow-(--glow-gold-strong) group-hover:brightness-105">
           {label}
         </span>
       </Link>
