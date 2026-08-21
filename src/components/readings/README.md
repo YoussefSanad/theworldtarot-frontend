@@ -273,6 +273,83 @@ Narrowing the measure put all of it back on her numbers without touching a
 single type value, which is the point of sizing a card off its own box. If a
 panel ever reads as mistyped on a phone, check its width before its font.
 
+### Hover is one definition, not five
+
+Every panel on the page — the signature panel, the three reading cards and the
+gift band — answers a pointer the same way: the parlour showing through the
+frame frosts, the border catches the gold glow, the photograph brightens, and
+the price lights the way `.btn-gold:hover` lights it. That lives in
+`.panel-hover` in globals.css, and each panel names its parts
+(`__surface`, `__photo`, `__cta`) rather than repeating four Tailwind
+utilities. `ProductCard` on the homepage already carries a warning about
+hand-copying `.btn-gold:hover`'s values and having them drift; five copies
+would have drifted faster.
+
+The work splits in two. `__surface` spans the panel and frosts the parlour
+showing through it; `__frame` is whatever draws the border, and it takes the
+glow as a **`drop-shadow`** — which follows the rendered shape rather than the
+box.
+
+That distinction is the whole point on the signature panel, whose top edge is
+deliberately open for its heading. A `box-shadow` rings the box, so it painted
+a bright band straight across the gap and through the words: a border glowing
+where there is no border. `drop-shadow` lights the lines that exist and leaves
+the opening dark. It is also why a closed panel draws its border as a **ring
+of its own** rather than on the box it clips — one shape of glow for all five,
+and a filter on the box would have haloed the photograph and the type inside
+it.
+
+Four smaller things are load-bearing. `--ornate-line` and `--ornate-radius`
+sit on the `@container` wrapper, not on the box they describe: the ring is a
+sibling of that box and cannot inherit a property declared on it — left there
+it resolved to nothing and drew no border at all. The ring also names its
+`z-index`, because the box it rings frosts, and a `backdrop-filter` — even
+`blur(0px)` — makes that box its own stacking context and paints it over a
+plain sibling: the border vanished under the photograph at rest and snapped
+back over it on hover, when the ring picked up a filter of its own and was
+promoted in turn. `__surface` rests at
+`blur(0px)` rather than `none`, because `none` is not a blur radius and the
+pair has nothing to interpolate. And on the signature panel `__surface` names
+**both** grid axes — given only a row it auto-places into the first column and
+frosts a strip down the panel's left edge, which reads as the hover simply not
+working.
+
+For the hover to be honest, **the whole panel is the link** in all five —
+which for the signature panel meant its `ButtonLink` becoming a `<span>`
+inside one, the construction the cards already used.
+
+### The mobile button is one definition too
+
+Alongside the hover, the *box* the five gold buttons share on a phone is stated
+once, as `.readings-cta` in globals.css: full panel width, her 18px label, and
+a height that falls out of the type because the padding is `em`.
+
+It has to be one value, and the reason is the section above this one. A reading
+card sizes itself in `cqw` off its own box; the signature panel's button and
+the page's closing one read `vw` off the screen. Those two scales agree only
+because the panel is 81.33% of the viewport — 5.9cqw and 4.8vw are both 18px on
+her 375px frame, which is why they were written as separate values and looked
+right. They are only equal at that one width. The `vw` pair stops at 18px where
+its clamp closes; the card's `cqw` doesn't stop, so on a 430px handset the card
+price rendered 21px beside an 18px button, and by tablet widths it was half
+again as large. One `vw` clamp for all five, and there is nothing left to
+drift.
+
+Above `lg` they part company on purpose — each hugs its own label at the size
+Figma sets for its panel — so only the width carries up, and each caller states
+its own type and vertical padding there.
+
+### The photographs only round where they meet the frame
+
+`.reading-card__media` clips to the frame's curve, but on **two corners only** —
+the ones actually touching the border. Rounding all four bites a crescent out
+of the picture where the box ends inside the card: on the desktop card the
+media box stops halfway down, so its bottom corners sat in the middle of the
+artwork. That went unnoticed for a while because the fade then ran to 68% and
+dissolved the bottom third; tightening it to the 88% her PSD measures put those
+corners back into fully opaque photograph and made them visible. In the mobile
+row the photograph is on the left, so it rounds down that side instead.
+
 ### One trap worth naming
 
 `.divider--hero` carries a `max-width` — the 448px Figma draws that rule at.

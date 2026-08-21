@@ -45,20 +45,30 @@ export function OrnateFrame({
   bodyClassName?: string;
   children: ReactNode;
 }) {
-  const frame = cn("ornate-frame", variant === "card" ? "ornate-frame--card" : "ornate-frame--panel");
+  /*
+    The line width and the corner radius sit on the wrapper, not on the box
+    they describe: the border is its own element now, and a sibling cannot
+    inherit a custom property declared on the box beside it — left there, the
+    ring resolved `var(--ornate-line)` to nothing and drew no border at all.
+    Declaring them here is still safe for the `cqw` radius, which resolves
+    where it is *used*, and it is only ever used on a descendant.
+  */
+  const tokens = cn("ornate-frame", variant === "card" ? "ornate-frame--card" : "ornate-frame--panel");
 
   if (!legend) {
     return (
-      <div className={cn("@container", crest && "stack isolate", className)}>
-        <div className={cn(frame, "ornate-frame--closed", bodyClassName)}>{children}</div>
+      <div className={cn("@container stack isolate", tokens, className)}>
+        <div className={cn("ornate-frame--closed", "panel-hover__surface", bodyClassName)}>{children}</div>
+        {/* The border, so the glow can follow the line rather than the box. */}
+        <span aria-hidden className="ornate-frame__ring panel-hover__frame" />
         {crest ? <OrnateCrest /> : null}
       </div>
     );
   }
 
   return (
-    <div className={cn("@container", className)}>
-      <div className={cn(frame, "ornate-frame--open")}>
+    <div className={cn("@container", tokens, className)}>
+      <div className="ornate-frame--open">
         {/*
           The size lives here rather than on `.ornate-legend` in the stylesheet
           because a utility outranks the components layer — and it has to be a
@@ -77,9 +87,10 @@ export function OrnateFrame({
         <div className={cn("ornate-frame__body", bodyClassName)}>{children}</div>
 
         {/* Decoration last, so the border paints over the edges of what it frames. */}
-        <span aria-hidden className="ornate-frame__edge ornate-frame__edge--start" />
-        <span aria-hidden className="ornate-frame__edge ornate-frame__edge--gap" />
-        <span aria-hidden className="ornate-frame__edge ornate-frame__edge--end" />
+        <span aria-hidden className="ornate-frame__surface panel-hover__surface" />
+        <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--start" />
+        <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--gap" />
+        <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--end" />
       </div>
     </div>
   );

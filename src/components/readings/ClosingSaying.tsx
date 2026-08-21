@@ -13,10 +13,16 @@ import { closing } from "@/content/readings";
  * and runs full width below `lg` — her mobile mockup sets every button on the
  * page to the panel's own width, and only lets them hug their label on the
  * desktop frame.
+ *
+ * The air below the button is the client's, not the PSD's: she wants the
+ * parlour to run on well past the last call to action before the footer cuts
+ * it off. Because the artwork stands on the floor of the page, every pixel of
+ * this padding is another pixel of the room on show — so this is the one
+ * number to move if she wants more of it or less.
  */
 export function ClosingSaying() {
   return (
-    <Section padding="none" className="pb-[clamp(2rem,4vw,5rem)]">
+    <Section padding="none" className="pb-[clamp(4rem,10vw,12rem)]">
       <Container width="readings" className="flex flex-col items-center text-center">
         <Divider variant="hero" />
 
@@ -30,7 +36,7 @@ export function ClosingSaying() {
         <ButtonLink
           href={closing.action.href}
           size="fluid"
-          className="mt-[clamp(0.75rem,2.19vw,2.625rem)] w-full px-[0.9em] py-[0.72em] text-[clamp(0.9375rem,4.8vw,1.125rem)] leading-none tracking-[0.01em] lg:w-fit lg:max-w-full lg:py-[0.633em] lg:text-nav"
+          className="readings-cta mt-[clamp(0.75rem,2.19vw,2.625rem)] tracking-[0.01em] lg:py-[0.633em] lg:text-nav lg:leading-none"
         >
           {closing.action.label}
         </ButtonLink>

@@ -124,6 +124,12 @@
   );
   --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
   --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
+  /*
+    The same light as `--glow-gold`, tuned for `drop-shadow` on a 2px line
+    rather than `box-shadow` around a filled box: far less source to spread,
+    so it is tighter and stronger to read at all.
+  */
+  --glow-gold-line: 0 0 6px rgba(248, 242, 176, 0.85);
   --veil-ink: rgba(15, 26, 39, 0.77); /* header and footer scrim */
 }
 
@@ -676,11 +682,30 @@
     --ornate-radius: 4.5cqw;
   }
 
-  /* All four sides — the reading cards and the gift band. */
+  /*
+    All four sides. The border is a ring of its own rather than on this box,
+    so the glow can follow the line — see `.panel-hover__frame`. This box
+    keeps the radius and the clip, which is what holds a photograph to the
+    frame's curve.
+  */
   .ornate-frame--closed {
-    border: var(--ornate-line) solid var(--color-gold);
     border-radius: var(--ornate-radius);
     overflow: clip;
+  }
+
+  .ornate-frame__ring {
+    border: var(--ornate-line) solid var(--color-gold);
+    border-radius: var(--ornate-radius);
+    pointer-events: none;
+    /*
+      Said outright because the box it rings frosts, and a `backdrop-filter` —
+      even `blur(0px)` — makes that box its own stacking context, which paints
+      it over a plain sibling. The border disappeared under the photograph at
+      rest and snapped back over it on hover, when the ring picked up a filter
+      of its own and was promoted in turn. Grid items take a z-index without
+      being positioned; the wrapper's `isolate` keeps it local.
+    */
+    z-index: 1;
   }
 
   /*
@@ -705,6 +730,19 @@
     grid-template-columns: 1fr auto 1fr;
     grid-template-rows: 0 auto;
     isolation: isolate;
+  }
+
+  /*
+    Spans the frame the three edge pieces draw, so it can carry their glow.
+    Both axes, explicitly: with only a row named it auto-places into the first
+    column and frosts a strip down the panel's left edge instead of the panel.
+  */
+  .ornate-frame__surface {
+    border-radius: var(--ornate-radius);
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    pointer-events: none;
+    z-index: -1;
   }
 
   .ornate-frame__edge {
@@ -852,6 +890,11 @@
       grid-row: 1 / 3;
     }
 
+    /* Stops short of the price, which steps outside the frame down here. */
+    .ornate-frame__surface {
+      grid-row: 1 / 3;
+    }
+
     .ornate-frame__edge--gap {
       grid-column: 2 / 4;
     }
@@ -994,11 +1037,20 @@
 
   /*
     Clipped to the frame's own curve, so the corners can't drift out of
-    register the way a radius baked into the image does. The inner corners
-    need no thought: the photograph has faded out before it reaches them.
+    register the way a radius baked into the image does — but only on the two
+    corners that actually meet the frame. The photograph's other edges are
+    interior, and rounding those bites a visible crescent out of it: on the
+    desktop card the media box ends halfway down, so its bottom corners sat in
+    the middle of the card. That went unnoticed while the fade ran to 68% and
+    dissolved the bottom third; tightening it to the 88% her PSD measures put
+    the corners back in fully opaque artwork.
+
+    In the row the photograph is on the left, so it rounds down that side; in
+    the column it is on top, so it rounds across the top instead.
   */
   .reading-card__media {
-    border-radius: var(--ornate-radius);
+    border-end-start-radius: var(--ornate-radius);
+    border-start-start-radius: var(--ornate-radius);
     grid-area: 1 / 1 / 2 / 2;
     overflow: clip;
   }
@@ -1035,6 +1087,8 @@
     }
 
     .reading-card__media {
+      border-end-start-radius: 0;
+      border-start-end-radius: var(--ornate-radius);
       grid-area: 1 / 1 / 2 / -1;
     }
 
@@ -1140,6 +1194,127 @@
   .compass-breathe {
     animation: compass-breathe 4s var(--ease-veil) infinite;
     filter: drop-shadow(0 29px 32px rgba(74, 63, 64, 0.25));
+  }
+
+  /*
+    One hover for every panel on the Readings page.
+
+    Defined here rather than as four Tailwind utilities repeated across three
+    components, because "the same on all of them" is the whole requirement and
+    three copies of it drift — `ProductCard` on the homepage already carries a
+    warning about exactly that, having duplicated `.btn-gold:hover`'s values by
+    hand. There is one definition and each panel names its parts.
+
+    `__surface` spans the panel with its border radius and frosts the parlour
+    showing through the frame. `__frame` is whatever actually draws the
+    border, and it takes the glow — as a `drop-shadow`, which follows the
+    rendered shape rather than the box.
+
+    That distinction is the whole point on the signature panel, whose top edge
+    is deliberately open for its heading. A `box-shadow` there rings the box,
+    so it painted a bright band straight across the gap and through the words:
+    a border glowing where there is no border. `drop-shadow` lights the lines
+    that exist and leaves the opening dark, which is also why the closed
+    panels draw their border as a ring of their own rather than on the box
+    they clip — one shape of glow for all five.
+  */
+  .panel-hover__surface {
+    /*
+      `blur(0px)` at rest rather than the `none` it would otherwise default
+      to: `none` is not a blur radius, so the pair has nothing to interpolate
+      and the frost snaps on instead of easing in.
+    */
+    backdrop-filter: blur(0px);
+    transition:
+      backdrop-filter 300ms var(--ease-veil),
+      box-shadow 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__surface {
+    backdrop-filter: blur(2px);
+  }
+
+  .panel-hover__frame {
+    transition: filter 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__frame {
+    filter: drop-shadow(var(--glow-gold-line));
+  }
+
+  .panel-hover__photo {
+    transition: filter 300ms var(--ease-veil);
+  }
+
+  .panel-hover:hover .panel-hover__photo {
+    filter: brightness(1.1);
+  }
+
+  /*
+    The price answers with the same light `.btn-gold:hover` gives it, so the
+    whole panel lights it rather than only pointing at the button — and holds
+    still, because a button growing inside a motionless card would be the one
+    thing on it that moves.
+  */
+  .panel-hover__cta {
+    --btn-hover-scale: 1;
+  }
+
+  .panel-hover:hover .panel-hover__cta {
+    box-shadow: var(--glow-gold-strong);
+    filter: brightness(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-hover:hover .panel-hover__surface {
+      backdrop-filter: none;
+    }
+  }
+
+  /*
+    The readings page's gold buttons — the signature price, the three reading
+    card prices and the closing call to action.
+
+    On a phone the client draws all five as one button: the full width of the
+    panel it belongs to, at the same 18px label, and a height that follows from
+    the type because the padding is `em`. So the box is stated once here rather
+    than five times in the markup.
+
+    It has to be one value. The reading cards size themselves in `cqw` off
+    their own box while the other two read `vw` off the screen, and those two
+    scales agree only because the panel is 81.33% of the viewport: 5.9cqw and
+    4.8vw are both her 18px on the 375px frame she drew. Written separately
+    they only held at that one width — the `vw` pair stopped at 18px where the
+    clamp closes and the cards' `cqw` kept going, so on any phone wider than
+    375px the same button was rendering at two sizes, and by tablet widths the
+    card price was half again as large as the one above it.
+
+    Above `lg` they part company as Figma draws them, each hugging its own
+    label at its own size, so only the width carries up and every caller states
+    its own type and height there.
+  */
+  /*
+    The box every gold button on this page shares. Only the padding differs
+    between them, and only because Figma draws them at three heights — 81px on
+    the signature panel, 70px on a reading card, 68px at the foot of the page.
+
+    A caller overriding the size with `text-nav` must pass `leading-none` with
+    it: that theme utility sets a line height as well as a size, and a utility
+    outranks this layer, so the `line-height` here is silently replaced and the
+    button grows 6px. Two of the three did exactly that.
+  */
+  .readings-cta {
+    font-size: clamp(0.9375rem, 4.8vw, 1.125rem);
+    inline-size: 100%;
+    line-height: 1;
+    padding: 0.72em 0.9em;
+  }
+
+  @media (width >= 64rem) {
+    .readings-cta {
+      inline-size: fit-content;
+      max-inline-size: 100%;
+    }
   }
 
   /* Ornament --------------------------------------------------------------- */
