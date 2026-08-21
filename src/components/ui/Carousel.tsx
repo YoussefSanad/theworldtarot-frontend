@@ -3,7 +3,7 @@
 import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "motion/react";
-import { createContext, use, useCallback, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
