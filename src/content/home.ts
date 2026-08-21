@@ -49,48 +49,107 @@ export const worldTarot = {
   },
 };
 
+/**
+ * A Choose Your Journey tile.
+ *
+ * Half of this comes from the API at runtime and half never can, so the split
+ * is worth knowing before editing either:
+ *
+ * | Field | Owner |
+ * |---|---|
+ * | `title`, `subtitle`, `price` | **The API**, once it answers. What is written here is the fallback |
+ * | `key`, `action`, `href`, `image` | **Here, always.** None of them are in the product contract |
+ *
+ * See `lib/products.ts` for the merge, and `docs/plans/products-api-wiring.md`
+ * for why it is arranged this way.
+ */
 export type Product = {
-  id: string;
+  /**
+   * The backend's `ProductKey`. Permanent, untranslated, identical in every
+   * language, and **the join between a bundled tile and its API record** — so
+   * a value here that the backend does not recognise is a tile that silently
+   * never takes live copy.
+   */
+  key: string;
   title: string;
-  subtitle: string[];
+  /**
+   * One string, not the two hard-wrapped lines this used to be.
+   *
+   * **Where it breaks is the tile's decision, not the copy's.** The API sends
+   * one sentence and the tile balances it (`text-balance` in `ProductCard`), so
+   * the same words split correctly at all four widths this tile renders at, and
+   * in a language whose words are longer. A newline typed into the admin panel
+   * is still honoured, as an override for when a specific break is really
+   * wanted.
+   */
+  subtitle: string;
+  /** A display string, already formatted. API prices arrive as minor units and are formatted by `lib/price.ts`. */
   price: string;
   action: string;
   href: string;
   image: ImageAsset;
 };
 
+/**
+ * The tiles, in the order they appear, with the copy to show before the API has
+ * answered or when it cannot be reached.
+ *
+ * **This list decides which tiles exist.** The API decides what they say. A
+ * tile cannot be rendered without artwork, and artwork ships in the bundle, so
+ * publishing a fifth product does not put it on the homepage — adding it here
+ * does. That is deliberate: it stops an edit in the admin panel rearranging a
+ * hand-tuned four-column grid.
+ *
+ * **This copy is the source of truth for what the backend seeds.** Every title,
+ * description and price below is reproduced exactly in the backend's
+ * `ProductKey` defaults — verified character for character, curly apostrophe
+ * included — so a freshly seeded database serves precisely what is written
+ * here. Switching the section to live data therefore changes nothing on screen,
+ * which is the whole point: the wiring is provable without the page moving.
+ *
+ * The two drift the first moment anything is edited in the admin panel, and
+ * that is the intended direction of travel. What is below is only ever seen
+ * when the backend cannot be reached at all.
+ *
+ * If you change a word here, the backend's copy of it does not follow. Change
+ * `ProductKey::defaultName` / `defaultShortDescription` / `defaultPrices` too,
+ * or accept that a fresh database and this file now disagree.
+ */
 export const products: Product[] = [
   {
-    id: "one-card",
+    key: "one-card",
     title: "1 CARD READING",
-    subtitle: ["A Single Message", "from the Tarot"],
+    subtitle: "A Single Message from the Tarot",
     price: "$12",
     action: "BEGIN READING",
     href: "/readings/one-card",
     image: artwork.productOneCard,
   },
   {
-    id: "three-card",
+    key: "three-card",
     title: "3 CARD READING",
-    subtitle: ["One Question,", "Three Cards"],
+    subtitle: "One Question, Three Cards",
     price: "$52",
     action: "BEGIN READING",
     href: "/readings/three-card",
     image: artwork.productThreeCard,
   },
   {
-    id: "month-ahead",
+    key: "month-ahead",
     title: "MONTH AHEAD",
-    subtitle: ["What’s in Store?", "5 Card Forecast"],
+    subtitle: "What’s in Store? 5 Card Forecast",
     price: "$75",
     action: "BEGIN READING",
     href: "/readings/month-ahead",
     image: artwork.productMonthAhead,
   },
   {
-    id: "viewing-room",
+    // `viewing-room-pass`, not `viewing-room`: this must be the backend's key
+    // for the merge to find it. The tile's own URL is `href` below and is
+    // unaffected.
+    key: "viewing-room-pass",
     title: "VIEWING ROOM",
-    subtitle: ["Complete Cinematic", "Collection"],
+    subtitle: "Complete Cinematic Collection",
     price: "$29",
     action: "ENTER",
     href: "/viewing-room",
