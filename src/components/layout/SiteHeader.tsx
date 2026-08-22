@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { LocaleControls, useLocaleSelection } from "@/components/layout/LocaleControls";
+import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
@@ -34,9 +34,9 @@ export function SiteHeader() {
   const reducedMotion = useReducedMotion();
   /*
     Held here rather than inside the controls because they are rendered twice —
-    as pills on the desktop action row and as flat rows in the drawer — and one
-    choice has to reach both. See `LocaleControls`; today this is plain state and
-    nothing reads it but the controls themselves.
+    as one icon and its panel on desktop and as flat rows in the drawer — and
+    one choice has to reach both. See `LocaleControls`; today this is plain
+    state and nothing reads it but the controls themselves.
   */
   const localeSelection = useLocaleSelection();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -120,13 +120,6 @@ export function SiteHeader() {
 
         <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
           <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
-            {/*
-              Ahead of the CTA, not after it: these settle how the page reads and
-              what it costs, which is a thing done before deciding, and the bag
-              stays the last item on the row where a shopper expects it.
-            */}
-            <LocaleControls selection={localeSelection} />
-
             <ButtonLink
               href={headerActions.cta.href}
               variant="ghost"
@@ -152,6 +145,13 @@ export function SiteHeader() {
                 />
               </Link>
             ))}
+
+            {/*
+              Last, not first: `LocaleMenu` anchors its panel to its own right
+              edge, and this row is right-justified, so the icon has to be the
+              rightmost thing here for that edge to line up with the header's.
+            */}
+            <LocaleMenu selection={localeSelection} />
           </div>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
@@ -269,12 +269,13 @@ export function SiteHeader() {
               {/*
                 Last, and pushed to the foot of the panel: settings rather than
                 destinations, so they sit below the places to go rather than
-                among them. Flat here instead of the desktop pills — a menu
-                opening inside a drawer is a second layer over a first, and with
-                seven options in total there is nothing to save by hiding them.
+                among them. Flat here instead of the desktop icon's panel — a
+                menu opening inside a drawer is a second layer over a first, and
+                with seven options in total there is nothing to save by hiding
+                them.
               */}
               <div className="mt-auto flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
-                <LocaleControls selection={localeSelection} variant="inline" />
+                <LocaleControls selection={localeSelection} />
               </div>
             </div>
           </motion.aside>
