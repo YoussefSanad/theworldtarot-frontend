@@ -24,15 +24,13 @@ export default function ReadingsPage() {
     content ends puts the room under the closing call to action, where she
     draws it. `isolate` keeps its `-z-10` inside this box.
 
-    On desktop the room already fills the page, so a short overhang tucks it
-    under the footer. That overhang is `vh`, not a percentage of this wrapper
-    — this page is thousands of pixels tall, so 5% of it was taller than the
-    footer and painted over it. The footer sits at `z-10` so the extra is
-    actually behind it.
+    `PageAtmosphere` is `inset-0` on this wrapper, so its bottom edge already
+    lands exactly on the wrapper's own bottom — the footer's top edge — with
+    no gap and no overhang to tune.
   */
   return (
     <div className="relative isolate">
-      <PageAtmosphere variant="readings" className="lg:-bottom-[55vh]" />
+      <PageAtmosphere variant="readings" />
       <ReadingsIntro />
       <SignatureExperience />
       <TraditionalReadings />
