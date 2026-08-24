@@ -88,6 +88,8 @@ export const surfaces = {
   valueProps: "/figma/section-6-bg.webp",
   /** `.page-atmosphere-readings`; the flat layer under it is `--color-ink`. */
   readingsParlor: "/figma/readings-parlor.webp",
+  /** The same layer's phone-only sky, from the revised mobile mockup. Below `lg` only. */
+  readingsSkyMobile: "/figma/readings-sky-mobile.webp",
 } as const;
 
 export const videos = {

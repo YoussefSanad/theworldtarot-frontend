@@ -496,6 +496,45 @@
   }
 
   /*
+    The mobile sky.
+
+    Her revised mobile mockup (375x1603) opens the page over a second
+    photograph — a cloudy night sky, laid in at 1:1 across the top 850px, with
+    the parlour's own top edge 58px below it and flat colour in between. It is
+    a phone-only layer: the desktop frame has the room reaching all the way to
+    the masthead, so there is no sky to see there, and `lg` is this page's one
+    seam between the two designs (see components/readings/README.md).
+
+    Built as the parlour's mirror image — same width-driven scale, same feather
+    written as a percentage of the picture, hung from the top edge instead of
+    the floor and fading downwards instead of up. 226.67vw is the artwork's
+    height at full width, 850/375.
+
+    What it cannot do is meet the parlour. In the mockup the whole page is
+    compressed into 1603px and the two layers all but touch; the real page runs
+    several thousand pixels on a phone, so between the sky's fade and the room's
+    there are screens of flat `--color-ink`. Stretching one 375px-wide export
+    across that distance is the alternative, and it would be a six-fold upscale
+    of a soft, low-detail image — smeared clouds and streaked stars where there
+    is now a clean flat colour. The layer keeps its own scale; `--sky-feather`
+    is the knob if the dissolve wants to start earlier.
+  */
+  @media (width < 64rem) {
+    .page-atmosphere-readings::before {
+      background-image: url("/figma/readings-sky-mobile.webp");
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+      block-size: min(226.67vw, 100%);
+      content: "";
+      inset: 0 0 auto 0;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      position: absolute;
+    }
+  }
+
+  /*
     DOM replacements for the world-shine/world-globe layers .page-atmosphere-hero
     omits. `top` reproduces `background-position-y: Y%`'s real formula —
     (Y/100) * (containerHeight - imageHeight), not just (Y/100) * containerHeight
