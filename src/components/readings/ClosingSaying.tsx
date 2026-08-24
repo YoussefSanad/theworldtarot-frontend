@@ -19,10 +19,15 @@ import { closing } from "@/content/readings";
  * it off. Because the artwork stands on the floor of the page, every pixel of
  * this padding is another pixel of the room on show — so this is the one
  * number to move if she wants more of it or less.
+ *
+ * Below `lg` that room-space is section padding, with the button sitting
+ * right under the rule the way the mobile mockup draws it. At `lg` the same
+ * clamp becomes the button's own box instead, so the button centres in the
+ * space rather than hugging the rule above it.
  */
 export function ClosingSaying() {
   return (
-    <Section padding="none" className="pb-[clamp(4rem,10vw,12rem)]">
+    <Section padding="none" className="pb-[clamp(4rem,10vw,12rem)] lg:pb-0">
       <Container width="readings" className="flex flex-col items-center text-center">
         <Divider variant="hero" />
 
@@ -32,14 +37,16 @@ export function ClosingSaying() {
 
         <Divider variant="hero" className="mt-[clamp(0.5rem,1.04vw,1.25rem)]" />
 
-        {/* 68px tall at 30px type in Figma; the width is the label's own. */}
-        <ButtonLink
-          href={closing.action.href}
-          size="fluid"
-          className="readings-cta mt-[clamp(0.75rem,2.19vw,2.625rem)] tracking-[0.01em] lg:py-[0.633em] lg:text-nav lg:leading-none"
-        >
-          {closing.action.label}
-        </ButtonLink>
+        <div className="mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center lg:mt-0 lg:h-[clamp(6rem,14vw,16rem)]">
+          {/* 68px tall at 30px type in Figma; the width is the label's own. */}
+          <ButtonLink
+            href={closing.action.href}
+            size="fluid"
+            className="readings-cta tracking-[0.01em] lg:py-[0.633em] lg:text-nav lg:leading-none"
+          >
+            {closing.action.label}
+          </ButtonLink>
+        </div>
       </Container>
     </Section>
   );

@@ -2,9 +2,11 @@
 
 Built from **two** Figma frames, because the client drew two mockups:
 `300:68` (`READINGS_08_05_FIXED (2)`, 1920x3293) and `311:324`
-(`READINGS OVERVIEW PAGE MOBILE MOCKUP`, 375x1603). Both convert from PSDs in
-`asset dump/readings page/`. Route: `src/app/(site)/readings/page.tsx`. Copy
-lives in [`src/content/readings.ts`](../../content/readings.ts).
+(`READINGS OVERVIEW PAGE MOBILE MOCKUP`, 375x1603, since revised as
+`READINGS OVERIVEW MOBILE REVISED_08_22` — same size, and the sky is what
+changed). Both convert from PSDs in `asset dump/readings page/`. Route:
+`src/app/(site)/readings/page.tsx`. Copy lives in
+[`src/content/readings.ts`](../../content/readings.ts).
 
 **`lg` (1024px) is the seam between the two designs** — one breakpoint for the
 whole page, rather than a different one per component. Above it the desktop
@@ -132,7 +134,17 @@ The mobile mockup is not a narrower desktop. Each panel turns on its side:
 | Gift band | title, small caps, rule, copy — no crest | title, **rule, small caps** — and it grows a crest |
 | Descriptive copy | shown | dropped on the reading cards and the gift band — a 169px column in a 135px frame has no room, and the client cut it. **Kept on the signature panel**, which she keeps |
 | Photograph edge | dissolves downwards | dissolves rightwards |
-| Backdrop | the room behind the whole page | the room in the bottom third, flat above it |
+| Backdrop | the room behind the whole page | the room in the bottom third, **a night sky across the top**, flat between them |
+
+The backdrop row is the one place the mobile design gains a layer rather than
+rearranging one. Both layers stand at their own scale — the room measured from
+the floor up, the sky from the top down, each as tall as its own width makes it
+— and dissolve into the flat colour they share. That is the whole rule, and it
+is why the mockup cannot be read literally here: hers compresses the page into
+1603px, where the two all but touch, and the page it describes is several
+thousand pixels tall on a phone. See the "Readings atmosphere" and "mobile sky"
+blocks in `globals.css`, and `page.tsx` for why the layer starts above the
+masthead.
 
 The button moving out of the frame is the structural one. A border can only
 wrap what it contains, so the border is **its own grid item** rather than a box

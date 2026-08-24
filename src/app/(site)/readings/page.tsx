@@ -24,15 +24,24 @@ export default function ReadingsPage() {
     content ends puts the room under the closing call to action, where she
     draws it. `isolate` keeps its `-z-10` inside this box.
 
-    On desktop the room already fills the page, so a short overhang tucks it
-    under the footer. That overhang is `vh`, not a percentage of this wrapper
-    — this page is thousands of pixels tall, so 5% of it was taller than the
-    footer and painted over it. The footer sits at `z-10` so the extra is
-    actually behind it.
+    `PageAtmosphere` is `inset-0` on this wrapper, so its bottom edge already
+    lands exactly on the wrapper's own bottom — the footer's top edge — with
+    no gap and no overhang to tune.
+
+    The top edge does need one, on a phone. The mobile sky (globals.css) hangs
+    from this box's top edge, but the box starts under a masthead that is
+    transparent so artwork can run behind it — so left flush the sky would open
+    with a hard horizontal edge at the header's bottom. 6rem clears that header
+    at every width below `lg`; the logo's own height sets it, ~83px at 375 and
+    ~90px at 1023. It is the element that moves rather than the sky inside it,
+    because the atmosphere clips its own overflow. No artwork is lost either
+    way — what ends 6rem higher is the layer's reach, not the top of the
+    picture. The site column clips the block axis, so this does not lengthen
+    the document.
   */
   return (
     <div className="relative isolate">
-      <PageAtmosphere variant="readings" className="lg:-bottom-[55vh]" />
+      <PageAtmosphere variant="readings" className="max-lg:-top-24" />
       <ReadingsIntro />
       <SignatureExperience />
       <TraditionalReadings />
