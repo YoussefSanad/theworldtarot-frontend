@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
@@ -31,6 +32,13 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const reducedMotion = useReducedMotion();
+  /*
+    Held here rather than inside the controls because they are rendered twice —
+    as one icon and its panel on desktop and as flat rows in the drawer — and
+    one choice has to reach both. See `LocaleControls`; today this is plain
+    state and nothing reads it but the controls themselves.
+  */
+  const localeSelection = useLocaleSelection();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasMenuOpen = useRef(false);
   const panelId = useId();
@@ -137,6 +145,13 @@ export function SiteHeader() {
                 />
               </Link>
             ))}
+
+            {/*
+              Last, not first: `LocaleMenu` anchors its panel to its own right
+              edge, and this row is right-justified, so the icon has to be the
+              rightmost thing here for that edge to line up with the header's.
+            */}
+            <LocaleMenu selection={localeSelection} />
           </div>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
@@ -250,6 +265,18 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
+
+              {/*
+                Last, and pushed to the foot of the panel: settings rather than
+                destinations, so they sit below the places to go rather than
+                among them. Flat here instead of the desktop icon's panel — a
+                menu opening inside a drawer is a second layer over a first, and
+                with seven options in total there is nothing to save by hiding
+                them.
+              */}
+              <div className="mt-auto flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
+                <LocaleControls selection={localeSelection} />
+              </div>
             </div>
           </motion.aside>
         ) : null}
