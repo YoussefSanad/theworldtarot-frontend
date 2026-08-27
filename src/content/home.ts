@@ -177,7 +177,7 @@ export const included = {
   heading: "What’s Included",
   columns: [
     ["A personalized tarot interpretation tailored to your question", "Clear, thoughtful guidance", "Your reading, beautifully presented on original artwork and delivered by email."],
-    ["Delivered within 72 hours (option to upgrade to 24-hour turnaround)", "A beautifully formatted reading designed to be saved and revisited"],
+    ["Prompt delivery based on your selected reading", "A beautifully formatted reading designed to be saved and revisited"],
   ],
 };
 
