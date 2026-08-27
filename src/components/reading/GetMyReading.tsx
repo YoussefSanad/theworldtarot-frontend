@@ -1,0 +1,221 @@
+import Image from "next/image";
+import type { ReactNode } from "react";
+
+import { PanelHeading } from "@/components/reading/PanelHeading";
+import { Button } from "@/components/ui/Button";
+import { Divider } from "@/components/ui/Divider";
+import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
+import { checkout as marks, type ImageAsset } from "@/lib/assets";
+import { cn } from "@/lib/cn";
+
+const { checkout, gift } = readingPageChrome;
+
+/**
+ * The price, the delivery, and the five ways the client draws of paying it.
+ *
+ * **Four of the five controls are duds**, on purpose and for now. There is no
+ * checkout endpoint and no redemption flow, so Apple Pay, Google Pay, Pay with
+ * Card and redeem gift code are `type="button"` with nothing behind them —
+ * inert rather than submitting a form that would only reload the page with the
+ * visitor's question in the URL. They are real buttons rather than disabled
+ * ones because the client rejected a disabled control elsewhere on the site:
+ * it reads as a bug rather than as "not yet".
+ *
+ * The fifth, `gift a reading`, is live: it turns the whole order into a gift
+ * order in place. See `ReadingOrder` for what that means and why it is a mode
+ * rather than a second page.
+ *
+ * ## Delivery
+ *
+ * Off — the state that ships — the frame's own line, stating the one delivery
+ * there is. On, the same line becomes a choice with standard still selected,
+ * so throwing the switch never changes what a visitor gets by doing nothing.
+ * The switch is `rushDelivery.enabled` and it belongs to the CMS.
+ */
+export function GetMyReading({
+  reading,
+  gifting,
+  onGiftToggle,
+}: {
+  reading: ReadingPage;
+  gifting: boolean;
+  onGiftToggle: () => void;
+}) {
+  return (
+    /* 49px under the question field. */
+    <section id={checkout.anchor} className="mt-[clamp(1rem,2.55vw,3.0625rem)] flex flex-col items-center text-center">
+      <PanelHeading className="text-h2-md">{checkout.heading}</PanelHeading>
+
+      <p className="mt-[clamp(0.125rem,0.21vw,0.25rem)] font-display text-h2-md leading-none tracking-[0.01em] text-white">
+        {reading.price}
+      </p>
+
+      {rushDelivery.enabled ? (
+        <DeliveryChoice />
+      ) : (
+        <p className="mt-[clamp(0.25rem,0.36vw,0.4375rem)] text-note leading-none tracking-[0.01em] font-light text-gold">
+          {reading.delivery}
+        </p>
+      )}
+
+      {/* 498px of the 687px panel; 12px between buttons at the 30px they label. */}
+      <div className="mt-[clamp(0.5rem,1.2vw,1.4375rem)] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none">
+        <CheckoutOption label="Pay with Apple Pay">
+          <Mark art={marks.applePay} className="w-[15.43cqw]" />
+        </CheckoutOption>
+
+        <CheckoutOption label="Pay with Google Pay">
+          <Mark art={marks.googlePay} className="w-[18.63cqw]" />
+        </CheckoutOption>
+
+        <CheckoutOption>
+          <Mark art={marks.card} className="w-[7.13cqw]" />
+          <span className="font-sans font-light">{checkout.card}</span>
+        </CheckoutOption>
+
+        {/*
+          Figma sets this at 24px, a step under the buttons it reassures about,
+          and the padlock beside it at 19x27 — sized in `em` off the line so
+          the two stay in proportion rather than the mark pinning to 19px.
+        */}
+        <p className="mt-[0.2em] flex items-center justify-center gap-[0.4em] text-note leading-none font-light text-white">
+          <Image
+            src={marks.lock.src}
+            alt=""
+            width={marks.lock.width}
+            height={marks.lock.height}
+            className="h-[1.125em] w-auto max-w-none shrink-0"
+          />
+          {checkout.secure}
+        </p>
+
+        <CheckoutOption>
+          <Mark art={marks.redeem} className="w-[7.57cqw]" />
+          {checkout.redeem}
+        </CheckoutOption>
+
+        {/* Between the two gift controls, at the 448px every rule here is drawn at. */}
+        <Divider variant="hero" className="my-[-0.3em]" />
+
+        {/*
+          The one control on this panel that does something. Its label is the
+          way back out of gift mode, so the state can be read off the button
+          rather than inferred from a section most of a panel above it.
+        */}
+        <CheckoutOption pressed={gifting} onClick={onGiftToggle}>
+          <Mark art={marks.gift} className="w-[7.71cqw]" />
+          {gifting ? gift.leave : gift.enter}
+        </CheckoutOption>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Standard or rush, once the CMS has turned rush on.
+ *
+ * Radios rather than a switch: these are two priced options of which exactly
+ * one is true, which is what a radio group is for, and it means the choice
+ * submits itself along with the rest of the form the day there is somewhere to
+ * submit to. Standard carries `defaultChecked`, so the default outcome stays
+ * the one the page had before the switch was thrown.
+ */
+function DeliveryChoice() {
+  return (
+    <fieldset className="mt-[clamp(0.25rem,0.52vw,0.625rem)] flex flex-col items-start gap-[0.3em] text-note leading-none">
+      <legend className="sr-only">Delivery</legend>
+
+      {/*
+        Named rather than described. The product's own `delivery` line — "within
+        24 hours" — is what the page says when there is only one delivery to
+        say; set against an option called 24-Hour Rush it stops reading as a
+        promise and starts reading as a contradiction. What arrives when is
+        already the last line of Your Reading, in the panel opposite.
+      */}
+      <DeliveryOption value="standard" defaultChecked>
+        {rushDelivery.standard}
+      </DeliveryOption>
+
+      <DeliveryOption value="rush">
+        {rushDelivery.label} <span className="text-champagne">({rushDelivery.surcharge})</span>
+      </DeliveryOption>
+    </fieldset>
+  );
+}
+
+function DeliveryOption({
+  value,
+  defaultChecked = false,
+  children,
+}: {
+  value: string;
+  defaultChecked?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-[0.5em] font-light text-gold">
+      {/*
+        The same appearance-none-and-gold treatment the newsletter's consent box
+        wears, drawn round, and lit with the gold glow every other chosen thing
+        on the site answers with rather than a second colour.
+      */}
+      <input
+        type="radio"
+        name="delivery"
+        value={value}
+        defaultChecked={defaultChecked}
+        className="size-[0.75em] shrink-0 appearance-none rounded-full border border-gold checked:bg-gold checked:shadow-(--glow-gold)"
+      />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+/**
+ * One of the five. `gift a reading` passes an `onClick` and a pressed state;
+ * the other four pass neither and are inert — `type="button"`, so a press does
+ * nothing at all rather than submitting the order form they sit in.
+ */
+function CheckoutOption({
+  label,
+  pressed,
+  onClick,
+  children,
+}: {
+  /** For the two that are a mark with no words in them. */
+  label?: string;
+  pressed?: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="fluid"
+      aria-label={label}
+      aria-pressed={pressed}
+      onClick={onClick}
+      className="checkout-option"
+    >
+      {children}
+    </Button>
+  );
+}
+
+/**
+ * A mark inside a checkout option, at its share of the panel — `cqw` rather
+ * than a share of the button, so the five marks keep their sizes relative to
+ * each other and to everything else in the panel.
+ */
+function Mark({ art, className }: { art: ImageAsset; className: string }) {
+  return (
+    <Image
+      src={art.src}
+      alt=""
+      width={art.width}
+      height={art.height}
+      className={cn("h-auto max-w-none shrink-0", className)}
+    />
+  );
+}

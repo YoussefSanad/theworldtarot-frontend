@@ -17,6 +17,18 @@ export const primaryNav: NavLink[] = [
   { label: "FAQ", href: "/faq" },
 ];
 
+/**
+ * The masthead's own controls.
+ *
+ * **`cta` is the site-wide rule for where GET MY READING goes**, and it is
+ * worth stating because the same words appear at the foot of several pages
+ * with two different destinations. A page that sells one reading sends it to
+ * that reading's checkout — on a reading page the checkout is on the page, so
+ * it is an anchor. Every other page — the homepage, World Tarot, Living Tarot,
+ * the Library, the Collection — sends it here, to the readings index, because
+ * there is nothing to check out yet. The masthead is on all of them, so it
+ * always takes the second form.
+ */
 export const headerActions = {
   cta: { label: "GET MY READING", href: "/readings" },
   account: { label: "Sign in", href: "/login", icon: icons.login },

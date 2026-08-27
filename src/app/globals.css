@@ -94,6 +94,12 @@
   */
   --container-readings: 1502px;
   --container-readings-gift: 1191px; /* the Gift a Reading frame */
+  /*
+    A reading's own page: the two panels side by side, 687 + 58 + 686. Figma
+    sets the pair 255px from the left edge and 234px from the right, which is
+    the PSD conversion rather than a design decision — the row centres here.
+  */
+  --container-reading: 1431px;
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -161,6 +167,14 @@
   */
   --measure-readings: 81.33%;
   --measure-readings-gift: 81.33%;
+  /*
+    A reading page's two panels. The client drew no phone mockup for this frame,
+    so below `lg` the pair stacks and takes the readings measure — one panel per
+    screen at the same inset as every other panel on the site, which is what
+    keeps a stacked panel's `cqw` type at the size she sets for a panel that
+    wide. See components/reading/README.md.
+  */
+  --measure-reading: 81.33%;
   --measure-flourish: 448px;
   --measure-flourish-wide: 538px;
   --measure-hairline: min(12rem, 100%);
@@ -175,6 +189,7 @@
     --measure-value-props: min(var(--container-value-props), 65.99vw);
     --measure-readings: min(var(--container-readings), 78.229vw);
     --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
+    --measure-reading: min(var(--container-reading), 74.531vw);
     --measure-flourish: min(448px, 23.333vw);
     --measure-flourish-wide: min(538px, 28.021vw);
     --measure-hairline: min(368px, 19.167vw);
@@ -372,6 +387,10 @@
     --shell-width: var(--measure-readings-gift);
   }
 
+  .shell--reading {
+    --shell-width: var(--measure-reading);
+  }
+
   /*
     Page atmosphere.
 
@@ -534,6 +553,277 @@
       mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
       position: absolute;
     }
+  }
+
+  /*
+    A reading page's atmosphere: the domed observatory the client sets every
+    reading in, standing on the compass rose of its own floor.
+
+    Figma stacks nine layers behind node 329:496 and **seven of them are not
+    worth an asset.** Four are flat fills — `bg-texture` and `bg-texture-alt`
+    are the same export twice and measure a dead `#081525`, which is exactly
+    `--color-night`; `bg-glow-mid` is that colour again and `bg-vignette` is
+    `#0f1a27`. Two more (`bg-floor`, `bg-floor-overlay`) sit *under*
+    `bg-atmosphere`, which is opaque edge to edge, so nothing of them is ever
+    seen, and `bg-accent-dot` is one pixel. What is left of the backdrop is one
+    1920x3191 photograph.
+
+    The ninth, `bg-clouds`, is not a backdrop layer at all — it is the left
+    panel's own sky, drawn in this group because the PSD flattened it here. It
+    lives on that panel; see `.reading-panel-sky` below.
+
+    Everything else here is the readings parlour's rule, for the reasons
+    written out over that block: the artwork is width-driven rather than
+    `cover`-to-fill so the room is never cropped to a vertical slice on a page
+    several times taller than the frame, it stands on the floor of the page,
+    and it dissolves into the flat colour at the top. 166.2vw is its height at
+    full width, 3191/1920. The dome's apex averages `rgb(11, 20, 36)` against
+    the `rgb(8, 21, 37)` it fades into, so the feather costs nothing to look at
+    even at 1920, where the artwork fills the page exactly.
+  */
+  .page-atmosphere-reading {
+    background-color: var(--color-night);
+    overflow: clip;
+  }
+
+  .page-atmosphere-reading::after {
+    background-image: url("/figma/reading-observatory.webp");
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    block-size: min(166.2vw, 100%);
+    content: "";
+    inset: auto 0 0 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
+    position: absolute;
+  }
+
+  /*
+    The left panel's own sky.
+
+    Figma draws this as a 684x2049 layer in the *background* group rather than
+    inside the panel, which is what makes it look like page furniture. It
+    isn't: it is positioned to the pixel over where that panel lands — 4px in
+    from its left edge, 24px above its top border, 20px short of its bottom —
+    and it is the panel's fill, exactly as the flat `--color-ink` wash is the
+    right panel's. Left on the page behind both panels it reads as a
+    hard-edged rectangle down the middle of the room, because that rectangle is
+    the panel it was cut for.
+
+    Painted on the body, which already clips to the frame's curve, so it can
+    never leak past the gold line. It keeps its own alpha: the observatory
+    still shows through the thin parts of the weather, which is what the PSD
+    does.
+
+    `cover` from the top rather than the artwork's own aspect. Nothing is
+    cropped at the size she draws it — 684x2049 is 0.334 against the panel's
+    own 0.336 — and where a panel runs taller than that, which is every width
+    below `lg` once the two columns stack, anchoring the top keeps the weather
+    and loses the near-black tail instead of the other way round.
+  */
+  .reading-panel-sky {
+    background-image: url("/figma/reading-panel-sky.webp");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /*
+    The phone-only sky, borrowed wholesale from the readings index.
+
+    The observatory is width-driven, so on a phone it stands 166vw tall at the
+    bottom of a page several thousand pixels long and everything above it is
+    flat colour. The index answers the same problem with a second layer hung
+    from the top edge, and this is that layer and that asset — the client's
+    375x850 night sky, at the scale it was drawn, fading downwards into the
+    same flat colour the room fades up into.
+
+    **Her own clouds are not used here**, and it is worth saying why, because
+    it is the obvious choice: they are `reading-panel-sky.webp`, which is
+    already on this screen at this width filling the left panel. Behind it as
+    well, the page would show one photograph twice at two scales, a few hundred
+    pixels apart. The index's sky is a different picture and already in the
+    repo.
+  */
+  @media (width < 64rem) {
+    .page-atmosphere-reading::before {
+      background-image: url("/figma/readings-sky-mobile.webp");
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+      block-size: min(226.67vw, 100%);
+      content: "";
+      inset: 0 0 auto 0;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      position: absolute;
+    }
+  }
+
+  /*
+    The two lit braziers in the gate photograph.
+
+    The picture never moves. What moves is a pair of overlays laid exactly over
+    the fires already in it — found by scanning the artwork for its two
+    red-dominant hot spots rather than placed by eye, which is why the two
+    anchors are not the round numbers they look like they should be: 32.4% and
+    64.9% across, both standing on the bowls' rims at 58.8% down.
+
+    Each brazier is a zero-size anchor carrying two layers. `::before` is the
+    flame — a warm ellipse growing from its own base. `::after` is what that
+    fire throws on the stone around it, six times as wide and a fraction of the
+    opacity. Both are `screen`, so they add light to the photograph rather than
+    painting over it; a flame drawn in flat colour would sit on the picture
+    like a sticker.
+
+    **`screen` is also why neither layer is sized to the fire it sits on.** The
+    two cores in the artwork measure `255,247,240` and `255,255,246` —
+    saturated, with nothing left to add. `screen` resolves to `b + a(1 - b)`,
+    so over white it contributes exactly zero however hard it is driven, and a
+    first pass at this that matched the flames' own 16x31px was invisible for
+    that reason alone. The picture only has headroom 25 to 60px out, where the
+    stone falls to 30–130. So the flame is sized to reach well past its own
+    core, its gradient carries less alpha in the middle than a third of the way
+    out, and the glow — which sits entirely on stone — does most of the visible
+    work. **If this reads as too faint, it wants more radius, not more
+    opacity**; opacity in the middle is spent on pixels that cannot take it.
+
+    **Nothing here is allowed to read as a loop**, which is a constraint on the
+    timings rather than on the shapes. The four animations run at 3.1s, 4.3s,
+    6.7s and 5.3s — no two of them share a factor, so the composition they make
+    together only repeats after several minutes — and each is started part-way
+    in with a negative delay so the two sides are never in step even for the
+    first pass. Within one cycle the keyframes are deliberately uneven (13%,
+    27%, 41%, 58%, 73%, 89%) so a flame does not breathe on a metre.
+
+    Movement is `scale` and `opacity` only, and neither leaves the brazier: the
+    flame is about 16px tall on a 616px frame, and its glow never brightens the
+    stone by more than a third. `prefers-reduced-motion` needs no rule of its
+    own — the global block at the foot of this file ends every animation after
+    one iteration, which leaves both layers resting on their 100% keyframe: a
+    still fire, lit.
+  */
+  .gate-braziers {
+    inline-size: 100%;
+    pointer-events: none;
+    position: relative;
+  }
+
+  .gate-brazier {
+    inset-block-end: 41.2%; /* the bowls' rims, 266px of the artwork's 453 */
+    position: absolute;
+    translate: -50% 0;
+  }
+
+  .gate-brazier--left {
+    inset-inline-start: 32.4%;
+  }
+
+  .gate-brazier--right {
+    inset-inline-start: 64.9%;
+  }
+
+  /* The flame. */
+  .gate-brazier::before {
+    background: radial-gradient(
+      ellipse at 50% 78%,
+      rgba(255, 248, 226, 0.5) 0%,
+      rgba(255, 226, 158, 0.88) 26%,
+      rgba(255, 178, 78, 0.54) 52%,
+      rgba(255, 130, 36, 0.22) 76%,
+      transparent 100%
+    );
+    block-size: 9cqw;
+    content: "";
+    inline-size: 4.6cqw;
+    inset: auto auto 0 0;
+    mix-blend-mode: screen;
+    position: absolute;
+    transform-origin: 50% 100%;
+    translate: -50% 0;
+  }
+
+  /* The light it throws on the stone. */
+  .gate-brazier::after {
+    background: radial-gradient(
+      circle,
+      rgba(255, 182, 96, 0.42) 0%,
+      rgba(255, 148, 56, 0.2) 40%,
+      rgba(255, 132, 42, 0.07) 62%,
+      transparent 78%
+    );
+    block-size: 27cqw;
+    content: "";
+    inline-size: 27cqw;
+    inset: auto auto -10cqw 0;
+    mix-blend-mode: screen;
+    position: absolute;
+    translate: -50% 0;
+  }
+
+  @keyframes brazier-flame {
+    0%,
+    100% {
+      opacity: 0.68;
+      scale: 1 1;
+    }
+    13% {
+      opacity: 0.94;
+      scale: 1.06 1.14;
+    }
+    27% {
+      opacity: 0.52;
+      scale: 0.94 0.9;
+    }
+    41% {
+      opacity: 0.86;
+      scale: 1.03 1.07;
+    }
+    58% {
+      opacity: 0.62;
+      scale: 0.97 0.95;
+    }
+    73% {
+      opacity: 1;
+      scale: 1.08 1.2;
+    }
+    89% {
+      opacity: 0.56;
+      scale: 0.95 0.92;
+    }
+  }
+
+  @keyframes brazier-glow {
+    0%,
+    100% {
+      opacity: 0.6;
+      scale: 1;
+    }
+    35% {
+      opacity: 1;
+      scale: 1.07;
+    }
+    62% {
+      opacity: 0.42;
+      scale: 0.95;
+    }
+  }
+
+  .gate-brazier--left::before {
+    animation: brazier-flame 3.1s ease-in-out infinite;
+  }
+
+  .gate-brazier--right::before {
+    animation: brazier-flame 4.3s ease-in-out -1.7s infinite;
+  }
+
+  .gate-brazier--left::after {
+    animation: brazier-glow 6.7s ease-in-out infinite;
+  }
+
+  .gate-brazier--right::after {
+    animation: brazier-glow 5.3s ease-in-out -2.9s infinite;
   }
 
   /*
@@ -823,6 +1113,26 @@
   }
 
   /*
+    The two tall panels a reading page is built out of. Measured off the border
+    exports rather than read from Figma, which reports the box and not the arc:
+    42px on the 687px left panel and 41px on the 686px right one, 6.11% and
+    5.98% of their own width.
+  */
+  .ornate-frame--column {
+    --ornate-radius: 6.05cqw;
+  }
+
+  /*
+    And the three frames those panels hold — the gate photograph (21px on 616),
+    the testimonial (18px on 616) and the question field (20px on 607). Three
+    values within half a percent of each other, so they are one, on the same
+    reasoning as `--panel` above.
+  */
+  .ornate-frame--inset {
+    --ornate-radius: 3.2cqw;
+  }
+
+  /*
     All four sides. The border is a ring of its own rather than on this box,
     so the glow can follow the line — see `.panel-hover__frame`. This box
     keeps the radius and the clip, which is what holds a photograph to the
@@ -963,6 +1273,53 @@
   }
 
   /*
+    A legend that is an ornament rather than a heading — the moon astride the
+    left panel of a reading page, where the border opens to exactly its box.
+
+    Everything above this is about a *first line*: where the rule crosses the
+    capitals, how far a mark hangs to meet it. A mark has no line to hang from,
+    and the row it sits in has no height, so `align-self: center` puts its own
+    centre on the border with nothing to measure. The nudge is the half of the
+    2px line the row's top edge is short by; a caller adds its own if the
+    client draws the mark off-centre, as she draws the moon.
+  */
+  .ornate-legend--mark {
+    align-items: center;
+    align-self: center;
+    margin-block-start: calc(var(--ornate-line) / 2);
+  }
+
+  /*
+    Ornaments astride a panel's top edge.
+
+    A row with no height of its own, laid on the border line: every mark in it
+    centres on the line whatever its own height, so the crops can differ (the
+    stud is 19x26, the trio 26x17) without either needing a lift of its own.
+    The client sets the two studs a fifth of the panel in from either end and
+    they hold that share at every width — `padding-inline` rather than a
+    measurement, since the panel is the only thing they are ever measured
+    against. A third child lands in the middle, which is how the right panel
+    gets its trio without a second construction.
+
+    Placed for both frames at once: on a closed panel this is a `.stack` cell,
+    where the area resolves to the single cell, and on an open one it is the
+    zero-height first row. `start` rather than `center` because only one of
+    those two boxes has zero height.
+  */
+  .panel-marks {
+    align-items: center;
+    align-self: start;
+    block-size: 0;
+    display: flex;
+    grid-area: 1 / 1 / 2 / -1;
+    justify-content: space-between;
+    margin-block-start: calc(var(--ornate-line) / 2);
+    padding-inline: 20%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /*
     The body starts on the line, so the heading's lower half hangs over it —
     that is what putting a heading on a border means. This is the room it needs
     to clear the artwork beneath: half a line of the legend's own type, which
@@ -1001,8 +1358,19 @@
     The body was carrying the frame's radius and clip; with it dissolved, the
     photograph carries its own.
   */
+  /*
+    Every rule in this block that names a `.ornate-frame__*` part is scoped to
+    `--panel`, and has to be: it re-templates the open frame's grid around the
+    signature panel's photograph, its price and the 14%–87% her mobile mockup
+    opens that one top edge to. A reading page's left panel is an open frame
+    too (`--column`, its border parting for the moon), and it wants the base
+    three-column template at every width — unscoped, these rules dropped its
+    body into a grid built for a different panel and folded the frame in half.
+    `--panel` sits on the `@container` wrapper and `--open` on the box inside
+    it, so a descendant selector separates them with nothing to keep in sync.
+  */
   @media (width < 64rem) {
-    .ornate-frame--open {
+    .ornate-frame--panel .ornate-frame--open {
       /*
         Her mobile frame opens its top edge from 14% to 87% and puts the
         photograph's edge at 45%, so all three are lines in one template.
@@ -1021,29 +1389,29 @@
       body and the panel owns the row inside it, so the children only reach the
       panel's grid when neither is a box.
     */
-    .ornate-frame--open > .ornate-frame__body,
+    .ornate-frame--panel .ornate-frame--open > .ornate-frame__body,
     .signature-body {
       display: contents;
     }
 
-    .ornate-frame__edge {
+    .ornate-frame--panel .ornate-frame__edge {
       grid-row: 1 / 3;
     }
 
     /* Stops short of the price, which steps outside the frame down here. */
-    .ornate-frame__surface {
+    .ornate-frame--panel .ornate-frame__surface {
       grid-row: 1 / 3;
     }
 
-    .ornate-frame__edge--gap {
+    .ornate-frame--panel .ornate-frame__edge--gap {
       grid-column: 2 / 4;
     }
 
-    .ornate-frame__edge--end {
+    .ornate-frame--panel .ornate-frame__edge--end {
       grid-column: 4;
     }
 
-    .ornate-legend {
+    .ornate-frame--panel .ornate-legend {
       grid-area: 1 / 2 / 2 / 4;
     }
 
@@ -1301,9 +1669,21 @@
   }
 
   .flanked__rule {
-    border-block-start: 2px solid rgba(228, 196, 106, 0.75);
+    border-block-start: var(--flanked-rule, 2px solid rgba(228, 196, 106, 0.75));
     flex: 1;
     min-inline-size: 0;
+  }
+
+  /*
+    The same row, ruled the way a reading page's four section headings are:
+    a hairline at full strength rather than a 2px line at 75%, and no mark
+    closing it. Figma ships each of those as a 626x1 bitmap that is solid
+    `#e4c46a` up to the heading and transparent behind it — which is a rule
+    with a gap in it, so the gap is the heading's own width here and there is
+    no measurement to keep in sync as the type scales.
+  */
+  .flanked--hairline {
+    --flanked-rule: 1px solid var(--color-gold);
   }
 
   /*
@@ -1455,6 +1835,55 @@
       inline-size: fit-content;
       max-inline-size: 100%;
     }
+  }
+
+  /*
+    A reading page's checkout options: Apple Pay, Google Pay, Pay with Card,
+    and the two gift controls under them.
+
+    Figma draws all five as one box — 498x78 at 30px type, no fill, a 2px gold
+    line and a 25px corner — and changes only the mark inside it, so it is
+    stated once here and each caller brings its own label and icon. Written as
+    a modifier on `.btn-ghost` rather than a control of its own: everything
+    these need beyond the box is the hover that class already carries, and its
+    resting border is the same gold at 55%, which is the one value that would
+    have drifted if this were a copy.
+
+    The height is `em` off the label, as every other button on the site is, so
+    the row keeps its proportion as the type scales rather than pinning to
+    78px. Unlike `.readings-cta` these never hug their labels — the client
+    stacks them as one column of equal buttons at every width, which is also
+    the only thing that keeps an Apple Pay mark and a five-word label the same
+    size as each other.
+  */
+  .checkout-option {
+    background-color: transparent;
+    border-color: var(--color-gold);
+    border-radius: clamp(0.5rem, 1.302vw, 1.5625rem); /* 25px */
+    /*
+      The frames' own line weight, at the frames' own colour. The style is
+      restated even though `.btn-ghost` already sets it: this only ever widens
+      a border that class declared, and a widened border with no style is no
+      border at all if the two ever come apart.
+    */
+    border-style: solid;
+    border-width: 2px;
+    color: var(--color-snow);
+    inline-size: 100%;
+    min-block-size: 2.6em; /* 78px at 30px */
+    padding: 0.3em 0.9em;
+  }
+
+  /*
+    The one of the five that holds a state: `gift a reading`, while the order
+    is a gift. It takes the same gold light every chosen thing on this site
+    answers with rather than a second colour, and it keeps it whether or not a
+    pointer is anywhere near it — which is the difference between a hover and a
+    state, and the reason this is on `aria-pressed` rather than a class.
+  */
+  .checkout-option[aria-pressed="true"] {
+    box-shadow: var(--glow-gold);
+    color: var(--color-champagne);
   }
 
   /* Ornament --------------------------------------------------------------- */

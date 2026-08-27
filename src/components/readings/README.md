@@ -146,6 +146,16 @@ thousand pixels tall on a phone. See the "Readings atmosphere" and "mobile sky"
 blocks in `globals.css`, and `page.tsx` for why the layer starts above the
 masthead.
 
+**The mobile half of that construction is scoped to `.ornate-frame--panel` in
+`globals.css`, and has to stay that way.** Every rule in the `< 64rem` block
+that re-templates `.ornate-frame--open` — the four-column grid, the dissolved
+body, the edges' new rows and columns — describes *this* panel's phone layout.
+A single reading's page (`components/reading/README.md`) is an open frame too,
+its border parting for a crescent rather than a heading, and it wants the base
+three-column template at every width. Unscoped, these rules caught it as well
+and folded it in half. `--panel` sits on the `@container` wrapper and `--open`
+on the box inside it, so a descendant selector separates the two.
+
 The button moving out of the frame is the structural one. A border can only
 wrap what it contains, so the border is **its own grid item** rather than a box
 around the content: it spans the price at one width and stops short of it at

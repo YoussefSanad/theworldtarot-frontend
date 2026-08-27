@@ -24,11 +24,20 @@ import { cn } from "@/lib/cn";
  * edge, so it shares a `.stack` cell with the whole panel rather than sitting
  * inside it.
  */
-export type OrnateFrameVariant = "card" | "panel";
+export type OrnateFrameVariant = "card" | "panel" | "column" | "inset";
+
+const VARIANT_CLASS: Record<OrnateFrameVariant, string> = {
+  card: "ornate-frame--card",
+  panel: "ornate-frame--panel",
+  column: "ornate-frame--column",
+  inset: "ornate-frame--inset",
+};
 
 export function OrnateFrame({
   variant = "card",
   legend,
+  legendMark = false,
+  marks,
   crest = false,
   className,
   bodyClassName,
@@ -37,6 +46,18 @@ export function OrnateFrame({
   variant?: OrnateFrameVariant;
   /** Given, the top border parts for this and the two ornaments bracketing it. */
   legend?: ReactNode;
+  /**
+   * The legend is an ornament rather than a heading, so it centres on the
+   * border instead of hanging from its own first line, and the pair that
+   * brackets a heading is not drawn. See `.ornate-legend--mark`.
+   */
+  legendMark?: boolean;
+  /**
+   * Ornaments laid astride the top edge, on the line rather than in a gap in
+   * it: two of them sit a fifth of the frame in from either end, a third
+   * lands in the middle. Works on an open frame and a closed one alike.
+   */
+  marks?: ReactNode;
   /** Draws the trio astride the top edge below `lg`. Closed panels only. */
   crest?: boolean;
   /** Sits on the `@container` wrapper. */
@@ -53,7 +74,7 @@ export function OrnateFrame({
     Declaring them here is still safe for the `cqw` radius, which resolves
     where it is *used*, and it is only ever used on a descendant.
   */
-  const tokens = cn("ornate-frame", variant === "card" ? "ornate-frame--card" : "ornate-frame--panel");
+  const tokens = cn("ornate-frame", VARIANT_CLASS[variant]);
 
   if (!legend) {
     return (
@@ -62,6 +83,11 @@ export function OrnateFrame({
         {/* The border, so the glow can follow the line rather than the box. */}
         <span aria-hidden className="ornate-frame__ring panel-hover__frame" />
         {crest ? <OrnateCrest /> : null}
+        {marks ? (
+          <span aria-hidden className="panel-marks">
+            {marks}
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -69,20 +95,27 @@ export function OrnateFrame({
   return (
     <div className={cn("@container", tokens, className)}>
       <div className="ornate-frame--open">
-        {/*
-          The size lives here rather than on `.ornate-legend` in the stylesheet
-          because a utility outranks the components layer — and it has to be a
-          responsive pair: `--text-h2`'s 24px floor is wider than the gap the
-          border opens on a phone, and the heading wraps out of the panel.
-          20px is what the mobile mockup sets it at.
-        */}
-        <div className="ornate-legend text-[clamp(0.875rem,4.8vw,1.375rem)] lg:text-h2">
-          <span aria-hidden className="ornate-legend__rule lg:hidden" />
-          <OrnateMark size="lg" className="hidden lg:block" />
-          {legend}
-          <OrnateMark size="lg" mirrored className="hidden lg:block" />
-          <span aria-hidden className="ornate-legend__rule lg:hidden" />
-        </div>
+        {legendMark ? (
+          /* An ornament straddling the line, so no size and no brackets. */
+          <div aria-hidden className="ornate-legend ornate-legend--mark">
+            {legend}
+          </div>
+        ) : (
+          /*
+            The size lives here rather than on `.ornate-legend` in the
+            stylesheet because a utility outranks the components layer — and it
+            has to be a responsive pair: `--text-h2`'s 24px floor is wider than
+            the gap the border opens on a phone, and the heading wraps out of
+            the panel. 20px is what the mobile mockup sets it at.
+          */
+          <div className="ornate-legend text-[clamp(0.875rem,4.8vw,1.375rem)] lg:text-h2">
+            <span aria-hidden className="ornate-legend__rule lg:hidden" />
+            <OrnateMark size="lg" className="hidden lg:block" />
+            {legend}
+            <OrnateMark size="lg" mirrored className="hidden lg:block" />
+            <span aria-hidden className="ornate-legend__rule lg:hidden" />
+          </div>
+        )}
 
         <div className={cn("ornate-frame__body", bodyClassName)}>{children}</div>
 
@@ -91,6 +124,13 @@ export function OrnateFrame({
         <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--start" />
         <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--gap" />
         <span aria-hidden className="ornate-frame__edge panel-hover__frame ornate-frame__edge--end" />
+
+        {/* And the marks over the border, which is what they sit on. */}
+        {marks ? (
+          <span aria-hidden className="panel-marks">
+            {marks}
+          </span>
+        ) : null}
       </div>
     </div>
   );

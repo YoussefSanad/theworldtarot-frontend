@@ -22,11 +22,13 @@ import { cn } from "@/lib/cn";
  * real scroll height, popping a scrollbar in and out for the animation's
  * duration.
  */
-export type AtmosphereVariant = "hero" | "readings";
+export type AtmosphereVariant = "hero" | "readings" | "reading";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
   readings: { className: "page-atmosphere-readings" },
+  /** A single reading's page: the observatory, not the parlour. */
+  reading: { className: "page-atmosphere-reading" },
 };
 
 export function PageAtmosphere({ variant, className }: { variant: AtmosphereVariant; className?: string }) {
