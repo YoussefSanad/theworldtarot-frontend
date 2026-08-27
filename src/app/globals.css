@@ -890,7 +890,17 @@
   */
   @media (width < 40rem) {
     #hero-sky {
-      --hero-sky-top: calc(10.9% - 4.48972vw);
+      /*
+        The trailing -6.09vw lifts the comp by 8% of its own height, asked for
+        by eye on top of the tuning above. The composition's height is the
+        globe's (the shine's box closes 15vw inside it): 100.21% width at the
+        artwork's 0.759375 aspect = 76.10vw, and 8% of that is 6.09vw. Kept as
+        its own term rather than folded into the 4.48972 so the approved
+        placement and the nudge off it stay separately legible, and kept
+        width-relative like the rest of the pair so it scales the same way the
+        artwork does instead of drifting with the page's height.
+      */
+      --hero-sky-top: calc(10.9% - 4.48972vw - 40.09vw);
     }
   }
 
