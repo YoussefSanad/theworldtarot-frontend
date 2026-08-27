@@ -255,6 +255,22 @@ every keystroke to do it.
   against the rendered page over three passes, so move it by eye too. The line
   count is the copy's own shape: `included` is a list of phrases per line, so
   its length *is* how many lines the entry sets at the width she drew.
+- **A feature prop turns on its side below `md`, and the row of three breaks
+  much later, at `xl`.** Two different widths on purpose. The compass stands
+  beside the words at `md` and up, which is what the frame draws, and over them
+  below it at the homepage's own size — a compass beside two lines of 22px type
+  has nowhere to go on a phone. Three *across*, though, needs 1384px of the
+  1431 the row is given, and it only keeps fitting while the type and the
+  column shrink together: `--text-caption` bottoms out at 13px around 1150px
+  while the column carries on narrowing, so below there no gap or compass size
+  saves the longest line. `xl` is the nearest step above that. Between the two
+  a prop is a full-width row of its own, which suits it.
+- **The gap between the three is 24px, not the page gutter's 60.** The client's
+  own render leaves about 35px and 3px between props; at 60 a third of the row
+  came to 293px against the 301px her longest description line measures, and
+  that prop ran to three lines. The gaps were the only slack there was to give
+  back. It now clears by 5.3% at every width the row is three across — which is
+  the number to re-check if that copy ever gets longer.
 - **A feature prop has three widths and none of them is the column's.** The
   rule is 277px. The title never wraps — Figma sets it `nowrap` and lets it
   overhang the rule, which is the look: a name on one line over a line. And the

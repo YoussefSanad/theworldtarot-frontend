@@ -10,9 +10,23 @@ import { brand } from "@/lib/assets";
  * Three props under the panels, each opened by a compass.
  *
  * The same three parts the homepage's value props are made of — compass, title,
- * hairline, body — turned on their side: there the compass sits over the words,
- * here it stands beside them. Both are the client's, and this is the reason
- * neither is a component of the other: what they share is a compass and a rule,
+ * hairline, body — and the same two arrangements.
+ *
+ * **The two things that move here move at different widths, and that is not an
+ * oversight.** How a prop is *arranged* switches at `md`: above it the compass
+ * stands beside the words, as this frame draws it, and below it sits **over**
+ * them the way the homepage's do, at the homepage's own size. Whether the three
+ * props sit *side by side* switches much later, at `xl` — see the note on the
+ * row below for the measurement that forces it. In between, a prop is a row of
+ * its own, one per line, which is the arrangement that suits a wide box with
+ * only two lines of type in it.
+ *
+ * A compass beside two lines of 22px type has nowhere to go on a phone; a
+ * column has the height to spare that a narrow row has no width for. That is
+ * the whole of the `md` rule.
+ *
+ * Both arrangements are the client's, and this is why neither section is a
+ * component of the other: what they actually share is a compass and a rule,
  * and both of those are already shared.
  *
  * The compass is `brand.compass`, not the 132x149 Figma exports here — the same
@@ -27,10 +41,21 @@ export function ReadingFeatures() {
       <Container width="reading">
         {/*
           Figma spaces the three at 480px and 460px, which is the PSD rather
-          than a rhythm; equal columns here. They stack below `md` — a compass
-          beside two lines of 22px type has nowhere to go on a phone.
+          than a rhythm; equal columns here — but not the page gutter between
+          them. Her pitch leaves the props about 35px and 3px apart, and under
+          the gutter's 60px a third of the row is 437px, which is 293px once
+          the compass and its gap are out. The first body's opening phrase
+          measures 301px: it wrapped inside itself and that prop ran to three
+          lines. 24px hands the measure back with room over.
+
+          Three across only holds while the column grows with the type, and it
+          stops below about 1150px — `--text-caption` bottoms out at 13px while
+          the column keeps shrinking, so past there no gap or compass size fits
+          the phrase. Hence `xl` for the columns rather than `md`. The props
+          keep their `md` arrangement either way; one per row, they have width
+          to spare.
         */}
-        <ul className="grid gap-[clamp(1.5rem,3.13vw,3.75rem)] md:grid-cols-3">
+        <ul className="grid gap-y-[clamp(1.5rem,3.13vw,3.75rem)] xl:grid-cols-3 xl:gap-x-[clamp(1rem,1.25vw,1.5rem)]">
           {readingPageChrome.features.map((feature, index) => (
             /*
               `min-w-0` so a title wider than its third of the row overhangs it
@@ -38,17 +63,23 @@ export function ReadingFeatures() {
               minimum otherwise, and one long name would push the row past the
               page.
             */
-            <li key={feature.title} className="flex min-w-0 items-center justify-center gap-[0.55em] text-caption">
+            <li
+              key={feature.title}
+              className="flex min-w-0 flex-col items-center justify-center gap-[0.45em] text-caption md:flex-row md:gap-[0.55em]"
+            >
               <Image
                 src={brand.compass.src}
                 alt=""
                 width={brand.compass.width}
                 height={brand.compass.height}
                 /*
-                  132px at 1920, and the same slow halo the homepage's three
-                  breathe with — offset per compass so they are not in step.
+                  132px at 1920 beside the words, and the homepage's own size
+                  below `md` where it sits over them instead — that clamp's
+                  floor holds at 96px across every phone width. Same slow halo
+                  as the homepage's three, offset per compass so the row does
+                  not breathe in step.
                 */
-                className="compass-breathe w-[clamp(3.5rem,6.875vw,8.25rem)] shrink-0"
+                className="compass-breathe w-[clamp(6rem,9.9vw,11.875rem)] shrink-0 md:w-[clamp(3.5rem,6.875vw,8.25rem)]"
                 style={{ animationDelay: `${(-4 / 3) * index}s` }}
               />
 
