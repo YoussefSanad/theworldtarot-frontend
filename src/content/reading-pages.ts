@@ -1,0 +1,183 @@
+import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "@/lib/assets";
+
+/**
+ * A written reading's own page — the template behind `/readings/month-ahead`,
+ * built from the client's frame `329:496` (`month-ahead-reading-page`, 1920x3191).
+ *
+ * **Three products share this one page.** Three Card, Month Ahead and a future
+ * In-Depth reading are the same purchase and the same fulfilment — the site
+ * takes an optional question and a payment, the client writes the reading
+ * offline and emails a PDF — so spread, card count and price are copy, never
+ * branching. See the workflow note in [`./README.md`](./README.md). Adding the
+ * other two is a `ReadingPage` here and a five-line route beside
+ * `src/app/(site)/readings/month-ahead/page.tsx`; there is nothing else to
+ * build for them.
+ *
+ * That split is what `readingPageChrome` is: everything the three pages say
+ * identically lives there once, and a `ReadingPage` holds only what changes.
+ *
+ * Line breaks follow the same rule as the readings index — see the note at the
+ * top of [`./readings.ts`](./readings.ts). An array is a list of *phrases*
+ * rendered by `<Phrase>`, riding one line where there is room and breaking at
+ * the client's chosen point where there isn't; a paragraph left to wrap to its
+ * measure is one string.
+ */
+
+/** Everything the three written readings' pages say the same way. */
+export const readingPageChrome = {
+  /**
+   * The loop under the title. The client supplied one film for all three
+   * readings — it is the deck, not the spread — so it lives here rather than
+   * on a `ReadingPage`.
+   */
+  hero: {
+    video: videos.readingCards,
+    poster: videoPosters.readingCards,
+    /** Read by anyone who gets the still rather than the film. */
+    alt: "Tarot cards scattered around one lit from within by golden fire",
+  },
+
+  question: {
+    heading: "Ask a Question",
+    body: ["Begin your reading by entering", "an optional question."],
+    /** The frame draws no label; screen readers get one. */
+    label: "Your question",
+    placeholder: "Enter your question…",
+  },
+
+  /**
+   * Buying the reading for somebody else, which the page does **as a mode
+   * rather than as a second page** — see `ReadingOrder`.
+   *
+   * The one hard rule is that the purchaser never sees a question field: the
+   * recipient asks their own after they redeem. So this replaces `question`
+   * outright rather than sitting beside it.
+   */
+  gift: {
+    heading: "Recipient Details",
+    body: ["Tell us where to send it, and", "what you would like it to say."],
+    /** Two states of one control; the second is how a visitor gets back. */
+    enter: "gift a reading",
+    leave: "a reading for myself",
+    email: { label: "Recipient's email address", placeholder: "Their email address…" },
+    message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
+    /**
+     * Said once, under the fields, because the flow is not the obvious one:
+     * nothing is asked of the reading until the recipient redeems it.
+     */
+    note: "They will choose their own question when they redeem it.",
+  },
+
+  checkout: {
+    heading: "Get My Reading",
+    /**
+     * The anchor the page's closing call to action scrolls back to. The frame
+     * draws the button and gives it nowhere to go; every other control on the
+     * page is above it.
+     */
+    anchor: "get-my-reading",
+    /** Apple Pay and Google Pay are marks, so only these two carry a label. */
+    card: "Pay with Card",
+    secure: "Secure checkout powered by Stripe",
+    /**
+     * Set in Cinzel in the frame, which renders lowercase as small capitals —
+     * so this reads as REDEEM GIFT CODE on the page without the copy shouting
+     * here.
+     */
+    redeem: "redeem gift code",
+  },
+
+  included: { heading: "Your Reading" },
+
+  gate: {
+    heading: "Beyond the Gate",
+    subtitle: "Your Journey Begins Here",
+    image: readingPageArtwork.gate,
+    imageAlt: "A lantern-lit stone archway on a mossy woodland path",
+  },
+
+  /** The three props under the panels, each opened by a compass. */
+  features: [
+    { title: "Led by the Cards", body: ["Each reading unfolds through the", "archetypes themselves"] },
+    { title: "Composed with Intention", body: ["Original artwork paired with", "thoughtful interpretation"] },
+    { title: "Clarity in Motion", body: ["Insight that illuminates your", "next chapter"] },
+  ],
+
+  closingAction: "GET MY READING",
+} as const;
+
+/**
+ * The rush upgrade, and the switch that decides whether it exists.
+ *
+ * **`enabled` is the CMS's, not the code's.** Off — which is the default and
+ * the state that ships — a reading offers one delivery and simply states it,
+ * exactly as the client's frame draws it. On, the same line becomes a choice
+ * of two with standard still selected, so turning it on never changes what a
+ * visitor gets by doing nothing.
+ *
+ * It is a plain `boolean` rather than a literal `false` on purpose: narrowed
+ * to a constant, the branch that renders the choice would read as dead code to
+ * everything that looks at this file.
+ */
+export const rushDelivery: { enabled: boolean; label: string; surcharge: string; standard: string } = {
+  enabled: false,
+  label: "24-Hour Rush",
+  surcharge: "+$25",
+  standard: "Standard Delivery",
+};
+
+/**
+ * The most a question — or a gift message — may run to, with the counter under
+ * the field written from it. Enforced on the field as well, so the limit is
+ * the same number in both places.
+ */
+export const questionLimit = 500;
+
+export type ReadingPage = {
+  /** Matches the `Reading` of the same id on the readings index. */
+  id: string;
+  title: string;
+  tagline: readonly string[];
+  /**
+   * Hard-coded, as the readings index and the homepage tiles' fallback copy
+   * are. Reading prices are resolved per visitor by the products endpoint —
+   * see `docs/plans/products-api-wiring.md` — and this page is not wired to it
+   * yet; when it is, this becomes the fallback rather than the source.
+   */
+  price: string;
+  /** Shown as drawn while `rushDelivery` is off, and as the standard option once it is on. */
+  delivery: string;
+  /** What Your Reading lists, one entry per medallion. */
+  included: readonly (readonly string[])[];
+  testimonial: { quote: readonly string[]; attribution: readonly string[] };
+  /** The line the page closes on, above its last call to action. */
+  closing: readonly string[];
+};
+
+/** Kept exported for the artwork type; the hero is chrome, the rest is copy. */
+export type { ImageAsset };
+
+export const monthAhead: ReadingPage = {
+  id: "month-ahead",
+  title: "Month Ahead Reading",
+  /** One line in the frame; two phrases so it breaks where she breaks it. */
+  tagline: ["One Month. Five Cards.", "a clear path ahead."],
+  price: "$75",
+  delivery: "Delivery Time: within 24 hours",
+  included: [
+    ["A Month-Ahead Reading", "focused on your path forward"],
+    ["Prepare for the weeks ahead", "with insight"],
+    ["Thoughtful written interpretation"],
+    /* The house name is set in the brand's own face here; see `<HouseName>`. */
+    ["Presented on original World Tarot", "artwork"],
+    ["Delivered by email within 24 hours"],
+  ],
+  testimonial: {
+    quote: [
+      "“It gave me a clearer sense of what to expect over the month ahead.",
+      "By month’s end, I was amazed by how much had resonated.”",
+    ],
+    attribution: ["RILEY S", "PORTLAND, ME"],
+  },
+  closing: ["What is unfolding", "has already begun"],
+};
