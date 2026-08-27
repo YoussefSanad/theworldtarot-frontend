@@ -838,19 +838,68 @@
       shine coeff = 9 * 121.93 * 0.409375 / 100 = 4.49236
       globe coeff = 5.9 * 100.21 * 0.759375 / 100 = 4.48972
     left/width are a direct port — posX/widthPct match production's tuned
-    background-position-x / background-size values exactly. The >=120rem
-    block is copied verbatim from .page-atmosphere's own calc() expressions
-    (already raw <length> values, not percentages, so no re-derivation
-    needed) — see the comment above that block, higher in this file, for
-    where 534.3px/320.6px/0.19966/0.28156 come from. Move both rules together,
-    by the same pixels, or the glint slides off the globe.
+    background-position-x / background-size values exactly, and they are
+    width-relative all the way through, so the horizontal half of the
+    composition has never been able to drift.
+
+    Only the globe carries a `top`; the shine is placed off it. Porting both
+    Y percentages verbatim was the bug — `9%` and `5.9%` are shares of the
+    *document* height (#hero-sky spans header, main and footer), so the gap
+    between the two layers came out as 0.031 * pageHeight, while the artwork
+    itself is sized in %-of-viewport and therefore needs that gap to scale with
+    *width*. The two agree only where pageHeight = 3.5914 * viewportWidth,
+    which is the design frame's own ratio (6895px at 1920px) and roughly holds
+    across desktop because the whole layout is vw-driven — and is out by a
+    factor of five on a phone, where the page reflows several screens tall and
+    the glint lands ~200px below the horizon. Desktop was drifting too, a few
+    px per content edit, just never enough to see.
+
+    So the pair is rigid now: 11.13vw is the design's own separation
+    (534.3px - 320.6px = 213.7px at 1920, / 1920), width-relative like
+    everything else about these two layers, so it holds at every width. Where
+    the old formula was right this resolves to the same number, so nothing
+    moves on desktop. Move the composition with --hero-sky-top and nothing
+    else — that single anchor is what stops the glint sliding off the globe.
+
+    --hero-sky-top itself stays page-height-relative on purpose: it keeps the
+    anchor exactly where the client approved it instead of re-tuning the comp
+    by eye. The pair therefore still rides up and down *as a unit* with the
+    page's height, which is the one thing left that content edits can move --
+    harmlessly now, since the two layers can no longer come apart. It is also
+    the only number to touch if the composition needs to sit higher or lower:
+    nudge --hero-sky-top, never one layer's `top`. The >=120rem override is the
+    globe's old expression untouched — see the comment above that block,
+    higher in this file, for where 320.6px/0.28156 come from. The shine's old
+    pair (534.3px/0.19966) is gone with its own `top`: those two slopes
+    disagreed, which was the same desync again, ~19px by 2560px.
   */
+  #hero-sky {
+    --hero-sky-top: calc(5.9% - 4.48972vw);
+  }
+
+  /*
+    Phones sit the composition 5% of the page lower than the shared anchor puts
+    it. Making the pair rigid moved the sun up onto the horizon where it
+    belongs, and the whole comp then read too high against a single-column
+    hero -- the copy runs much further down the screen here than it does beside
+    the card at desktop widths, so the sky has further to fall before it is
+    behind anything. Tuned by eye at 390px; same expression as the base rule
+    with one number changed, because it has to stay a page-height share to keep
+    scaling with the rest of the anchor. 40rem is the mobile breakpoint the
+    carousels and the hero's mobile copy already switch at.
+  */
+  @media (width < 40rem) {
+    #hero-sky {
+      --hero-sky-top: calc(10.9% - 4.48972vw);
+    }
+  }
+
   .hero-sky-shine {
     position: absolute;
     max-width: none;
     width: 121.93%;
     left: calc((100% - 121.93%) * 0.613);
-    top: calc(9% - 4.49236vw);
+    top: calc(var(--hero-sky-top) + 11.13vw);
   }
 
   .hero-sky-globe {
@@ -858,16 +907,12 @@
     max-width: none;
     width: 100.21%;
     left: calc((100% - 100.21%) * 1.5);
-    top: calc(5.9% - 4.48972vw);
+    top: var(--hero-sky-top);
   }
 
   @media (width >= 120rem) {
-    .hero-sky-shine {
-      top: calc(534.3px - (100vw - 1920px) * 0.19966);
-    }
-
-    .hero-sky-globe {
-      top: calc(320.6px - (100vw - 1920px) * 0.28156);
+    #hero-sky {
+      --hero-sky-top: calc(320.6px - (100vw - 1920px) * 0.28156);
     }
   }
 
