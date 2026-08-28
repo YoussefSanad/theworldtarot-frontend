@@ -16,7 +16,8 @@
     "check:measure": "node scripts/measure.mjs",
     "check:images": "node scripts/check-images.mjs",
     "check:reveal": "node scripts/check-reveal.mjs",
-    "check:panel": "node scripts/check-panel.mjs"
+    "check:panel": "node scripts/check-panel.mjs",
+    "check:confirmation": "node scripts/check-confirmation.mjs"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.8.2",

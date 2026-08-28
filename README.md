@@ -105,6 +105,14 @@ npm run check:reveal    # walks the whole reveal interaction
 npm run check:images    # flags images that failed or rendered at zero size
 ```
 
+Two need a build first, because they drive the real export rather than `next dev`:
+
+```bash
+npm run build
+npm run check:panel         # the payment panel's four states, and the wallet row
+npm run check:confirmation  # /checkout/complete/ through every payment outcome
+```
+
 At 1920px the hero grid, card, buttons and product row land on the Figma
 geometry exactly. The page runs about 7% taller than the 6674px frame, which is
 the flow layout resolving overlaps that the design draws as stacked boxes.
