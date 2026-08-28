@@ -78,9 +78,17 @@ const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
     rather than of a shorter one we would quietly grow later.
   */
   emailRequired: true,
-  // One button, and never a Stripe overflow menu offering the five methods
-  // the panel has just turned off.
-  layout: { maxColumns: 1, maxRows: 1, overflow: "never" },
+  /*
+    One column, and never a Stripe overflow menu offering the five methods the
+    panel has just turned off.
+
+    `maxRows: 0` means unlimited, and it is **required** rather than chosen:
+    Stripe throws `IntegrationError: options.layout.overflow: 'never' is only
+    supported when options.layout.maxRows is 0` and renders nothing at all. With
+    every other wallet set to `never` there is only ever one button to lay out,
+    so unlimited rows and no overflow are the same single row either way.
+  */
+  layout: { maxColumns: 1, maxRows: 0, overflow: "never" },
 };
 
 function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {

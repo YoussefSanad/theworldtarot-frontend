@@ -112,6 +112,25 @@ async function drive(state, response, settled) {
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
+  /*
+    Stripe validates its options inside the iframe and reports a bad one by
+    throwing, not by rejecting a promise anybody awaits — an `IntegrationError`
+    surfaces as an uncaught rejection and the element renders nothing at all.
+    Every assertion below still passes when that happens, because they are all
+    negatives and a dead element satisfies every one of them.
+
+    Added after `layout.overflow: 'never'` shipped with `maxRows: 1`, which
+    Stripe rejects and this script did not notice.
+  */
+  const thrown = [];
+
+  page.on("pageerror", (error) => thrown.push(error.message.split("\n")[0]));
+  page.on("console", (message) => {
+    const text = message.text();
+
+    if (message.type() === "error" && /IntegrationError|Stripe/.test(text)) thrown.push(text.split("\n")[0]);
+  });
+
   let release = () => {};
 
   if (!live) {
@@ -170,7 +189,7 @@ async function drive(state, response, settled) {
 
   await page.close();
 
-  return { resting, settled: answered };
+  return { resting, settled: answered, thrown };
 }
 
 const PRODUCT = {
@@ -194,6 +213,7 @@ const priced = () => {
 const unsold = () => document.querySelectorAll("#get-my-reading form").length === 0;
 
 const sold = await drive("live — a priced product", { status: 200, json: PRODUCT }, priced);
+expect("live", "Stripe raised nothing", sold.thrown, []);
 expect("live", "no controls while loading", sold.resting.reachableControls, 0);
 /*
   Not "does not move". This browser has no Apple Pay, so the wallet row
@@ -223,6 +243,7 @@ if (live) {
 }
 
 const gone = await drive("withdrawn — a 404", { status: 404, json: { message: "Not found." } }, unsold);
+expect("withdrawn", "Stripe raised nothing", gone.thrown, []);
 expect("withdrawn", "no price", gone.settled.price, "");
 expect("withdrawn", "no controls", gone.settled.visibleControls, 0);
 expect("withdrawn", "no question either", gone.settled.question, 0);
@@ -230,6 +251,7 @@ expect("withdrawn", "the closing call to action still lands", gone.settled.ancho
 expect("withdrawn", "and nothing to pay with", gone.settled.stripeFrames, 0);
 
 const dead = await drive("unreachable — a 500", { status: 500, json: { message: "Server error." } }, priced);
+expect("unreachable", "Stripe raised nothing", dead.thrown, []);
 expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
 /*
   The frame stays whole — a visitor arriving while the API is down should not
