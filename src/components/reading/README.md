@@ -196,14 +196,18 @@ Three things about it are worth knowing before changing any of it.
   fourth. No gold, no gold border, no typeface. `appearance` on `<Elements>`
   reaches the corner radius and the Payment Element that #38 will mount next to
   it, and nothing else. The panel is visibly mixed and that is a constraint
-- **The collapse is Apple's check, not Stripe's.** Where no wallet can show,
-  Stripe emits nothing at all — not `ready`, not `loaderror`, not
-  `availablepaymentmethodschange` — so there is no negative signal to listen
-  for. `window.ApplePaySession` is what "no wallet is available" actually means,
-  read through `useSyncExternalStore` because this repo's lint forbids
-  `setState` in an effect. On a device without it the row collapses and the
-  rows beneath move **up**, which is the safe direction: nothing appears under
-  a finger that was reaching for something else
+- **The row starts closed and opens when Stripe says so.** This is Stripe's own
+  documented pattern: `availablepaymentmethodschange` fires when the element has
+  something to show, and never fires when it has not — which is why no headless
+  browser ever sees it. Until it fires the row is `h-0 overflow-hidden` and
+  `inert`, so there is no gap and nothing announced. It is deliberately not
+  `display:none`: a zero-size iframe may never initialise far enough to report
+  anything, which would leave the row shut forever.
+
+  An earlier version asked `window.ApplePaySession` instead. That answers for
+  the **device**, not for a card in the Wallet, so a Mac that supports Apple Pay
+  with an empty Wallet reserved 78px that Stripe then declined to fill —
+  precisely the gap the criterion forbids
 - **Nothing is charged.** `onConfirm` calls `paymentFailed`, so a customer who
   authorises with Face ID is told checkout is not open rather than shown a tick
   for a payment that never happened. #38 replaces that with a real intent

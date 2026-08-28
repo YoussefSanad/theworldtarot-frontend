@@ -67,33 +67,39 @@ installed types before changing any of them.
 Link, PayPal, Klarna and Amazon Pay all default to `'auto'` as well, so scoping to Apple Pay
 means setting every other key to `'never'` explicitly.
 
-## The collapse is Apple's check, because Stripe does not have one
+## The row starts closed and opens when Stripe says so
 
 The plan for this ticket built the "no gap where no wallet is available" criterion on
 `onReady`'s `availablePaymentMethods`. **That does not work, and the way it fails is silent.**
 
 Measured against the real export in a headless Chromium: where no wallet can show, Stripe emits
-nothing at all — not `ready`, not `loaderror`, not `availablepaymentmethodschange`. There is no
-negative signal to listen for. Forcing `applePay: 'always'` does not help either: on any origin
-that is not a registered payment method domain, Stripe declines to draw the button and says
-nothing about it, which is exactly the failure
+nothing at all — not `ready`, not `loaderror`, not `availablepaymentmethodschange`. Forcing
+`applePay: 'always'` does not help either: on any origin that is not a registered payment method
+domain, Stripe declines to draw the button and says nothing about it, which is the failure
 [#31](https://github.com/YoussefSanad/theworldtarot-frontend/issues/31) exists to prevent.
 
-So the row collapses on `window.ApplePaySession`, which is Apple's own capability check and is
-absent outside Safari and on Macs without the hardware. `canMakePayments()` is the synchronous
-form and answers for the device; the async form answers for a card in the Wallet and needs a
-merchant session we have no business opening to decide a CSS height.
+The first fix was `window.ApplePaySession`, Apple's own capability check. It was wrong in a way
+that only showed up in conversation: **it answers for the device, not for a card in the Wallet.**
+A Mac that supports Apple Pay with an empty Wallet reports capable, so the row reserved 78px that
+Stripe then declined to fill — exactly the gap the criterion forbids, on exactly the
+configuration nobody would have tested.
 
-It is read through `useSyncExternalStore` rather than an effect, because this repo's lint
-forbids `setState` in an effect body and the value is exactly what that hook is for: a snapshot
-of a platform API, with a server snapshot for the export.
+What ships is Stripe's own documented pattern, from the Express Checkout Element guide: start
+closed, and open on `availablepaymentmethodschange`. The event does not fire when nothing is
+available — which is why no headless browser sees it, and why it looked like a dead end the first
+time. It is not a negative signal; it is a positive one, and the absence of it is the answer.
 
-**This does move the panel.** On a device with no Apple Pay the 2.6em ghost row is replaced by a
-collapsed one the moment the price lands, and the rows beneath move up by that much. That is the
-trade taken for the criterion, and the direction is the point: a panel that only ever shrinks
-never puts a control under a finger reaching for something else. `check:panel` asserts *the
-panel never grows* rather than *the panel does not move*, which is the honest version of the
-claim `reading-page-live-price.md` made.
+Two details are load-bearing:
+
+- The closed state is `h-0 overflow-hidden`, **not `display:none`**. A zero-size iframe may never
+  initialise far enough to report anything, which would leave the row shut permanently — the same
+  silent shape as every other failure on this ticket
+- `inert` alongside it, so an Apple Pay button that is not being offered is not announced to a
+  screen reader or reachable by a tab
+
+The cost is that the button appears rather than being reserved for. It appears into a column that
+is `invisible` while the price is in flight, so there is no moment where a visitor is looking at
+a settled panel and a payment button arrives under their thumb.
 
 ## Nothing is charged, and the sheet is told so
 

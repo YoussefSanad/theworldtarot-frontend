@@ -4,9 +4,10 @@ import { Elements, ExpressCheckoutElement } from "@stripe/react-stripe-js";
 import type {
   StripeElementsOptions,
   StripeExpressCheckoutElementOptions,
+  StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent,
   StripeExpressCheckoutElementConfirmEvent,
 } from "@stripe/stripe-js";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/cn";
 import { formatPrice, type Money } from "@/lib/price";
@@ -99,7 +100,21 @@ function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
 }
 
 export function WalletButton({ money }: { money: Money }) {
-  const reserved = useSyncExternalStore(subscribe, hasApplePay, reserveWhileUnknown);
+  /*
+    Stripe's own pattern, from the Express Checkout Element docs: start hidden
+    and reveal when the element says it has something to show.
+
+    **The row reserves nothing until then**, which is what makes the "no gap"
+    criterion true in every case rather than most of them — including a Mac that
+    supports Apple Pay with an empty Wallet, where the device is capable and
+    there is still no button. An earlier version asked `ApplePaySession`
+    instead, which answers for the *device* and would have left 78px of nothing
+    on exactly that machine.
+
+    This is the event that never fires when nothing is available, which is why
+    no headless browser sees it: it reports availability, and there is none.
+  */
+  const [available, setAvailable] = useState(false);
 
   /*
     Memoised on the money, because `Elements` treats a new `options` object as
@@ -125,6 +140,16 @@ export function WalletButton({ money }: { money: Money }) {
     [money.amount, money.currency],
   );
 
+  function handleAvailability(event: StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent) {
+    /*
+      `paymentMethods` is `undefined` when nothing at all can show. Apple Pay is
+      read by name rather than trusting the object's presence, because every
+      other wallet is `never` here — one of them being available is not a reason
+      to hold open a row this panel will never put a button in.
+    */
+    setAvailable(event.paymentMethods?.applePay?.available ?? false);
+  }
+
   return (
     /*
       The row, not the button. Stripe's button is a fixed pixel height and the
@@ -145,9 +170,22 @@ export function WalletButton({ money }: { money: Money }) {
         check has to tell apart.
       */
       data-wallet-row=""
+      inert={!available}
       className={cn(
         "flex w-full items-center justify-center",
-        reserved ? "min-h-[2.6em]" : "hidden",
+        /*
+          Not `hidden`, and not `sr-only`. The element has to stay rendered with
+          its real width or it may never initialise far enough to tell us
+          whether it has anything to show — and `display:none` is exactly the
+          zero-size box that would prevent the event this row is waiting for.
+          `h-0 overflow-hidden` keeps the width and clips the height, so there
+          is nothing to see and nothing to scroll past.
+
+          `inert` alongside it, so an Apple Pay button that is not being offered
+          is not announced to a screen reader or reachable by a tab — the same
+          treatment the panel already gives its controls while the price loads.
+        */
+        available ? "min-h-[2.6em]" : "h-0 overflow-hidden",
       )}
       /*
         The amount is in the sheet, not on the page, so a screen reader that
@@ -156,62 +194,12 @@ export function WalletButton({ money }: { money: Money }) {
       aria-label={`Pay ${formatPrice(money)} with Apple Pay`}
     >
       <Elements stripe={getStripe()} options={elementsOptions}>
-        <ExpressCheckoutElement options={ELEMENT_OPTIONS} onConfirm={handleConfirm} />
+        <ExpressCheckoutElement
+          options={ELEMENT_OPTIONS}
+          onAvailablePaymentMethodsChange={handleAvailability}
+          onConfirm={handleConfirm}
+        />
       </Elements>
     </div>
   );
-}
-
-/**
- * Whether this device could open an Apple Pay sheet at all.
- *
- * **Apple's check, because Stripe does not give us one.** Verified against
- * `@stripe/stripe-js@9.14.0` in a headless Chromium against the real export:
- * where no wallet can show, `onReady` never fires — nor does `onLoadError`, nor
- * `onAvailablePaymentMethodsChange`. There is no negative signal to listen for.
- * The positive one cannot be proved anywhere but a registered payment method
- * domain either: on any other origin Stripe declines to draw the button and
- * says nothing, which is the silent failure #31 exists to prevent.
- *
- * `ApplePaySession` is absent outside Safari and on Macs without the hardware,
- * so its presence is what "no wallet is available" actually means here.
- * `canMakePayments()` is the synchronous form and answers for the device; the
- * async form answers for a card in the Wallet, and needs a merchant session we
- * have no business opening to decide a CSS height.
- */
-function hasApplePay(): boolean {
-  const applePay = (window as { ApplePaySession?: { canMakePayments(): boolean } }).ApplePaySession;
-
-  try {
-    return applePay?.canMakePayments() ?? false;
-  } catch {
-    // `canMakePayments` throws rather than returns false in an insecure or
-    // cross-origin-framed context. Same answer either way.
-    return false;
-  }
-}
-
-/**
- * The answer before there is a `window` to ask: reserve the space.
- *
- * In practice this never runs. `WalletButton` mounts only once the price has
- * arrived, which is after hydration, so the first render already calls
- * `hasApplePay` for real. It is here because a snapshot that guessed *wrong* in
- * a future where the offer resolves during hydration would guess a payment
- * button into existence, and reserving space is the harmless direction to be
- * wrong in.
- *
- * **What this does not do is prevent a reflow.** On a device with no Apple Pay
- * the 2.6em ghost row is replaced by a collapsed one the moment the price
- * lands, and the rows beneath move up by that much. That is the trade accepted
- * for the "no gap" criterion: the movement is upward, and it happens only where
- * there is no wallet button for a thumb to land on.
- */
-function reserveWhileUnknown(): boolean {
-  return true;
-}
-
-/** The capability does not change under a visitor, so there is nothing to subscribe to. */
-function subscribe(): () => void {
-  return () => {};
 }
