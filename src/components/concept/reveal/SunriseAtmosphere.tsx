@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import { artwork } from "@/lib/assets";
@@ -47,16 +47,43 @@ type SkyPhase = "night" | "dawn" | "full";
  * Rising sun + world behind the hero. Portals into `#concept-sky` so layers
  * sit above the CSS atmosphere backgrounds and behind page chrome.
  */
+/**
+ * Whether we are past the server render, which gates the portal below: the
+ * target element does not exist until the client has painted.
+ *
+ * A `useState` + `useEffect(() => setMounted(true), [])` pair is the usual
+ * spelling and is a render that only exists to schedule another. This asks the
+ * question directly instead — the server snapshot is `false`, the client one
+ * `true`, and nothing ever changes so the subscribe is a no-op.
+ */
+const subscribeToNothing = () => () => {};
+
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+}
+
 export function SunriseAtmosphere() {
   const { status, onDawnSettled } = useReveal();
   const reducedMotion = useReducedMotion();
-  const [phase, setPhase] = useState<SkyPhase>("night");
-  const [mounted, setMounted] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
+  const mounted = useMounted();
   const loaded = useRef({ globe: false, shine: false });
   const dawnNotified = useRef(false);
+
+  // Held in a ref so the effects below can call the latest one without
+  // resubscribing whenever the context hands back a new identity. Written in an
+  // effect rather than during render: a render can be thrown away or replayed,
+  // and one that mutates a ref on the way past leaves that write behind either
+  // way.
   const onDawnSettledRef = useRef(onDawnSettled);
-  onDawnSettledRef.current = onDawnSettled;
+
+  useEffect(() => {
+    onDawnSettledRef.current = onDawnSettled;
+  }, [onDawnSettled]);
 
   const isFull = status === "revealing" || status === "revealed";
 
@@ -65,32 +92,49 @@ export function SunriseAtmosphere() {
     if (loaded.current.globe && loaded.current.shine) setAssetsReady(true);
   };
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  /**
+   * The sky is derived from the reveal below, with one exception: the night to
+   * dawn move has to be a *transition*, so the sky must paint at night for one
+   * frame before it is told to go to dawn. That single frame is the only thing
+   * here that is genuinely state, and it is recorded as the situation it was
+   * awarded for rather than as a bare boolean — when `isFull` goes back to
+   * false the key changes, the frame is stale, and the sky starts from night
+   * again instead of snapping straight to dawn.
+   */
+  const dawnKey = `${isFull}:${reducedMotion}:${assetsReady}`;
+  const [dawnFrameFor, setDawnFrameFor] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (reducedMotion || isFull || !assetsReady) return;
+
+    const frame = requestAnimationFrame(() => setDawnFrameFor(dawnKey));
+    return () => cancelAnimationFrame(frame);
+  }, [dawnKey, isFull, reducedMotion, assetsReady]);
+
+  const phase: SkyPhase = reducedMotion
+    ? isFull
+      ? "full"
+      : "dawn"
+    : isFull
+      ? "full"
+      : dawnFrameFor === dawnKey
+        ? "dawn"
+        : "night";
+
+  /**
+   * Under reduced motion the dawn never animates, so there is no animation
+   * completion to report it — this is the only path that has to announce the
+   * settled dawn itself. Every other path is announced by the shine's own
+   * `onAnimationComplete` below, which is why both go through `dawnNotified`:
+   * the reveal downstream must be told exactly once.
+   */
   useEffect(() => {
     dawnNotified.current = false;
 
-    if (reducedMotion) {
-      setPhase(isFull ? "full" : "dawn");
-      if (!isFull) {
-        dawnNotified.current = true;
-        onDawnSettledRef.current();
-      }
-      return;
-    }
+    if (!reducedMotion || isFull) return;
 
-    if (isFull) {
-      setPhase("full");
-      return;
-    }
-
-    setPhase("night");
-    if (!assetsReady) return;
-
-    const frame = requestAnimationFrame(() => setPhase("dawn"));
-    return () => cancelAnimationFrame(frame);
+    dawnNotified.current = true;
+    onDawnSettledRef.current();
   }, [isFull, reducedMotion, assetsReady]);
 
   const shineTransition = reducedMotion

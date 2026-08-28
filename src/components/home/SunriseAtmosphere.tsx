@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import { useReveal } from "@/components/reveal";
@@ -44,12 +44,30 @@ type SkyPhase = "night" | "dawn" | "full";
  * sky — the file rode along. If SHINE_* constants and a wrapper `y` animation
  * appear here again, that is what has happened; this is the version to keep.
  */
+/**
+ * Whether we are past the server render, which gates the portal below: the
+ * target element does not exist until the client has painted.
+ *
+ * A `useState` + `useEffect(() => setMounted(true), [])` pair is the usual
+ * spelling and is a render that only exists to schedule another. This asks the
+ * question directly instead — the server snapshot is `false`, the client one
+ * `true`, and nothing ever changes so the subscribe is a no-op.
+ */
+const subscribeToNothing = () => () => {};
+
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+}
+
 export function SunriseAtmosphere() {
   const { status } = useReveal();
   const reducedMotion = useReducedMotion();
-  const [phase, setPhase] = useState<SkyPhase>("night");
-  const [mounted, setMounted] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
+  const mounted = useMounted();
   const loaded = useRef({ globe: false, shine: false });
 
   const isFull = status === "revealing" || status === "revealed";
@@ -59,27 +77,34 @@ export function SunriseAtmosphere() {
     if (loaded.current.globe && loaded.current.shine) setAssetsReady(true);
   };
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  /**
+   * The sky is derived from the reveal below, with one exception: the night to
+   * dawn move has to be a *transition*, so the sky must paint at night for one
+   * frame before it is told to go to dawn. That single frame is the only thing
+   * here that is genuinely state, and it is recorded as the situation it was
+   * awarded for rather than as a bare boolean — when `isFull` goes back to
+   * false the key changes, the frame is stale, and the sky starts from night
+   * again instead of snapping straight to dawn.
+   */
+  const dawnKey = `${isFull}:${reducedMotion}:${assetsReady}`;
+  const [dawnFrameFor, setDawnFrameFor] = useState<string | null>(null);
 
   useEffect(() => {
-    if (reducedMotion) {
-      setPhase(isFull ? "full" : "dawn");
-      return;
-    }
+    if (reducedMotion || isFull || !assetsReady) return;
 
-    if (isFull) {
-      setPhase("full");
-      return;
-    }
-
-    setPhase("night");
-    if (!assetsReady) return;
-
-    const frame = requestAnimationFrame(() => setPhase("dawn"));
+    const frame = requestAnimationFrame(() => setDawnFrameFor(dawnKey));
     return () => cancelAnimationFrame(frame);
-  }, [isFull, reducedMotion, assetsReady]);
+  }, [dawnKey, isFull, reducedMotion, assetsReady]);
+
+  const phase: SkyPhase = reducedMotion
+    ? isFull
+      ? "full"
+      : "dawn"
+    : isFull
+      ? "full"
+      : dawnFrameFor === dawnKey
+        ? "dawn"
+        : "night";
 
   const shineTransition = reducedMotion
     ? { duration: 0 }
