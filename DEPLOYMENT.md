@@ -33,6 +33,28 @@ The build refuses a loopback address outright (see `assertDeployableApiBase`
 in both config files); `ALLOW_LOCAL_API_BUILD=1` overrides it for a deliberate
 local preview build.
 
+## The checkout probe
+
+`/checkout-probe/` places a real pending order against the API the build points
+at and shows what came back. It is the proof that a browser on our own origin
+can complete the Sanctum cookie handshake — something no test can establish,
+because the tests around [`src/lib/api-write.ts`](src/lib/api-write.ts) stub
+`fetch` and so verify the request we build rather than what the browser does
+with it.
+
+It is behind no flag, deliberately: this branch is not one production is cut
+from, and the route is deleted at #38 when a real payment panel does the same
+thing. Deleting the file is a stronger guarantee than an environment variable
+somebody can set by accident.
+
+**So do not cut a production build from a branch that still has this route.**
+Anybody who loads it places a real pending order against whatever
+`NEXT_PUBLIC_API_BASE_URL` names.
+
+It proves nothing anywhere but `staging.theworldtarot.com`: cookies are issued
+for `.theworldtarot.com`, so on a `pages.dev` preview URL the handshake fails
+for reasons that say nothing about the code.
+
 ## Cloudflare: static assets, not a Worker
 
 `wrangler.toml` reads in full:

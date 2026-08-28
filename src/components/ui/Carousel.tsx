@@ -3,7 +3,7 @@
 import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "motion/react";
-import { createContext, use, useCallback, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -79,24 +79,44 @@ export function Carousel({
   children: ReactNode;
 } & ComponentPropsWithoutRef<"div">) {
   const [viewportRef, api] = useEmblaCarousel(options);
-  const [snapCount, setSnapCount] = useState(initialSnapCount);
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const onReInit = useCallback((embla: EmblaCarouselType) => {
-    setSnapCount(embla.scrollSnapList().length);
-    setSelectedIndex(embla.selectedScrollSnap());
-  }, []);
+  /**
+   * Embla owns the snap list and the selected index; this component only
+   * mirrors them, which is what makes them an external store rather than
+   * state of ours.
+   *
+   * Subscribing was previously an effect that also called its own handler once
+   * to catch up, because Embla emits `init` while it is being constructed —
+   * before any effect could have been listening. That catch-up was a `setState`
+   * in an effect body, and so a render that immediately scheduled another.
+   * Reading the value in a snapshot instead removes the catch-up entirely:
+   * there is nothing to miss, because nothing is being mirrored into state.
+   */
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (!api) return () => {};
 
-  const onSelect = useCallback((embla: EmblaCarouselType) => {
-    setSelectedIndex(embla.selectedScrollSnap());
-  }, []);
+      api.on("reInit", onStoreChange).on("select", onStoreChange);
 
-  useEffect(() => {
-    if (!api) return;
-    onReInit(api);
-    api.on("reInit", onReInit).on("select", onSelect);
-    return () => void api.off("reInit", onReInit).off("select", onSelect);
-  }, [api, onReInit, onSelect]);
+      return () => void api.off("reInit", onStoreChange).off("select", onStoreChange);
+    },
+    [api],
+  );
+
+  // The server snapshot is the caller's declared count, which is the whole
+  // reason `initialSnapCount` exists: dots that render before Embla has
+  // measured anything, so the row does not appear a frame late.
+  const snapCount = useSyncExternalStore(
+    subscribe,
+    () => (api ? api.scrollSnapList().length : initialSnapCount),
+    () => initialSnapCount,
+  );
+
+  const selectedIndex = useSyncExternalStore(
+    subscribe,
+    () => (api ? api.selectedScrollSnap() : 0),
+    () => 0,
+  );
 
   // Skipped on mount, where Embla has just measured the slides itself and a
   // second pass would only risk throwing away the position it settled on.
