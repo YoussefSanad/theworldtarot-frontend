@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { PanelHeading } from "@/components/reading/PanelHeading";
+import { WalletButton } from "@/components/reading/WalletButton";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
@@ -20,21 +21,29 @@ const { checkout, gift } = readingPageChrome;
  * `offer` is what the product endpoint said, as a state rather than a number —
  * see `lib/product.ts`. Three of its four reach this component, and the rule
  * that decides all three is one sentence: **where there is no live money there
- * are no payment controls.**
+ * is nothing that can take a payment.**
+ *
+ * Note what that sentence does *not* say. It is about what can be paid, not
+ * about what can be seen — the client's frame is drawn in every state, and only
+ * the one control that quotes an amount is conditional on there being one.
  *
  * - **live** — the price, formatted from `Money` against the site's locale, and
- *   every control. `offer.money` is also what the wallet sheet will be mounted
- *   with, so the number the customer authorises is the number they were quoted
+ *   a real `WalletButton` mounted from `offer.money`, so the number the customer
+ *   authorises in the sheet is the number they were quoted on the page
  * - **loading** — a resting placeholder at the price line's own height, and the
  *   controls kept in the layout but `invisible` and `inert`. They reserve their
  *   height without being reachable by a pointer, a tab, a screen reader or a
  *   programmatic click. **This is the point of the state**: 498px appearing
  *   under a thumb already reaching for Apple Pay is how a customer pays for
  *   something they did not mean to
- * - **unreachable** — the bundled `reading.price` as plain copy, and no
- *   controls at all. That string has no currency in it and no payment can
- *   honestly be built from it. This state is settled rather than in flight, so
- *   it is allowed to collapse: nothing is about to appear under the finger
+ * - **unreachable** — the bundled `reading.price` as plain copy, and the frame's
+ *   own five buttons, none of which can take money. The panel looks whole
+ *   because a visitor who arrives while the API is down should not meet a hole
+ *   where the checkout is. **No wallet button mounts**, and that is the part
+ *   that matters: `reading.price` is the string `"$75"` for a reading the
+ *   catalogue prices at EUR 7000. It has no currency in it, nobody has verified
+ *   the number today, and a sheet quoting it would be asking for consent to an
+ *   amount no server ever agreed to
  *
  * The fourth, **withdrawn**, never gets here — `ReadingOrder` takes the whole
  * order off the page rather than rendering a checkout for something that is not
@@ -42,13 +51,23 @@ const { checkout, gift } = readingPageChrome;
  *
  * ## The controls
  *
- * **Four of the five controls are duds**, on purpose and for now. There is no
- * checkout endpoint and no redemption flow, so Apple Pay, Google Pay, Pay with
- * Card and redeem gift code are `type="button"` with nothing behind them —
- * inert rather than submitting a form that would only reload the page with the
- * visitor's question in the URL. They are real buttons rather than disabled
- * ones because the client rejected a disabled control elsewhere on the site:
- * it reads as a bug rather than as "not yet".
+ * **One of the five is real once there is money**: Apple Pay, which becomes a
+ * `WalletButton` on `live` and stays the client's ghost button otherwise. See
+ * that file — it takes `Money` rather than an offer, so it cannot be mounted
+ * from a state that has no amount.
+ *
+ * **Three are duds**, on purpose and for now. There is no checkout endpoint and
+ * no redemption flow, so Google Pay, Pay with Card and redeem gift code are
+ * `type="button"` with nothing behind them — inert rather than submitting a form
+ * that would only reload the page with the visitor's question in the URL. They
+ * are real buttons rather than disabled ones because the client rejected a
+ * disabled control elsewhere on the site: it reads as a bug rather than as
+ * "not yet". Google Pay is #36 and the card is #38.
+ *
+ * The panel is visibly mixed while that is true: Apple draws its own button and
+ * allows it three themes, none of them gold, so it cannot be made to match the
+ * gold-outlined frames beside it. That is a constraint rather than an
+ * oversight — see `WalletButton` and `lib/stripe.ts`.
  *
  * The fifth, `gift a reading`, is live: it turns the whole order into a gift
  * order in place. See `ReadingOrder` for what that means and why it is a mode
@@ -98,17 +117,27 @@ export function GetMyReading({
         space, rather than a `min-height` that would be a second number to keep
         true at four widths of a panel laid out in `cqw`.
       */}
-      {offer.status === "unreachable" ? null : (
       <div
         className={cn(
           "mt-[clamp(0.5rem,1.2vw,1.4375rem)] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none",
-          !offering && "invisible",
+          offer.status === "loading" && "invisible",
         )}
-        inert={!offering}
+        inert={offer.status === "loading"}
       >
-        <CheckoutOption label="Pay with Apple Pay">
-          <Mark art={marks.applePay} className="w-[15.43cqw]" />
-        </CheckoutOption>
+        {/*
+          The one control on this panel that is real, and the only one that
+          needs an amount. It is mounted from `offer.money`, which exists on
+          `live` and on no other state — so the slot below it is not a fallback
+          for a wallet button, it is the client's frame standing where a wallet
+          button is not being offered.
+        */}
+        {offering ? (
+          <WalletButton money={offer.money} />
+        ) : (
+          <CheckoutOption label="Pay with Apple Pay">
+            <Mark art={marks.applePay} className="w-[15.43cqw]" />
+          </CheckoutOption>
+        )}
 
         <CheckoutOption label="Pay with Google Pay">
           <Mark art={marks.googlePay} className="w-[18.63cqw]" />
@@ -153,7 +182,6 @@ export function GetMyReading({
           {gifting ? gift.leave : gift.enter}
         </CheckoutOption>
       </div>
-      )}
     </section>
   );
 }

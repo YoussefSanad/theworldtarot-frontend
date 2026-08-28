@@ -27,8 +27,8 @@ export    : the static HTML ships the resting state, no controls, and no price
 
 | Added | Why |
 |---|---|
-| **`npm run check:price`** | The two headline claims — the panel does not move, and there is no way to pay without a live amount — are facts about a laid-out page, which neither `tsc` nor `node --test` can see. The script serves `out/`, intercepts the endpoint, and holds each answer until the loading state has been measured. It needs no backend, which is also the only way to produce the 500 on demand |
-| **`check:price -- --live`** | The intercepted run proves the states and cannot prove the endpoint answers this key. Live mode drops the interception and serves on **port 3000**, the one origin staging's CORS list carries |
+| **`npm run check:panel`** (named `check:price` when this plan was written; renamed at #37, which added the wallet assertions) | The two headline claims — the panel does not move, and there is no way to pay without a live amount — are facts about a laid-out page, which neither `tsc` nor `node --test` can see. The script serves `out/`, intercepts the endpoint, and holds each answer until the loading state has been measured. It needs no backend, which is also the only way to produce the 500 on demand |
+| **`check:panel -- --live`** | The intercepted run proves the states and cannot prove the endpoint answers this key. Live mode drops the interception and serves on **port 3000**, the one origin staging's CORS list carries |
 | **`NEXT_PUBLIC_API_BASE_URL` read inside `baseUrl()`** | It was a module constant, resolved at import, so a test could not set it. Next substitutes the literal wherever the expression appears, so this is identical in a build — and it is what `api-write.ts` already did |
 
 Verified in a browser against the real export, all three settling states:
@@ -50,7 +50,7 @@ standing condition recorded at the foot of `products-api-wiring.md`, which block
 reveal from ever being exercised locally, no longer applies. Anything below still describing it
 as live is describing the day this was planned.
 
-So the last unproven step was taken rather than left owed. `check:price -- --live`, against the
+So the last unproven step was taken rather than left owed. `check:panel -- --live`, against the
 real catalogue:
 
 ```
@@ -170,7 +170,7 @@ them; `inert` takes them out of the accessibility tree — so an explicit `aria-
 `pointer-events: none` would restate what is already true and read as though something else
 were being fixed. What `inert` adds over hiding alone is the last case: a programmatic
 `click()` does nothing either. **There are no payment controls in this state in every sense the
-phrase has**, which is the claim `check:price` asserts by counting controls not inside an
+phrase has**, which is the claim `check:panel` asserts by counting controls not inside an
 `[inert]` subtree.
 
 The price line gets a **resting state** rather than an invisible one — a quiet placeholder at

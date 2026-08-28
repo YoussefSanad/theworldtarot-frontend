@@ -51,6 +51,21 @@ A buyer with no session. Guests are the normal case at checkout: they supply a
 name and an email, and an account with no password is created for them.
 _Avoid_: anonymous user, visitor (a visitor is anyone; a guest is a guest *buyer*)
 
+**Express checkout element**:
+The Stripe element we mount in the payment panel, which draws the wallet
+buttons. It is ours: its theme, type, height and border radius are ours to set,
+within the range Stripe and the wallet vendor allow. It draws buttons; it
+authorizes nothing.
+_Avoid_: Apple Pay button, wallet button, payment element (that is a different Stripe element, for cards)
+
+**Wallet sheet**:
+The dialog the operating system opens when a wallet button is pressed — Apple's
+or Google's, over our page, outside our document. It quotes Money and takes the
+customer's authorization. It is **not ours**: we cannot style it, and the only
+thing we control about it is the number it is given. A cancelled sheet has
+created nothing.
+_Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout element (that is the button, this is the dialog)
+
 ### After the money
 
 **Confirmation**:

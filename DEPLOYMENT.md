@@ -33,6 +33,41 @@ The build refuses a loopback address outright (see `assertDeployableApiBase`
 in both config files); `ALLOW_LOCAL_API_BUILD=1` overrides it for a deliberate
 local preview build.
 
+## The Stripe publishable key
+
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is what the wallet button mounts from. It
+is inlined at build time like the API base, so staging and production carry
+different keys for the same reason they carry different API bases.
+
+**The `NEXT_PUBLIC_` prefix is the whole point of this section.** Only prefixed
+variables reach the bundle. Set as `STRIPE_PUBLISHABLE_KEY` — which is where it
+originally lived, on the *backend* environment, where nothing read it — the key
+reads as configured in every dashboard and is inert in every browser:
+`loadStripe` gets `undefined`, no element mounts, and the payment panel renders
+a gap behind a green build. Check the name, not just the presence.
+
+The build refuses three things (`assertStripeKeyMatchesApi`, in **both** config
+files):
+
+| build | key | result |
+|---|---|---|
+| `staging-api.theworldtarot.com` | `pk_test_` | builds |
+| `staging-api.theworldtarot.com` | `pk_live_` | **refused** — quotes real money against test-priced orders |
+| any non-staging host | `pk_test_` | **refused** — takes an authorization that can never be captured |
+| any | unset | **refused** — the silent gap above |
+
+Any host that does not begin with `staging` is treated as production and
+demands a live key. That is deliberate: production is not stood up yet, and an
+unrecognised host failing a build is safer than one passing it.
+
+`ALLOW_LOCAL_API_BUILD=1` exempts this guard as well as the API base one — a
+deliberate local preview build is exempt from every deployability guard rather
+than a subset.
+
+The key is publishable, not secret: it ships in the bundle by design and
+identifies the account rather than authorising anything. The secret key is the
+backend's and never appears in this repository.
+
 ## The checkout probe
 
 `/checkout-probe/` places a real pending order against the API the build points

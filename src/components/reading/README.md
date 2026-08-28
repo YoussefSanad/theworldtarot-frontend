@@ -177,10 +177,41 @@ Three things about that table are decisions rather than mechanics:
   `click()` alike, rather than a `min-height` that would be wrong at one of the
   panel's four widths. A customer reaching for Apple Pay must not have it move
 
-`npm run check:price` drives all four against the real export with the endpoint
+`npm run check:panel` drives all four against the real export with the endpoint
 intercepted; `-- --live` runs the live case against the API in `.env.local`
 instead, from port 3000 because that is the origin staging's CORS list carries.
 See `docs/plans/reading-page-live-price.md`.
+
+### The wallet button
+
+`WalletButton` is the only control on the panel that is real, and it is mounted
+from `offer.money` — which exists on `live` and on no other state, so a wallet
+sheet quoting a price this repo typed will not compile. See
+`docs/plans/apple-pay-sheet.md`.
+
+Three things about it are worth knowing before changing any of it.
+
+- **It cannot be made to match the frames beside it.** Apple draws the button;
+  `ApplePayButtonTheme` is `'black' | 'white' | 'white-outline'` and there is no
+  fourth. No gold, no gold border, no typeface. `appearance` on `<Elements>`
+  reaches the corner radius and the Payment Element that #38 will mount next to
+  it, and nothing else. The panel is visibly mixed and that is a constraint
+- **The collapse is Apple's check, not Stripe's.** Where no wallet can show,
+  Stripe emits nothing at all — not `ready`, not `loaderror`, not
+  `availablepaymentmethodschange` — so there is no negative signal to listen
+  for. `window.ApplePaySession` is what "no wallet is available" actually means,
+  read through `useSyncExternalStore` because this repo's lint forbids
+  `setState` in an effect. On a device without it the row collapses and the
+  rows beneath move **up**, which is the safe direction: nothing appears under
+  a finger that was reaching for something else
+- **Nothing is charged.** `onConfirm` calls `paymentFailed`, so a customer who
+  authorises with Face ID is told checkout is not open rather than shown a tick
+  for a payment that never happened. #38 replaces that with a real intent
+
+`check:panel` can never see the button — Stripe draws one only in Safari, on a
+device with a wallet, on a registered payment method domain. It asserts the
+negatives instead. That the sheet opens and quotes the price is proved by hand
+on `staging.theworldtarot.com`.
 
 ### Gift is a mode, not a page
 
