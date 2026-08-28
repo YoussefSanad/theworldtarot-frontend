@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { PanelHeading } from "@/components/reading/PanelHeading";
-import { WalletButton } from "@/components/reading/WalletButton";
+import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
@@ -28,7 +28,7 @@ const { checkout, gift } = readingPageChrome;
  * the one control that quotes an amount is conditional on there being one.
  *
  * - **live** — the price, formatted from `Money` against the site's locale, and
- *   a real `WalletButton` mounted from `offer.money`, so the number the customer
+ *   a real `ExpressCheckout` mounted from `offer.money`, so the number the customer
  *   authorises in the sheet is the number they were quoted on the page
  * - **loading** — a resting placeholder at the price line's own height, and the
  *   controls kept in the layout but `invisible` and `inert`. They reserve their
@@ -39,7 +39,7 @@ const { checkout, gift } = readingPageChrome;
  * - **unreachable** — the bundled `reading.price` as plain copy, and the frame's
  *   own five buttons, none of which can take money. The panel looks whole
  *   because a visitor who arrives while the API is down should not meet a hole
- *   where the checkout is. **No wallet button mounts**, and that is the part
+ *   where the checkout is. **No express checkout element mounts**, and that is the part
  *   that matters: `reading.price` is the string `"$75"` for a reading the
  *   catalogue prices at EUR 7000. It has no currency in it, nobody has verified
  *   the number today, and a sheet quoting it would be asking for consent to an
@@ -52,7 +52,7 @@ const { checkout, gift } = readingPageChrome;
  * ## The controls
  *
  * **One of the five is real once there is money**: Apple Pay, which becomes a
- * `WalletButton` on `live` and stays the client's ghost button otherwise. See
+ * `ExpressCheckout` on `live` and stays the client's ghost button otherwise. See
  * that file — it takes `Money` rather than an offer, so it cannot be mounted
  * from a state that has no amount.
  *
@@ -67,7 +67,7 @@ const { checkout, gift } = readingPageChrome;
  * The panel is visibly mixed while that is true: Apple draws its own button and
  * allows it three themes, none of them gold, so it cannot be made to match the
  * gold-outlined frames beside it. That is a constraint rather than an
- * oversight — see `WalletButton` and `lib/stripe.ts`.
+ * oversight — see `ExpressCheckout` and `lib/stripe.ts`.
  *
  * The fifth, `gift a reading`, is live: it turns the whole order into a gift
  * order in place. See `ReadingOrder` for what that means and why it is a mode
@@ -132,7 +132,7 @@ export function GetMyReading({
           button is not being offered.
         */}
         {offering ? (
-          <WalletButton money={offer.money} />
+          <ExpressCheckout money={offer.money} />
         ) : (
           <CheckoutOption label="Pay with Apple Pay">
             <Mark art={marks.applePay} className="w-[15.43cqw]" />

@@ -13,7 +13,7 @@
 
 ## What the money is, and why it is a type rather than a rule
 
-`WalletButton` takes `money: Money`, not a `ProductOffer`. `ProductOffer` carries `money` on
+`ExpressCheckout` takes `money: Money`, not a `ProductOffer`. `ProductOffer` carries `money` on
 `live` and on no other state (`lib/product.ts`), so *mount a wallet sheet from a price we
 invented* is a compile error rather than a rule somebody remembers.
 

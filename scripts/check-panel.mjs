@@ -16,7 +16,7 @@
  * It needs no backend — every request to the API is answered by the route
  * handler, which is also the only way to produce the 500 on demand.
  *
- * ## What it can and cannot say about the wallet button
+ * ## What it can and cannot say about the express checkout element
  *
  * **It can never see an Apple Pay button.** Stripe draws one only in Safari on
  * a device with a wallet, and only on a registered payment method domain — a
@@ -56,11 +56,11 @@ const PANEL = ".reading-panel-sky";
 const PRICE = "#get-my-reading p.font-display";
 const RESTING = '[role="status"][aria-label="Fetching the price"]';
 
-/** The client's own frames. The wallet button is not one and never matches. */
+/** The client's own frames. The express checkout element is not one and never matches. */
 const GHOST = "#get-my-reading .checkout-option";
 
-/** The wallet row, present or collapsed. Selected by the hook, not the label. */
-const WALLET = "#get-my-reading [data-wallet-row]";
+/** The express checkout row, present or collapsed. Selected by the hook, not the label. */
+const WALLET = "#get-my-reading [data-express-checkout]";
 
 /** Proof Stripe.js actually built an element rather than merely loading. */
 const STRIPE_FRAME = '#get-my-reading iframe[name^="__privateStripeFrame"]';

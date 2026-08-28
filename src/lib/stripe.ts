@@ -4,6 +4,12 @@ import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
  * Stripe.js, loaded once and only when something is about to mount an element.
  *
  * See `docs/plans/apple-pay-sheet.md`.
+ *
+ * **Two reasons to change, noted rather than split.** Script loading — the
+ * singleton, the SDK's failure modes — moves on a Stripe upgrade;
+ * `walletAppearance` moves on a design token. They are unrelated, and this file
+ * is small enough that one file is still the cheaper arrangement. Split it when
+ * the appearance map next grows, which is #38 mounting the Payment Element.
  */
 
 /**
@@ -32,7 +38,7 @@ let pending: Promise<Stripe | null> | undefined;
  *
  * Resolves to `null` when the script cannot load, which `Elements` handles by
  * rendering nothing. That is the same visual outcome as a device with no
- * wallet, and `WalletButton` collapses for both.
+ * wallet, and `ExpressCheckout` collapses for both.
  */
 export function getStripe(): Promise<Stripe | null> {
   if (!PUBLISHABLE_KEY) return Promise.resolve(null);

@@ -182,9 +182,9 @@ intercepted; `-- --live` runs the live case against the API in `.env.local`
 instead, from port 3000 because that is the origin staging's CORS list carries.
 See `docs/plans/reading-page-live-price.md`.
 
-### The wallet button
+### The express checkout element
 
-`WalletButton` is the only control on the panel that is real, and it is mounted
+`ExpressCheckout` is the only control on the panel that is real, and it is mounted
 from `offer.money` — which exists on `live` and on no other state, so a wallet
 sheet quoting a price this repo typed will not compile. See
 `docs/plans/apple-pay-sheet.md`.

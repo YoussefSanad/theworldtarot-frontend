@@ -14,7 +14,14 @@ import { formatPrice, type Money } from "@/lib/price";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
 /**
- * The Apple Pay button, and the wallet sheet it opens.
+ * The **express checkout element**, and the wallet sheet it opens.
+ *
+ * Not "the Apple Pay button", which is what `CONTEXT.md` lists under _Avoid_
+ * for this: the element is one control that *draws* wallet buttons, plural, and
+ * which ones it draws is Stripe's decision at runtime. A name that says "the
+ * Apple Pay button" is the name that produced the bug `c27d69f` fixed — asking
+ * Apple whether the device could pay instead of asking the element what it had
+ * to show.
  *
  * See `docs/plans/apple-pay-sheet.md`. Option names are pinned against
  * `@stripe/stripe-js@9.14.0`, which is not decoration: `wallets` is deprecated
@@ -99,7 +106,7 @@ function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
   });
 }
 
-export function WalletButton({ money }: { money: Money }) {
+export function ExpressCheckout({ money }: { money: Money }) {
   /*
     Stripe's own pattern, from the Express Checkout Element docs: start hidden
     and reveal when the element says it has something to show.
@@ -169,7 +176,7 @@ export function WalletButton({ money }: { money: Money }) {
         match both. A collapsed row and an absent one are the two things that
         check has to tell apart.
       */
-      data-wallet-row=""
+      data-express-checkout=""
       inert={!available}
       className={cn(
         "flex w-full items-center justify-center",
