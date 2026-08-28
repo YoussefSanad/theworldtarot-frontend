@@ -11,9 +11,9 @@ const nextConfig = {
 /**
  * Kept identical to the copy in `next.config.ts`, and this is the one that
  * actually runs: Next resolves `next.config.mjs` ahead of `next.config.ts`, so
- * despite what DEPLOYMENT.md says about `.ts` being authoritative, a guard
- * added only there would never fire. Verified by this file failing to load on
- * 21 August 2026 while the `.ts` copy sat unread beside it. Change both.
+ * a guard added only to the `.ts` would never fire. Verified by this file
+ * failing to load on 21 August 2026 while the `.ts` copy sat unread beside it.
+ * Change both.
  */
 function assertDeployableApiBase() {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;

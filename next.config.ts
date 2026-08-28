@@ -16,15 +16,18 @@ const nextConfig: NextConfig = {
  *
  * `NEXT_PUBLIC_API_BASE_URL` is inlined at build time and this app is a static
  * export, so whatever `.env.local` holds when `next build` runs is what every
- * visitor's browser will fetch — there is no server later to correct it. Local
- * development legitimately points at `127.0.0.1` (a backend, or the CORS shim
- * that forwards to staging, since staging's allow list has no `localhost`), so
- * the wrong value is the *normal* value on a developer's machine and the
- * failure is silent: the build succeeds, the homepage renders its bundled
- * fallback copy, and only the network tab says the shop never loaded.
+ * visitor's browser will fetch — there is no server later to correct it. A
+ * developer running a backend on `127.0.0.1` legitimately points at it, so the
+ * wrong value is the *normal* value on that machine and the failure is silent:
+ * the build succeeds, the homepage renders its bundled fallback copy, and only
+ * the network tab says the shop never loaded.
  *
  * Set `ALLOW_LOCAL_API_BUILD=1` to build against a local API deliberately,
- * which is what previewing the products section against the shim wants.
+ * which is what previewing the products section against one wants.
+ *
+ * This catches loopback only. It cannot catch the other wrong value — an API
+ * base outside `theworldtarot.com`, which passes here and then loses the
+ * cookies on every write. See `docs/adr/0001-one-registrable-domain.md`.
  */
 function assertDeployableApiBase(): void {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
