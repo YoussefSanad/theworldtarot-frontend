@@ -125,3 +125,17 @@ test("an unrecognised type is returned, never thrown", async () => {
   assert.equal(result.type, "unrecognised");
   assert.equal(result.type === "unrecognised" && result.reportedType, "redirect");
 });
+
+test("names a method only when asked to, so the backend picks its default", async () => {
+  stubFetch(new Response(null, { status: 204 }), json({ type: "nothing_to_pay" }));
+  await payOrder("kQ3rN8xvT1sLb0Zy");
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), {});
+
+  calls = [];
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ type: "client_secret", client_secret: "pi_1_secret_2" }),
+  );
+  await payOrder("kQ3rN8xvT1sLb0Zy", { method: "stripe" });
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { method: "stripe" });
+});

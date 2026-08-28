@@ -49,7 +49,16 @@ export function CheckoutProbe() {
     return () => controller.abort();
   }, []);
 
-  async function run() {
+  /**
+   * `method` left out asks the backend for its own default, which is what the
+   * real checkout will do. Naming `stripe` is the diagnostic: staging answered
+   * `nothing_to_pay` on a freshly placed pending order, which means the default
+   * resolved to hand settlement. Whether that is because `PAYMENT_METHOD` is
+   * unset or because Stripe is not in the registry at all is the difference
+   * between a 422 here and a client secret — the registry drops Stripe unless
+   * both STRIPE_SECRET and STRIPE_WEBHOOK_SECRET are non-blank.
+   */
+  async function run(method?: string) {
     if (!product) return;
 
     setRunning(true);
@@ -67,7 +76,7 @@ export function CheckoutProbe() {
       // The pay token stays in this scope and dies with it. Not in the URL, not
       // in state that a devtools panel prints, not in a log. It is the whole of
       // the authority to pay this order.
-      const instruction = await payOrder(order.payToken);
+      const instruction = await payOrder(order.payToken, { method });
 
       setReport({
         status: order.status,
@@ -94,14 +103,31 @@ export function CheckoutProbe() {
         Product: {product ? `${product.key} (${product.price.currency})` : "…"}
       </p>
 
-      <button
-        type="button"
-        onClick={run}
-        disabled={!product || running}
-        className="mt-4 border px-4 py-2 disabled:opacity-40"
-      >
-        {running ? "Placing…" : "Place and pay"}
-      </button>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => run()}
+          disabled={!product || running}
+          className="border px-4 py-2 disabled:opacity-40"
+        >
+          {running ? "Placing…" : "Place and pay (backend default)"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => run("stripe")}
+          disabled={!product || running}
+          className="border px-4 py-2 disabled:opacity-40"
+        >
+          {running ? "Placing…" : "Place and pay (name stripe)"}
+        </button>
+      </div>
+
+      <p className="mt-3 opacity-70">
+        Each button places its own order. A 422 on the second means this environment
+        does not offer Stripe at all; a client secret means it does and only the
+        default method is wrong.
+      </p>
 
       {report ? (
         <dl className="mt-8 grid grid-cols-[10rem_1fr] gap-2">
