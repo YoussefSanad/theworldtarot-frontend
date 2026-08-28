@@ -8,6 +8,7 @@
     "start": "next start",
     "export": "next build",
     "lint": "eslint",
+    "test": "node --test \"src/**/*.test.ts\"",
     "assets:fetch": "node scripts/fetch-figma-assets.mjs",
     "assets:optimize": "node scripts/optimize-figma-assets.mjs",
     "assets:media": "node scripts/stage-media.mjs",

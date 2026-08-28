@@ -9,6 +9,9 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // Tests run on `node --test`, whose ESM resolver needs the extension in the
+    // specifier. Next resolves it too, and `noEmit` means nothing is rewritten.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
