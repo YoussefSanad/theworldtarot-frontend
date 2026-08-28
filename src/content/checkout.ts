@@ -23,7 +23,17 @@ export type OutcomeCopy = {
 };
 
 export const checkoutCompleteCopy = {
-  title: "Payment received",
+  /**
+   * The route's `<title>`, and the one string here that has to be true in all
+   * seven states.
+   *
+   * It cannot vary by outcome: this is a static export and the outcome is only
+   * known client-side, long after the metadata has shipped. So it names the
+   * subject and never a result — four of these screens say in the body that no
+   * payment was taken, and a tab reading "Payment received" above them is the
+   * part of a page that gets screenshotted and re-read.
+   */
+  pageTitle: "Your payment",
   /** Above the amount, whatever the outcome. */
   outcomes: {
     received: {

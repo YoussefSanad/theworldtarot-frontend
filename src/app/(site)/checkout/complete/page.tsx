@@ -20,7 +20,7 @@ import { siteName } from "@/content/site";
  * lands ahead of the payment panel rather than with it.
  */
 export const metadata: Metadata = {
-  title: `${checkoutCompleteCopy.title} — ${siteName}`,
+  title: `${checkoutCompleteCopy.pageTitle} — ${siteName}`,
   /*
     Reached only from a payment, and the address carries a payment intent's
     client secret when Stripe put one there. Nothing about it belongs in an
