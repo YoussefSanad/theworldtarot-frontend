@@ -98,7 +98,7 @@ function intent({ id, secret, money }, status) {
  * Either can be absent, which is how the two arrival paths — and the arrival
  * with nothing at all — are told apart.
  */
-async function drive(state, { record, query, answers }) {
+async function drive(state, { record, query, answers, blockStripeJs }) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -112,6 +112,14 @@ async function drive(state, { record, query, answers }) {
       sessionStorage.setItem("checkout", value);
     }, JSON.stringify(record));
   }
+
+  /*
+    An ad blocker, a corporate proxy, a connection dropped mid-load: whatever
+    the cause, `loadStripe` *rejects* rather than resolving to null, and a
+    rejection inside the screen's one async pass is what used to leave a
+    customer on "Checking your payment" for as long as the tab stayed open.
+  */
+  if (blockStripeJs) await page.route("https://js.stripe.com/**", (route) => route.abort());
 
   /*
     Stripe.js retrieves an intent with the publishable key alone over this
@@ -246,6 +254,21 @@ const runs = [
       expect("two purchases", "reports the intent in the address", /payment has been received/i.test(shown.heading), true);
       expect("two purchases", "shows that payment's amount", /€49/.test(shown.text), true);
       expect("two purchases", "never shows the other purchase's amount", /€75/.test(shown.text), false);
+    },
+  },
+  {
+    state: "js.stripe.com blocked, with a payment that did go through",
+    input: {
+      // The worst case for a hang: the money moved, and the screen cannot ask
+      // about it. It must say so rather than checking forever.
+      query: { payment_intent: FIRST.id, payment_intent_client_secret: FIRST.secret },
+      answers: SUCCEEDED,
+      blockStripeJs: true,
+    },
+    assert: ({ shown }) => {
+      expect("blocked", "does not hold on the checking heading", /^Checking/.test(shown.heading), false);
+      expect("blocked", "says it could not check the payment", /could not check/i.test(shown.heading), true);
+      expect("blocked", "does not claim a payment was received", /received/i.test(shown.heading), false);
     },
   },
   {

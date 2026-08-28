@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { checkoutCompleteCopy } from "@/content/checkout";
-import { paymentIntentId, recallCheckout } from "@/lib/checkout-session";
+import { checkoutFor, paymentIntentId } from "@/lib/checkout-session";
 import { outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
 import { getStripe } from "@/lib/stripe";
@@ -43,6 +43,10 @@ import { getStripe } from "@/lib/stripe";
  * mid-way through a fresh purchase — the record is discarded rather than
  * mixed in. What is displayed then comes wholly from the intent the URL names.
  *
+ * The guard itself is `checkoutFor` in `lib/checkout-session.ts`, beside the
+ * `paymentIntentId` it depends on: this screen asks for the record that applies
+ * to the payment it is displaying, and is handed nothing when none does.
+ *
  * ## Reload is safe
  *
  * The record is not erased when this renders. sessionStorage dies with the tab,
@@ -56,7 +60,10 @@ type Result =
   | { state: "checking" }
   /** No intent id anywhere: nothing to look up, and nothing to confirm. */
   | { state: "unknown" }
-  /** Stripe refused the retrieval. Says nothing about whether money moved. */
+  /**
+   * Stripe refused the retrieval, or could not be asked at all — a blocked
+   * script, a dropped connection. Says nothing about whether money moved.
+   */
   | { state: "error" }
   | { state: "known"; outcome: PaymentOutcome; money: Money | null };
 
@@ -83,61 +90,68 @@ export function CheckoutComplete() {
       and hydrate a page whose first paint disagrees with its second.
     */
     void (async () => {
-      const record = recallCheckout();
-
-      // The URL's own id, when Stripe put one there; otherwise the record's,
-      // derived from the secret so the two can never disagree.
-      const intentId = urlIntent ?? (record ? paymentIntentId(record.clientSecret) : null);
-      const clientSecret = urlSecret ?? record?.clientSecret ?? null;
-
-      if (!clientSecret || !intentId) {
-        if (live) setResult({ state: "unknown" });
-        return;
-      }
-
       /*
-        The guard. A record that names a different payment than the one being
-        displayed describes some other purchase — almost always a newer one,
-        made in this tab after the customer navigated back here — and none of it
-        may be shown against this intent.
+        Every await below can reject rather than resolve — `getStripe` when
+        js.stripe.com is blocked by an ad blocker or a proxy, the retrieval on
+        any network failure — and neither is the resolved `{ error }` shape.
+        Without this, the rejection would go unhandled, `setResult` would never
+        be called, and somebody whose card has just been charged would be told
+        "checking" for as long as the tab stayed open.
       */
-      const recordApplies = record !== null && paymentIntentId(record.clientSecret) === intentId;
+      try {
+        // The record for the payment being displayed, or `null` — the
+        // stale-result guard lives in `checkoutFor`, not here.
+        const record = checkoutFor(urlIntent);
 
-      const stripe = await getStripe();
+        // The URL's own id, when Stripe put one there; otherwise the record's,
+        // derived from the secret so the two can never disagree.
+        const intentId = urlIntent ?? (record ? paymentIntentId(record.clientSecret) : null);
+        const clientSecret = urlSecret ?? record?.clientSecret ?? null;
 
-      // No publishable key, or js.stripe.com unreachable. There is nothing
-      // honest to say about the payment, which is what `error` says.
-      if (!stripe) {
+        if (!clientSecret || !intentId) {
+          if (live) setResult({ state: "unknown" });
+          return;
+        }
+
+        const stripe = await getStripe();
+
+        // No publishable key, or js.stripe.com unreachable. There is nothing
+        // honest to say about the payment, which is what `error` says.
+        if (!stripe) {
+          if (live) setResult({ state: "error" });
+          return;
+        }
+
+        const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+        if (!live) return;
+
+        if (!paymentIntent) {
+          setResult({ state: "error" });
+          return;
+        }
+
+        setResult({
+          state: "known",
+          outcome: outcomeFor(paymentIntent.status),
+          /*
+            The intent's own amount first, because it is the payment being
+            reported and cannot be the wrong purchase's money. The record is the
+            fallback for a retrieval that came back without one, and it has
+            already passed the id guard — a restated amount from the wrong
+            purchase would be worse than no amount at all.
+          */
+          money:
+            typeof paymentIntent.amount === "number"
+              ? { currency: paymentIntent.currency.toUpperCase(), amount: paymentIntent.amount }
+              : (record?.money ?? null),
+        });
+      } catch {
+        // A thrown retrieval says exactly as little about the payment as a
+        // refused one, so it lands in the same state, whose copy is already
+        // honest about not knowing whether money moved.
         if (live) setResult({ state: "error" });
-        return;
       }
-
-      const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-
-      if (!live) return;
-
-      if (!paymentIntent) {
-        setResult({ state: "error" });
-        return;
-      }
-
-      setResult({
-        state: "known",
-        outcome: outcomeFor(paymentIntent.status),
-        /*
-          The intent's own amount first, because it is the payment being
-          reported and cannot be the wrong purchase's money. The record is the
-          fallback for a retrieval that came back without one, and only when it
-          passes the id guard — a restated amount from the wrong purchase would
-          be worse than no amount at all.
-        */
-        money:
-          typeof paymentIntent.amount === "number"
-            ? { currency: paymentIntent.currency.toUpperCase(), amount: paymentIntent.amount }
-            : recordApplies
-              ? record.money
-              : null,
-      });
     })();
 
     return () => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 
-import { forgetCheckout, paymentIntentId, recallCheckout, rememberCheckout } from "./checkout-session.ts";
+import { checkoutFor, paymentIntentId, recallCheckout, rememberCheckout } from "./checkout-session.ts";
 
 const realStorage = Reflect.get(globalThis, "sessionStorage");
 
@@ -80,13 +80,6 @@ test("nothing stored recalls as null", () => {
   assert.equal(recallCheckout(), null);
 });
 
-test("a forgotten record recalls as null", () => {
-  rememberCheckout(record);
-  forgetCheckout();
-
-  assert.equal(recallCheckout(), null);
-});
-
 test("a record that is not JSON recalls as null rather than throwing", () => {
   sessionStorage.setItem("checkout", "{not json");
 
@@ -113,6 +106,29 @@ test("storage that refuses is survivable in both directions", () => {
   useStorage(refusingStorage());
 
   assert.doesNotThrow(() => rememberCheckout(record));
-  assert.doesNotThrow(() => forgetCheckout());
   assert.equal(recallCheckout(), null);
+  assert.equal(checkoutFor(null), null);
+});
+
+test("the record is returned for the payment it names", () => {
+  rememberCheckout(record);
+
+  assert.deepEqual(checkoutFor("pi_3Abc123"), record);
+});
+
+test("a record naming another payment is withheld — the stale-result guard", () => {
+  rememberCheckout(record);
+
+  assert.equal(checkoutFor("pi_3Def456"), null);
+});
+
+test("with no intent named, the record is the payment being displayed", () => {
+  rememberCheckout(record);
+
+  assert.deepEqual(checkoutFor(null), record);
+});
+
+test("no record applies to any payment", () => {
+  assert.equal(checkoutFor(null), null);
+  assert.equal(checkoutFor("pi_3Abc123"), null);
 });

@@ -69,6 +69,11 @@ export function paymentIntentId(clientSecret: string): string {
  * because the screen compares intent ids before it trusts the money, a record
  * from the *newer* purchase cannot be shown against an older purchase's URL
  * either.
+ *
+ * **Its caller is #38, the payment panel**, which writes this immediately
+ * before it confirms. Nothing in the tree writes the record today, so the
+ * session-only arrival path on the confirmation is unreachable until that
+ * lands — this is early rather than orphaned.
  */
 export function rememberCheckout(record: CheckoutRecord): void {
   try {
@@ -126,11 +131,24 @@ export function recallCheckout(): CheckoutRecord | null {
   return { payToken, money: { currency, amount }, clientSecret };
 }
 
-/** Erases the record. Nothing on the confirmation path calls this. */
-export function forgetCheckout(): void {
-  try {
-    sessionStorage.removeItem(KEY);
-  } catch {
-    // Same reasoning as the write: never throw over storage.
-  }
+/**
+ * The record for one payment: the stale-result guard, as a function.
+ *
+ * A record that names a different payment than the one being displayed
+ * describes some other purchase — almost always a newer one, made in this tab
+ * after the customer navigated back — and none of it may be shown against the
+ * intent on screen. This answers that in one place, beside `paymentIntentId`,
+ * the function it depends on.
+ *
+ * `null` for `intentId` is the session-only arrival: nothing names an intent
+ * yet, so the record *is* the payment being displayed. `rememberCheckout`
+ * replaces on every purchase, so what is there is always the newest one.
+ */
+export function checkoutFor(intentId: string | null): CheckoutRecord | null {
+  const record = recallCheckout();
+
+  if (record === null) return null;
+  if (intentId === null) return record;
+
+  return paymentIntentId(record.clientSecret) === intentId ? record : null;
 }
