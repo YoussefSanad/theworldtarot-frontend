@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { type ApiProduct, fetchProducts } from "@/lib/api";
 import { ApiRateLimitError, ApiValidationError } from "@/lib/api-write";
 import { type PaymentInstruction, placeOrder, payOrder } from "@/lib/orders";
+import type { Money } from "@/lib/price";
 
 /**
  * Runs the real write seam end to end and shows what came back.
@@ -18,8 +19,8 @@ import { type PaymentInstruction, placeOrder, payOrder } from "@/lib/orders";
 type Report = {
   /** What the order came back as. Never "paid" — a 201 means recorded. */
   status: string;
-  currency: string;
-  totalAmount: number;
+  /** The order's total, currency and all. Never an amount on its own. */
+  total: Money;
   instruction: PaymentInstruction;
 };
 
@@ -71,8 +72,7 @@ export function CheckoutProbe() {
 
       setReport({
         status: order.status,
-        currency: order.currency,
-        totalAmount: order.totalAmount,
+        total: order.total,
         instruction,
       });
     } catch (cause: unknown) {
@@ -109,7 +109,7 @@ export function CheckoutProbe() {
           <dd>{report.status}</dd>
           <dt>total</dt>
           <dd>
-            {report.totalAmount} {report.currency} (minor units)
+            {report.total.amount} {report.total.currency} (minor units)
           </dd>
           <dt>pay type</dt>
           <dd>{report.instruction.type}</dd>

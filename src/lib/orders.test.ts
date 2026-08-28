@@ -84,9 +84,10 @@ test("places an order with no locale segment and returns what the backend priced
 
   assert.equal(order.id, 41);
   assert.equal(order.status, "pending");
-  assert.equal(order.totalAmount, 6400);
+  assert.deepEqual(order.total, { currency: "GBP", amount: 6400 });
   assert.equal(order.payToken, "kQ3rN8xvT1sLb0Zy");
-  assert.equal(order.lines[1].unitAmount, 4500);
+  // The one currency the API sends, put back on every line's own price.
+  assert.deepEqual(order.lines[1].unitPrice, { currency: "GBP", amount: 4500 });
 });
 
 test("paying returns the client secret, addressing the order by its pay token", async () => {

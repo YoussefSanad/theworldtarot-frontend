@@ -7,6 +7,7 @@
  */
 
 import { apiWrite } from "./api-write.ts";
+import type { Money } from "./price.ts";
 
 /** One thing being bought. `quantity` defaults to 1 at the backend, maximum 10. */
 export type OrderLineInput = {
@@ -33,10 +34,15 @@ export type PlaceOrderInput = {
   lines: OrderLineInput[];
 };
 
-/** A line as the backend priced it. Amounts are integer minor units. */
+/** A line as the backend priced it. */
 export type OrderLine = {
   product: string;
-  unitAmount: number;
+  /**
+   * What one of them costs. **Money**, not a bare amount: the wire sends one
+   * currency for the whole order and this puts it back on the number, so no
+   * line price can travel without the currency it is in.
+   */
+  unitPrice: Money;
   quantity: number;
   question: string | null;
 };
@@ -48,8 +54,8 @@ export type Order = {
    * means the order is recorded, never that it is paid.**
    */
   status: string;
-  currency: string;
-  totalAmount: number;
+  /** What the whole order comes to, as the backend priced it. */
+  total: Money;
   lines: OrderLine[];
   /**
    * A credential, and the whole of the authority to pay this order. Never put
@@ -77,14 +83,20 @@ type ApiOrder = {
 export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
   const order = await apiWrite<ApiOrder>("/api/v1/orders", input);
 
+  /*
+    The wire shape is unchanged: one currency for the whole order, and bare
+    minor units on the total and on every line. It is paired up here, at the
+    boundary, so nothing downstream ever holds an amount on its own.
+  */
+  const currency = order.currency;
+
   return {
     id: order.id,
     status: order.status,
-    currency: order.currency,
-    totalAmount: order.total_amount,
+    total: { currency, amount: order.total_amount },
     lines: order.lines.map((line) => ({
       product: line.product,
-      unitAmount: line.unit_amount,
+      unitPrice: { currency, amount: line.unit_amount },
       quantity: line.quantity,
       question: line.question,
     })),
@@ -130,15 +142,11 @@ type ApiPaymentInstruction = { type: string; client_secret?: string };
  * what a declined card should do, and creates no second order. An unknown token
  * is a 404, and so is somebody else's, identically.
  */
-export async function payOrder(
-  payToken: string,
-  { method }: { method?: string } = {},
-): Promise<PaymentInstruction> {
-  // The body is optional. `method` is left out unless asked for, so that
-  // gifting can add `gift_code` later without changing the shape of this call.
+export async function payOrder(payToken: string): Promise<PaymentInstruction> {
+  // The body is optional and there is nothing to put in it.
   const instruction = await apiWrite<ApiPaymentInstruction>(
     `/api/v1/orders/${encodeURIComponent(payToken)}/pay`,
-    method ? { method } : {},
+    {},
   );
 
   if (instruction.type === "client_secret" && instruction.client_secret) {
