@@ -44,7 +44,16 @@ function isLoopback(hostname: string): boolean {
 function assertDeployableApiBase(): void {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  if (!apiBase || process.env.ALLOW_LOCAL_API_BUILD === "1") return;
+  if (process.env.ALLOW_LOCAL_API_BUILD === "1") return;
+
+  if (!apiBase) {
+    throw new Error(
+      "NEXT_PUBLIC_API_BASE_URL is unset, so the export has no API to talk to and every " +
+        "write fails in the browser. It is also what tells the Stripe key guard which " +
+        "environment this build is for, so an unset base silently disarms that too. " +
+        "Point it at a deployed backend, or set ALLOW_LOCAL_API_BUILD=1 for a local preview build.",
+    );
+  }
 
   if (!isLoopback(new URL(apiBase).hostname)) return;
 
@@ -79,14 +88,21 @@ function assertDeployableApiBase(): void {
  * host is therefore treated as production and demands a live key. That is the
  * safe direction to be wrong in: it fails a build rather than passing one.
  *
- * `ALLOW_LOCAL_API_BUILD=1` exempts this too. A deliberate local preview build
- * is exempt from every deployability guard, not a subset of them.
+ * `ALLOW_LOCAL_API_BUILD=1` excuses the *missing* key only. That flag exists so
+ * a local preview build with no checkout in it can run, and a build with no key
+ * has no checkout in it — but a key that is present is checked against the
+ * environment either way. Allowing a local build may not double as a way to
+ * ship a live key to staging.
  */
 function assertStripeKeyMatchesApi(): void {
   const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  if (process.env.ALLOW_LOCAL_API_BUILD === "1") return;
+  // The bypass is for a local preview build with no checkout in it, so it
+  // excuses a *missing* key and nothing else. A key that is present is still
+  // checked against the environment: allowing a local build must never be a way
+  // to ship a live key to staging.
+  if (!key && process.env.ALLOW_LOCAL_API_BUILD === "1") return;
 
   if (!key) {
     throw new Error(
@@ -99,7 +115,17 @@ function assertStripeKeyMatchesApi(): void {
     );
   }
 
-  if (!apiBase) return;
+  // Not a `return`. An unset base used to let a live key through here, on the
+  // assumption that `assertDeployableApiBase` had already refused it — which it
+  // did only for a base that was *set* and loopback. Each function refuses this
+  // for its own reason rather than either assuming the other covers it.
+  if (!apiBase) {
+    throw new Error(
+      "NEXT_PUBLIC_API_BASE_URL is unset, so there is nothing to check " +
+        `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY against. A ${key.slice(0, 8)}… key would be ` +
+        "inlined into the export unexamined. Set the API base to the backend this build is for.",
+    );
+  }
 
   const { hostname } = new URL(apiBase);
 
