@@ -306,7 +306,12 @@ formatting on the server render and therefore no hydration mismatch to worry abo
 
 ## Known before starting
 
-- **`http://localhost:3000` is not on staging's CORS allow-list.** Verified 20 August 2026:
+- **`http://localhost:3000` is not on staging's CORS allow-list.** ~~Verified 20 August 2026~~
+  — **fixed, 28 August 2026.** The preflight now answers
+  `access-control-allow-origin: http://localhost:3000`, so `next dev` reaches the API and both
+  the reveal and this section can be exercised locally. Everything in this bullet below is the
+  condition as it stood, kept because two close-outs in this folder reason from it. Verified
+  20 August 2026:
   staging returns `access-control-allow-origin` for `https://theworldtarot.com` and
   `https://staging.theworldtarot.com`, and no header at all for localhost, on both the simple
   request and the preflight. **This blocks the reveal today too**, not just this work. It is a

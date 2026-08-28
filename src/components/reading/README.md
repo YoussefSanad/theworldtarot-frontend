@@ -144,8 +144,43 @@ selector separates them with nothing to keep in sync.
 
 ## The order form is the one piece of state
 
-`ReadingOrder` is the only client component on the page, and it holds one
-boolean.
+`ReadingOrder` is the only client component on the page. It holds one boolean
+and asks the catalogue what the reading costs.
+
+### The price is the API's, and so is whether there is one
+
+`useProduct(reading.productKey)` reads `GET /api/v1/{locale}/products/{key}` in
+the browser — **never at build time**, since prices resolve per visitor from
+their country and a baked response would ship one country's currency to
+everybody. The answer is a state rather than a number, and one sentence decides
+all of them: **where there is no live money there are no payment controls.**
+
+| State | Price line | Controls |
+| --- | --- | --- |
+| Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
+| Live | `formatPrice(money)`, site locale, never the browser's | All five |
+| Unreachable | The bundled `reading.price`, as plain copy | None |
+| Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
+
+Three things about that table are decisions rather than mechanics:
+
+- **`reading.price` is copy and can never be money.** It has no currency in it,
+  so a wallet sheet built from it would quote a number this repo typed. It
+  exists so an unreachable backend does not leave a blank where the price was
+- **A 404 takes the offer off the page**, question field included — the same
+  call the homepage makes when it drops a tile the catalogue answered without
+  (`HIDE_WITHDRAWN` in `lib/products.ts`). The rest of the page is untouched;
+  it just does not sell anything. The `#get-my-reading` anchor moved onto the
+  wrapper so the closing call to action still lands in every state
+- **The controls block reserves its own height** while loading — `invisible`
+  plus `inert`, so it is unreachable by pointer, tab, screen reader and
+  `click()` alike, rather than a `min-height` that would be wrong at one of the
+  panel's four widths. A customer reaching for Apple Pay must not have it move
+
+`npm run check:price` drives all four against the real export with the endpoint
+intercepted; `-- --live` runs the live case against the API in `.env.local`
+instead, from port 3000 because that is the origin staging's CORS list carries.
+See `docs/plans/reading-page-live-price.md`.
 
 ### Gift is a mode, not a page
 

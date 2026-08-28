@@ -1,7 +1,7 @@
 import type { TarotCard } from "@/content/cards";
 
-import { DEFAULT_LOCALE, type Locale } from "./locale";
-import type { Money } from "./price";
+import { DEFAULT_LOCALE, type Locale } from "./locale.ts";
+import type { Money } from "./price.ts";
 
 /**
  * The backend, for the homepage reveal.
@@ -42,10 +42,18 @@ import type { Money } from "./price";
  * `API_CONTRACT.md`.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-/** Inlined at build time, so staging and production are separate builds. */
+/**
+ * Inlined at build time, so staging and production are separate builds.
+ *
+ * Read inside the function rather than into a module constant, as `api-write.ts`
+ * does. Next substitutes the literal wherever `process.env.NEXT_PUBLIC_*`
+ * appears, so the two are identical in a build — but a constant is resolved at
+ * import time, which makes the value unsettable from a test that has already
+ * imported this file.
+ */
 function baseUrl(): string {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   if (!API_BASE) {
     throw new Error(
       "NEXT_PUBLIC_API_BASE_URL is not set. The reveal falls back to the bundled card without it.",
@@ -226,4 +234,44 @@ export async function fetchProducts(
   }
 
   return (await response.json()) as ApiProduct[];
+}
+
+/** One entry from `/products/{key}`. The listing shape, with the long copy. */
+export type ApiProductDetail = ApiProduct & { long_description: string };
+
+/**
+ * One product by key — the authoritative price for the thing a page sells.
+ *
+ * A page that sells a single reading asks for that reading rather than for
+ * everything on sale and then picking one out of it. One response says both
+ * what to charge and which currency to charge it in, which is the pair a
+ * payment is built from; see `Money` in `lib/price.ts`.
+ *
+ * Returns null when the backend answers 404, which covers rather more than a
+ * typo: **unpublished, outside the fixed set of keys, or not translated into
+ * the language asked for** all answer the same way, deliberately, since whether
+ * an unreleased reading exists is not public information. Whatever the cause,
+ * the product is not on sale here today and the page must not offer it — see
+ * `lib/product.ts`, where that is acted on.
+ *
+ * Throws on anything else, so an unreachable backend stays distinguishable from
+ * a withdrawn one. Those two want opposite things on the page: one keeps the
+ * bundled copy on screen, the other takes the offer down.
+ */
+export async function fetchProduct(
+  key: string,
+  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+): Promise<ApiProductDetail | null> {
+  const response = await fetch(`${baseUrl()}/api/v1/${locale}/products/${key}`, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (response.status === 404) return null;
+
+  if (!response.ok) {
+    throw new Error(`Fetching the product "${key}" failed with ${response.status}.`);
+  }
+
+  return (await response.json()) as ApiProductDetail;
 }

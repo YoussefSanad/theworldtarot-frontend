@@ -7,11 +7,40 @@ import { Divider } from "@/components/ui/Divider";
 import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
 import { checkout as marks, type ImageAsset } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import { formatPrice } from "@/lib/price";
+import type { ProductOffer } from "@/lib/product";
 
 const { checkout, gift } = readingPageChrome;
 
 /**
  * The price, the delivery, and the five ways the client draws of paying it.
+ *
+ * ## The price is the catalogue's, and so is whether there is one
+ *
+ * `offer` is what the product endpoint said, as a state rather than a number —
+ * see `lib/product.ts`. Three of its four reach this component, and the rule
+ * that decides all three is one sentence: **where there is no live money there
+ * are no payment controls.**
+ *
+ * - **live** — the price, formatted from `Money` against the site's locale, and
+ *   every control. `offer.money` is also what the wallet sheet will be mounted
+ *   with, so the number the customer authorises is the number they were quoted
+ * - **loading** — a resting placeholder at the price line's own height, and the
+ *   controls kept in the layout but `invisible` and `inert`. They reserve their
+ *   height without being reachable by a pointer, a tab, a screen reader or a
+ *   programmatic click. **This is the point of the state**: 498px appearing
+ *   under a thumb already reaching for Apple Pay is how a customer pays for
+ *   something they did not mean to
+ * - **unreachable** — the bundled `reading.price` as plain copy, and no
+ *   controls at all. That string has no currency in it and no payment can
+ *   honestly be built from it. This state is settled rather than in flight, so
+ *   it is allowed to collapse: nothing is about to appear under the finger
+ *
+ * The fourth, **withdrawn**, never gets here — `ReadingOrder` takes the whole
+ * order off the page rather than rendering a checkout for something that is not
+ * for sale.
+ *
+ * ## The controls
  *
  * **Four of the five controls are duds**, on purpose and for now. There is no
  * checkout endpoint and no redemption flow, so Apple Pay, Google Pay, Pay with
@@ -34,21 +63,24 @@ const { checkout, gift } = readingPageChrome;
  */
 export function GetMyReading({
   reading,
+  offer,
   gifting,
   onGiftToggle,
 }: {
   reading: ReadingPage;
+  /** Never `withdrawn`; that state does not render an order at all. */
+  offer: Exclude<ProductOffer, { status: "withdrawn" }>;
   gifting: boolean;
   onGiftToggle: () => void;
 }) {
+  const offering = offer.status === "live";
+
   return (
     /* 49px under the question field. */
-    <section id={checkout.anchor} className="mt-[clamp(1rem,2.55vw,3.0625rem)] flex flex-col items-center text-center">
+    <section className="mt-[clamp(1rem,2.55vw,3.0625rem)] flex flex-col items-center text-center">
       <PanelHeading className="text-h2-md">{checkout.heading}</PanelHeading>
 
-      <p className="mt-[clamp(0.125rem,0.21vw,0.25rem)] font-display text-h2-md leading-none tracking-[0.01em] text-white">
-        {reading.price}
-      </p>
+      <Price offer={offer} fallback={reading.price} />
 
       {rushDelivery.enabled ? (
         <DeliveryChoice />
@@ -58,8 +90,22 @@ export function GetMyReading({
         </p>
       )}
 
-      {/* 498px of the 687px panel; 12px between buttons at the 30px they label. */}
-      <div className="mt-[clamp(0.5rem,1.2vw,1.4375rem)] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none">
+      {/*
+        498px of the 687px panel; 12px between buttons at the 30px they label.
+
+        Absent entirely once the request has failed, and present-but-inert while
+        it is still in flight — the block's own height is what reserves the
+        space, rather than a `min-height` that would be a second number to keep
+        true at four widths of a panel laid out in `cqw`.
+      */}
+      {offer.status === "unreachable" ? null : (
+      <div
+        className={cn(
+          "mt-[clamp(0.5rem,1.2vw,1.4375rem)] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none",
+          !offering && "invisible",
+        )}
+        inert={!offering}
+      >
         <CheckoutOption label="Pay with Apple Pay">
           <Mark art={marks.applePay} className="w-[15.43cqw]" />
         </CheckoutOption>
@@ -107,8 +153,49 @@ export function GetMyReading({
           {gifting ? gift.leave : gift.enter}
         </CheckoutOption>
       </div>
+      )}
     </section>
   );
+}
+
+/**
+ * The one line the whole panel turns on.
+ *
+ * Three states, one box: whichever renders, it is a single line of display type
+ * at the same size, so the heading above it and the delivery under it do not
+ * move as the answer arrives.
+ *
+ * The resting state is a shape rather than words. "Loading…" in the price's
+ * place is a sentence the panel would have to take back, and at this size it
+ * reads as copy; a quiet bar reads as a price that has not landed. Screen
+ * readers get `checkout.pricePending` instead, and get it through `role=status`
+ * so the price that replaces it is announced rather than swapped in silently.
+ */
+function Price({
+  offer,
+  fallback,
+}: {
+  offer: Exclude<ProductOffer, { status: "withdrawn" }>;
+  fallback: string;
+}) {
+  const line = "mt-[clamp(0.125rem,0.21vw,0.25rem)] font-display text-h2-md leading-none tracking-[0.01em] text-white";
+
+  if (offer.status === "loading") {
+    return (
+      <p role="status" aria-label={checkout.pricePending} className={line}>
+        <span className="inline-block h-[0.55em] w-[2.4em] animate-pulse rounded-full bg-white/15 align-middle" />
+      </p>
+    );
+  }
+
+  /*
+    `formatPrice` formats against the site's locale and never the browser's, so
+    a US visitor's price is not written `75,00 $` because their laptop is set to
+    German. The currency varies by visitor; the language it is written in does
+    not. The other branch is `reading.price`, which is already a display string
+    and is copy rather than money — see its docblock.
+  */
+  return <p className={line}>{offer.status === "live" ? formatPrice(offer.money) : fallback}</p>;
 }
 
 /**

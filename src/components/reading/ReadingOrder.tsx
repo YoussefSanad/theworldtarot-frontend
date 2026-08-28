@@ -5,7 +5,8 @@ import { useState } from "react";
 import { AskQuestion } from "@/components/reading/AskQuestion";
 import { GetMyReading } from "@/components/reading/GetMyReading";
 import { RecipientDetails } from "@/components/reading/RecipientDetails";
-import type { ReadingPage } from "@/content/reading-pages";
+import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
+import { useProduct } from "@/lib/product";
 
 /**
  * The left panel's form, and the one piece of state on this page.
@@ -27,6 +28,24 @@ import type { ReadingPage } from "@/content/reading-pages";
  * this page does not build yet: `redeem gift code` is a dud, as the payment
  * controls are. See `GetMyReading`.
  *
+ * ## What is for sale, and whether anything is
+ *
+ * This is also where the catalogue is asked about the product — `useProduct`,
+ * on the page's own `productKey` — because the answer decides the whole
+ * section, not only the number in it. See `docs/plans/reading-page-live-price.md`.
+ *
+ * **A withdrawn product takes the order off the page.** A 404 means unpublished,
+ * or copy or a price emptied in the panel: somebody withdrew it deliberately,
+ * and it is the same call the homepage already makes when it drops a tile the
+ * catalogue answered without (`HIDE_WITHDRAWN` in `lib/products.ts`). The rest
+ * of the page is untouched — the reading, what it includes, the testimonial and
+ * the artwork are all still true — but nothing here invites a purchase, and the
+ * question goes with it, being a line on an order that cannot be placed.
+ *
+ * The anchor stays. It sits on the wrapper rather than on the checkout section,
+ * so the closing call to action at the foot of the page lands on the panel in
+ * every state instead of scrolling to an id that is no longer in the document.
+ *
  * ## One thing here is a deliberate departure
  *
  * The client's frame puts "gift a reading" at the foot of the payment column,
@@ -38,18 +57,28 @@ import type { ReadingPage } from "@/content/reading-pages";
  */
 export function ReadingOrder({ reading }: { reading: ReadingPage }) {
   const [gifting, setGifting] = useState(false);
+  const offer = useProduct(reading.productKey);
 
   return (
-    /*
-      No action, and none of its controls submit it — see `GetMyReading`. It is
-      a form because the fields inside it are one submission's worth of data,
-      and naming them now is what makes wiring the checkout a matter of adding
-      an endpoint rather than restructuring the panel.
-    */
-    <form className="mt-[clamp(2rem,5.63vw,6.75rem)]">
-      {gifting ? <RecipientDetails /> : <AskQuestion />}
+    <div id={readingPageChrome.checkout.anchor}>
+      {offer.status === "withdrawn" ? null : (
+        /*
+          No action, and none of its controls submit it — see `GetMyReading`. It
+          is a form because the fields inside it are one submission's worth of
+          data, and naming them now is what makes wiring the checkout a matter
+          of adding an endpoint rather than restructuring the panel.
+        */
+        <form className="mt-[clamp(2rem,5.63vw,6.75rem)]">
+          {gifting ? <RecipientDetails /> : <AskQuestion />}
 
-      <GetMyReading reading={reading} gifting={gifting} onGiftToggle={() => setGifting((on) => !on)} />
-    </form>
+          <GetMyReading
+            reading={reading}
+            offer={offer}
+            gifting={gifting}
+            onGiftToggle={() => setGifting((on) => !on)}
+          />
+        </form>
+      )}
+    </div>
   );
 }

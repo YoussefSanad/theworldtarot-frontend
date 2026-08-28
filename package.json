@@ -15,7 +15,8 @@
     "check:shoot": "node scripts/shoot.mjs",
     "check:measure": "node scripts/measure.mjs",
     "check:images": "node scripts/check-images.mjs",
-    "check:reveal": "node scripts/check-reveal.mjs"
+    "check:reveal": "node scripts/check-reveal.mjs",
+    "check:price": "node scripts/check-price.mjs"
   },
   "dependencies": {
     "embla-carousel-react": "^8.6.0",

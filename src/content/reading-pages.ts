@@ -78,6 +78,13 @@ export const readingPageChrome = {
     anchor: "get-my-reading",
     /** Apple Pay and Google Pay are marks, so only these two carry a label. */
     card: "Pay with Card",
+    /**
+     * Read out where the price will be while the catalogue is being asked for
+     * it. The resting state itself is a shape rather than words — the panel
+     * holds its height and says nothing it might have to take back — so this is
+     * the only description of it a screen reader gets.
+     */
+    pricePending: "Fetching the price",
     secure: "Secure checkout powered by Stripe",
     /**
      * Set in Cinzel in the frame, which renders lowercase as small capitals —
@@ -136,13 +143,27 @@ export const questionLimit = 500;
 export type ReadingPage = {
   /** Matches the `Reading` of the same id on the readings index. */
   id: string;
+  /**
+   * The backend's permanent, untranslated identifier for the thing this page
+   * sells — `month-ahead`, `three-card`, `in-depth`. It is what the price is
+   * read by (`useProduct`) and what an order line will name.
+   *
+   * Spelled out rather than reusing `id`, which the two agree with today. `id`
+   * exists to match the readings index, and a page that quotes a price off a
+   * key must say which key it means rather than inherit one from a list of
+   * artwork. See `docs/plans/reading-page-live-price.md`.
+   */
+  productKey: string;
   title: string;
   tagline: readonly string[];
   /**
-   * Hard-coded, as the readings index and the homepage tiles' fallback copy
-   * are. Reading prices are resolved per visitor by the products endpoint —
-   * see `docs/plans/products-api-wiring.md` — and this page is not wired to it
-   * yet; when it is, this becomes the fallback rather than the source.
+   * **Copy, and only ever copy.** The price the site advertises when the API
+   * cannot be reached, so the page does not go blank where the number was.
+   *
+   * It is not money and cannot become money: it carries no currency, and its
+   * digits are a rendering rather than minor units. Nothing a payment is built
+   * from may come from here — that is `Money`, from the product endpoint, and
+   * a page with no live money offers no way to pay. See `lib/product.ts`.
    */
   price: string;
   /** Shown as drawn while `rushDelivery` is off, and as the standard option once it is on. */
@@ -159,6 +180,7 @@ export type { ImageAsset };
 
 export const monthAhead: ReadingPage = {
   id: "month-ahead",
+  productKey: "month-ahead",
   title: "Month Ahead Reading",
   /** One line in the frame; two phrases so it breaks where she breaks it. */
   tagline: ["One Month. Five Cards.", "a clear path ahead."],
