@@ -158,14 +158,14 @@ all of them: **where there is no live money there are no payment controls.**
 | State | Price line | Controls |
 | --- | --- | --- |
 | Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
-| Live | `formatPrice(money)`, site locale, never the browser's | All five |
-| Unreachable | The bundled `reading.price`, as plain copy | None |
+| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live and quoting it |
+| Unreachable | The bundled `reading.price`, as plain copy | The frames, none of which can pay |
 | Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
 
 Three things about that table are decisions rather than mechanics:
 
 - **`reading.price` is copy and can never be money.** It has no currency in it,
-  so a wallet sheet built from it would quote a number this repo typed. It
+  so an order placed from it would be an order at a number this repo typed. It
   exists so an unreachable backend does not leave a blank where the price was
 - **A 404 takes the offer off the page**, question field included — the same
   call the homepage makes when it drops a tile the catalogue answered without
@@ -175,47 +175,71 @@ Three things about that table are decisions rather than mechanics:
 - **The controls block reserves its own height** while loading — `invisible`
   plus `inert`, so it is unreachable by pointer, tab, screen reader and
   `click()` alike, rather than a `min-height` that would be wrong at one of the
-  panel's four widths. A customer reaching for Apple Pay must not have it move
+  panel's four widths. A customer reaching for a payment button must not have
+  it move
 
-`npm run check:panel` drives all four against the real export with the endpoint
-intercepted; `-- --live` runs the live case against the API in `.env.local`
-instead, from port 3000 because that is the origin staging's CORS list carries.
-See `docs/plans/reading-page-live-price.md`.
+`npm run check:panel` drives every state against the real export with the whole
+checkout intercepted — the catalogue, `/orders` and `/pay` — which is what lets
+it **press** Buy Now rather than only look at it. `-- --live` runs the live case
+against the API in `.env.local` instead and presses nothing, from port 3000
+because that is the origin staging's CORS list carries. See
+`docs/plans/reading-page-live-price.md` and `docs/plans/hosted-checkout.md`.
 
-### The express checkout element
+### Buy Now is a redirect, and the wallet is coming back
 
-`ExpressCheckout` is the only control on the panel that is real, and it is mounted
-from `offer.money` — which exists on `live` and on no other state, so a wallet
-sheet quoting a price this repo typed will not compile. See
-`docs/plans/apple-pay-sheet.md`.
+`BuyNow` is the only control on the panel that takes money, and it does not
+take it here: pressing it places an order, starts its payment and sends the
+browser to Stripe's **hosted page**. Nothing is collected on this page and no
+Stripe.js is loaded on it. See
+`docs/adr/0002-checkout-happens-on-stripes-page.md` and
+`docs/plans/hosted-checkout.md`.
 
-Three things about it are worth knowing before changing any of it.
+It is mounted from `offer.money` — which exists on `live` and on no other state
+— so an order placed at a price this repo typed will not compile.
 
-- **It cannot be made to match the frames beside it.** Apple draws the button;
-  `ApplePayButtonTheme` is `'black' | 'white' | 'white-outline'` and there is no
-  fourth. No gold, no gold border, no typeface. `appearance` on `<Elements>`
-  reaches the corner radius and the Payment Element that #38 will mount next to
-  it, and nothing else. The panel is visibly mixed and that is a constraint
-- **The row starts closed and opens when Stripe says so.** This is Stripe's own
-  documented pattern: `availablepaymentmethodschange` fires when the element has
-  something to show, and never fires when it has not — which is why no headless
-  browser ever sees it. Until it fires the row is `h-0 overflow-hidden` and
-  `inert`, so there is no gap and nothing announced. It is deliberately not
-  `display:none`: a zero-size iframe may never initialise far enough to report
-  anything, which would leave the row shut forever.
+Four things about it are worth knowing before changing any of it.
 
-  An earlier version asked `window.ApplePaySession` instead. That answers for
-  the **device**, not for a card in the Wallet, so a Mac that supports Apple Pay
-  with an empty Wallet reserved 78px that Stripe then declined to fill —
-  precisely the gap the criterion forbids
-- **Nothing is charged.** `onConfirm` calls `paymentFailed`, so a customer who
-  authorises with Face ID is told checkout is not open rather than shown a tick
-  for a payment that never happened. #38 replaces that with a real intent
+- **Two round trips happen before the browser leaves**, and the button holds a
+  pending state across both. Place the order, then pay it: folding them into one
+  call buys about 300ms and destroys the shape that makes a retry safe, since a
+  second press pays the order rather than placing another one. Placing it
+  earlier, on question blur, mints a `pending` order for everyone who types a
+  sentence and leaves
+- **The checkout is remembered before the navigation**, because afterwards there
+  is no code of ours left running to remember anything. `lib/checkout-session.ts`
+  holds the pay token, the Money the backend priced, the Session id the
+  confirmation is guarded on, and the question — which is what a cancelled
+  checkout puts back in the textarea, and only on the page whose `productKey`
+  matches
+- **It is inert in gift mode**, and says so. `POST /orders` has no field for a
+  recipient email or a gift message, so one live button there charges somebody
+  for a gift delivered to themselves
+- **An instruction this build cannot read refuses the press** rather than
+  crashing it. `nothing_to_pay` on a fresh order, a `client_secret` this page
+  has no element for, or a `type` a later backend invents: the order exists, it
+  is `pending`, nothing has been charged, and the panel says exactly that
 
-`check:panel` can never see the button — Stripe draws one only in Safari, on a
-device with a wallet, on a registered payment method domain. It asserts the
-negatives instead. That the sheet opens and quotes the price is proved by hand
-on `staging.theworldtarot.com`.
+`ExpressCheckout.tsx` is **unrendered rather than removed**, and not because the
+wallet was rejected. The client asked for Apple Pay and Google Pay back on our
+own page on 29 August 2026 and the backend agreed the shape the same day, in its
+`docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md` — `/pay` gains a
+second method, `stripe_wallet`, answering a `client_secret` the element confirms
+against. **That method has no code behind it yet.** The file is a dud in the
+meantime — its `onConfirm` calls `paymentFailed` — and a button that fails after
+Face ID has no business sitting beside one that charges. It comes back above Buy
+Now when it works, which is #48, and `docs/plans/apple-pay-sheet.md` and
+`walletAppearance` are its plan and its styling, both still here.
+
+**Three frames is an interim, not a destination.** The wallet row returns above
+Buy Now, and collapses to nothing on any device without a wallet — which is
+every device the panel is likely to be shown on for approval.
+
+`check:panel` used to assert what the wallet row did. It asserts the negative
+instead now, and it is worth more than it looks: **no Stripe iframe mounts on
+this page in any state, and js.stripe.com is never fetched.** A request to it
+reappearing is what a half-finished wallet ticket shipping by accident looks
+like. That the hosted page opens, quotes the order total and takes a test card
+is proved by hand on `staging.theworldtarot.com` — #47.
 
 ### Gift is a mode, not a page
 
@@ -246,17 +270,21 @@ screen. Rather than move her button:
   mode is never somewhere a visitor is stuck.
 
 The recipient's side of the flow — redeem, then ask — is not built. `redeem
-gift code` is a dud, as the payment controls are.
+gift code` is a dud, and **Buy Now is inert while gift mode is on**: `POST
+/orders` has no field for a recipient, so a live button here would charge
+somebody for a gift delivered to themselves. Gifting is the code model and a
+separate milestone.
 
-### Four of the five controls are duds, on purpose
+### One of the three controls is a dud, on purpose
 
-There is no checkout endpoint and no redemption flow, so Apple Pay, Google Pay,
-Pay with Card and redeem gift code are `type="button"` with nothing behind
-them. **Inert rather than submitting**: the form has no action, so a submit
-would reload the page with the visitor's question in the query string, which is
-a worse nothing than nothing. They are real buttons rather than disabled ones
-because the client rejected a disabled control elsewhere on the site — it reads
-as a bug rather than as "not yet".
+There is no redemption flow, so `redeem gift code` is `type="button"` with
+nothing behind it. **Inert rather than submitting**: the form has no action, so
+a submit would reload the page with the visitor's question in the query string,
+which is a worse nothing than nothing. It is a real button rather than a
+disabled one because the client rejected a disabled control elsewhere on the
+site — it reads as a bug rather than as "not yet", and that is why the two
+states in which Buy Now cannot be pressed are `aria-disabled` rather than
+`disabled` too.
 
 The form itself stays, with its fields named. That is what makes wiring the
 checkout a matter of adding an endpoint rather than restructuring the panel.
@@ -300,12 +328,13 @@ every keystroke to do it.
   than letting a baked radius drift out of register with it; the fields carry
   their own border so the gold can answer focus, which `.field` already knows
   how to do.
-- **The five checkout controls** are one box, `.checkout-option`, a modifier on
+- **The checkout controls** are one box, `.checkout-option`, a modifier on
   `.btn-ghost`. Figma draws all five identically (498x78, 2px gold, 25px
-  corner) and changes only the mark inside. Unlike `.readings-cta` they never
-  hug their labels: the client stacks them as one column of equal buttons, and
-  that is also the only thing keeping an Apple Pay mark and a five-word label
-  the same size as each other.
+  corner) and changes only the mark inside; Buy Now wears the same box, so the
+  column still reads as one set of frames while it stands where three of them
+  did. Unlike `.readings-cta` they never hug their labels: the client stacks
+  them as one column of equal buttons, and that is also the only thing keeping
+  a mark and a five-word label the same size as each other.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty

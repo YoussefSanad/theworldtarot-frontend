@@ -160,7 +160,12 @@ function api(body, status = 200) {
  * long enough for a route handler and not for a real round trip to staging,
  * which is exactly the kind of flake that gets a check disbelieved.
  */
-async function drive(state, response, settled, { gift = false, press = false, cancelled } = {}) {
+async function drive(
+  state,
+  response,
+  settled,
+  { gift = false, press = false, cancelled, payAnswer, holdWrites = false } = {},
+) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -199,6 +204,12 @@ async function drive(state, response, settled, { gift = false, press = false, ca
   page.on("request", (request) => asked.push(request.url()));
 
   let release = () => {};
+  let releaseOrder = () => {};
+  let releasePay = () => {};
+
+  /* The two writes one press makes, each answerable on this script's schedule. */
+  const orderHeld = new Promise((resolve) => (releaseOrder = resolve));
+  const payHeld = new Promise((resolve) => (releasePay = resolve));
 
   if (!live) {
     const held = new Promise((resolve) => (release = resolve));
@@ -215,6 +226,9 @@ async function drive(state, response, settled, { gift = false, press = false, ca
     // under it, because a glob has to match the whole address.
     await page.route("**/api/v1/orders", async (route) => {
       placed.push(JSON.parse(route.request().postData() ?? "null"));
+      // Held, where the point is to read the button while the first round trip
+      // is still in flight.
+      if (holdWrites) await orderHeld;
       await route.fulfill(api(ORDER, 201));
     });
 
@@ -223,7 +237,8 @@ async function drive(state, response, settled, { gift = false, press = false, ca
         url: route.request().url(),
         body: JSON.parse(route.request().postData() ?? "null"),
       });
-      await route.fulfill(api({ type: "redirect", redirect_url: SESSION_URL }));
+      if (holdWrites) await payHeld;
+      await route.fulfill(payAnswer ?? api({ type: "redirect", redirect_url: SESSION_URL }));
     });
   }
 
@@ -284,6 +299,11 @@ async function drive(state, response, settled, { gift = false, press = false, ca
 
   let landed = null;
   let record = null;
+  /** What the button says while each of the two round trips is in flight. */
+  const pressing = [];
+
+  const label = async () =>
+    (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " ");
 
   if (press) {
     /*
@@ -294,6 +314,32 @@ async function drive(state, response, settled, { gift = false, press = false, ca
       actionability check would refuse to reproduce the only case this proves.
     */
     await page.locator(BUY).first().click({ force: true });
+
+    /*
+      Two round trips happen before the browser leaves, and the button holds a
+      pending state across both. Each is held here in turn, so what the button
+      says during each is read rather than inferred from how fast a stub
+      answers.
+    */
+    if (holdWrites) {
+      await page
+        .waitForFunction(
+          () => document.querySelector("[data-buy-now]")?.getAttribute("aria-busy") === "true",
+          null,
+          { timeout: 5000 },
+        )
+        .catch(() => {});
+
+      pressing.push(await label());
+
+      releaseOrder();
+      await page.waitForFunction(() => true);
+      await page.waitForTimeout(300);
+
+      pressing.push(await label());
+
+      releasePay();
+    }
 
     /*
       Either the browser leaves, or it does not and that is the assertion. The
@@ -308,15 +354,27 @@ async function drive(state, response, settled, { gift = false, press = false, ca
     record = await page.evaluate(() => sessionStorage.getItem("checkout")).catch(() => null);
   }
 
+  /** The button once everything has settled — for a refusal, where it stays. */
+  const afterwards = press && landed === PAGE ? await label().catch(() => "") : null;
+
+  /** Whatever the panel says after a press that went nowhere. */
+  const afterPanel =
+    press && landed === PAGE
+      ? (await page.locator("#get-my-reading").innerText().catch(() => "")).trim()
+      : "";
+
   await page.close();
 
   return {
+    afterPanel,
     resting,
     settled: answered,
     thrown,
     placed,
     paid,
+    pressing,
     landed,
+    afterwards,
     record: record === null ? null : JSON.parse(record),
     stripeJs: asked.filter((url) => url.includes("js.stripe.com")),
     orderCalls: asked.filter((url) => url.includes("/api/v1/orders")),
@@ -354,7 +412,10 @@ function assertNoStripeOnThePage(state, result) {
   expect(state, "and js.stripe.com is never fetched", result.stripeJs, []);
 }
 
-const sold = await drive("live — a priced product", PRICED, priced, { press: !live });
+const sold = await drive("live — a priced product", PRICED, priced, {
+  press: !live,
+  holdWrites: !live,
+});
 
 assertNoStripeOnThePage("live", sold);
 expect("live", "Buy Now is in the layout while loading", sold.resting.buyNow, 1);
@@ -394,6 +455,15 @@ expect("live", "in the API's currency, with the question on the line", sold.plac
 expect("live", "and no name or email, which the page never collected", sold.placed[0] && "email" in sold.placed[0], false);
 expect("live", "then pays it, addressing the order by its pay token", sold.paid.length && sold.paid[0].url.endsWith(`/api/v1/orders/${PAY_TOKEN}/pay`), true);
 expect("live", "naming the page to come back to, as a product key", sold.paid[0]?.body, { return_to: "month-ahead" });
+/*
+  The criterion the two held answers exist for: the pending state is held across
+  both round trips, not just the first. A button that looked idle between them
+  is a button pressed twice, which is a second order for the same reading.
+*/
+expect("live", "the button holds a pending state across both round trips", sold.pressing, [
+  "Taking you to checkout…",
+  "Taking you to checkout…",
+]);
 expect("live", "the browser goes where Stripe said", sold.landed, SESSION_URL);
 expect("live", "and the checkout was remembered before it went", sold.record, {
   payToken: PAY_TOKEN,
@@ -402,6 +472,24 @@ expect("live", "and the checkout was remembered before it went", sold.record, {
   productKey: "month-ahead",
   question: QUESTION,
 });
+
+const ahead = await drive("shipped ahead of the backend — an instruction we cannot read", PRICED, priced, {
+  press: true,
+  payAnswer: api({ type: "conjured_by_a_later_backend" }),
+});
+
+assertNoStripeOnThePage("ahead", ahead);
+/*
+  The window where this frontend has shipped and the backend has not, and the
+  window after the backend grows a method this build has never seen. A checkout
+  that crashed here would fail for a customer whose order is perfectly fine.
+*/
+expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
+expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
+expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Buy Now €70");
+/* Nothing to paint a confirmation from, because nothing was confirmed. */
+expect("ahead", "nothing was remembered", ahead.record, null);
 
 const gifted = await drive("gifting — a recipient rather than a question", PRICED, priced, {
   gift: true,
