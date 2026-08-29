@@ -13,11 +13,11 @@ import {
   setPasswordCopy,
 } from "@/content/passwords";
 import {
+  claimAccount,
   type PasswordFailure,
   type PasswordSubmission,
   readPasswordFailure,
   resetPassword,
-  setPassword,
 } from "@/lib/passwords";
 
 /**
@@ -44,7 +44,7 @@ const FLOW: Record<
   PasswordFlow,
   { copy: PasswordPageCopy; submit: (submission: PasswordSubmission) => Promise<void> }
 > = {
-  claim: { copy: setPasswordCopy, submit: setPassword },
+  claim: { copy: setPasswordCopy, submit: claimAccount },
   reset: { copy: resetPasswordCopy, submit: resetPassword },
 };
 
