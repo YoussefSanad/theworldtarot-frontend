@@ -256,22 +256,22 @@ console.log("\nthree different refusals, one sentence");
 console.log("\ntoo many tries answers the wait");
 {
   /*
-    Both arms are checked because the browser only sometimes gets to read the
-    wait, and the difference is not the page's doing.
+    Both arms are checked because the wait only reaches the page when the API
+    says it may, and that is a backend setting rather than anything this page
+    controls.
 
     `Retry-After` is not one of the seven CORS-safelisted response headers, so
-    a cross-origin caller reads it only when the API answers
-    `Access-Control-Expose-Headers: Retry-After`. The backend does not:
-    `config/cors.php` has `'exposed_headers' => []` (read 29 August 2026). So
-    against staging today `response.headers.get("Retry-After")` is `null`
-    however faithfully the 429 carries the header, and the page falls back to
-    the wording that does not name a number.
+    a cross-origin caller reads it only when the answer carries
+    `Access-Control-Expose-Headers: Retry-After`. The backend now sends it —
+    `config/cors.php` has `'exposed_headers' => ['Retry-After']`, added
+    29 August 2026 for this ticket — so the second arm is the behaviour a
+    rate-limited customer gets against staging, and it is the one #49 asks for.
 
-    That fallback is the behaviour under test, not a compromise — #49 asks that
-    six tries "answer the 429's wait rather than the refusal", and both of these
-    sentences are a wait rather than the refusal. The second arm is here so the
-    day the backend exposes the header, the page is already right and this
-    check already says so.
+    The first arm stays because the exposure is one line in another repo and
+    nothing in this one would notice its removal. It is also what a customer
+    reads whenever the header is simply absent, which the seam treats as
+    ordinary. Losing the seconds must degrade to a sentence that still reads as
+    a wait rather than to the refusal, and that is what it asserts.
   */
   const tooMany = { message: "Too Many Attempts." };
 
