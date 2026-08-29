@@ -85,14 +85,33 @@ import { formatPrice, type Money } from "@/lib/price";
  * `API_CONTRACT.md` says of `POST /orders/status`: *"This is a poll, so poll it
  * politely."* **This screen does not poll, and that is a decision rather than an
  * oversight.** The contract's advice is written for a screen that starts at "we
- * do not know". This one starts at `received`, so a poll could only confirm
- * what is already on screen or mutate a message underneath somebody reading it,
- * and the **receipt** is already the channel for fulfilment.
+ * do not know". The **card** road does not: it starts at `received`, so a poll
+ * could only confirm what is already on screen or mutate a message underneath
+ * somebody reading it, and the **receipt** is already the channel for
+ * fulfilment.
+ *
+ * **That argument does not cover the wallet road, and saying so is the point of
+ * this paragraph.** ~~This one starts at `received`~~ — that road starts at
+ * exactly the "we do not know" the contract is written for, which is the whole
+ * reason it paints nothing until the backend answers. So a `processing`, a
+ * `requires_action` or a status this build has never heard of becomes a
+ * terminal screen there with no second look, and the contract's advice applies
+ * to it unanswered.
+ *
+ * It ships that way rather than being fixed quietly, because the fix is a
+ * judgement about what a customer should watch change under them and not a
+ * detail: all three of those screens are honest and actionable as they stand —
+ * `pending` says a mail will come, `unfinished` says to start again — so this is
+ * a screen that could be better rather than one that is wrong. Recorded on #48
+ * at review, 29 August 2026.
  *
  * **On a 503, or a status this build has never heard of, the optimistic paint
- * stands.** That is the contract's "we do not know yet" arriving at a screen
- * that already has something honest to show; replacing `received` with a hedge
- * on the strength of not knowing would be the worst of both.
+ * stands** — on the card road, which is the only road that has one. That is the
+ * contract's "we do not know yet" arriving at a screen that already has
+ * something honest to show; replacing `received` with a hedge on the strength
+ * of not knowing would be the worst of both. On the wallet road there is no
+ * paint to stand, and the two cases part company: a 503 becomes `unreadable`
+ * and an unrecognised status becomes `unfinished`.
  *
  * ## The stale-result guard
  *

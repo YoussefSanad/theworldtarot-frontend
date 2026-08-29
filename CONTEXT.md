@@ -79,7 +79,7 @@ authorizes nothing. ~~It is off the reading page during the interim~~ — it is
 interim it was waiting out has ended. It draws **nothing at all** on a device
 with no wallet, and the row it sits in collapses to no height and no gap when it
 does, so its absence costs the panel nothing.
-_Avoid_: Apple Pay button, wallet button, payment element (that is a different Stripe element, for cards)
+_Avoid_: Apple Pay button, payment element (that is a different Stripe element, for cards), and **"the wallet button" as a name for _this_** — it draws buttons, plural, and which ones is Stripe's decision at runtime. ~~"wallet button" outright~~: corrected 29 August 2026, because it is the right name for the thing Stripe draws *inside* the element, which had no other name and which this file already used it for twice. The element is not a button; a wallet button is what it renders.
 
 **Wallet sheet**:
 The dialog the operating system opens when a wallet button is pressed — Apple's

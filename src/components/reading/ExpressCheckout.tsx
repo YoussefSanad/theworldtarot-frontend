@@ -65,7 +65,7 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
  * `applePay` and `googlePay` are `'auto'`; the other four are `'never'`. The
  * default is `'auto'` per method, and the option knows about Link, PayPal,
  * Klarna and Amazon Pay — so naming only Google Pay, as the ticket does, would
- * have let three more wallets onto the panel.
+ * have let those four onto the panel.
  *
  * `'auto'` rather than `'always'` for both: `'always'` renders a button on
  * devices that cannot use it, which is the "no gap" criterion inverted into a
@@ -296,26 +296,64 @@ function Wallet({
 
   async function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
     /*
-      One failure sentence for every arm below. The customer is looking at a
-      sheet they have already authorised with Face ID, and what they need to
-      know is the same in every case: nothing was taken. Which of the six things
-      went wrong is a matter for the console, and is logged there.
+      ~~One failure sentence for every arm below.~~ **Two**, corrected 29 August
+      2026 at review, and the line between them is what is actually known about
+      the customer's money rather than which call went wrong.
+
+      The customer is looking at a sheet they have already authorised with Face
+      ID. Before there is a client secret, nothing can have been taken and the
+      sentence says so. Once the confirmation has been attempted, a failure of
+      the *call* is not a failure of the *payment*, and the sentence stops
+      claiming one. Which of the six things went wrong is a matter for the
+      console, and is logged there.
 
       **There is no arm of this function that ends without either a confirmed
-      payment or this call.** A handler that returned quietly would leave the
-      sheet spinning on a payment that is never going to happen.
+      payment or one of those two calls.** A handler that returned quietly would
+      leave the sheet spinning on a payment that is never going to happen.
     */
-    const fail = (why: string, cause?: unknown) => {
+    const tell = (why: string, message: string, cause?: unknown) => {
       console.error(`The wallet payment could not be completed: ${why}`, cause);
 
-      event.paymentFailed({
-        reason: "fail",
-        message: "We could not take this payment. Nothing has been charged.",
-      });
+      event.paymentFailed({ reason: "fail", message });
     };
+
+    /**
+     * It did not happen, and we know that. Every arm before the confirmation
+     * ends here: the sheet was refused, the order was, or `/pay` was — and in
+     * all of them there is no secret yet, so there is nothing that could have
+     * taken money.
+     */
+    const fail = (why: string, cause?: unknown) =>
+      tell(why, "We could not take this payment. Nothing has been charged.", cause);
+
+    /**
+     * The confirmation itself went wrong, and **what happened to the money is
+     * not known here**.
+     *
+     * A rejected `confirmPayment` is not a refused payment. The request may
+     * have reached Stripe and been acted on before the connection dropped, so
+     * "nothing has been charged" is a claim this arm cannot support — and a
+     * false claim about a customer's money is worse than an unhelpful true one.
+     * It points at the receipt, which is the record that counts and the one
+     * channel that knows.
+     */
+    const unresolved = (why: string, cause?: unknown) =>
+      tell(
+        why,
+        "We could not complete this payment. If you were charged, your receipt will arrive by email.",
+        cause,
+      );
 
     if (!stripe || !elements) return fail("Stripe.js is not loaded.");
 
+    let clientSecret: string;
+
+    /*
+      **Everything that happens before there is a secret**, which is what makes
+      the one message this arm ends in true. The split from the confirmation
+      below is not tidiness: it is the difference between "nothing was taken"
+      and "we do not know", and only one of those can be said here.
+    */
     try {
       /*
         Required by the deferred-intent flow, and it comes first: it validates
@@ -327,12 +365,21 @@ function Wallet({
 
       if (invalid) return fail(invalid.message ?? "The wallet sheet was refused.", invalid);
 
-      const clientSecret = await startWalletPayment({
+      clientSecret = await startWalletPayment({
         productKey,
         money,
         question: questionIn(anchor.current),
       });
+    } catch (cause: unknown) {
+      /*
+        A refused order, a 422 on the line, a 429, a network failure, or an
+        instruction this road cannot act on. Nothing has been charged in any of
+        them — the throw happens before there is a secret to confirm.
+      */
+      return fail("The order or its payment was refused.", cause);
+    }
 
+    try {
       /*
         `return_url` is **our own** confirmation, built from this origin. It is
         not the open redirect the backend's ADR 0002 guards against: nothing
@@ -359,11 +406,14 @@ function Wallet({
       if (error) return fail(error.message ?? "Stripe refused the confirmation.", error);
     } catch (cause: unknown) {
       /*
-        A refused order, a 422 on the line, a 429, a network failure, or an
-        instruction this road cannot act on. Nothing has been charged in any of
-        them — the throw happens before there is a secret to confirm.
+        **Not `fail`.** A resolved `{ error }` above is Stripe telling us the
+        payment did not go through, which is a fact. A *rejection* here is the
+        call itself failing — and it can fail after the request reached Stripe,
+        which means the charge may exist. There is a secret by this point and it
+        has been used, so this is the one arm on this road that must not say
+        nothing was taken.
       */
-      return fail("The order or its payment was refused.", cause);
+      return unresolved("The confirmation could not be completed.", cause);
     }
   }
 
