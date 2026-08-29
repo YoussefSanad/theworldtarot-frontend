@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 
-import { Field, Panel } from "@/components/account/FormPanel";
+import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
 import { Button } from "@/components/ui/Button";
 import { signInPath } from "@/content/login";
 import {
@@ -103,7 +103,7 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
   // Only the password fields carry a field-keyed message. Everything else the
   // backend can key in a 422 came from the token check, and `readPasswordFailure`
   // has already collapsed it into `link`.
-  const fieldErrors = failure?.kind === "fields" ? failure.errors : {};
+  const fieldErrors = fieldErrorsOf(failure);
 
   return (
     <Panel>
@@ -144,15 +144,7 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
         </Button>
       </form>
 
-      {failure && failure.kind !== "fields" ? (
-        <p role="alert" className="mt-6 text-note text-ash">
-          {failure.kind === "link"
-            ? copy.linkFailure
-            : failure.kind === "rate-limited"
-              ? copy.rateLimited
-              : copy.unknownFailure}
-        </p>
-      ) : null}
+      <Refusal failure={failure} wording={(refusal) => failureWording(refusal, copy)} />
 
       {/*
         Only for a dead link. The other two failures are answered by trying
@@ -168,4 +160,20 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
       ) : null}
     </Panel>
   );
+}
+
+/**
+ * What a person reads for a failure that is not about one field.
+ *
+ * Three sentences from this page's own copy rather than the backend's message,
+ * and `link` is the one that carries the whole point: a used token, an expired
+ * one, a malformed one and an account somebody has already claimed all arrive
+ * here as one arm, and naming which would turn the page into a way to ask
+ * whether an address has an account. See `readPasswordFailure`.
+ */
+function failureWording(failure: PasswordFailure, copy: PasswordPageCopy): string {
+  if (failure.kind === "link") return copy.linkFailure;
+  if (failure.kind === "rate-limited") return copy.rateLimited;
+
+  return copy.unknownFailure;
 }

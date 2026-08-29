@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
-import { Field, Panel } from "@/components/account/FormPanel";
+import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Button } from "@/components/ui/Button";
 import { afterSignIn, loginCopy } from "@/content/login";
@@ -87,7 +87,7 @@ export function SignInForm() {
   const copy = asking ? loginCopy.forgot : loginCopy;
   // Only the password can carry a field-keyed message here. Everything else the
   // backend keys in a 422 on this road is the vague refusal.
-  const fieldErrors = failure?.kind === "fields" ? failure.errors : {};
+  const fieldErrors = fieldErrorsOf(failure);
 
   if (asking && asked) {
     return (
@@ -139,11 +139,7 @@ export function SignInForm() {
         </Button>
       </form>
 
-      {failure && failure.kind !== "fields" ? (
-        <p role="alert" className="mt-6 text-note text-ash">
-          {failureWording(failure, asking)}
-        </p>
-      ) : null}
+      <Refusal failure={failure} wording={(refusal) => failureWording(refusal, asking)} />
 
       <Prompt onClick={() => swapTo(!asking)}>
         {asking ? loginCopy.forgot.backPrompt : loginCopy.forgotPrompt}
