@@ -158,7 +158,7 @@ all of them: **where there is no live money there are no payment controls.**
 | State | Price line | Controls |
 | --- | --- | --- |
 | Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
-| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live and quoting it |
+| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live — and the only place the price is said |
 | Unreachable | The bundled `reading.price`, as plain copy | The frames, none of which can pay |
 | Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
 
@@ -238,6 +238,14 @@ It is drawn on `live` **and** where the API offers the method **and** not while
 gifting. The middle one is `lib/payment-methods.ts`, and it rests at `false`: an
 environment with no Stripe keys — a laptop — must draw the card button alone
 rather than a wallet that would fail on its first call.
+
+**The buttons are the frames' width**, and were not until 29 August 2026. The
+row is a flex box, so the div react-stripe-js mounts the element into was sized
+by its content — and Stripe's content asks for 300px, which drew a 292px wallet
+button in a 498px column of 498px frames. `w-full` on the element is the whole
+fix; the iframe reads 8px wider than the column because Stripe insets what it
+draws by the 4px it bleeds. **Height cannot follow**: Stripe caps `buttonHeight`
+at 55 against frames that stand at 2.6em, so the row holds the difference.
 
 **The row collapses to nothing where the browser has no wallet**, which is every
 browser this repo's checks run in. Two facts, not one: zero height, and no gap.
@@ -365,7 +373,12 @@ every keystroke to do it.
   column still reads as one set of frames while it stands where three of them
   did. Unlike `.readings-cta` they never hug their labels: the client stacks
   them as one column of equal buttons, and that is also the only thing keeping
-  a mark and a five-word label the same size as each other.
+  a mark and a five-word label the same size as each other. **The padding is
+  what makes "equal" true**, and both halves of it earn their number: the
+  inline padding is never seen on a full-width box with centred contents, so it
+  is only the width at which a label wraps, and the block padding is what lets
+  a label that wraps anyway still stand inside `2.6em` rather than growing the
+  frame. See the comment on `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty

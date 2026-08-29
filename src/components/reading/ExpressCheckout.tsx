@@ -174,10 +174,10 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
     `handleConfirm`, where calling `paymentFailed()` at that point is the
     `IntegrationError` this state was added to fix.
 
-    Held here rather than in `Wallet` because the row is a centred flex box
-    sized to the button: a paragraph inside it would sit *beside* the wallet
-    button rather than under it. This is a sibling of the row, so it takes its
-    own line in `GetMyReading`'s column and is gapped like every other child.
+    Held here rather than in `Wallet` because the row is a flex box laid out
+    across it: a paragraph inside it would sit *beside* the wallet button rather
+    than under it. This is a sibling of the row, so it takes its own line in
+    `GetMyReading`'s column and is gapped like every other child.
   */
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -271,13 +271,21 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
   return (
     <>
       {/*
-        The row, not the button. Stripe's button is a fixed pixel height and the
+        The row, not the button, and it settles one of the button's two
+        dimensions rather than both.
+
+        **Height is the row's.** Stripe's button is a fixed pixel height and the
         column around it is `em` against the panel's container query, so the two
         cannot track each other across the four widths this panel is laid out at.
         Holding `2.6em` here — the ghost buttons' own `min-block-size` — keeps the
         column's rhythm at every width and centres whatever the wallet draws inside
         it. A `min` rather than a fixed height, so the rare device offering both
         wallets grows the row to fit the second rather than clipping it.
+
+        **Width is the element's**, and it has to be: this is a flex box, so a
+        child with no width of its own is sized by its content, and Stripe's
+        content asked for 300px in a 498px column. The `w-full` that fixes it is
+        on the element below, where the reasoning belongs.
 
         `hidden` rather than a height animation once the answer is `false`: this
         only ever moves the rows below it *up*, and only on a device with no
@@ -571,6 +579,33 @@ function Wallet({
       <span ref={anchor} className="hidden" />
 
       <ExpressCheckoutElement
+        /*
+          **The width the wallet buttons are drawn at, and the reason they were
+          not the frames' width until 29 August 2026.**
+
+          `className` lands on the plain `<div>` react-stripe-js mounts the
+          element into, and that div is a flex item of the row above — so with no
+          width of its own it was sized by its content, and Stripe's content is an
+          iframe that asks for 300px. The wallet buttons stood 292px wide in a
+          497.63px column of 497.63px frames, centred, visibly narrow against
+          every other control on the panel.
+
+          `w-full` is what makes it the column's width instead: the element fills
+          the row, `.__PrivateStripeElement` is `display: block` inside it, and
+          the iframe's own `min-width: 100%` follows both. Measured against
+          staging at 497.63px and at 229.91px, where a `.checkout-option` stands
+          at exactly the same two numbers.
+
+          The iframe reads 8px wider than that, and it is meant to: Stripe sets
+          `width: calc(100% + 8px)` with `margin: -4px` and insets what it draws
+          by the same amount, so the *button* lands on the frames' edges. Nothing
+          overflows — the document and the panel both scroll to their own width.
+
+          Height is the one dimension this cannot reach. Stripe caps
+          `buttonHeight` at 55 and the frames stand at 2.6em, so the row holds
+          the difference rather than the button closing it.
+        */
+        className="w-full"
         options={ELEMENT_OPTIONS}
         onAvailablePaymentMethodsChange={onAvailability}
         onConfirm={(event) => void handleConfirm(event)}

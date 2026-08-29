@@ -1926,7 +1926,28 @@
     color: var(--color-snow);
     inline-size: 100%;
     min-block-size: 2.6em; /* 78px at 30px */
-    padding: 0.3em 0.9em;
+    /*
+      ~~`0.3em 0.9em`.~~ **Both loosened on 29 August 2026**, and neither number
+      is decoration: they are the two things that decide whether this column is
+      one set of equal frames or four heights.
+
+      These boxes are full-width and their contents are centred, so the inline
+      padding is never seen — it is only the width at which a label gives up and
+      wraps. `0.9em` left "Continue to Checkout" 12.27em to stand in and the
+      words want 12.46em, so the longest label on the panel wrapped and its frame
+      grew to 82px beside its siblings' 78px. `0.75em` hands back the 0.3em that
+      settles it, and the same ratio holds at every width above the type's floor
+      because both are `em` off the same size.
+
+      Under about 430px the words cannot fit on one line at any padding: the type
+      clamps at 15px while the panel keeps narrowing, so the label needs 12.46em
+      of a box that has 11em. The block padding is what keeps that from showing.
+      Two lines is 2em, and at `0.15em` a wrapped label still stands inside the
+      `2.6em` the frames are drawn at — so the box holds its height instead of
+      growing. It costs nothing where a label fits, since `min-block-size` is
+      what decides those.
+    */
+    padding: 0.15em 0.75em;
   }
 
   /*

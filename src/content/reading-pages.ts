@@ -84,9 +84,14 @@ export const readingPageChrome = {
      *
      * It does not say "Pay with Card". The **hosted page** offers every method
      * turned on in the Dashboard, and a button that names one of them would be
-     * wrong the first time somebody pays with anything else. The price is set
-     * beside it rather than in it, so the label is a constant and the amount is
-     * the API's.
+     * wrong the first time somebody pays with anything else.
+     *
+     * **It does not quote the price either.** ~~The amount was set beside it,
+     * so the label could be a constant and the number the API's.~~ The panel
+     * already states the price once, above these frames and in display type, and
+     * a second telling at nav size was what made this label — the longest on the
+     * panel — wrap onto two lines and stand taller than the frames beside it.
+     * Removed 29 August 2026 at the client's request; see `BuyNow`.
      *
      * ~~"Buy Now".~~ **"Continue to Checkout" from 29 August 2026**, at the
      * client's request, because the old label promised something the button

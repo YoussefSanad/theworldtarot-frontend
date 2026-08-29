@@ -611,7 +611,15 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
 expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
-expect("live", "Buy Now is labelled with the price", sold.settled.buyNow, "Continue to Checkout €70");
+/*
+  The label alone, and the same string in every state the button is drawn in.
+  The amount left this button on 29 August 2026: the panel says the price once,
+  in the line above, and a second telling here wrapped the longest label on the
+  panel onto two lines. So this is no longer the assertion that the button
+  quotes the API — `sold.settled.price` above is — it is the assertion that it
+  quotes nothing at all.
+*/
+expect("live", "Buy Now is labelled, and quotes no amount", sold.settled.buyNow, "Continue to Checkout");
 expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
 
 if (live) {
@@ -678,7 +686,7 @@ expect("ahead", "the wallet row still stands beside the refused card road", ahea
 expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
 expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
 expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
-expect("ahead", "and the button is pressable again", ahead.afterwards, "Continue to Checkout €70");
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Continue to Checkout");
 /* Nothing to paint a confirmation from, because nothing was confirmed. */
 expect("ahead", "nothing was remembered", ahead.record, null);
 
@@ -736,7 +744,7 @@ expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
   meet a hole where the checkout is. None of the three can take money.
 */
 expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
-expect("unreachable", "Buy Now quotes nothing", dead.settled.buyNow, "Continue to Checkout");
+expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Continue to Checkout");
 expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a

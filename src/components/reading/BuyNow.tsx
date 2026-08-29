@@ -7,7 +7,7 @@ import { Mark } from "@/components/ui/Mark";
 import { readingPageChrome } from "@/content/reading-pages";
 import { checkout as marks } from "@/lib/assets";
 import { startCheckout } from "@/lib/buy";
-import { formatPrice, type Money } from "@/lib/price";
+import { type Money } from "@/lib/price";
 import { questionIn } from "@/lib/question";
 
 const { checkout } = readingPageChrome;
@@ -20,6 +20,22 @@ const { checkout } = readingPageChrome;
  * than a payment: pressing it places an order, starts its payment and sends the
  * browser to Stripe's **hosted page**. Nothing is collected here, and this file
  * loads no Stripe.js. See `docs/adr/0002-checkout-happens-on-stripes-page.md`.
+ *
+ * ## It does not quote the price, and that is a layout fact
+ *
+ * ~~The amount set beside the label, in champagne.~~ **Gone from the button on
+ * 29 August 2026**, at the client's request. The panel states the price once,
+ * in display type above these frames, so the number in the button was the
+ * second place it was said and the only one that had to be read at nav size.
+ *
+ * What it cost was the column's shape. `.checkout-option` is the same box five
+ * times over — the client stacks them as one set of equal frames — and a third
+ * child pushed "Continue to Checkout" past the width it fits on one line: the
+ * label wrapped, and the frame stood 82px against its siblings' 78px. Removing
+ * the amount alone did not settle that (the label wants 12.46em and had 12.27em
+ * of it), which is why `.checkout-option` gives back some of its inline padding
+ * in the same change. `money` stays a prop: it is what the order is placed in,
+ * not what the button says.
  *
  * ## It takes Money, or nothing at all
  *
@@ -146,13 +162,6 @@ export function BuyNow({
             */}
             <Mark art={marks.card} className="w-[7.13cqw]" />
             <span>{checkout.buy}</span>
-            {/*
-              The amount is the API's, formatted against the site's locale. It
-              is set beside the label rather than inside it so the words do not
-              move as the price lands, and so a state with no live money simply
-              has no number rather than a different sentence.
-            */}
-            {money ? <span className="text-champagne">{formatPrice(money)}</span> : null}
           </>
         )}
       </Button>
