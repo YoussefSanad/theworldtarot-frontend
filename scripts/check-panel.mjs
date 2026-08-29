@@ -1,42 +1,46 @@
 /**
- * Drives the reading page's payment panel through the four states it can be in.
+ * Drives the reading page's payment panel through every state it can be in, and
+ * presses Buy Now in each of them.
  *
  * `npm run build && npm run check:panel` — serves `out/` and loads the real
- * exported bundle three times, intercepting the product endpoint to answer
- * 200, 404 and 500 in turn. Each answer is **held until the loading state has
- * been measured**, so the race between the fetch and the assertion cannot
- * decide the result.
+ * exported bundle once per state, answering the product endpoint 200, 404 and
+ * 500 in turn. Each answer is **held until the loading state has been
+ * measured**, so the race between the fetch and the assertion cannot decide the
+ * result.
  *
- * This exists because the thing the ticket actually asks for cannot be checked
- * by the type checker or by `node --test`: that the panel does not move under a
- * customer's thumb while the price is in flight, and that there is no way to
- * pay until there is a live amount to pay. Both are facts about a laid-out
- * page. See `docs/plans/reading-page-live-price.md`.
+ * This exists because the things the ticket asks for cannot be checked by the
+ * type checker or by `node --test`: that the panel does not move under a
+ * customer's thumb while the price is in flight, that no order can be placed
+ * from a price no server agreed to, and that one press places an order, pays
+ * it, remembers it and leaves. All of them are facts about a laid-out page and
+ * the requests it makes. See `docs/plans/hosted-checkout.md`.
  *
- * It needs no backend — every request to the API is answered by the route
- * handler, which is also the only way to produce the 500 on demand.
+ * ## The whole checkout is answered here, not just the catalogue
  *
- * ## What it can and cannot say about the express checkout element
+ * `/orders` and `/orders/{token}/pay` are intercepted too, which is what lets
+ * the live state be **pressed** rather than merely inspected — and pressed
+ * without placing a real order against staging every time somebody runs this.
+ * The redirect it is handed points back at this server carrying a `cs_...` in
+ * its path, so the navigation can be followed and the record read out of the
+ * tab it survived in.
  *
- * **It can never see an Apple Pay button.** Stripe draws one only in Safari on
- * a device with a wallet, and only on a registered payment method domain — a
- * headless Chromium on `localhost` fails both, and Stripe reports nothing when
- * it declines: no `ready`, no `loaderror`, no `availablepaymentmethodschange`.
- * Verified against `@stripe/stripe-js@9.14.0`.
+ * ## The wallet assertions are gone, and the negative replaced them
  *
- * So the wallet assertions here are all negatives, and they are the ones that
- * would otherwise go unnoticed: that the element mounts at all, that it quotes
- * the live amount, that its row collapses rather than leaving a hole where no
- * wallet exists, and that nothing capable of taking money is mounted in a state
- * that has no live money to take. **That the sheet opens and quotes the price
- * is proved by hand, in Safari, on `staging.theworldtarot.com`** — see #37.
+ * There is no express checkout element on this page while the card road stands
+ * alone, so there is nothing to assert the collapse of. **What is asserted
+ * instead is that no Stripe iframe mounts on the reading page in any state, and
+ * that nothing fetches js.stripe.com.** It is worth more than it looks: Stripe.js
+ * is not loaded on this road at all, and a check that would notice it coming
+ * back is the check that catches a half-finished wallet ticket shipping by
+ * accident. #48 is where it comes back on purpose, with its own assertions.
  *
  * `npm run check:panel -- --live` drops the interception and lets the page talk
  * to the API in `.env.local`, which is the one thing the intercepted run cannot
- * prove: that the endpoint answers this product key at all. It serves on **port
- * 3000 deliberately** — that is the origin staging's `CORS_ALLOWED_ORIGINS`
- * carries, so any other port fails as an opaque network error rather than as a
- * CORS message.
+ * prove: that the endpoint answers this product key at all. **It presses
+ * nothing**, because there a press would place a real order. It serves on
+ * **port 3000 deliberately** — that is the origin staging's
+ * `CORS_ALLOWED_ORIGINS` carries, so any other port fails as an opaque network
+ * error rather than as a CORS message.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -56,14 +60,34 @@ const PANEL = ".reading-panel-sky";
 const PRICE = "#get-my-reading p.font-display";
 const RESTING = '[role="status"][aria-label="Fetching the price"]';
 
-/** The client's own frames. The express checkout element is not one and never matches. */
+/** The client's frames. Buy Now wears the same treatment and is one of them. */
 const GHOST = "#get-my-reading .checkout-option";
 
-/** The express checkout row, present or collapsed. Selected by the hook, not the label. */
-const WALLET = "#get-my-reading [data-express-checkout]";
+/** The one control that can take money. Selected by its hook, not its words. */
+const BUY = "#get-my-reading [data-buy-now]";
 
-/** Proof Stripe.js actually built an element rather than merely loading. */
-const STRIPE_FRAME = '#get-my-reading iframe[name^="__privateStripeFrame"]';
+const GIFT = '#get-my-reading button:has-text("gift a reading")';
+
+/**
+ * Proof Stripe.js built an element. **Page-wide rather than inside the panel**:
+ * the claim is that nothing on this page mounts one, and an element that
+ * appeared somewhere else on it would be the same accident.
+ */
+const STRIPE_FRAME = 'iframe[name^="__privateStripeFrame"]';
+
+/** What the customer types, and what has to survive as far as the order line. */
+const QUESTION = "What should I focus on this month?";
+
+/**
+ * Where the browser is sent instead of Stripe. It carries a `cs_...` in its
+ * **path**, which is where `sessionIdFrom` reads one, and it lands back on this
+ * server — which answers 404 for it, and 404 is a page like any other to assert
+ * an address on.
+ */
+const SESSION_ID = "cs_test_a1B2c3";
+const SESSION_URL = `http://localhost:${PORT}/stripe-stands-here/${SESSION_ID}`;
+
+const PAY_TOKEN = "kQ3rN8xvT1sLb0Zy";
 
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
@@ -100,27 +124,52 @@ function expect(state, what, actual, wanted) {
   console.log(`  ${ok ? "✓" : "✗"} ${what}: ${JSON.stringify(actual)}`);
 }
 
+const ORDER = {
+  id: 41,
+  status: "pending",
+  currency: "EUR",
+  total_amount: 7000,
+  lines: [{ product: "month-ahead", unit_amount: 7000, quantity: 1, question: QUESTION }],
+  pay_token: PAY_TOKEN,
+};
+
 /**
- * Loads the page, measures the resting state, then lets the API answer.
+ * A fulfilled cross-origin answer. The API is on another origin, so a reply
+ * with no `Access-Control-Allow-Origin` is one the browser hands the page as a
+ * network failure — which would make every state below look like `unreachable`.
+ */
+function api(body, status = 200) {
+  return {
+    status,
+    contentType: "application/json",
+    headers: {
+      "Access-Control-Allow-Origin": `http://localhost:${PORT}`,
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Headers": "Content-Type, Accept, X-XSRF-TOKEN",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+/**
+ * Loads the page, measures the resting state, lets the API answer, and reads
+ * the panel back.
  *
  * `settled` is a page-side predicate rather than a timeout. A fixed wait is
  * long enough for a route handler and not for a real round trip to staging,
  * which is exactly the kind of flake that gets a check disbelieved.
  */
-async function drive(state, response, settled) {
+async function drive(state, response, settled, { gift = false, press = false } = {}) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
   /*
     Stripe validates its options inside the iframe and reports a bad one by
-    throwing, not by rejecting a promise anybody awaits — an `IntegrationError`
-    surfaces as an uncaught rejection and the element renders nothing at all.
-    Every assertion below still passes when that happens, because they are all
-    negatives and a dead element satisfies every one of them.
-
-    Added after `layout.overflow: 'never'` shipped with `maxRows: 1`, which
-    Stripe rejects and this script did not notice.
+    throwing, not by rejecting a promise anybody awaits. Nothing here mounts a
+    Stripe element any more, so this is now watching for one appearing rather
+    than for one misbehaving — either way it is the same line of evidence.
   */
   const thrown = [];
 
@@ -131,6 +180,13 @@ async function drive(state, response, settled) {
     if (message.type() === "error" && /IntegrationError|Stripe/.test(text)) thrown.push(text.split("\n")[0]);
   });
 
+  /** Every address the page asks for, so a request that must not happen can be named. */
+  const asked = [];
+  const placed = [];
+  const paid = [];
+
+  page.on("request", (request) => asked.push(request.url()));
+
   let release = () => {};
 
   if (!live) {
@@ -140,6 +196,24 @@ async function drive(state, response, settled) {
       await held;
       await route.fulfill(response);
     });
+
+    // The handshake `api-write.ts` makes before every write.
+    await page.route("**/sanctum/csrf-cookie", (route) => route.fulfill(api({}, 204)));
+
+    // Anchored patterns: this one matches the endpoint and never the `/pay`
+    // under it, because a glob has to match the whole address.
+    await page.route("**/api/v1/orders", async (route) => {
+      placed.push(JSON.parse(route.request().postData() ?? "null"));
+      await route.fulfill(api(ORDER, 201));
+    });
+
+    await page.route("**/api/v1/orders/*/pay", async (route) => {
+      paid.push({
+        url: route.request().url(),
+        body: JSON.parse(route.request().postData() ?? "null"),
+      });
+      await route.fulfill(api({ type: "redirect", redirect_url: SESSION_URL }));
+    });
   }
 
   await page.goto(PAGE, { waitUntil: "domcontentloaded" });
@@ -148,6 +222,9 @@ async function drive(state, response, settled) {
   const resting = {
     height: Math.round(await page.$eval(PANEL, (node) => node.getBoundingClientRect().height)),
     visibleControls: await page.locator("#get-my-reading button:visible").count(),
+    // Present in the layout, holding its height, while being none of those
+    // things — which is what `invisible` and `inert` together buy.
+    buyNow: await page.locator(BUY).count(),
     // A control inside an `inert` subtree is not reachable by a pointer, a tab,
     // a screen reader or `element.click()`, which is the whole claim.
     reachableControls: await page
@@ -158,38 +235,75 @@ async function drive(state, response, settled) {
   release();
   await page.waitForFunction(settled, null, { timeout: 15000 });
 
+  if (gift) await page.locator(GIFT).click();
+
   /*
-    Stripe mounts its iframe a beat after the price settles, so the wallet
-    measurements need their own wait. Absent is a legitimate answer — three of
-    the four states have no element at all — so this resolves rather than throws
-    when nothing arrives.
+    Typed before the press, and read off the form by the press itself. In gift
+    mode there is no question field in the DOM at all — the sections are
+    mutually exclusive — so this is skipped rather than made conditional inside
+    the page.
   */
-  await page.waitForSelector(STRIPE_FRAME, { timeout: 8000 }).catch(() => {});
+  const question = await page.locator("#get-my-reading textarea[name=question]").count();
+
+  if (question > 0) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
 
   const answered = {
     height: Math.round(await page.$eval(PANEL, (node) => node.getBoundingClientRect().height)),
     visibleControls: await page.locator("#get-my-reading button:visible").count(),
     price: (await page.locator(PRICE).first().innerText().catch(() => "")).trim(),
-    question: await page.locator("#get-my-reading textarea").count(),
+    question,
+    recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
-    walletRows: await page.locator(WALLET).count(),
+    // Whitespace-flattened: the label and the amount are two spans that the
+    // column lays out one above the other, and where the line breaks is not
+    // what this is asserting.
+    buyNow: (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " "),
+    /* Announced as unavailable is how the two inert cases say so out loud. */
+    buyNowDisabled: await page.locator(BUY).first().getAttribute("aria-disabled").catch(() => null),
+    panel: (await page.locator("#get-my-reading").innerText().catch(() => "")).trim(),
     stripeFrames: await page.locator(STRIPE_FRAME).count(),
-    /*
-      The rendered height of the wallet row. `boundingBox()` is `null` for a
-      `display:none` element, which is the collapse, and that is deliberately
-      not distinguished from a zero-height box: either way the panel has no gap.
-    */
-    walletHeight: Math.round(
-      (await page.locator(WALLET).first().boundingBox().catch(() => null))?.height ?? 0,
-    ),
-    /* The amount the sheet would quote, read off the row's own label. */
-    walletLabel: await page.locator(WALLET).first().getAttribute("aria-label").catch(() => null),
   };
+
+  let landed = null;
+  let record = null;
+
+  if (press) {
+    /*
+      `force`, because a button announcing itself unavailable is exactly the one
+      worth pressing: it is `aria-disabled` rather than `disabled` — the client
+      rejected a disabled control as reading like a bug — so a customer's
+      pointer really does land on it and really does press it. Playwright's
+      actionability check would refuse to reproduce the only case this proves.
+    */
+    await page.locator(BUY).first().click({ force: true });
+
+    /*
+      Either the browser leaves, or it does not and that is the assertion. The
+      wait is short and its failure is a legitimate answer rather than an error,
+      which is why the address is read afterwards rather than thrown from here.
+    */
+    await page.waitForURL((url) => url.href.includes(SESSION_ID), { timeout: 8000 }).catch(() => {});
+
+    landed = page.url();
+    // sessionStorage is the tab's, not the document's, so it survives the
+    // navigation the same way it survives the round trip to Stripe.
+    record = await page.evaluate(() => sessionStorage.getItem("checkout")).catch(() => null);
+  }
 
   await page.close();
 
-  return { resting, settled: answered, thrown };
+  return {
+    resting,
+    settled: answered,
+    thrown,
+    placed,
+    paid,
+    landed,
+    record: record === null ? null : JSON.parse(record),
+    stripeJs: asked.filter((url) => url.includes("js.stripe.com")),
+    orderCalls: asked.filter((url) => url.includes("/api/v1/orders")),
+  };
 }
 
 const PRODUCT = {
@@ -202,6 +316,10 @@ const PRODUCT = {
   price: { currency: "EUR", amount: 7000 },
 };
 
+const PRICED = api(PRODUCT);
+const WITHDRAWN = api({ message: "Not found." }, 404);
+const BROKEN = api({ message: "Server error." }, 500);
+
 /** The price line has said something — live or fallback, either settles it. */
 const priced = () => {
   const node = document.querySelector("#get-my-reading p.font-display");
@@ -212,27 +330,30 @@ const priced = () => {
 /** Nothing is for sale: the whole order came off the page. */
 const unsold = () => document.querySelectorAll("#get-my-reading form").length === 0;
 
-const sold = await drive("live — a priced product", { status: 200, json: PRODUCT }, priced);
-expect("live", "Stripe raised nothing", sold.thrown, []);
-expect("live", "no controls while loading", sold.resting.reachableControls, 0);
+/** True of every state, and the reason half of them are driven at all. */
+function assertNoStripeOnThePage(state, result) {
+  expect(state, "Stripe raised nothing", result.thrown, []);
+  expect(state, "no Stripe element is mounted", result.settled.stripeFrames, 0);
+  expect(state, "and js.stripe.com is never fetched", result.stripeJs, []);
+}
+
+const sold = await drive("live — a priced product", PRICED, priced, { press: !live });
+
+assertNoStripeOnThePage("live", sold);
+expect("live", "Buy Now is in the layout while loading", sold.resting.buyNow, 1);
+expect("live", "no control is reachable while loading", sold.resting.reachableControls, 0);
+expect("live", "and none is visible either", sold.resting.visibleControls, 0);
 /*
-  Not "does not move". This browser has no Apple Pay, so the wallet row
-  collapses the moment the price lands and the panel gets shorter by exactly one
-  row. That is the trade #37 took for the "no gap" criterion, and the direction
-  is the point: a panel that only ever shrinks never puts a control under a
-  finger that was reaching for something else. What must never happen is growth.
+  Not "does not move". The panel is three frames rather than five and nothing
+  in it is drawn by a wallet vendor any more, so the height that settles is the
+  height that was reserved. What must never happen is growth: a panel that only
+  ever shrinks never puts a control under a finger reaching for something else.
 */
 expect("live", "the panel never grows", sold.settled.height <= sold.resting.height, true);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
-expect("live", "the client's four frames, Apple Pay's row now Stripe's", sold.settled.ghosts, 4);
-expect("live", "a Stripe element is mounted", sold.settled.stripeFrames > 0, true);
-expect(
-  "live",
-  "and it quotes the API's money, not the bundled copy",
-  sold.settled.walletLabel,
-  "Pay €70 with Apple Pay",
-);
-expect("live", "no gap where this browser has no wallet", sold.settled.walletHeight, 0);
+expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
+expect("live", "Buy Now is labelled with the price", sold.settled.buyNow, "Buy Now €70");
+expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
 
 if (live) {
   await browser.close();
@@ -242,30 +363,75 @@ if (live) {
   process.exit(failures.length === 0 ? 0 : 1);
 }
 
-const gone = await drive("withdrawn — a 404", { status: 404, json: { message: "Not found." } }, unsold);
-expect("withdrawn", "Stripe raised nothing", gone.thrown, []);
+/*
+  One press, and everything it is supposed to do. The order carries the question
+  and no identity — Stripe's page collects the buyer's email after the order
+  exists — the payment names the page to come back to, the record is written
+  before the browser leaves, and the browser leaves.
+*/
+expect("live", "one press places one order", sold.placed.length, 1);
+expect("live", "in the API's currency, with the question on the line", sold.placed[0], {
+  currency: "EUR",
+  lines: [{ product: "month-ahead", quantity: 1, question: QUESTION }],
+});
+expect("live", "and no name or email, which the page never collected", sold.placed[0] && "email" in sold.placed[0], false);
+expect("live", "then pays it, addressing the order by its pay token", sold.paid.length && sold.paid[0].url.endsWith(`/api/v1/orders/${PAY_TOKEN}/pay`), true);
+expect("live", "naming the page to come back to, as a product key", sold.paid[0]?.body, { return_to: "month-ahead" });
+expect("live", "the browser goes where Stripe said", sold.landed, SESSION_URL);
+expect("live", "and the checkout was remembered before it went", sold.record, {
+  payToken: PAY_TOKEN,
+  money: { currency: "EUR", amount: 7000 },
+  sessionId: SESSION_ID,
+  productKey: "month-ahead",
+  question: QUESTION,
+});
+
+const gifted = await drive("gifting — a recipient rather than a question", PRICED, priced, {
+  gift: true,
+  press: true,
+});
+
+assertNoStripeOnThePage("gifting", gifted);
+expect("gifting", "the recipient's fields replace the question", gifted.settled.recipient, 1);
+expect("gifting", "and there is no question in the form at all", gifted.settled.question, 0);
+expect("gifting", "the frames still stand", gifted.settled.ghosts, 3);
+expect("gifting", "Buy Now says it is unavailable", gifted.settled.buyNowDisabled, "true");
+expect("gifting", "and says why", /gifting is not open yet/i.test(gifted.settled.panel), true);
+/*
+  The assertion this state exists for. `POST /orders` has no field for a
+  recipient email or a gift message, so one live button here charges somebody
+  for a gift delivered to themselves.
+*/
+expect("gifting", "and no order can be placed", gifted.orderCalls, []);
+expect("gifting", "so the browser stays where it is", gifted.landed, PAGE);
+
+const gone = await drive("withdrawn — a 404", WITHDRAWN, unsold);
+
+assertNoStripeOnThePage("withdrawn", gone);
 expect("withdrawn", "no price", gone.settled.price, "");
 expect("withdrawn", "no controls", gone.settled.visibleControls, 0);
 expect("withdrawn", "no question either", gone.settled.question, 0);
 expect("withdrawn", "the closing call to action still lands", gone.settled.anchor, 1);
-expect("withdrawn", "and nothing to pay with", gone.settled.stripeFrames, 0);
 
-const dead = await drive("unreachable — a 500", { status: 500, json: { message: "Server error." } }, priced);
-expect("unreachable", "Stripe raised nothing", dead.thrown, []);
+const dead = await drive("unreachable — a 500", BROKEN, priced, { press: true });
+
+assertNoStripeOnThePage("unreachable", dead);
 expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
 /*
   The frame stays whole — a visitor arriving while the API is down should not
-  meet a hole where the checkout is. None of these five can take money.
+  meet a hole where the checkout is. None of the three can take money.
 */
-expect("unreachable", "the client's five frames, all of them duds", dead.settled.ghosts, 5);
+expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
+expect("unreachable", "Buy Now quotes nothing", dead.settled.buyNow, "Buy Now");
+expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
 /*
-  The assertion the state exists for. `reading.price` is the string "$75" for a
+  The assertion this state exists for. `reading.price` is the string "$75" for a
   reading the catalogue prices at EUR 7000: no currency, and a number nobody has
-  verified today. A sheet quoting it would be asking for consent to an amount no
-  server ever agreed to, so nothing capable of opening one is mounted.
+  verified today. An order placed from it would be an order at an amount no
+  server ever agreed to, so no request is possible at all.
 */
-expect("unreachable", "and nothing that could quote it", dead.settled.walletRows, 0);
-expect("unreachable", "no Stripe element at all", dead.settled.stripeFrames, 0);
+expect("unreachable", "and no request is possible", dead.orderCalls, []);
+expect("unreachable", "so the browser stays where it is", dead.landed, PAGE);
 
 await browser.close();
 server.close();
@@ -275,4 +441,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("\nAll four states behave.");
+console.log("\nEvery state behaves, and one press buys a reading.");

@@ -79,6 +79,40 @@ export const readingPageChrome = {
     /** Apple Pay and Google Pay are marks, so only these two carry a label. */
     card: "Pay with Card",
     /**
+     * The one control on this panel that takes money, and the whole of what
+     * three of the client's five frames became for the length of the interim.
+     *
+     * It does not say "Pay with Card". The **hosted page** offers every method
+     * turned on in the Dashboard, and a button that names one of them would be
+     * wrong the first time somebody pays with anything else. The price is set
+     * beside it rather than in it, so the label is a constant and the amount is
+     * the API's.
+     */
+    buy: "Buy Now",
+    /**
+     * Held across both round trips — the order, then the payment — because the
+     * browser does not leave until the second one answers, and a button that
+     * looks idle for a second and a half is a button pressed twice.
+     */
+    buying: "Taking you to checkout…",
+    /**
+     * Under the button in gift mode, where the button is inert.
+     *
+     * `POST /orders` has no field for a recipient email or a gift message, so a
+     * live button here would charge somebody for a gift delivered to
+     * themselves. Gifting is the code model and a separate milestone: the buyer
+     * names a recipient, the recipient redeems a code and writes their own
+     * question.
+     */
+    giftingComing: "Gifting is not open yet. A reading for yourself can be bought now.",
+    /**
+     * A refused order, a refused payment, or an instruction this build cannot
+     * act on. **It says nothing has been charged**, because nothing has: an
+     * order is a record, and the money is collected on Stripe's page which the
+     * customer never reached.
+     */
+    buyFailed: "We could not start the checkout, and nothing has been charged. Please try again.",
+    /**
      * Read out where the price will be while the catalogue is being asked for
      * it. The resting state itself is a shape rather than words — the panel
      * holds its height and says nothing it might have to take back — so this is
