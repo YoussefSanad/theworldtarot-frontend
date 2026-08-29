@@ -891,16 +891,19 @@
   @media (width < 40rem) {
     #hero-sky {
       /*
-        The trailing -6.09vw lifts the comp by 8% of its own height, asked for
-        by eye on top of the tuning above. The composition's height is the
-        globe's (the shine's box closes 15vw inside it): 100.21% width at the
-        artwork's 0.759375 aspect = 76.10vw, and 8% of that is 6.09vw. Kept as
-        its own term rather than folded into the 4.48972 so the approved
-        placement and the nudge off it stay separately legible, and kept
-        width-relative like the rest of the pair so it scales the same way the
-        artwork does instead of drifting with the page's height.
+        The 8%-of-its-own-height lift that used to trail this expression is
+        gone. It was asked for by eye while the sun was welded 11.13vw off
+        the globe, and lifting the pair took the glint up off the card the
+        composition is meant to sit behind; the client asked for the comp
+        back down, and dropping the term is that move exactly — 40.09vw, or
+        about 156px at 390px, with the weld untouched so the sun and the
+        earth travel together.
+
+        What is left is the approved placement and nothing else: the base
+        rule with one number changed, still a page-height share so it keeps
+        scaling with the rest of the anchor.
       */
-      --hero-sky-top: calc(10.9% - 4.48972vw - 40.09vw);
+      --hero-sky-top: calc(10.9% - 4.48972vw);
     }
   }
 
