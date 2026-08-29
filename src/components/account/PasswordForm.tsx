@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 
+import { Field, Panel } from "@/components/account/FormPanel";
 import { Button } from "@/components/ui/Button";
+import { signInPath } from "@/content/login";
 import {
   type PasswordPageCopy,
   resetPasswordCopy,
@@ -117,6 +120,8 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
         <Field
           id={`${fieldId}-password`}
           label={copy.passwordLabel}
+          type="password"
+          maxLength={72}
           value={password}
           onChange={setPassword}
           autoComplete="new-password"
@@ -126,6 +131,8 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
         <Field
           id={`${fieldId}-confirmation`}
           label={copy.confirmLabel}
+          type="password"
+          maxLength={72}
           value={passwordConfirmation}
           onChange={setPasswordConfirmation}
           autoComplete="new-password"
@@ -146,54 +153,19 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
               : copy.unknownFailure}
         </p>
       ) : null}
-    </Panel>
-  );
-}
 
-function Panel({ children }: { children: React.ReactNode }) {
-  return <section className="mx-auto w-full max-w-[36.25rem] px-6 py-24">{children}</section>;
-}
-
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  autoComplete,
-  errors,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  autoComplete: string;
-  errors: string[] | undefined;
-}) {
-  const errorId = `${id}-error`;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-note text-ash">
-        {label}
-      </label>
-      <input
-        id={id}
-        type="password"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        autoComplete={autoComplete}
-        required
-        /* The backend's own ceiling for a hashed password. */
-        maxLength={72}
-        aria-invalid={errors ? true : undefined}
-        aria-describedby={errors ? errorId : undefined}
-        className="field px-3 py-2 text-note"
-      />
-      {errors ? (
-        <p id={errorId} className="text-fine text-champagne">
-          {errors.join(" ")}
-        </p>
+      {/*
+        Only for a dead link. The other two failures are answered by trying
+        again on this page, and a way off it would be the wrong offer.
+      */}
+      {failure?.kind === "link" ? (
+        <Link
+          href={signInPath}
+          className="mt-4 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
+        >
+          {copy.signInPrompt}
+        </Link>
       ) : null}
-    </div>
+    </Panel>
   );
 }

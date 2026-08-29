@@ -24,6 +24,14 @@ export type PasswordPageCopy = {
   successBody: string;
   /** Shown for a dead link, and never accompanied by the reason. */
   linkFailure: string;
+  /**
+   * The way out of a dead link, and the only one there is. Both `linkFailure`
+   * sentences send somebody to the sign in page, which **exists since #49** —
+   * before it did, this was an instruction to visit a 404. Rendered as a link
+   * beside the failure rather than woven into the sentence, so the copy stays
+   * one string for a translator.
+   */
+  signInPrompt: string;
   rateLimited: string;
   unknownFailure: string;
 };
@@ -43,6 +51,7 @@ export const setPasswordCopy: PasswordPageCopy = {
   // sign in attempt rather than a second copy of the same mail.
   linkFailure:
     "This link is no longer valid. If you have already set a password, sign in with it. If not, ask for a new link from the sign in page.",
+  signInPrompt: "Go to the sign in page",
   rateLimited: "That is a few too many tries. Wait a moment and try once more.",
   unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
 };
@@ -59,6 +68,7 @@ export const resetPasswordCopy: PasswordPageCopy = {
   successBody: "You can sign in with it now.",
   linkFailure:
     "This link is no longer valid. Reset links last an hour and work once. Ask for a new one from the sign in page.",
+  signInPrompt: "Go to the sign in page",
   rateLimited: "That is a few too many tries. Wait a moment and try once more.",
   unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
 };

@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
-import { ApiError, ApiRateLimitError, ApiValidationError, apiWrite } from "./api-write.ts";
+import {
+  ApiError,
+  ApiRateLimitError,
+  ApiValidationError,
+  apiWrite,
+  apiWriteEmpty,
+} from "./api-write.ts";
 
 type Call = { url: string; init: RequestInit };
 
@@ -196,4 +202,30 @@ test("a refused payment names the endpoint and never the pay token in it", async
 
   assert.equal(failure?.message.includes("kQ3rN8xvT1sLb0Zy"), false);
   assert.equal(failure?.message, "The write to /api/v1/orders/{pay_token}/pay failed with 502.");
+});
+
+test("an empty write survives a 204 with no body, and still does the handshake", async () => {
+  /*
+    `logout` answers 204 and nothing at all. Parsing that as JSON throws, so a
+    sign out that worked perfectly would reach the caller as a fault.
+  */
+  stubCookie("XSRF-TOKEN=fresh");
+  stubFetch(new Response(null, { status: 204 }), new Response(null, { status: 204 }));
+
+  await apiWriteEmpty("/api/v1/logout");
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].url.endsWith("/sanctum/csrf-cookie"), true);
+  assert.equal(calls[1].url, "https://staging-api.theworldtarot.com/api/v1/logout");
+  assert.equal(calls[1].init.method, "POST");
+  assert.equal(new Headers(calls[1].init.headers).get("X-XSRF-TOKEN"), "fresh");
+});
+
+test("an empty write still throws what a refusal says", async () => {
+  stubFetch(new Response(null, { status: 204 }), json({ message: "Unauthenticated." }, 401));
+
+  await assert.rejects(
+    () => apiWriteEmpty("/api/v1/logout"),
+    (error: unknown) => error instanceof ApiError && error.status === 401,
+  );
 });

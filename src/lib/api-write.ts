@@ -15,12 +15,18 @@
  * `process.env.NEXT_PUBLIC_*` wherever it appears, so this is still baked into
  * the bundle at build time; reading it here just means the value is not frozen
  * at import.
+ *
+ * Exported for `session.ts`, whose `/me` is a **credentialed read** and so
+ * belongs to neither seam cleanly: it wants this side's cookies and the other
+ * side's `GET`. One export beats a third copy of the same six lines.
  */
-function baseUrl(): string {
+export function apiBaseUrl(): string {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   if (!base) {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL is not set. Nothing can be bought without it.");
+    throw new Error(
+      "NEXT_PUBLIC_API_BASE_URL is not set. Nothing can be bought and nobody can sign in without it.",
+    );
   }
 
   return base.replace(/\/$/, "");
@@ -32,7 +38,7 @@ function baseUrl(): string {
  * of the flow, and without them the cookie is never stored to be read back.
  */
 async function ensureCsrfCookie(): Promise<void> {
-  await fetch(`${baseUrl()}/sanctum/csrf-cookie`, {
+  await fetch(`${apiBaseUrl()}/sanctum/csrf-cookie`, {
     credentials: "include",
     cache: "no-store",
     headers: { Accept: "application/json" },
@@ -139,7 +145,7 @@ async function toError(path: string, response: Response): Promise<ApiError> {
 function post(path: string, body: unknown): Promise<Response> {
   const token = readXsrfToken();
 
-  return fetch(`${baseUrl()}${path}`, {
+  return fetch(`${apiBaseUrl()}${path}`, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
@@ -152,7 +158,11 @@ function post(path: string, body: unknown): Promise<Response> {
   });
 }
 
-export async function apiWrite<T>(path: string, body: unknown): Promise<T> {
+/**
+ * Everything a write is apart from reading its answer: the handshake, the
+ * header, the one retry, and the typed refusal.
+ */
+async function send(path: string, body: unknown): Promise<Response> {
   await ensureCsrfCookie();
 
   let response = await post(path, body);
@@ -170,5 +180,25 @@ export async function apiWrite<T>(path: string, body: unknown): Promise<T> {
     throw await toError(path, response);
   }
 
-  return (await response.json()) as T;
+  return response;
+}
+
+export async function apiWrite<T>(path: string, body: unknown): Promise<T> {
+  return (await send(path, body)).json() as Promise<T>;
+}
+
+/**
+ * A write whose answer is nothing at all.
+ *
+ * `POST /api/v1/logout` is a **204 with an empty body**, and `response.json()`
+ * on one throws — a sign out that worked perfectly would arrive at the caller
+ * as a fault. Its own function rather than a branch inside `apiWrite`, so a
+ * caller that does expect a body cannot quietly be handed `undefined` instead.
+ *
+ * `body` is optional because an endpoint that answers nothing often asks for
+ * nothing either; `JSON.stringify(undefined)` is `undefined`, which `fetch`
+ * reads as no body at all.
+ */
+export async function apiWriteEmpty(path: string, body?: unknown): Promise<void> {
+  await send(path, body);
 }

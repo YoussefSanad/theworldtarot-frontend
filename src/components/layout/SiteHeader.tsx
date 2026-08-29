@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { AccountControl } from "@/components/account/AccountControl";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
@@ -129,22 +130,26 @@ export function SiteHeader() {
               {headerActions.cta.label}
             </ButtonLink>
 
-            {[headerActions.account, headerActions.bag].map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                aria-label={action.label}
-                className="opacity-90 transition-opacity hover:opacity-100"
-              >
-                <Image
-                  src={action.icon.src}
-                  alt=""
-                  width={action.icon.width}
-                  height={action.icon.height}
-                  className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-                />
-              </Link>
-            ))}
+            {/*
+              No longer mapped with the bag beside it: the account control has
+              two states and the bag has one, so what was a list of identical
+              icon links is now one component and one link.
+            */}
+            <AccountControl />
+
+            <Link
+              href={headerActions.bag.href}
+              aria-label={headerActions.bag.label}
+              className="opacity-90 transition-opacity hover:opacity-100"
+            >
+              <Image
+                src={headerActions.bag.icon.src}
+                alt=""
+                width={headerActions.bag.icon.width}
+                height={headerActions.bag.icon.height}
+                className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
+              />
+            </Link>
 
             {/*
               Last, not first: `LocaleMenu` anchors its panel to its own right
@@ -234,23 +239,22 @@ export function SiteHeader() {
                   {headerActions.cta.label}
                 </ButtonLink>
 
-                {[headerActions.account, headerActions.bag].map((action) => (
-                  <Link
-                    key={action.href}
-                    href={action.href}
-                    aria-label={action.label}
-                    className="opacity-90 transition-opacity hover:opacity-100"
-                    onClick={closeMenu}
-                  >
-                    <Image
-                      src={action.icon.src}
-                      alt=""
-                      width={action.icon.width}
-                      height={action.icon.height}
-                      className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-                    />
-                  </Link>
-                ))}
+                <AccountControl onNavigate={closeMenu} />
+
+                <Link
+                  href={headerActions.bag.href}
+                  aria-label={headerActions.bag.label}
+                  className="opacity-90 transition-opacity hover:opacity-100"
+                  onClick={closeMenu}
+                >
+                  <Image
+                    src={headerActions.bag.icon.src}
+                    alt=""
+                    width={headerActions.bag.icon.width}
+                    height={headerActions.bag.icon.height}
+                    className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
+                  />
+                </Link>
               </div>
 
               <nav aria-label="Primary" className="flex flex-col gap-5 text-nav-sm">

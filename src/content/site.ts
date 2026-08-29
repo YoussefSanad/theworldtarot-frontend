@@ -1,4 +1,5 @@
 import type { SocialIconName } from "@/components/ui/SocialIcon";
+import { signInPath } from "@/content/login";
 import { icons } from "@/lib/assets";
 
 /**
@@ -31,7 +32,14 @@ export const primaryNav: NavLink[] = [
  */
 export const headerActions = {
   cta: { label: "GET MY READING", href: "/readings" },
-  account: { label: "Sign in", href: "/login", icon: icons.login },
+  /**
+   * The icon a visitor presses. `/login/` is a built route since #49 — it was
+   * named here from the client's navigation document long before the page
+   * existed, and pointed at a 404 for as long as it did.
+   */
+  account: { label: "Sign in", href: signInPath, icon: icons.login },
+  /** The other half of that control, shown once somebody is signed in. */
+  signOut: { label: "Sign out" },
   bag: { label: "Your bag", href: "/checkout", icon: icons.bag },
 };
 

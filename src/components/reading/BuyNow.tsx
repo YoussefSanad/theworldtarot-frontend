@@ -126,7 +126,14 @@ export function BuyNow({
           checkout.buying
         ) : (
           <>
-            <span className="font-sans font-light">{checkout.buy}</span>
+            {/*
+              No face of its own. `.btn-ghost` sets the serif every other button
+              on the site is in, and this span carried the site's only
+              `font-sans` until 29 August 2026 — inherited from the five-frame
+              panel, where four siblings hid it, into a three-frame one where it
+              was the odd one out. See #49.
+            */}
+            <span>{checkout.buy}</span>
             {/*
               The amount is the API's, formatted against the site's locale. It
               is set beside the label rather than inside it so the words do not
