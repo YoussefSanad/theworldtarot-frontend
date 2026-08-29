@@ -6,7 +6,7 @@ import { AskQuestion } from "@/components/reading/AskQuestion";
 import { GetMyReading } from "@/components/reading/GetMyReading";
 import { RecipientDetails } from "@/components/reading/RecipientDetails";
 import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
-import { recallCheckout } from "@/lib/checkout-session";
+import { questionFor } from "@/lib/checkout-session";
 import { useProduct } from "@/lib/product";
 
 /**
@@ -57,7 +57,9 @@ import { useProduct } from "@/lib/product";
  *
  * **Only onto the page it was typed on.** The record names the **product key**
  * it was made against, and a question restored onto a different reading is a
- * stranger's sentence appearing in a box the visitor did not type it in.
+ * stranger's sentence appearing in a box the visitor did not type it in. That
+ * comparison is `questionFor`, beside the guard the confirmation uses, rather
+ * than a pair of fields compared here.
  *
  * `useSyncExternalStore` rather than an effect that sets state. Storage is an
  * external store, and this is a static export: the HTML is built on a machine
@@ -73,10 +75,12 @@ import { useProduct } from "@/lib/product";
  * changes once, on the render after hydration, and only where there is
  * something to put back.
  *
- * **The record is not cleared.** A customer who cancels twice gets their
- * question back twice, and the confirmation still has a record to paint from
- * after a reload — clearing it here would trade a rare tidiness for a common
- * blank screen.
+ * **Nothing is cleared here.** A customer who cancels twice gets their question
+ * back twice, and the confirmation still has a record to paint from after a
+ * reload. The one thing that does drop the question is the confirmation itself,
+ * once the backend has said the money moved — a question about a reading
+ * already bought, sitting in the box on the way back to the page, reads as an
+ * order that did not go through.
  *
  * ## One thing here is a deliberate departure
  *
@@ -90,10 +94,11 @@ import { useProduct } from "@/lib/product";
 export function ReadingOrder({ reading }: { reading: ReadingPage }) {
   const [gifting, setGifting] = useState(false);
   const offer = useProduct(reading.productKey);
-  const checkout = useSyncExternalStore(nothingChangesIt, recallCheckout, noRecordWhereThisIsBuilt);
-
-  const restored =
-    checkout?.productKey === reading.productKey ? checkout.question : undefined;
+  const restored = useSyncExternalStore(
+    nothingChangesIt,
+    () => questionFor(reading.productKey),
+    noQuestionWhereThisIsBuilt,
+  );
 
   return (
     <div id={readingPageChrome.checkout.anchor}>
@@ -127,4 +132,4 @@ export function ReadingOrder({ reading }: { reading: ReadingPage }) {
 const nothingChangesIt = () => () => {};
 
 /** The static export is built where there is no sessionStorage to read. */
-const noRecordWhereThisIsBuilt = () => null;
+const noQuestionWhereThisIsBuilt = () => undefined;

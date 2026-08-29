@@ -191,11 +191,11 @@ test("a refused order never reaches the payment call", async () => {
   assert.equal(recallCheckout(), null);
 });
 
-test("an address with no Session id in it still takes the customer to Stripe", async () => {
-  // The guard cannot be derived, so there is nothing safe to remember — and a
-  // record with no session is one the confirmation would have to trust
-  // blindly. The customer can still pay, and the receipt is the record that
-  // counts. Paying matters more than confirming prettily.
+test("an address with no Session id in it is still remembered, minus the guard", async () => {
+  // The guard cannot be derived, so the confirmation will identify nothing and
+  // say so — the receipt is the record that counts there. The question is not
+  // guarded on a Session and still comes home from a cancelled checkout, which
+  // is the half of this record that matters most.
   stubFetch(
     new Response(null, { status: 204 }),
     placed(),
@@ -203,10 +203,19 @@ test("an address with no Session id in it still takes the customer to Stripe", a
     json({ type: "redirect", redirect_url: "https://checkout.stripe.com/somewhere-new" }),
   );
 
-  const url = await startCheckout({ productKey: "month-ahead", money: offer });
+  const url = await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "What next?",
+  });
 
   assert.equal(url, "https://checkout.stripe.com/somewhere-new");
-  assert.equal(recallCheckout(), null);
+  assert.deepEqual(recallCheckout(), {
+    payToken: "kQ3rN8xvT1sLb0Zy",
+    money: { currency: "EUR", amount: 7000 },
+    productKey: "month-ahead",
+    question: "What next?",
+  });
 });
 
 test("storage that refuses does not cost the customer their checkout", async () => {

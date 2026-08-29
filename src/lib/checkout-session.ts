@@ -50,8 +50,17 @@ export type CheckoutRecord = {
    * `success_url`. **The stale-result guard turns on it**, and it is used for
    * nothing else: it is opaque, nothing on the backend maps one to an order,
    * and it is never sent anywhere.
+   *
+   * **Optional, because the question matters more than it does.** It is read
+   * out of the redirect's address, and a redirect shaped in some way
+   * `sessionIdFrom` does not recognise leaves nothing to read. A record without
+   * one can confirm nothing — `checkoutFor` withholds it from every Session,
+   * which is the honest answer for a payment that cannot be identified — but it
+   * still carries the question home from a cancelled checkout, and losing
+   * several sentences of typed question silently is the worse of the two by a
+   * distance. The wallet road writes no Session id either.
    */
-  sessionId: string;
+  sessionId?: string;
   /**
    * The **product key** of the reading this was started from. It is what says
    * which page the question below belongs to, so a cancelled checkout cannot
@@ -193,8 +202,8 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
   >;
 
   if (typeof payToken !== "string" || payToken === "") return null;
-  if (typeof sessionId !== "string" || sessionId === "") return null;
   if (typeof productKey !== "string" || productKey === "") return null;
+  if (sessionId !== undefined && (typeof sessionId !== "string" || sessionId === "")) return null;
   if (typeof money !== "object" || money === null) return null;
 
   const { currency, amount } = money as Record<string, unknown>;
@@ -210,8 +219,8 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
   return {
     payToken,
     money: { currency, amount },
-    sessionId,
     productKey,
+    ...(sessionId === undefined ? {} : { sessionId }),
     ...(question === undefined ? {} : { question }),
     ...(clientSecret === undefined ? {} : { clientSecret }),
   };
@@ -237,7 +246,58 @@ export function checkoutFor(sessionId: string | null): CheckoutRecord | null {
 
   const record = recallCheckout();
 
-  if (record === null) return null;
+  if (record === null || record.sessionId === undefined) return null;
 
   return record.sessionId === sessionId ? record : null;
+}
+
+/**
+ * The question a cancelled checkout left behind, for the reading page it was
+ * typed on and for no other.
+ *
+ * The second of this file's two guards, and it sits beside the first
+ * deliberately: both answer "does this record apply to what is on screen", and
+ * a caller left to compare the fields itself is a caller that will one day
+ * compare the wrong ones. A question restored onto a different reading is a
+ * sentence appearing in a box the visitor did not type it in.
+ *
+ * **A string, not a record**, so it can be a `useSyncExternalStore` snapshot
+ * without the caller reaching past it into anything else.
+ */
+export function questionFor(productKey: string): string | undefined {
+  const record = recallCheckout();
+
+  if (record === null || record.productKey !== productKey) return undefined;
+
+  return record.question;
+}
+
+/**
+ * Drops the question from the record, leaving everything else in place.
+ *
+ * **Its caller is the confirmation**, once the backend has said the money
+ * moved. Until then the question is what a cancelled checkout puts back in the
+ * textarea; after a payment it is a sentence about a reading already bought,
+ * and finding it waiting in the box on the way back to the page reads as an
+ * order that did not go through.
+ *
+ * The rest of the record stays, so a reload of the confirmation still has the
+ * Money and the pay token to work from.
+ *
+ * **It is handed the record it means**, and drops nothing if what is in storage
+ * is no longer that one. A verification takes a round trip, and a second
+ * purchase started in this tab while it was in flight would leave a record whose
+ * question is about the reading being bought right now.
+ */
+export function forgetQuestion(paid: CheckoutRecord): void {
+  const stored = recallCheckout();
+
+  if (stored === null || stored.payToken !== paid.payToken) return;
+  if (stored.question === undefined) return;
+
+  const { question: spent, ...rest } = stored;
+
+  void spent;
+
+  rememberCheckout(rest);
 }

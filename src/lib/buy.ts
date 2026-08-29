@@ -94,32 +94,37 @@ export async function startCheckout({
   if (instruction.type !== "redirect") throw new CheckoutUnavailable(instruction.type);
 
   /*
-    Written **before** the navigation, because after it there is no code of ours
-    left running to write anything.
-
     The Session id is read out of the address because `/pay` answers an address
-    and nothing else. Where it cannot be — a URL shaped in some way this does
-    not recognise — the customer still goes to Stripe and still pays; what they
-    lose is the confirmation restating their money, and the **receipt** is the
-    record that counts. A record with no guard on it would be the worse trade:
-    the confirmation would have to paint it against any Session at all.
+    and nothing else. Where it cannot be — a redirect shaped in some way
+    `sessionIdFrom` does not recognise — the record is written **without** one.
+
+    The two things the record does are not equally important. Without a Session
+    id the confirmation can identify nothing and says so, and the **receipt** is
+    the record that counts. But the question comes home from a cancelled
+    checkout either way, and losing several sentences of typed question silently
+    is the worst thing this flow can do.
   */
   const sessionId = sessionIdFrom(instruction.redirectUrl);
 
   if (sessionId === null) {
     // Loud here and quiet on the page, as `useProduct` is about an unreachable
-    // catalogue: from the outside this is indistinguishable from a checkout
-    // that worked, and it needs to be distinguishable from in here.
-    console.error("No Checkout Session id in the redirect, so this checkout cannot be remembered.");
-  } else {
-    rememberCheckout({
-      payToken: order.payToken,
-      money: order.total,
-      sessionId,
-      productKey,
-      ...(asked === undefined ? {} : { question: asked }),
-    });
+    // catalogue: from the outside a confirmation that cannot identify the
+    // payment is indistinguishable from one that worked, and it needs to be
+    // distinguishable from in here.
+    console.error("No Checkout Session id in the redirect, so this payment cannot be confirmed.");
   }
+
+  /*
+    Written **before** the navigation, because after it there is no code of ours
+    left running to write anything.
+  */
+  rememberCheckout({
+    payToken: order.payToken,
+    money: order.total,
+    productKey,
+    ...(sessionId === null ? {} : { sessionId }),
+    ...(asked === undefined ? {} : { question: asked }),
+  });
 
   return instruction.redirectUrl;
 }

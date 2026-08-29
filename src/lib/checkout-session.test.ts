@@ -3,6 +3,8 @@ import { afterEach, beforeEach, test } from "node:test";
 
 import {
   checkoutFor,
+  forgetQuestion,
+  questionFor,
   recallCheckout,
   rememberCheckout,
   sessionIdFrom,
@@ -107,8 +109,8 @@ test("a record that is not JSON recalls as null rather than throwing", () => {
 for (const [name, stored] of [
   ["no pay token", { ...record, payToken: undefined }],
   ["an empty pay token", { ...record, payToken: "" }],
-  ["no session id", { ...record, sessionId: undefined }],
   ["an empty session id", { ...record, sessionId: "" }],
+  ["a session id that is not a string", { ...record, sessionId: 12 }],
   ["no product key", { ...record, productKey: undefined }],
   ["no money", { ...record, money: undefined }],
   ["money as a bare number", { ...record, money: 4900 }],
@@ -123,6 +125,30 @@ for (const [name, stored] of [
     assert.equal(recallCheckout(), null);
   });
 }
+
+test("a record with no Session id reads back, because the question is worth more", () => {
+  // A redirect `sessionIdFrom` could not read. The payment cannot be confirmed
+  // and the confirmation says so; the question still comes home.
+  const { sessionId, ...unconfirmable } = record;
+
+  rememberCheckout(unconfirmable);
+
+  assert.deepEqual(recallCheckout(), unconfirmable);
+  assert.equal(sessionId, record.sessionId);
+});
+
+test("and it confirms nothing, because it names no payment", () => {
+  const { sessionId, ...unconfirmable } = record;
+
+  rememberCheckout(unconfirmable);
+
+  // Not even against the Session it was in fact made for: the record cannot say
+  // so, and a guard that passes on a value it never held is not a guard.
+  assert.equal(checkoutFor(sessionId ?? null), null);
+  assert.equal(checkoutFor("cs_test_anything"), null);
+  // The question is not guarded on a Session, so it is still there.
+  assert.equal(questionFor("month-ahead"), record.question);
+});
 
 test("a record from the build before this one recalls as null", () => {
   // What the wallet road wrote: a client secret, no session and no product. It
@@ -206,4 +232,59 @@ test("the same object comes back until the record changes, so it can be a snapsh
 
   assert.notEqual(recallCheckout(), first);
   assert.equal(recallCheckout()?.sessionId, "cs_test_d4E5f6");
+});
+
+test("the question is offered to the reading it was typed on", () => {
+  rememberCheckout(record);
+
+  assert.equal(questionFor("month-ahead"), record.question);
+});
+
+test("and to no other reading", () => {
+  // A question restored onto a different reading is a sentence appearing in a
+  // box the visitor did not type it in.
+  rememberCheckout(record);
+
+  assert.equal(questionFor("three-card"), undefined);
+});
+
+test("no record offers no question", () => {
+  assert.equal(questionFor("month-ahead"), undefined);
+});
+
+test("a spent question is dropped and the rest of the record stays", () => {
+  // The confirmation's call, once the backend has said the money moved. The
+  // Money and the pay token stay, so a reload of the confirmation still works.
+  rememberCheckout(record);
+
+  forgetQuestion(record);
+
+  const { question, ...rest } = record;
+
+  assert.deepEqual(recallCheckout(), rest);
+  assert.equal(questionFor("month-ahead"), undefined);
+  assert.equal(question, record.question);
+});
+
+test("spending a question twice is harmless", () => {
+  rememberCheckout(record);
+
+  forgetQuestion(record);
+  forgetQuestion(record);
+
+  assert.equal(recallCheckout()?.payToken, record.payToken);
+});
+
+test("a purchase started since the verification began keeps its question", () => {
+  // A verification takes a round trip. A second purchase in this tab while it
+  // was in flight leaves a record whose question is about the reading being
+  // bought right now, and that one is not spent.
+  rememberCheckout(record);
+
+  const second = { ...record, payToken: "the-second-order", question: "A different question" };
+
+  rememberCheckout(second);
+  forgetQuestion(record);
+
+  assert.deepEqual(recallCheckout(), second);
 });

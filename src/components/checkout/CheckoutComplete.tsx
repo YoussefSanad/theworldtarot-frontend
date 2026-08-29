@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { checkoutCompleteCopy } from "@/content/checkout";
-import { checkoutFor } from "@/lib/checkout-session";
+import { checkoutFor, forgetQuestion } from "@/lib/checkout-session";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
@@ -69,6 +69,14 @@ import { formatPrice, type Money } from "@/lib/price";
  * purchase, and none of it may be shown. The guard is `checkoutFor` in
  * `lib/checkout-session.ts`: this screen asks for the record that applies to
  * the payment it is displaying and is handed nothing when none does.
+ *
+ * ## It spends the question, and only that
+ *
+ * Once the backend has said the money moved, the question is dropped from the
+ * record — see `forgetQuestion`. This is the only screen that knows a payment
+ * happened, and the reading page a cancelled checkout returns to cannot tell
+ * cancel from success. Everything else in the record stays, which is what keeps
+ * the reload below safe.
  *
  * ## Reload is safe
  *
@@ -142,6 +150,20 @@ export function CheckoutComplete() {
         if (!isRecognisedStatus(status)) return;
 
         const outcome = outcomeFor(status);
+
+        /*
+          The money moved, so the question that came with it is spent. It is
+          dropped from the record here and nowhere else, because this is the
+          only screen that knows a payment happened — the reading page a
+          cancelled checkout returns to cannot tell the two apart, and would
+          otherwise put a question about a reading already bought back in the
+          box.
+
+          Only on a status that says so. `unpaid` is a customer who has to try
+          again, and taking their question away at the moment they need it would
+          be the loss this whole record exists to prevent.
+        */
+        if (outcome === "received" || outcome === "pending") forgetQuestion(record);
 
         if (outcome === "received") return;
 
