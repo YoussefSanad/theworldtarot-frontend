@@ -486,8 +486,11 @@ the masthead's copy of it:
   check out.
 
 Both already held before this page existed (`headerActions.cta` and
-`closingCta` are both `/readings`); the rule is now stated rather than
-incidental.
+`closingCta` both point at the readings index); the rule is now stated rather
+than incidental. **They no longer spell it identically**: `headerActions.cta`
+became `/readings/` on 29 August 2026, because the export is a directory of
+`index.html` files and the unslashed form costs a 308. `closingCta` in
+`content/home.ts` has not been moved yet. Same destination, one redirect apart.
 
 ### The gift flow
 
