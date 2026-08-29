@@ -11,10 +11,11 @@ import { signOut } from "@/lib/session";
 /**
  * The masthead's account control, in whichever of its two states applies.
  *
- * A visitor gets the icon that has always been here, pointing at the sign in
- * page. A signed-in customer gets their own name and a way out. **That is what
- * makes signing in legible at all today**: there is no member area to land in,
- * so the header is the only place on the site that shows the session exists.
+ * Somebody signed out gets the icon that has always been here, pointing at the
+ * sign in page. A signed-in customer gets their own name and a way out. **That
+ * is what makes signing in legible at all today**: there is no member area to
+ * land in, so the header is the only place on the site that shows the session
+ * exists.
  *
  * Rendered twice by `SiteHeader` — once on the desktop row and once in the
  * mobile drawer — which is why the answer it draws comes from a shared store

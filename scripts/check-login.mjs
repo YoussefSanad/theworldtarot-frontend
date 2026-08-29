@@ -126,7 +126,7 @@ function api(body, status = 200, headers = {}) {
  * A page with the account endpoints answered.
  *
  * `me` is a function rather than a value because it changes underneath a single
- * page: a visitor is a 401, and the same tab after a sign in is a customer.
+ * page: nobody signed in is a 401, and the same tab after a sign in is a customer.
  */
 async function open({ login, me = () => api({ message: "Unauthenticated." }, 401) } = {}) {
   const page = await browser.newPage();
@@ -173,12 +173,12 @@ console.log("\nthe page exists and the masthead reaches it");
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: "networkidle" });
 
   const href = await page.getAttribute(SIGN_IN_ICON, "href");
-  expect("visitor", "the masthead's account control points at the built route", href, "/login/");
+  expect("signed out", "the masthead's account control points at the built route", href, "/login/");
 
   await page.click(SIGN_IN_ICON);
   await page.waitForURL(LOGIN);
-  expect("visitor", "and reaches it", page.url(), LOGIN);
-  expect("visitor", "which asks for an address and a password", await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
+  expect("signed out", "and reaches it", page.url(), LOGIN);
+  expect("signed out", "which asks for an address and a password", await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
   await page.close();
 }
 
@@ -188,7 +188,7 @@ console.log("\na claimed account signs in, and the masthead says so");
   const { page, sent } = await open({ me: () => (signedIn ? api(CUSTOMER) : api({ message: "Unauthenticated." }, 401)) });
   await page.goto(LOGIN, { waitUntil: "networkidle" });
 
-  expect("signing in", "the masthead starts on the visitor's icon", await masthead(page), {
+  expect("signing in", "the masthead starts on the signed-out icon", await masthead(page), {
     signIn: 1, name: "", signOut: 0,
   });
 

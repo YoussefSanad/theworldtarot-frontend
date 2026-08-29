@@ -3,7 +3,7 @@
  * a reset link, and reading back the customer the session belongs to.
  *
  * A third seam beside `api.ts` and `api-write.ts` rather than a corner of
- * either, because a session is neither content nor a purchase and every rule
+ * either, because a session is neither content nor an order and every rule
  * below is about the session rather than about the endpoint that carries it.
  *
  * **None of these take a locale segment.** An account is the same account in
@@ -12,7 +12,7 @@
  * **Nothing here may be cached, stored or persisted** — no `localStorage`, no
  * service worker, no store written to disk. `/me` answers `Cache-Control:
  * no-store` and it is different for every caller: anything holding it hands one
- * customer's name and address to the next visitor.
+ * customer's name and address to the next person.
  */
 
 import { apiBaseUrl, apiWrite, apiWriteEmpty } from "./api-write.ts";
@@ -111,13 +111,13 @@ export async function requestPasswordLink(email: string): Promise<void> {
 }
 
 /**
- * Whoever the session cookie belongs to, or null for a visitor.
+ * Whoever the session cookie belongs to, or null when nobody is signed in.
  *
  * A credentialed **read**, which is why it is here and not in `api.ts`: it
  * needs `credentials: "include"` the way a write does, and it must not be
  * cached the way the draw must not be.
  *
- * **A 401 is the normal answer for a visitor.** It is not logged, not surfaced
+ * **A 401 is the normal answer, not an error.** It is not logged, not surfaced
  * and not thrown — most people who load the homepage are not signed in, and an
  * error for each of them fills a console with the ordinary case. Anything else
  * still throws, so an API that is genuinely broken stays distinguishable from
@@ -148,11 +148,11 @@ export async function currentCustomer(
  * Why a sign in was refused, in the four shapes the page needs.
  *
  * The arm that matters is `refused`. **A wrong password, an address with no
- * account, and an account made by a purchase whose owner has never set a
- * password are one outcome here** — the backend answers all three with the same
- * status and the same message on the `email` field, says it will not change,
- * and telling them apart is exactly what a form must not offer. The page
- * supplies one wording that leaves every door open.
+ * account, and an account made when an order settled whose owner has never set
+ * a password are one outcome here** — the backend answers all three with the
+ * same status and the same message on the `email` field, says it will not
+ * change, and telling them apart is exactly what a form must not offer. The
+ * page supplies one wording that leaves every door open.
  */
 export type SignInFailure =
   /** A password rule, keyed by the field the backend named. */
