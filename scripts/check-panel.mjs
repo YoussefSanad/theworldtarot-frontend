@@ -24,15 +24,26 @@
  * its path, so the navigation can be followed and the record read out of the
  * tab it survived in.
  *
- * ## The wallet assertions are gone, and the negative replaced them
+ * ## The wallet assertions are back, and what they can and cannot prove
  *
- * There is no express checkout element on this page while the card road stands
- * alone, so there is nothing to assert the collapse of. **What is asserted
- * instead is that no Stripe iframe mounts on the reading page in any state, and
- * that nothing fetches js.stripe.com.** It is worth more than it looks: Stripe.js
- * is not loaded on this road at all, and a check that would notice it coming
- * back is the check that catches a half-finished wallet ticket shipping by
- * accident. #48 is where it comes back on purpose, with its own assertions.
+ * **No headless browser will ever see a wallet button here.** Stripe draws one
+ * only in Safari with a card in Wallet, or in Chrome signed into Google Pay, on
+ * a registered payment method domain — and a headless Chromium on `localhost`
+ * fails all three. So what is asserted is everything around the button: that
+ * the element **mounts** on `live`, that the row quotes the API's money, that
+ * it **collapses to nothing** — no height and no gap — where the browser has no
+ * wallet, and that **no other state mounts one** — gifting having mounted one
+ * first, at which point the toggle has to take it away again.
+ *
+ * That last one is the negative #45 left behind, kept and narrowed. A Stripe
+ * iframe on a withdrawn product, on an unreachable API or in gift mode is what
+ * a half-finished wallet ticket shipping by accident looks like, and it is
+ * still worth catching.
+ *
+ * **The collapse is measured rather than inferred.** The row is a child of a
+ * flex column with a `gap`, and a gap applies to a zero-height child as much as
+ * to any other — so "height 0" and "leaves no gap" are two different facts and
+ * only the panel's own height proves the second.
  *
  * `npm run check:panel -- --live` drops the interception and lets the page talk
  * to the API in `.env.local`, which is the one thing the intercepted run cannot
@@ -70,10 +81,18 @@ const GIFT = '#get-my-reading button:has-text("gift a reading")';
 
 /**
  * Proof Stripe.js built an element. **Page-wide rather than inside the panel**:
- * the claim is that nothing on this page mounts one, and an element that
- * appeared somewhere else on it would be the same accident.
+ * in the states that must not mount one, an element appearing anywhere else on
+ * the page would be the same accident.
  */
 const STRIPE_FRAME = 'iframe[name^="__privateStripeFrame"]';
+
+/**
+ * The wallet row. Selected by its hook rather than by its `aria-label`, which
+ * names a price and would stop matching the moment the catalogue changed one.
+ * **A collapsed row and an absent one are the two things this check has to tell
+ * apart**, so the count and the height are read separately.
+ */
+const WALLET = "#get-my-reading [data-express-checkout]";
 
 /** What the customer types, and what has to survive as far as the order line. */
 const QUESTION = "What should I focus on this month?";
@@ -177,7 +196,7 @@ async function drive(
   state,
   response,
   settled,
-  { gift = false, press = false, cancelled, payAnswer, holdWrites = false } = {},
+  { gift = false, press = false, cancelled, payAnswer, holdWrites = false, wallet = true } = {},
 ) {
   console.log(`\n${state}`);
 
@@ -235,6 +254,16 @@ async function drive(
     // The handshake `api-write.ts` makes before every write.
     await page.route("**/sanctum/csrf-cookie", (route) => route.fulfill(api({}, 204)));
 
+    /*
+      What this environment offers, which is what decides whether the wallet row
+      is drawn at all. `wallet: false` is an environment that configured no
+      Stripe — a laptop, where nobody has the keys — and the panel must draw the
+      card button alone rather than a wallet that would fail on its first call.
+    */
+    await page.route("**/api/v1/payment-methods", (route) =>
+      route.fulfill(api({ methods: wallet ? ["stripe", "stripe_wallet"] : [] })),
+    );
+
     // Anchored patterns: this one matches the endpoint and never the `/pay`
     // under it, because a glob has to match the whole address.
     await page.route("**/api/v1/orders", async (route) => {
@@ -274,6 +303,32 @@ async function drive(
   release();
   await page.waitForFunction(settled, null, { timeout: 15000 });
 
+  /*
+    **Stripe settles later than the price does**, and by a margin that is not
+    small: the element's iframe is attached around half a second after the panel
+    has painted, and on a cold first page load it has taken four. Reading the
+    frames at `settled` is reading a race, and that race is what made "the
+    express checkout element mounts" fail on 29 August 2026 against a page that
+    mounts it perfectly well.
+
+    Bounded, and its expiry is a legitimate answer rather than an error. The
+    states that must mount nothing wait the deadline out, which is not waste:
+    it is twelve seconds of opportunity for a mount that should not happen to be
+    caught happening.
+  */
+  await page
+    .waitForFunction(
+      () => document.querySelectorAll('iframe[name^="__privateStripeFrame"]').length > 0,
+      null,
+      { timeout: 12000 },
+    )
+    .catch(() => {});
+
+  /*
+    After the wait, so gifting is a row that mounted an element and then took it
+    off again — which is the fact worth proving — rather than one the click beat
+    to the DOM.
+  */
   if (gift) await page.locator(GIFT).click();
 
   /*
@@ -306,9 +361,69 @@ async function drive(
     buyNowDisabled: await page.locator(BUY).first().getAttribute("aria-disabled").catch(() => null),
     panel: (await page.locator("#get-my-reading").innerText().catch(() => "")).trim(),
     stripeFrames: await page.locator(STRIPE_FRAME).count(),
+    /*
+      The element's own frame, inside the panel. Distinct from `stripeFrames`,
+      which is page-wide and therefore also counts the fraud-signal frame
+      `Stripe()` appends to the body the moment it is constructed — a frame that
+      belongs to the script rather than to any element, and **outlives every
+      element that is unmounted**. Page-wide zero is the stronger claim and is
+      still asserted wherever Stripe.js is never fetched at all; where it has
+      been, this is the one that can tell a mounted element from a loaded script.
+    */
+    panelStripeFrames: await page.locator(`#get-my-reading ${STRIPE_FRAME}`).count(),
+    /* Present in the layout at all — the row, not the button inside it. */
+    walletRow: await page.locator(WALLET).count(),
+    /*
+      Zero where this browser has no wallet, which is every browser this check
+      runs in. Rounded, because a collapsed box measured against a `cqw` column
+      answers in fractions of a pixel.
+    */
+    walletHeight: Math.round(
+      await page.locator(WALLET).first().evaluate((node) => node.getBoundingClientRect().height).catch(() => -1),
+    ),
+    /* The API's money, in the accessible name — the sheet is where it is shown. */
+    walletLabel: await page.locator(WALLET).first().getAttribute("aria-label").catch(() => null),
+    /*
+      A collapsed row is not reachable by a pointer, a tab or a screen reader.
+      Read as "is it inside an inert subtree", which is what actually decides it.
+    */
+    walletReachable: await page
+      .locator(`${WALLET} *`)
+      .evaluateAll((nodes) => nodes.filter((node) => !node.closest("[inert]")).length)
+      .catch(() => 0),
   };
 
   if (question > 0 && press) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
+
+  /*
+    What a wallet press would put on the order line, read the way `questionIn`
+    reads it: from the row's own node, up to the form, and out of the form's
+    data.
+
+    **The wallet button cannot be pressed here** — no headless browser draws one
+    — so this is the only place the wallet road's question can be proved at all,
+    and it is not a detail. A wallet payment that dropped the question would
+    deliver a reading nobody asked a question of, and the customer would have no
+    way of knowing until it arrived.
+
+    What it actually guards is the row staying **inside** the order form. The
+    form is `ReadingOrder`'s and the row is several components down from it; a
+    later refactor that lifted the row out by one level would break every wallet
+    question silently, and nothing else here would notice.
+  */
+  const walletWouldSend = await page
+    .locator(WALLET)
+    .first()
+    .evaluate((node) => {
+      const form = node.closest("form");
+
+      if (!form) return null;
+
+      const typed = new FormData(form).get("question");
+
+      return typeof typed === "string" ? typed : null;
+    })
+    .catch(() => null);
 
   let landed = null;
   let record = null;
@@ -381,6 +496,7 @@ async function drive(
   return {
     afterPanel,
     resting,
+    walletWouldSend,
     settled: answered,
     thrown,
     placed,
@@ -418,9 +534,31 @@ const priced = () => {
 /** Nothing is for sale: the whole order came off the page. */
 const unsold = () => document.querySelectorAll("#get-my-reading form").length === 0;
 
-/** True of every state, and the reason half of them are driven at all. */
-function assertNoStripeOnThePage(state, result) {
+/**
+ * True of every state: whatever Stripe does or does not mount, it must not
+ * complain. An `IntegrationError` is how a bad option reports itself — thrown
+ * inside the iframe rather than rejecting a promise anybody awaits — and it
+ * renders nothing at all while looking exactly like a device with no wallet.
+ */
+function assertStripeIsQuiet(state, result) {
   expect(state, "Stripe raised nothing", result.thrown, []);
+}
+
+/**
+ * The states with no wallet row in them. Nothing mounts, and **js.stripe.com is
+ * not even fetched** — a page with no wallet button to draw has no business
+ * asking Stripe's fraud signals to watch it.
+ *
+ * That last one is the assertion that earns its place. It failed on 29 August
+ * 2026 in all three of these states at once, and what it had caught was real:
+ * `@stripe/stripe-js`'s main entry point injects the script from its own top
+ * level, so importing it anywhere fetched it everywhere, however carefully
+ * `lib/stripe.ts` deferred its own `loadStripe`. Nothing visible was wrong,
+ * which is exactly why nothing else would have found it.
+ */
+function assertNoWallet(state, result) {
+  assertStripeIsQuiet(state, result);
+  expect(state, "no wallet row at all", result.settled.walletRow, 0);
   expect(state, "no Stripe element is mounted", result.settled.stripeFrames, 0);
   expect(state, "and js.stripe.com is never fetched", result.stripeJs, []);
 }
@@ -430,7 +568,30 @@ const sold = await drive("live — a priced product", PRICED, priced, {
   holdWrites: !live,
 });
 
-assertNoStripeOnThePage("live", sold);
+assertStripeIsQuiet("live", sold);
+/*
+  The wallet row, and everything about it a headless browser can settle. The
+  button itself cannot be seen here: Stripe draws one only in Safari with a card
+  in Wallet, or Chrome signed into Google Pay, on a registered payment method
+  domain — and this fails all three.
+*/
+expect("live", "the wallet row is drawn above Buy Now", sold.settled.walletRow, 1);
+expect("live", "the express checkout element mounts", sold.settled.stripeFrames > 0, true);
+expect("live", "and quotes the API's money, not the bundled copy", sold.settled.walletLabel, "Pay €70 with a saved wallet");
+/*
+  The criterion this state exists for, and the half that is easy to get wrong.
+  Zero height is not enough: the row is a child of a flex column with a gap, and
+  a gap applies to a zero-height child like any other.
+*/
+expect("live", "with no wallet here, the row collapses to nothing", sold.settled.walletHeight, 0);
+expect("live", "and nothing in it is reachable", sold.settled.walletReachable, 0);
+/*
+  The wallet road's question, proved where it can be: not by pressing a button
+  that will never be drawn here, but by walking the path `questionIn` walks from
+  the node it is actually handed. Both roads have to reach the order line with
+  the same sentence.
+*/
+expect("live", "a wallet press would read the same question off the same form", sold.walletWouldSend, QUESTION);
 expect("live", "Buy Now is in the layout while loading", sold.resting.buyNow, 1);
 expect("live", "no control is reachable while loading", sold.resting.reachableControls, 0);
 expect("live", "and none is visible either", sold.resting.visibleControls, 0);
@@ -441,6 +602,13 @@ expect("live", "and none is visible either", sold.resting.visibleControls, 0);
   ever shrinks never puts a control under a finger reaching for something else.
 */
 expect("live", "the panel never grows", sold.settled.height <= sold.resting.height, true);
+/*
+  "Leaving no gap", measured rather than asserted about. The loading state draws
+  no wallet row at all, so a collapsed row that still took its share of the
+  column's `gap-[0.4em]` would show up here as the panel growing — which is the
+  only way that fact can be seen from outside.
+*/
+expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
 expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
 expect("live", "Buy Now is labelled with the price", sold.settled.buyNow, "Buy Now €70");
@@ -467,7 +635,16 @@ expect("live", "in the API's currency, with the question on the line", sold.plac
 });
 expect("live", "and no name or email, which the page never collected", sold.placed[0] && "email" in sold.placed[0], false);
 expect("live", "then pays it, addressing the order by its pay token", sold.paid.length && sold.paid[0].url.endsWith(`/api/v1/orders/${PAY_TOKEN}/pay`), true);
-expect("live", "naming the page to come back to, as a product key", sold.paid[0]?.body, { return_to: "month-ahead" });
+/*
+  `method` is not decoration and not a default the backend can assume: the two
+  roads mint different things — a Checkout Session here, a PaymentIntent for the
+  wallet — and `/pay` is told which by name. See `lib/orders.ts` and the
+  backend's #43.
+*/
+expect("live", "naming its road and the page to come back to", sold.paid[0]?.body, {
+  return_to: "month-ahead",
+  method: "stripe",
+});
 /*
   The criterion the two held answers exist for: the pending state is held across
   both round trips, not just the first. A button that looked idle between them
@@ -491,7 +668,8 @@ const ahead = await drive("shipped ahead of the backend — an instruction we ca
   payAnswer: api({ type: "conjured_by_a_later_backend" }),
 });
 
-assertNoStripeOnThePage("ahead", ahead);
+assertStripeIsQuiet("ahead", ahead);
+expect("ahead", "the wallet row still stands beside the refused card road", ahead.settled.walletRow, 1);
 /*
   The window where this frontend has shipped and the backend has not, and the
   window after the backend grows a method this build has never seen. A checkout
@@ -509,7 +687,13 @@ const gifted = await drive("gifting — a recipient rather than a question", PRI
   press: true,
 });
 
-assertNoStripeOnThePage("gifting", gifted);
+/*
+  Not `assertNoWallet`. This state **is** the live state until the gift toggle is
+  pressed, so the row mounted an element and Stripe.js was fetched, both of them
+  correctly. What has to be true here is that pressing the toggle takes the
+  element away again — asserted below, beside Buy Now going the same way.
+*/
+assertStripeIsQuiet("gifting", gifted);
 expect("gifting", "the recipient's fields replace the question", gifted.settled.recipient, 1);
 expect("gifting", "and there is no question in the form at all", gifted.settled.question, 0);
 expect("gifting", "the frames still stand", gifted.settled.ghosts, 3);
@@ -521,11 +705,23 @@ expect("gifting", "and says why", /gifting is not open yet/i.test(gifted.settled
   for a gift delivered to themselves.
 */
 expect("gifting", "and no order can be placed", gifted.orderCalls, []);
+/*
+  The wallet goes with Buy Now here, and is the worse of the two to leave live:
+  it takes the money the instant a face is recognised, with no second press
+  between the customer and a gift delivered to themselves.
+*/
+expect("gifting", "and there is no wallet to press either", gifted.settled.walletRow, 0);
+/*
+  The row leaving the DOM and the element being destroyed are two facts, and
+  only the second one is about Stripe. An element left mounted under a removed
+  row is still an element listening for a confirmation.
+*/
+expect("gifting", "and the element it held was destroyed with it", gifted.settled.panelStripeFrames, 0);
 expect("gifting", "so the browser stays where it is", gifted.landed, PAGE);
 
 const gone = await drive("withdrawn — a 404", WITHDRAWN, unsold);
 
-assertNoStripeOnThePage("withdrawn", gone);
+assertNoWallet("withdrawn", gone);
 expect("withdrawn", "no price", gone.settled.price, "");
 expect("withdrawn", "no controls", gone.settled.visibleControls, 0);
 expect("withdrawn", "no question either", gone.settled.question, 0);
@@ -533,7 +729,7 @@ expect("withdrawn", "the closing call to action still lands", gone.settled.ancho
 
 const dead = await drive("unreachable — a 500", BROKEN, priced, { press: true });
 
-assertNoStripeOnThePage("unreachable", dead);
+assertNoWallet("unreachable", dead);
 expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
 /*
   The frame stays whole — a visitor arriving while the API is down should not
@@ -550,6 +746,21 @@ expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled,
 */
 expect("unreachable", "and no request is possible", dead.orderCalls, []);
 expect("unreachable", "so the browser stays where it is", dead.landed, PAGE);
+
+const unoffered = await drive("no wallet offered — an environment with no Stripe", PRICED, priced, {
+  wallet: false,
+});
+
+/*
+  The criterion the payment methods endpoint exists for. Locally that answer is
+  hand settlement alone — nobody has the keys on a laptop — and an offered method
+  with no credentials behind it is a button that fails at the worst moment a shop
+  has. The card button survives being wrong about this by redirecting to a page
+  that says so; the wallet does not.
+*/
+assertNoWallet("no wallet offered", unoffered);
+expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 3);
+expect("no wallet offered", "and still takes money", unoffered.settled.buyNowDisabled, "false");
 
 /**
  * A record for a checkout that was cancelled at Stripe. Everything the page
@@ -569,7 +780,7 @@ const back = await drive("cancelled — back from Stripe, having paid nothing", 
   cancelled: cancelledCheckout("month-ahead"),
 });
 
-assertNoStripeOnThePage("cancelled", back);
+assertStripeIsQuiet("cancelled", back);
 /*
   The one thing a redirect makes easy to get wrong, and the worst thing this
   flow can do: losing several sentences of typed question silently.

@@ -185,14 +185,16 @@ against the API in `.env.local` instead and presses nothing, from port 3000
 because that is the origin staging's CORS list carries. See
 `docs/plans/reading-page-live-price.md` and `docs/plans/hosted-checkout.md`.
 
-### Buy Now is a redirect, and the wallet is coming back
+### Buy Now is a redirect, and the wallet is not
 
-`BuyNow` is the only control on the panel that takes money, and it does not
-take it here: pressing it places an order, starts its payment and sends the
-browser to Stripe's **hosted page**. Nothing is collected on this page and no
-Stripe.js is loaded on it. See
-`docs/adr/0002-checkout-happens-on-stripes-page.md` and
-`docs/plans/hosted-checkout.md`.
+`BuyNow` is ~~the only control on the panel that takes money~~ — from 29 August
+2026 the wallet row above it takes money too, and the two do it in different
+places, which is the whole of the difference between them. Pressing Buy Now
+places an order, starts its payment and sends the browser to Stripe's **hosted
+page**: nothing is collected on this page and, on this road, no Stripe.js is
+loaded on it. The wallet stays here and confirms in an iframe on our own origin.
+See `docs/adr/0002-checkout-happens-on-stripes-page.md`,
+`docs/plans/hosted-checkout.md` and the wallet row below.
 
 It is mounted from `offer.money` — which exists on `live` and on no other state
 — so an order placed at a price this repo typed will not compile.
@@ -207,10 +209,12 @@ Four things about it are worth knowing before changing any of it.
   sentence and leaves
 - **The checkout is remembered before the navigation**, because afterwards there
   is no code of ours left running to remember anything. `lib/checkout-session.ts`
-  holds the pay token, the Money the backend priced, the Session id the
-  confirmation is guarded on, and the question — which is what a cancelled
-  checkout puts back in the textarea, and only on the page whose `productKey`
-  matches
+  holds the pay token, the Money the backend priced, the question — which is what
+  a cancelled checkout puts back in the textarea, and only on the page whose
+  `productKey` matches — and the id the confirmation is guarded on: a Session id
+  on the card road, a **client secret** on the wallet road, from which the intent
+  id is derived. Each road's guard refuses the other's record, so neither branch
+  of the confirmation has to know the other exists
 - **It is inert in gift mode**, and says so. `POST /orders` has no field for a
   recipient email or a gift message, so one live button there charges somebody
   for a gift delivered to themselves
@@ -219,27 +223,54 @@ Four things about it are worth knowing before changing any of it.
   has no element for, or a `type` a later backend invents: the order exists, it
   is `pending`, nothing has been charged, and the panel says exactly that
 
-`ExpressCheckout.tsx` is **unrendered rather than removed**, and not because the
-wallet was rejected. The client asked for Apple Pay and Google Pay back on our
-own page on 29 August 2026 and the backend agreed the shape the same day, in its
-`docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md` — `/pay` gains a
-second method, `stripe_wallet`, answering a `client_secret` the element confirms
-against. **That method has no code behind it yet.** The file is a dud in the
-meantime — its `onConfirm` calls `paymentFailed` — and a button that fails after
-Face ID has no business sitting beside one that charges. It comes back above Buy
-Now when it works, which is #48, and `docs/plans/apple-pay-sheet.md` and
-`walletAppearance` are its plan and its styling, both still here.
+### The wallet row, above Buy Now
 
-**Three frames is an interim, not a destination.** The wallet row returns above
-Buy Now, and collapses to nothing on any device without a wallet — which is
-every device the panel is likely to be shown on for approval.
+`ExpressCheckout.tsx` **renders again** from 29 August 2026, which is #48.
+~~Unrendered rather than removed~~ — it was a dud while `/pay` had no
+`stripe_wallet` behind it, and a button that fails after Face ID had no business
+sitting beside one that charges. The backend's
+`docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md` gave it one: `/pay`
+takes a `method`, and answers a `client_secret` the element confirms against.
+Both roads now name themselves in that call — the card road sends
+`method: "stripe"` — so neither is a default the backend has to assume.
 
-`check:panel` used to assert what the wallet row did. It asserts the negative
-instead now, and it is worth more than it looks: **no Stripe iframe mounts on
-this page in any state, and js.stripe.com is never fetched.** A request to it
-reappearing is what a half-finished wallet ticket shipping by accident looks
-like. That the hosted page opens, quotes the order total and takes a test card
-is proved by hand on `staging.theworldtarot.com` — #47.
+It is drawn on `live` **and** where the API offers the method **and** not while
+gifting. The middle one is `lib/payment-methods.ts`, and it rests at `false`: an
+environment with no Stripe keys — a laptop — must draw the card button alone
+rather than a wallet that would fail on its first call.
+
+**The row collapses to nothing where the browser has no wallet**, which is every
+browser this repo's checks run in. Two facts, not one: zero height, and no gap.
+The row is a child of a flex column with `gap-[0.4em]` and **a gap applies to a
+zero-height child like any other**, so the collapsed row carries `-mb-[0.4em]`
+to cancel the one gap it is responsible for. That number belongs to
+`GetMyReading`'s column and has to move if the `gap` does. `check:panel` proves
+it the only way it can be seen from outside: the panel's settled height equals
+its loading height, so the row costs the column nothing.
+
+`check:panel` asserts everything around the button, because no headless browser
+will ever see the button itself — Stripe draws one only in Safari with a card in
+Wallet, or Chrome signed into Google Pay, on a registered payment method domain.
+So: that the element **mounts** on `live`, that the row quotes the API's money,
+that it collapses, and that **no other state mounts one** — gifting having
+mounted one first, at which point the toggle has to take it away again.
+
+**Where no row is drawn at all, `js.stripe.com` is not fetched either.** That
+assertion earns its place: it failed on 29 August 2026 in three states at once
+and what it had caught was real. `@stripe/stripe-js`'s main entry point injects
+the script from its own top level, so importing it anywhere fetched it
+everywhere, however carefully `lib/stripe.ts` deferred its own `loadStripe`.
+`lib/stripe.ts` imports `@stripe/stripe-js/pure` for that reason and must keep
+doing so. Nothing visible was wrong, which is why nothing else would have found
+it.
+
+That a real device draws a real button and the sheet takes a real payment is
+proved by hand on `staging.theworldtarot.com`, in Safari and in Chrome — and it
+needs `staging.theworldtarot.com` registered as a Stripe **payment method
+domain** in test mode. Stripe registers exact hostnames, so the apex does not
+cover it, and an unregistered one fails by the button silently not appearing,
+which is indistinguishable from a device with no wallet. That the hosted card
+page opens, quotes the order total and takes a test card is #47.
 
 ### Gift is a mode, not a page
 

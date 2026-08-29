@@ -5,14 +5,25 @@ import { useEffect, useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { checkoutCompleteCopy } from "@/content/checkout";
-import { checkoutFor, forgetQuestion } from "@/lib/checkout-session";
+import { checkoutFor, forgetQuestion, walletCheckoutFor } from "@/lib/checkout-session";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
 
 /**
- * The **confirmation**: where a paid-for checkout lands on its way back from the
- * **hosted page**.
+ * The **confirmation**: where a paid-for checkout lands, by either road.
+ *
+ * ## Two roads arrive here, and they are told apart by the address
+ *
+ * The card road returns from Stripe's **hosted page** with `session_id` in the
+ * address and a record holding a Session id. The wallet road returns from
+ * `stripe.confirmPayment` — from 3D Secure, or straight away — with
+ * `payment_intent` in the address and a record holding a client secret. Each
+ * has its own guard in `lib/checkout-session.ts`, and each refuses the other's
+ * record, so neither branch has to know the other exists.
+ *
+ * **They do not paint the same way, and that is the whole of the difference.**
+ * See below.
  *
  * ## It reports a payment, never a fulfilment
  *
@@ -33,7 +44,7 @@ import { formatPrice, type Money } from "@/lib/price";
  * answer is our own backend — `POST /orders/status`, which takes the **pay
  * token** out of the record and never the id out of the address.
  *
- * ## It paints first and verifies second
+ * ## The card road paints first and verifies second
  *
  * `success_url` is reached only after Stripe has taken the payment; a declined
  * card keeps the customer on Stripe's page to retry. So where the address
@@ -42,7 +53,29 @@ import { formatPrice, type Money } from "@/lib/price";
  * only on disagreement. **There is no spinner in front of a payment that has
  * already happened.**
  *
- * An address with neither falls to `unknown`, which is also where a customer
+ * ## The wallet road may not, and this is the one asymmetry on this screen
+ *
+ * `return_url` is reached **whatever happened**. Stripe sends the browser there
+ * on a declined wallet card and on an abandoned 3D Secure step exactly as it
+ * does on a success, with `redirect_status` naming which — so a customer can
+ * genuinely arrive here having failed. Painting `received` first on this road
+ * would show a green tick to somebody who was never charged, which is the one
+ * thing a payment surface may never do, and taking it back a second later is
+ * worse rather than better.
+ *
+ * So this road **asks before it says anything**: `checking` until the backend
+ * answers, then the outcome it gave. `redirect_status` in the address is not
+ * what it reads — that is Stripe telling the browser what happened, and this
+ * screen already has a channel to our own backend, which is the party that
+ * settles the order and the only one it trusts about money.
+ *
+ * **And a failure to reach that answer is a hedge here, not a paint.** Where
+ * the card road stands its ground on a 503 — it has something true on screen
+ * already — this road has nothing true to stand on, so it says so:
+ * `errorHeading` and `errorBody`, which have been in `content/checkout.ts`
+ * waiting for exactly this road.
+ *
+ * An address with neither id falls to `unknown`, which is also where a customer
  * lands whose tab lost the record — a browser with storage off, or a link
  * opened somewhere else. `unknownBody` is written for exactly that: the receipt
  * is the record that counts.
@@ -63,12 +96,13 @@ import { formatPrice, type Money } from "@/lib/price";
  *
  * ## The stale-result guard
  *
- * The Session id is what stops a second purchase in the same tab from landing
- * on the first one's result. A second purchase overwrites the record, so a
- * record naming a different Session than the address does describes some other
- * purchase, and none of it may be shown. The guard is `checkoutFor` in
- * `lib/checkout-session.ts`: this screen asks for the record that applies to
- * the payment it is displaying and is handed nothing when none does.
+ * The id in the address is what stops a second purchase in the same tab from
+ * landing on the first one's result. A second purchase overwrites the record,
+ * so a record naming a different payment than the address does describes some
+ * other purchase, and none of it may be shown. The guards are `checkoutFor` and
+ * `walletCheckoutFor` in `lib/checkout-session.ts`: this screen asks for the
+ * record that applies to the payment it is displaying and is handed nothing
+ * when none does.
  *
  * ## It spends the question, and only that
  *
@@ -89,16 +123,24 @@ import { formatPrice, type Money } from "@/lib/price";
 type Result =
   | { state: "checking" }
   /**
-   * No Session in the address, or no record for the one that is there. Nothing
-   * to show, and nothing to confirm.
+   * No id in the address, or no record for the one that is there. Nothing to
+   * show, and nothing to confirm.
    *
-   * There is no `error` state on this road. The screen never asks a question it
-   * has no honest answer to: it either has the record — in which case the money
-   * moved and it says so — or it has nothing, which is what this is. The
-   * wallet road, which retrieves an intent from Stripe and can be refused, is
-   * what `errorHeading` and `errorBody` are still in `content/checkout.ts` for.
+   * On the card road this is the only way to have nothing: the screen either
+   * has the record — in which case the money moved and it says so — or it has
+   * nothing, which is this.
    */
   | { state: "unknown" }
+  /**
+   * The wallet road, having asked and got no answer. A 503 from our backend, or
+   * a network failure here.
+   *
+   * **It exists on this road and not the other**, and the asymmetry is the
+   * point. The card road has already painted something true and stands its
+   * ground; this road has painted nothing, because `return_url` is reached
+   * whatever happened, so it has nothing to stand on and says so instead.
+   */
+  | { state: "unreadable" }
   | { state: "known"; outcome: PaymentOutcome; money: Money | null };
 
 export function CheckoutComplete() {
@@ -109,6 +151,13 @@ export function CheckoutComplete() {
     re-run the verification — and each run is a request.
   */
   const sessionId = searchParams.get("session_id");
+  /*
+    What `stripe.confirmPayment` appends to the `return_url` we handed it. The
+    **id**, not the `payment_intent_client_secret` beside it: an id identifies
+    the payment without being the authority to confirm it, and this screen needs
+    only to know which payment it is looking at.
+  */
+  const paymentIntentId = searchParams.get("payment_intent");
 
   const [result, setResult] = useState<Result>({ state: "checking" });
 
@@ -127,14 +176,30 @@ export function CheckoutComplete() {
       customer and it.
     */
     void (async () => {
-      const record = checkoutFor(sessionId);
+      /*
+        The card road first, and the two are asked in turn rather than chosen
+        between: each guard refuses the other road's record, so at most one of
+        them can answer. An address carrying both ids is not a case anybody can
+        produce — Stripe appends one or the other — and if it ever were, the
+        card road's optimism is the reading that would be wrong, so the road
+        that paints nothing is the one that gets the second look.
+      */
+      const card = checkoutFor(sessionId);
+      const wallet = card ? null : walletCheckoutFor(paymentIntentId);
+      const record = card ?? wallet;
 
       if (!record) {
         if (live) setResult({ state: "unknown" });
         return;
       }
 
-      setResult({ state: "known", outcome: "received", money: record.money });
+      /*
+        **Only the card road paints before it asks.** `success_url` is reached
+        only after Stripe has taken the payment. `return_url` is reached
+        whatever happened, so on the wallet road there is nothing yet that is
+        safe to say.
+      */
+      if (card) setResult({ state: "known", outcome: "received", money: card.money });
 
       try {
         const status = await fetchPaymentStatus(record.payToken);
@@ -147,7 +212,15 @@ export function CheckoutComplete() {
           is what is already on screen — so both leave it alone rather than
           replacing something true with a hedge.
         */
-        if (!isRecognisedStatus(status)) return;
+        /*
+          A status this build has never heard of is the contract's own "we do
+          not know yet". On the card road that leaves a true screen alone. On
+          the wallet road there is no screen yet to leave alone, and
+          `outcomeFor` maps it to `unfinished` — which says the payment is not
+          finished and nothing has been charged **yet**, and claims nothing
+          either way. That is the honest answer for a road that cannot assume.
+        */
+        if (!isRecognisedStatus(status) && card) return;
 
         const outcome = outcomeFor(status);
 
@@ -165,23 +238,31 @@ export function CheckoutComplete() {
         */
         if (outcome === "received" || outcome === "pending") forgetQuestion(record);
 
-        if (outcome === "received") return;
+        // Already on screen, on the card road only, and repainting it would
+        // replace a rendered object with an identical one for nothing.
+        if (outcome === "received" && card) return;
 
         setResult({ state: "known", outcome, money: record.money });
       } catch {
+        if (!live) return;
+
         /*
           A 503 — Stripe unreachable from the backend — or a network failure
-          here. Both say exactly nothing about the payment, and the payment is
-          one Stripe had already taken before it sent the customer to this
-          address. The paint stands.
+          here. Both say exactly nothing about the payment.
+
+          On the card road the payment is one Stripe had already taken before it
+          sent the customer here, and `received` is already on screen: the paint
+          stands. On the wallet road nothing is on screen and nothing is known,
+          so the screen says that rather than inventing either answer.
         */
+        if (!card) setResult({ state: "unreadable" });
       }
     })();
 
     return () => {
       live = false;
     };
-  }, [sessionId]);
+  }, [sessionId, paymentIntentId]);
 
   if (result.state === "checking") {
     return (
@@ -196,6 +277,16 @@ export function CheckoutComplete() {
       <Panel>
         <h1 className="font-display text-h2 text-champagne">{checkoutCompleteCopy.unknownHeading}</h1>
         <p className="mt-4 text-note text-ash">{checkoutCompleteCopy.unknownBody}</p>
+        <Back />
+      </Panel>
+    );
+  }
+
+  if (result.state === "unreadable") {
+    return (
+      <Panel>
+        <h1 className="font-display text-h2 text-champagne">{checkoutCompleteCopy.errorHeading}</h1>
+        <p className="mt-4 text-note text-ash">{checkoutCompleteCopy.errorBody}</p>
         <Back />
       </Panel>
     );

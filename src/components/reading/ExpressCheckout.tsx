@@ -1,16 +1,23 @@
 "use client";
 
-import { Elements, ExpressCheckoutElement } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  ExpressCheckoutElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import type {
   StripeElementsOptions,
   StripeExpressCheckoutElementOptions,
   StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent,
   StripeExpressCheckoutElementConfirmEvent,
 } from "@stripe/stripe-js";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
+import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
 import { formatPrice, type Money } from "@/lib/price";
+import { questionIn } from "@/lib/question";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
 /**
@@ -21,7 +28,8 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
  * which ones it draws is Stripe's decision at runtime. A name that says "the
  * Apple Pay button" is the name that produced the bug `c27d69f` fixed — asking
  * Apple whether the device could pay instead of asking the element what it had
- * to show.
+ * to show. From 29 August 2026 the plural is literal: **both Apple Pay and
+ * Google Pay**, at the client's request.
  *
  * See `docs/plans/apple-pay-sheet.md`. Option names are pinned against
  * `@stripe/stripe-js@9.14.0`, which is not decoration: `wallets` is deprecated
@@ -38,75 +46,92 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
  * is the number the customer believes they agreed to**; it is the whole reason
  * #34 gated this ticket.
  *
- * ## It charges nothing, and says so
+ * ## It charges, and it is the road that does it in the page
  *
- * `onConfirm` fires after the customer has authorised with Face ID, and there
- * is no order endpoint wired yet — that is #38. It calls `paymentFailed`, so
- * the sheet closes stating that checkout is not ready. Resolving successfully
- * would show a green tick for a payment that never happened, which is the one
- * thing a payment surface may never do, staging or not. The handler is a
- * required prop, so there is no third option of leaving it off and letting the
- * sheet spin.
+ * `onConfirm` fires after the customer has authorised with Face ID. Until 29
+ * August 2026 it called `paymentFailed`, because there was no order endpoint
+ * wired; now it places the order, asks `/pay` for a `stripe_wallet` payment and
+ * confirms the secret that comes back. **The one thing it may never do is
+ * resolve successfully for a payment that did not happen** — every failure path
+ * below ends in `paymentFailed`, and there is no arm that simply returns.
  *
- * ## Apple Pay only
+ * The two roads are not one thing. A hosted Checkout Session is an address you
+ * send a browser to; this is an iframe mounted on our own origin. See
+ * `docs/adr/0002-checkout-happens-on-stripes-page.md` and the backend's
+ * `docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md`.
  *
- * Every other key in `paymentMethods` is `'never'`, all six of them. The
+ * ## Both wallets, and nothing else
+ *
+ * `applePay` and `googlePay` are `'auto'`; the other four are `'never'`. The
  * default is `'auto'` per method, and the option knows about Link, PayPal,
- * Klarna and Amazon Pay as well as Google Pay — so naming only Google Pay, as
- * the ticket does, would have let three more wallets onto the panel.
+ * Klarna and Amazon Pay — so naming only Google Pay, as the ticket does, would
+ * have let three more wallets onto the panel.
  *
- * `applePay: 'auto'` rather than `'always'`: `'always'` renders the button on
+ * `'auto'` rather than `'always'` for both: `'always'` renders a button on
  * devices that cannot use it, which is the "no gap" criterion inverted into a
- * dead button on every Windows and Android visitor's screen. The cost is that a
- * headless browser never sees this button, so `check:panel` asserts the
- * collapse and Safari on a real device is what proves the sheet.
+ * dead control on every visitor's screen who has no wallet. The cost is that a
+ * headless browser never sees a button, so `check:panel` asserts the mount and
+ * the collapse, and a real device is what proves the sheet.
+ *
+ * ## The domain is what makes this appear at all
+ *
+ * `theworldtarot.com` must be a registered Stripe **payment method domain**, in
+ * test and in live, and **it is mandatory for an element mounted on our own
+ * origin** rather than the belt-and-braces it was for the hosted page. It fails
+ * by the button silently not appearing — indistinguishable from a device with
+ * no wallet, and therefore indistinguishable from working correctly. Stripe
+ * registers **exact hostnames**, so `staging.theworldtarot.com` is its own
+ * registration and not covered by the apex. See ADR 0001.
  */
 
 const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
   paymentMethods: {
     applePay: "auto",
-    googlePay: "never",
+    googlePay: "auto",
     link: "never",
     paypal: "never",
     klarna: "never",
     amazonPay: "never",
   },
-  // Apple's three, of which this is the only one that reads as belonging
-  // beside a column of gold-outlined ghost buttons on a dark panel.
-  buttonTheme: { applePay: "white-outline" },
-  // One reading bought outright, not a basket being checked out.
-  buttonType: { applePay: "buy" },
+  /*
+    Apple allows three themes and Google two, and none of the five is gold. The
+    panel is visibly mixed and that is a constraint rather than an oversight:
+    these buttons are drawn by their vendors, and the same rule that stops the
+    client's own artwork from shipping stops us styling them. What is chosen
+    here is the nearest each vendor has to a dark panel's outlined frames.
+  */
+  buttonTheme: { applePay: "white-outline", googlePay: "white" },
+  // One reading bought outright, not a basket being checked out. Google spells
+  // the same intent `buy`; its `checkout` has no hyphen where Apple's does.
+  buttonType: { applePay: "buy", googlePay: "buy" },
   // Stripe's ceiling, and still short of the 78px the ghost buttons stand at
   // — which is why the wrapper below holds the row's height instead.
   buttonHeight: 55,
   /*
-    The value #31 committed to the backend. Nothing is done with it here
-    because nothing is charged here, but it is what the finished sheet looks
-    like, and the screenshot going to the client should be of that sheet
-    rather than of a shorter one we would quietly grow later.
+    **Load-bearing, and the sentence the buyer's identity rests on.** A wallet
+    PaymentIntent has no Checkout Session, so the backend cannot resolve who
+    paid the way it does on the card road; it reads the buyer off the charge's
+    `latest_charge.billing_details`, and this flag is what puts an email there.
+    Without it a wallet payment settles nobody: the order is left pending with
+    the customer already charged, forever. See the backend's #43 and #44, and
+    `API_CONTRACT.md` section 9 — whose sentence saying this flag was "gone with
+    the element" was corrected on 29 August 2026.
   */
   emailRequired: true,
   /*
-    One column, and never a Stripe overflow menu offering the five methods the
+    One column, and never a Stripe overflow menu offering the four methods the
     panel has just turned off.
 
     `maxRows: 0` means unlimited, and it is **required** rather than chosen:
     Stripe throws `IntegrationError: options.layout.overflow: 'never' is only
-    supported when options.layout.maxRows is 0` and renders nothing at all. With
-    every other wallet set to `never` there is only ever one button to lay out,
-    so unlimited rows and no overflow are the same single row either way.
+    supported when options.layout.maxRows is 0` and renders nothing at all.
+    Unlimited rows is also what lets a device offering both wallets draw both,
+    stacked, rather than hiding one behind an overflow the panel has forbidden.
   */
   layout: { maxColumns: 1, maxRows: 0, overflow: "never" },
 };
 
-function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
-  event.paymentFailed({
-    reason: "fail",
-    message: "Checkout is not open yet. Nothing has been charged.",
-  });
-}
-
-export function ExpressCheckout({ money }: { money: Money }) {
+export function ExpressCheckout({ productKey, money }: { productKey: string; money: Money }) {
   /*
     Stripe's own pattern, from the Express Checkout Element docs: start hidden
     and reveal when the element says it has something to show.
@@ -134,14 +159,28 @@ export function ExpressCheckout({ money }: { money: Money }) {
     () => ({
       /*
         Deferred intent: no client secret, so no order and no PaymentIntent
-        exists when this mounts. The amount is quoted to the sheet from here and
-        confirmed against a real intent at #38.
+        exists when this mounts. One is minted at the moment of confirmation,
+        which is what keeps a visitor who reads the page and leaves from
+        littering Stripe with abandoned intents.
+
+        **The amount quoted here is checked against the intent at confirmation.**
+        Stripe refuses to confirm a secret whose amount or currency disagrees
+        with these, which is a guard rather than a nuisance: the sheet shows
+        this number and the charge is the backend's, and a customer must never
+        be charged something other than what the sheet said.
       */
       mode: "payment",
       amount: money.amount,
       // Stripe wants the ISO code lowercased; the API answers "EUR".
       currency: money.currency.toLowerCase(),
-      paymentMethodCreation: "manual",
+      /*
+        No `paymentMethodCreation: 'manual'`. That option exists to create a
+        PaymentMethod from the group and confirm it **server-side**, and ADR
+        0003 records why that road was not taken — it is the fallback if the
+        wallet's email turns out not to reach the charge, not the plan. What is
+        done instead is `confirmPayment({ elements, clientSecret })`, which is
+        Stripe's documented deferred-intent flow and needs this unset.
+      */
       appearance: walletAppearance,
     }),
     [money.amount, money.currency],
@@ -149,12 +188,14 @@ export function ExpressCheckout({ money }: { money: Money }) {
 
   function handleAvailability(event: StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent) {
     /*
-      `paymentMethods` is `undefined` when nothing at all can show. Apple Pay is
-      read by name rather than trusting the object's presence, because every
-      other wallet is `never` here — one of them being available is not a reason
-      to hold open a row this panel will never put a button in.
+      `paymentMethods` is `undefined` when nothing at all can show. The two
+      wallets are read by name rather than trusting the object's presence,
+      because the other four are `never` here — one of *them* being available is
+      not a reason to hold open a row this panel will never put a button in.
     */
-    setAvailable(event.paymentMethods?.applePay?.available ?? false);
+    const offered = event.paymentMethods;
+
+    setAvailable((offered?.applePay?.available ?? false) || (offered?.googlePay?.available ?? false));
   }
 
   return (
@@ -163,7 +204,9 @@ export function ExpressCheckout({ money }: { money: Money }) {
       column around it is `em` against the panel's container query, so the two
       cannot track each other across the four widths this panel is laid out at.
       Holding `2.6em` here — the ghost buttons' own `min-block-size` — keeps the
-      column's rhythm at every width and centres whatever Apple draws inside it.
+      column's rhythm at every width and centres whatever the wallet draws inside
+      it. A `min` rather than a fixed height, so the rare device offering both
+      wallets grows the row to fit the second rather than clipping it.
 
       `hidden` rather than a height animation once the answer is `false`: this
       only ever moves the rows below it *up*, and only on a device with no
@@ -172,7 +215,7 @@ export function ExpressCheckout({ money }: { money: Money }) {
     <div
       /*
         `check:panel` selects the row by this rather than by its `aria-label`,
-        which ends in "Apple Pay" on the ghost button it replaces and would
+        which ends in a wallet's name on the ghost button it replaces and would
         match both. A collapsed row and an absent one are the two things that
         check has to tell apart.
       */
@@ -188,25 +231,156 @@ export function ExpressCheckout({ money }: { money: Money }) {
           `h-0 overflow-hidden` keeps the width and clips the height, so there
           is nothing to see and nothing to scroll past.
 
-          `inert` alongside it, so an Apple Pay button that is not being offered
-          is not announced to a screen reader or reachable by a tab — the same
+          `inert` alongside it, so a wallet button that is not being offered is
+          not announced to a screen reader or reachable by a tab — the same
           treatment the panel already gives its controls while the price loads.
+
+          **`-mb-[0.4em]` is what makes "no gap" literally true.** The column
+          this sits in is a flex `gap-[0.4em]`, and a gap applies to every
+          *rendered* child including a zero-height one — so a row that only
+          collapsed its height would still leave exactly the gap it promises
+          not to, on every device without a wallet. The negative margin cancels
+          the one gap this row is responsible for. It is the only number here
+          that belongs to `GetMyReading`'s column rather than to this file, and
+          it has to move if that `gap` does.
         */
-        available ? "min-h-[2.6em]" : "h-0 overflow-hidden",
+        available ? "min-h-[2.6em]" : "-mb-[0.4em] h-0 overflow-hidden",
       )}
       /*
         The amount is in the sheet, not on the page, so a screen reader that
-        never opens one still gets told what this button is for.
+        never opens one still gets told what this button is for. It names no
+        single wallet, because which one is drawn here is Stripe's decision at
+        runtime and may be both.
       */
-      aria-label={`Pay ${formatPrice(money)} with Apple Pay`}
+      aria-label={`Pay ${formatPrice(money)} with a saved wallet`}
     >
       <Elements stripe={getStripe()} options={elementsOptions}>
-        <ExpressCheckoutElement
-          options={ELEMENT_OPTIONS}
-          onAvailablePaymentMethodsChange={handleAvailability}
-          onConfirm={handleConfirm}
+        <Wallet
+          productKey={productKey}
+          money={money}
+          onAvailability={handleAvailability}
         />
       </Elements>
     </div>
+  );
+}
+
+/**
+ * The element itself, inside the group, where `useStripe` and `useElements` can
+ * reach it.
+ *
+ * A child rather than the same component, and not for tidiness: both hooks
+ * answer `null` outside an `<Elements>` provider, so confirming from the parent
+ * is not something that works less well — it is something that cannot work at
+ * all.
+ */
+function Wallet({
+  productKey,
+  money,
+  onAvailability,
+}: {
+  productKey: string;
+  money: Money;
+  onAvailability: (event: StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  /*
+    The question is read out of the DOM at the moment of confirmation, off the
+    order form this row sits inside — the same field, read the same way, as the
+    card button reads it. There is no node of ours inside the element to hang
+    this on, so it hangs on a marker beside it.
+  */
+  const anchor = useRef<HTMLSpanElement>(null);
+
+  async function handleConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
+    /*
+      One failure sentence for every arm below. The customer is looking at a
+      sheet they have already authorised with Face ID, and what they need to
+      know is the same in every case: nothing was taken. Which of the six things
+      went wrong is a matter for the console, and is logged there.
+
+      **There is no arm of this function that ends without either a confirmed
+      payment or this call.** A handler that returned quietly would leave the
+      sheet spinning on a payment that is never going to happen.
+    */
+    const fail = (why: string, cause?: unknown) => {
+      console.error(`The wallet payment could not be completed: ${why}`, cause);
+
+      event.paymentFailed({
+        reason: "fail",
+        message: "We could not take this payment. Nothing has been charged.",
+      });
+    };
+
+    if (!stripe || !elements) return fail("Stripe.js is not loaded.");
+
+    try {
+      /*
+        Required by the deferred-intent flow, and it comes first: it validates
+        the group and is what Stripe's own documented order does. Running it
+        after the order was placed would leave a pending order behind for a
+        sheet that was never valid.
+      */
+      const { error: invalid } = await elements.submit();
+
+      if (invalid) return fail(invalid.message ?? "The wallet sheet was refused.", invalid);
+
+      const clientSecret = await startWalletPayment({
+        productKey,
+        money,
+        question: questionIn(anchor.current),
+      });
+
+      /*
+        `return_url` is **our own** confirmation, built from this origin. It is
+        not the open redirect the backend's ADR 0002 guards against: nothing
+        caller-supplied reaches the backend on this road — `startWalletPayment`
+        sends no `return_to` at all — and the only redirect in play is 3D Secure
+        returning the browser to where it started.
+
+        The trailing slash is the export's shape: this is a static site of
+        directories with an `index.html` in each, and the address without it
+        redirects.
+      */
+      const { error } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: { return_url: `${location.origin}/checkout/complete/` },
+      });
+
+      /*
+        Reached only when the payment did **not** go through — on success the
+        browser has already left for `return_url`. A declined wallet card, an
+        abandoned 3D Secure step, an intent Stripe refused: all of them arrive
+        here, and all of them are a payment that did not happen.
+      */
+      if (error) return fail(error.message ?? "Stripe refused the confirmation.", error);
+    } catch (cause: unknown) {
+      /*
+        A refused order, a 422 on the line, a 429, a network failure, or an
+        instruction this road cannot act on. Nothing has been charged in any of
+        them — the throw happens before there is a secret to confirm.
+      */
+      return fail("The order or its payment was refused.", cause);
+    }
+  }
+
+  return (
+    <>
+      {/*
+        A zero-size marker, and the handle on the form. The element beside it is
+        a cross-origin iframe with nothing addressable inside it, so this is
+        what `closest("form")` is called on.
+      */}
+      <span ref={anchor} className="hidden" />
+
+      <ExpressCheckoutElement
+        options={ELEMENT_OPTIONS}
+        onAvailablePaymentMethodsChange={onAvailability}
+        onConfirm={(event) => void handleConfirm(event)}
+      />
+    </>
   );
 }

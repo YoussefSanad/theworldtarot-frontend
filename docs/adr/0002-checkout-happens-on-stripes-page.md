@@ -108,7 +108,9 @@ confirmation reports a payment and never a fulfilment.
 
 **Express checkout element** and **Wallet sheet** stay in `CONTEXT.md` and stay
 ours. The first draft struck them. They are not on the page during the interim
-described below, which is a fact about a sequence and not about a vocabulary.
+described below, which is a fact about a sequence and not about a vocabulary —
+and the interim ended on 29 August 2026, which is why both entries now describe
+a row that is drawn.
 
 **Payment method** is the one entry that does change, and it changes because of
 backend ADR 0003 rather than because of this one: Apple Pay, Google Pay and card
@@ -116,6 +118,9 @@ were "a single method, `stripe`, because they are one PaymentIntent". They are
 now two methods, because they are a PaymentIntent and a hosted Session.
 
 ## The order this arrives in
+
+*This section describes an interim that has since ended. See the note at its
+foot.*
 
 The card road ships first, alone. The backend's half of it is **already
 shipped** — `/pay` answers `redirect`, `POST /orders/status` exists, and a guest
@@ -131,3 +136,15 @@ is kept because it is going to.**
 
 `docs/plans/apple-pay-sheet.md` stays on disk for the same reason and is not
 superseded — it is the plan for the road that is still coming.
+
+**It came, on 29 August 2026.** The backend built `stripe_wallet` (its #43,
+merged to `staging`), and frontend #48 mounted the element above Buy Now. So the
+two paragraphs above are history: the element renders, its `onConfirm` charges,
+and the decision this ADR records — **the card road goes to Stripe's page** — is
+what is unaffected and why the ADR still stands. What the wallet road does
+instead, and why the two are not one thing, is the backend's ADR 0003; what the
+panel now draws is `src/components/reading/README.md`.
+
+The panel draws **three** client frames in every state, not four. The fourth was
+never a frame of the client's: the wallet row is Stripe's, it sits above them,
+and it collapses to nothing on every device without a wallet.

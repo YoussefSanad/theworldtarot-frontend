@@ -4,10 +4,12 @@ import { afterEach, beforeEach, test } from "node:test";
 import {
   checkoutFor,
   forgetQuestion,
+  paymentIntentFrom,
   questionFor,
   recallCheckout,
   rememberCheckout,
   sessionIdFrom,
+  walletCheckoutFor,
   type CheckoutRecord,
 } from "./checkout-session.ts";
 
@@ -287,4 +289,66 @@ test("a purchase started since the verification began keeps its question", () =>
   forgetQuestion(record);
 
   assert.deepEqual(recallCheckout(), second);
+});
+
+/*
+  The wallet road: a record with a client secret and no Session id, guarded on
+  the intent Stripe names in the address it returns to.
+*/
+
+const SECRET = "pi_3Abc123_secret_XyZ789";
+
+/** What the wallet road wrote before it confirmed. No Session id on this road. */
+const walletRecord: CheckoutRecord = {
+  payToken: "kQ3rN8xvT1sLb0Zy",
+  money: { currency: "EUR", amount: 4900 },
+  productKey: "month-ahead",
+  question: "What next?",
+  clientSecret: SECRET,
+};
+
+test("an intent id is the part of the secret before the separator", () => {
+  assert.equal(paymentIntentFrom(SECRET), "pi_3Abc123");
+});
+
+test("a string that is not a client secret yields no intent", () => {
+  // Each of these would be an id the secret does not belong to, which is the
+  // one thing a guard may never produce.
+  assert.equal(paymentIntentFrom("pi_3Abc123"), null);
+  assert.equal(paymentIntentFrom("cs_test_a1_secret_b2"), null);
+  assert.equal(paymentIntentFrom(""), null);
+});
+
+test("an intent named in the address shows the record that belongs to it", () => {
+  rememberCheckout(walletRecord);
+
+  assert.deepEqual(walletCheckoutFor("pi_3Abc123"), walletRecord);
+});
+
+test("a second wallet purchase cannot be shown against the first one's intent", () => {
+  // The same stale-result guard the card road has, against a different id. A
+  // record naming another payment describes some other purchase, and none of it
+  // may appear on this screen.
+  rememberCheckout({ ...walletRecord, clientSecret: "pi_3Second_secret_ZzZ" });
+
+  assert.equal(walletCheckoutFor("pi_3Abc123"), null);
+});
+
+test("an address with no intent in it shows nothing", () => {
+  rememberCheckout(walletRecord);
+
+  assert.equal(walletCheckoutFor(null), null);
+});
+
+test("the two roads refuse each other's records", () => {
+  // What having two guards buys: neither caller has to know there is another
+  // road. A card record has no secret to derive an intent from, and a wallet
+  // record has no Session id.
+  rememberCheckout(walletRecord);
+
+  assert.equal(checkoutFor("cs_test_a1B2c3"), null);
+
+  rememberCheckout(record);
+
+  assert.equal(walletCheckoutFor("pi_3Abc123"), null);
 });

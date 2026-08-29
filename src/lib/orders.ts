@@ -155,6 +155,31 @@ export type PaymentInstruction =
 type ApiPaymentInstruction = { type: string; client_secret?: string; redirect_url?: string };
 
 /**
+ * The ways of paying this build knows the names of.
+ *
+ * **Published values, agreed with the backend before either side switched them
+ * on**, and the same strings `GET /api/v1/payment-methods` answers with. They
+ * are two rather than one because they are a hosted Session and a PaymentIntent
+ * — an address you send a browser to, and an iframe you mount — and no Stripe
+ * parameter reconciles those. See
+ * `docs/adr/0002-checkout-happens-on-stripes-page.md`.
+ *
+ * **Not a union of every method the backend has.** `manual` is offered to a
+ * person in an admin panel and drawn on no page, and the endpoint that lists
+ * what a customer may press excludes it. A name outside this pair is something
+ * this build cannot draw a button for, which is why `fetchPaymentMethods`
+ * answers strings and only this type reaches `payOrder`.
+ */
+export type PaymentMethodName =
+  /** The card button: a hosted Checkout Session, answered as a `redirect`. */
+  | "stripe"
+  /**
+   * The wallet button: a PaymentIntent, answered as a `client_secret`, which
+   * the express checkout element confirms against on our own page.
+   */
+  | "stripe_wallet";
+
+/**
  * Starts a payment for an order already placed. The token is the authority, so
  * this is open to a guest.
  *
@@ -162,6 +187,17 @@ type ApiPaymentInstruction = { type: string; client_secret?: string; redirect_ur
  * secret, which is what a declined card and an abandoned checkout should both
  * do, and creates no second order. An unknown token is a 404, and so is
  * somebody else's, identically.
+ *
+ * ## `method` names which button was pressed, and both roads name themselves
+ *
+ * Optional on the wire — the backend falls back to `payments.default` — and
+ * **sent by both roads regardless**, because from 29 August 2026 there are two
+ * and the endpoint cannot tell them apart otherwise. A road that relies on the
+ * default is a road that silently changes the day somebody edits a config file
+ * on the other side, and the two answers here are not interchangeable: one is
+ * an address to navigate to and one is a secret to confirm in an iframe.
+ *
+ * Anything outside what this environment offers is a 422 naming the field.
  *
  * ## `returnTo` is a product key, and it is what makes cancelling land anywhere
  *
@@ -177,11 +213,17 @@ type ApiPaymentInstruction = { type: string; client_secret?: string; redirect_ur
  */
 export async function payOrder(
   payToken: string,
-  { returnTo }: { returnTo?: string } = {},
+  { returnTo, method }: { returnTo?: string; method?: PaymentMethodName } = {},
 ): Promise<PaymentInstruction> {
   const instruction = await apiWrite<ApiPaymentInstruction>(
     `/api/v1/orders/${encodeURIComponent(payToken)}/pay`,
-    returnTo === undefined ? {} : { return_to: returnTo },
+    {
+      // Absent rather than null, both of them. `sometimes` is what the backend
+      // validates these with, and a key present holding nothing is a key
+      // present — it fails the rule rather than skipping it.
+      ...(returnTo === undefined ? {} : { return_to: returnTo }),
+      ...(method === undefined ? {} : { method }),
+    },
   );
 
   /*

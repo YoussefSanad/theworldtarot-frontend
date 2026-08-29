@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { readingPageChrome } from "@/content/reading-pages";
 import { startCheckout } from "@/lib/buy";
 import { formatPrice, type Money } from "@/lib/price";
+import { questionIn } from "@/lib/question";
 
 const { checkout } = readingPageChrome;
 
@@ -37,13 +38,9 @@ const { checkout } = readingPageChrome;
  * ## The question is read off the form, not held in state
  *
  * A `<button>` inside a form knows its own form, and the question is a named
- * field in it, read at the moment of the press. That is what keeps
- * `CountedField` uncontrolled: holding the text in React would re-render the
- * whole order form on every keystroke to do it, which is the trade its own
- * docblock refuses. In gift mode there is no
- * `question` field in the DOM at all — the sections are mutually exclusive —
- * and this reads an empty string, which is the correct answer for a form that
- * has no question in it.
+ * field in it, read at the moment of the press. See `questionIn` in
+ * `lib/question.ts`, which the wallet button reads through as well — the
+ * question has to reach the order line identically on both roads.
  */
 export function BuyNow({
   productKey,
@@ -166,21 +163,4 @@ function Note({ alert = false, children }: { alert?: boolean; children: string }
       {children}
     </p>
   );
-}
-
-/**
- * What the customer typed, read out of the form this button sits in.
- *
- * An empty string when there is no form, no field, or nothing typed — all three
- * mean the same thing to an order, whose `question` is optional on every
- * product.
- */
-function questionIn(button: HTMLButtonElement | null): string {
-  const form = button?.form;
-
-  if (!form) return "";
-
-  const typed = new FormData(form).get("question");
-
-  return typeof typed === "string" ? typed : "";
 }

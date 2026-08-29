@@ -275,3 +275,58 @@ export async function fetchProduct(
 
   return (await response.json()) as ApiProductDetail;
 }
+
+/**
+ * Which ways of paying this environment offers, and therefore which buttons to
+ * draw.
+ *
+ * **Flat, with no locale segment**, because it carries no copy: the answer is
+ * identical for every visitor and nothing about them varies it. Published 29
+ * August 2026 alongside `stripe_wallet` — see `API_CONTRACT.md` section 8.
+ *
+ * ## Why the panel asks at all
+ *
+ * The reading page cannot infer which buttons it may draw. Whether the wallet
+ * exists here depends on whether *this* environment configured Stripe, and a
+ * local build configures nothing — an offered method with no credentials behind
+ * it is a button that fails at the worst moment a shop has. The card button
+ * survives being wrong about this by redirecting to a page that says so; the
+ * wallet button does not, because it opens a sheet the customer has already
+ * authorised with Face ID.
+ *
+ * ## Strings, not a union
+ *
+ * The list is the backend's and it grows — `gift_code` joins it with gifting.
+ * Answering `string[]` rather than `PaymentMethodName[]` is what keeps a name
+ * this build has never heard of from being cast into one it has: the caller
+ * asks whether the name it wants is present, and a new one it cannot draw is
+ * simply not found.
+ *
+ * Throws on a broken API, so a backend that cannot answer is loud rather than
+ * indistinguishable from an environment that offers nothing. The caller treats
+ * both as "draw no wallet", which is the safe reading of either.
+ */
+export async function fetchPaymentMethods(
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<string[]> {
+  const response = await fetch(`${baseUrl()}/api/v1/payment-methods`, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetching the payment methods failed with ${response.status}.`);
+  }
+
+  const body = (await response.json()) as { methods?: unknown };
+
+  /*
+    An object with a `methods` key, matching `/currencies`, rather than a bare
+    array — gifting brings `gift_code` and likely a second key with it. Checked
+    rather than cast: a body shaped some other way answers "nothing is offered",
+    which draws no wallet, and that is the right way to be wrong here.
+  */
+  if (!Array.isArray(body.methods)) return [];
+
+  return body.methods.filter((method): method is string => typeof method === "string");
+}

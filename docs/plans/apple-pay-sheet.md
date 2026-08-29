@@ -8,6 +8,17 @@
 > Follows `reading-page-live-price.md`, which is why that ticket gated this one. A wallet sheet
 > is a payment authorization and the number it quotes is a number the customer believes they
 > agreed to. It must never be one we invented from a bundled copy string.
+>
+> **Superseded in part on 29 August 2026 by
+> [#48](https://github.com/YoussefSanad/theworldtarot-frontend/issues/48)**, which is #38 arriving
+> by another name. Four things below are no longer true and are struck through where they are
+> said: the element **charges** now rather than calling `paymentFailed`; it draws **Google Pay
+> beside Apple Pay**, so the singular "the Apple Pay button" is wrong throughout; the element is
+> mounted on the panel, having spent one ticket unrendered; and the client's frame counts in the
+> table below are three in every state rather than four and five. What is *not* superseded is the
+> money argument, the availability event, the collapse, and the domain registration — those are
+> the parts of this plan the shipped row is built on. The current shape is in
+> `src/components/reading/README.md`.
 
 ---
 
@@ -31,8 +42,8 @@ can be *seen*.
 | state | price line | the client's frames | wallet |
 |---|---|---|---|
 | **loading** | resting bar, `role=status` | drawn, `invisible` + `inert` | none |
-| **live** | `formatPrice(money)` — `€70` | four; Apple Pay's row is Stripe's now | mounted from `offer.money` |
-| **unreachable** | bundled `"$75"` as copy | **all five**, none able to take money | **none** |
+| **live** | `formatPrice(money)` — `€70` | ~~four~~ three; the wallet's row is Stripe's | mounted from `offer.money` |
+| **unreachable** | bundled `"$75"` as copy | ~~**all five**~~ three, none able to take money | **none** |
 | **withdrawn** | — | the order leaves the page entirely | none |
 
 `unreachable` changed at this ticket. It used to render nothing, which left a hole where the
@@ -101,17 +112,25 @@ The cost is that the button appears rather than being reserved for. It appears i
 is `invisible` while the price is in flight, so there is no moment where a visitor is looking at
 a settled panel and a payment button arrives under their thumb.
 
-## Nothing is charged, and the sheet is told so
+## ~~Nothing is charged, and the sheet is told so~~ — it charges, from #48
 
 `onConfirm` is a required prop, so there is no option of leaving it off and letting the sheet
-spin. It calls `paymentFailed({ reason: 'fail' })`: a customer who authorises with Face ID is
-told checkout is not open. Resolving successfully would show a green tick for a payment that
-never happened, which is the one thing a payment surface may never do — staging or not,
-screenshot or not.
+spin. ~~It calls `paymentFailed({ reason: 'fail' })`: a customer who authorises with Face ID is
+told checkout is not open.~~ From 29 August 2026 it places the order, asks `/pay` for a
+`stripe_wallet` payment and confirms the secret that comes back.
 
-`emailRequired: true` is set even though nothing is done with the value. It is what #31
-committed to the backend, and the screenshot going to the client should be of the sheet the
-finished checkout will show rather than a shorter one we would quietly grow later.
+**The sentence that survives the change is the reason it was written**: resolving successfully
+would show a green tick for a payment that never happened, which is the one thing a payment
+surface may never do. So every failure arm of the handler still ends in `paymentFailed` and
+there is no arm that simply returns — a handler that returned quietly leaves the sheet spinning
+on a payment that is never going to happen.
+
+~~`emailRequired: true` is set even though nothing is done with the value.~~ **It is
+load-bearing, and it is the sentence the buyer's identity rests on.** A wallet PaymentIntent has
+no Checkout Session, so the backend cannot resolve who paid the way it does on the card road; it
+reads the buyer off the charge's `latest_charge.billing_details`, and this flag is what puts an
+email there. Without it a wallet payment settles nobody: the order is left pending with the
+customer already charged. See the backend's #43 and #44.
 
 ## The build guard
 
@@ -135,20 +154,42 @@ first, so a guard added only to the `.ts` never fires.
 
 ## What is proved, and where
 
-`npm run check:panel` can never see an Apple Pay button: Stripe draws one only in Safari, on a
-device with a wallet, on a registered payment method domain, and a headless Chromium on
-`localhost` fails all three. So its wallet assertions are negatives — the ones that would
-otherwise go unnoticed.
+*Rewritten 29 August 2026, at #48.*
+
+`npm run check:panel` can never see a wallet button: Stripe draws one only in Safari with a card
+in Wallet, or in Chrome signed into Google Pay, on a registered payment method domain — and a
+headless Chromium on `localhost` fails all three. So what it asserts is everything *around* the
+button.
 
 ```
-live         €70 · four client frames · a Stripe element mounted
-             label "Pay €70 with Apple Pay" — the API's money, not the bundled copy
-             wallet row 0px where this browser has no wallet
-withdrawn    no price · no controls · no question · anchor still lands · no element
-unreachable  "$75" as copy · five client frames · no wallet row · no element at all
+live          €70 · three client frames · the element mounts
+              label "Pay €70 with a saved wallet" — the API's money, not the bundled copy
+              row 0px where this browser has no wallet, and nothing in it reachable
+              settled height === loading height — the collapsed row costs the column no gap
+              one press: order placed, /pay told method "stripe", record written, browser leaves
+ahead         a /pay answer this build cannot read: nothing charged, button pressable again
+gifting       the row comes off, and the element it held is destroyed with it
+withdrawn     no price · no controls · no question · anchor lands · no row, and no js.stripe.com
+unreachable   "$75" as copy · three client frames · no row · no js.stripe.com
+no wallet     the API offers none: the card button stands alone and still takes money
 ```
 
-**That the sheet opens and quotes the price is proved by hand**, in Safari, on
-`staging.theworldtarot.com`, on a device with a card in Wallet. There is no substitute and there
-was never going to be one — that is what the acceptance criteria ask for, and it is where the
-client's screenshot comes from.
+**The height assertion is the one that is easy to write wrongly.** "Collapses leaving no gap" is
+two facts, and a zero-height flex child still takes its share of the column's `gap`. Only the
+*panel's* height can show the second, which is why the collapse is proved as `settled.height ===
+resting.height` rather than by measuring the row.
+
+`npm run check:confirmation` proves the other end of this road: that the wallet's `return_url` —
+reached whatever happened, unlike the card road's `success_url` — paints **nothing** until the
+backend has answered, and that `redirect_status=failed` in the address does not change what the
+backend is believed about.
+
+**That the button draws and the sheet opens and quotes the price is proved by hand**, in Safari
+and in Chrome, on `staging.theworldtarot.com`, on a device with a card in Wallet or an account
+signed into Google Pay. There is no substitute and there was never going to be one — that is what
+the acceptance criteria ask for, and it is where the client's screenshot comes from.
+
+It also needs `staging.theworldtarot.com` **registered as a payment method domain in test mode**.
+Stripe registers exact hostnames, so the apex registration does not cover it, and an unregistered
+host fails by the button silently not appearing — which is indistinguishable from a device with
+no wallet, and therefore indistinguishable from working correctly.

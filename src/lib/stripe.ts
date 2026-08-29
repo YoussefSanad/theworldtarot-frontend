@@ -1,4 +1,5 @@
-import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js/pure";
+import type { Appearance, Stripe } from "@stripe/stripe-js";
 
 /**
  * Stripe.js, loaded once and only when something is about to mount an element.
@@ -35,6 +36,17 @@ let pending: Promise<Stripe | null> | undefined;
  * readings index and the reveal — pages with nothing to pay for. Stripe's own
  * fraud signals want the script on pages that lead to checkout, not on every
  * page a visitor has ever seen.
+ *
+ * **`@stripe/stripe-js/pure` is load-bearing, and the plain entry point is the
+ * bug it fixes.** `@stripe/stripe-js`'s main module injects the script tag from
+ * its own top level — `Promise.resolve().then(() => getStripePromise())` in
+ * `src/index.ts`, one tick after the module is evaluated — so importing it at
+ * all defeats every word above, whatever this function does. `check:panel`
+ * caught it on 29 August 2026: `js.stripe.com` was fetched in the 404 state,
+ * the 500 state and the state where the API offers no wallet, none of which
+ * mounts anything. `/pure` is the same `loadStripe` with that side effect
+ * removed. Pinned against `@stripe/stripe-js@9.14.0`; the types come from the
+ * package root, which is types-only and erases.
  *
  * Resolves to `null` when the script cannot load, which `Elements` handles by
  * rendering nothing. That is the same visual outcome as a device with no

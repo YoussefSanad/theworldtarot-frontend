@@ -1,36 +1,44 @@
+"use client";
+
 import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { PanelHeading } from "@/components/reading/PanelHeading";
 import { BuyNow } from "@/components/reading/BuyNow";
+import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
 import { checkout as marks, type ImageAsset } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import { useWalletOffered } from "@/lib/payment-methods";
 import { formatPrice } from "@/lib/price";
 import type { ProductOffer } from "@/lib/product";
 
 const { checkout, gift } = readingPageChrome;
 
 /**
- * The price, the delivery, and the three ways of paying it.
+ * The price, the delivery, and the ways of paying it.
  *
- * ## Three frames, and it is an interim rather than a destination
+ * ## Two roads, side by side, and they cannot be one control
  *
- * The client draws five. Apple Pay, Google Pay and Pay with Card collapse into
- * one **Buy Now** button for the length of the interim: the card road ships
- * first, and the wallet road's backend — `stripe_wallet` — is decided and
- * unbuilt. **The wallet row returns above Buy Now when it ships**, and it
- * collapses to nothing on any device without a wallet. See
- * `docs/adr/0002-checkout-happens-on-stripes-page.md` and #48.
+ * The client draws five frames. What stands here is a **wallet row** that
+ * collapses to nothing where there is no wallet, above a fixed-height **Buy
+ * Now** that is always there — which is the arrangement
+ * `docs/adr/0002-checkout-happens-on-stripes-page.md` argued for rather than a
+ * compromise against it. Its claim was never that a wallet button is unwelcome;
+ * it was that a wallet sheet, whose height is unknowable at build time, cannot
+ * be the control this panel is laid out around.
  *
- * `ExpressCheckout.tsx` is unrendered rather than removed, and **not because
- * the wallet was rejected**: its `onConfirm` deliberately calls `paymentFailed`,
- * and a button that fails after Face ID has no business sitting beside one that
- * charges. No Stripe element is mounted on this page on this road, and
- * `check:panel` asserts exactly that — a Stripe iframe appearing here again is
- * what a half-finished wallet ticket shipping by accident would look like.
+ * They are two controls because they are two things. Buy Now sends the browser
+ * to a hosted Checkout Session — an address; the wallet row mounts an express
+ * checkout element and confirms a PaymentIntent in the page — an iframe. No
+ * Stripe parameter reconciles those, which is why `/pay` answers two shapes.
+ *
+ * **The panel is visibly mixed and that is a constraint rather than an
+ * oversight.** Apple draws its own button and allows it three themes, none of
+ * them gold; Google allows two. Neither can be made to match the gold-outlined
+ * frames beside it.
  *
  * ## The price is the catalogue's, and so is whether there is one
  *
@@ -67,9 +75,10 @@ const { checkout, gift } = readingPageChrome;
  *
  * ## The controls
  *
- * **One of the three is real once there is money**: Buy Now, which takes
- * `Money` rather than an offer, so it cannot be built from a state that has no
- * amount. See that file for what a press does and what makes it inert.
+ * **Two of them take money once there is money**: the wallet row and Buy Now.
+ * Both take `Money` rather than an offer, so neither can be built from a state
+ * that has no amount. See those files for what a press does and what makes each
+ * inert.
  *
  * **`redeem gift code` is a dud**, on purpose and for now: there is no
  * redemption flow, so it is `type="button"` with nothing behind it — inert
@@ -102,6 +111,15 @@ export function GetMyReading({
   gifting: boolean;
   onGiftToggle: () => void;
 }) {
+  /*
+    Whether this environment offers the wallet at all, which is a different
+    question from whether the device has one. A local build configures no
+    Stripe; a deployed one does. `false` until the backend answers, so nothing
+    is mounted and no Stripe.js is fetched on a page that turns out to have no
+    wallet button to draw.
+  */
+  const walletOffered = useWalletOffered();
+
   return (
     /* 49px under the question field. */
     <section className="mt-[clamp(1rem,2.55vw,3.0625rem)] flex flex-col items-center text-center">
@@ -133,12 +151,33 @@ export function GetMyReading({
         inert={offer.status === "loading"}
       >
         {/*
-          The one control on this panel that is real, and the only one that
-          needs an amount. `offer.money` exists on `live` and on no other state,
-          so the button is handed `null` everywhere else and there is no branch
-          in it that can place an order without a price the backend set.
+          The wallet row, above Buy Now and nowhere else.
 
-          The wallet row goes back above this, and nowhere else, when #48 ships.
+          **Three conditions, and each removes it for a different reason.**
+          `live`, because `money` exists in no other state and a sheet quoting a
+          price no server agreed to is the one thing this panel may never open.
+          `walletOffered`, because an environment that configured no Stripe has
+          no wallet to offer. And not `gifting`, for the reason Buy Now goes
+          inert there: `POST /orders` has no field for a recipient, so a live
+          control in gift mode charges somebody for a gift delivered to
+          themselves — and a wallet is the worse of the two to get wrong, since
+          it takes the money the instant a face is recognised.
+
+          Absent rather than collapsed in all three. The row's own collapse
+          answers a fourth question — this device has no wallet — and it must
+          stay the only reason the row is ever zero-height, or the check that
+          tells a collapsed row from an absent one is measuring nothing.
+        */}
+        {offer.status === "live" && walletOffered && !gifting ? (
+          <ExpressCheckout productKey={reading.productKey} money={offer.money} />
+        ) : null}
+
+        {/*
+          The control on this panel that is always here, and the only one that
+          needs an amount before it can act. `offer.money` exists on `live` and
+          on no other state, so the button is handed `null` everywhere else and
+          there is no branch in it that can place an order without a price the
+          backend set.
         */}
         <BuyNow
           productKey={reading.productKey}
