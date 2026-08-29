@@ -42,6 +42,13 @@ export function RecipientDetails() {
           limit={254}
           required
           autoFocusOnMount
+          /*
+            The address wanted here is the recipient's. Left alone, Chrome
+            offers the purchaser their own — the one they have typed into every
+            other email field on the web — which is a quiet way to send
+            somebody a gift addressed to themselves.
+          */
+          suppressAutofill
         />
       </div>
 

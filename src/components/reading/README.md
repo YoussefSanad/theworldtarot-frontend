@@ -269,6 +269,14 @@ screen. Rather than move her button:
   pointer being near it, and a label that becomes the way back out, so gift
   mode is never somewhere a visitor is stuck.
 
+The recipient's email field also **suppresses browser autofill**
+(`CountedField`'s `suppressAutofill`). Chrome classifies a field by its `name`
+and `id` as much as by its `autocomplete`, so `recipientEmail` had it offering
+the purchaser their own saved address — the one address a gift must not go to.
+The field therefore submits under React's opaque `useId` string and carries its
+real name on `data-field`, which is where anything reading this form should
+look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
+
 The recipient's side of the flow — redeem, then ask — is not built. `redeem
 gift code` is a dud, and **Buy Now is inert while gift mode is on**: `POST
 /orders` has no field for a recipient, so a live button here would charge
