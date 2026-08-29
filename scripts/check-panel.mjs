@@ -611,7 +611,7 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
 expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
-expect("live", "Buy Now is labelled with the price", sold.settled.buyNow, "Buy Now €70");
+expect("live", "Buy Now is labelled with the price", sold.settled.buyNow, "Continue to Checkout €70");
 expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
 
 if (live) {
@@ -678,7 +678,7 @@ expect("ahead", "the wallet row still stands beside the refused card road", ahea
 expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
 expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
 expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
-expect("ahead", "and the button is pressable again", ahead.afterwards, "Buy Now €70");
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Continue to Checkout €70");
 /* Nothing to paint a confirmation from, because nothing was confirmed. */
 expect("ahead", "nothing was remembered", ahead.record, null);
 

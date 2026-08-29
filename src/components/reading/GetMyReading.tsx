@@ -8,8 +8,9 @@ import { BuyNow } from "@/components/reading/BuyNow";
 import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
+import { Mark } from "@/components/ui/Mark";
 import { readingPageChrome, rushDelivery, type ReadingPage } from "@/content/reading-pages";
-import { checkout as marks, type ImageAsset } from "@/lib/assets";
+import { checkout as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 import { useWalletOffered } from "@/lib/payment-methods";
 import { formatPrice } from "@/lib/price";
@@ -365,14 +366,3 @@ function CheckoutOption({
  * than a share of the button, so the marks keep their sizes relative to each
  * other and to everything else in the panel.
  */
-function Mark({ art, className }: { art: ImageAsset; className: string }) {
-  return (
-    <Image
-      src={art.src}
-      alt=""
-      width={art.width}
-      height={art.height}
-      className={cn("h-auto max-w-none shrink-0", className)}
-    />
-  );
-}

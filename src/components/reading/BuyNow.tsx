@@ -3,7 +3,9 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { Mark } from "@/components/ui/Mark";
 import { readingPageChrome } from "@/content/reading-pages";
+import { checkout as marks } from "@/lib/assets";
 import { startCheckout } from "@/lib/buy";
 import { formatPrice, type Money } from "@/lib/price";
 import { questionIn } from "@/lib/question";
@@ -130,6 +132,19 @@ export function BuyNow({
               panel, where four siblings hid it, into a three-frame one where it
               was the odd one out. See #49.
             */}
+            {/*
+              `marks.card` is the client's own frame icon, drawn for the "Pay
+              with Card" frame this button replaced and unused between `1fd46f6`
+              and 29 August 2026. Restored at the client's request, at the scale
+              its two siblings on this panel already use: 49px ÷ 6.87 = 7.13cqw.
+
+              **It is narrower than the road it opens**, and that is argued in
+              `content/reading-pages.ts` beside the label rather than here: the
+              hosted page takes Apple Pay and Google Pay too. The wallets have
+              their own buttons above this one, so card is what is left by the
+              time a customer is reading this frame.
+            */}
+            <Mark art={marks.card} className="w-[7.13cqw]" />
             <span>{checkout.buy}</span>
             {/*
               The amount is the API's, formatted against the site's locale. It

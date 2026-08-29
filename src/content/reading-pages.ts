@@ -87,8 +87,24 @@ export const readingPageChrome = {
      * wrong the first time somebody pays with anything else. The price is set
      * beside it rather than in it, so the label is a constant and the amount is
      * the API's.
+     *
+     * ~~"Buy Now".~~ **"Continue to Checkout" from 29 August 2026**, at the
+     * client's request, because the old label promised something the button
+     * does not do. Pressing it buys nothing: it places a `pending` order and
+     * sends the browser to Stripe, where the customer picks a method and pays.
+     * The money is collected on a page this one never sees. `buying` below has
+     * said "Taking you to checkout…" all along, so the resting label was
+     * disagreeing with its own pending state.
+     *
+     * **The card mark beside it is narrower than the road, and that is
+     * accepted rather than missed.** `marks.card` is the client's own frame
+     * icon, and the hosted page still takes Apple Pay and Google Pay — proved
+     * by hand on 29 August 2026. What makes it defensible is the panel around
+     * it: the wallets have their own buttons directly above, so by the time a
+     * customer reaches this frame, card is what is left. The *label* still
+     * names no method, which is what keeps the paragraph above true.
      */
-    buy: "Buy Now",
+    buy: "Continue to Checkout",
     /**
      * Held across both round trips — the order, then the payment — because the
      * browser does not leave until the second one answers, and a button that
