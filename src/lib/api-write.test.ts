@@ -178,3 +178,22 @@ test("a 429 carries Retry-After", async () => {
     },
   );
 });
+
+test("a refused payment names the endpoint and never the pay token in it", async () => {
+  /*
+    The backend answers `/pay` without a `message` on plenty of failures — a
+    502, an HTML error page, a proxy timing out — and the fallback message is
+    built from the path. The panel logs a rejected write, so a token left in
+    that string is a credential in a console. `CONTEXT.md`, Pay token: never in
+    a log.
+  */
+  stubFetch(new Response(null, { status: 204 }), new Response(null, { status: 502 }));
+
+  const failure = await apiWrite("/api/v1/orders/kQ3rN8xvT1sLb0Zy/pay", {}).then(
+    () => null,
+    (error: unknown) => error as Error,
+  );
+
+  assert.equal(failure?.message.includes("kQ3rN8xvT1sLb0Zy"), false);
+  assert.equal(failure?.message, "The write to /api/v1/orders/{pay_token}/pay failed with 502.");
+});

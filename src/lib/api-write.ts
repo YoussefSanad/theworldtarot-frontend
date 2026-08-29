@@ -95,6 +95,24 @@ export class ApiRateLimitError extends ApiError {
 }
 
 /**
+ * The path with any **pay token** in it struck out.
+ *
+ * `/pay` addresses an order by its pay token, because the token is the whole
+ * authority to pay it and the backend takes it there. The request has to carry
+ * it. **The error message does not**, and this is the difference that matters:
+ * `CONTEXT.md` says of the pay token that it goes in no address bar, redirect,
+ * analytics event **or log**, and a caller that logs a rejected write — the
+ * payment panel does — would otherwise put a live credential in a console
+ * beside a stack trace, every time the backend answered without a `message`.
+ *
+ * Struck out here rather than at the caller because there is one seam and any
+ * number of callers, and the next one will not think of it either.
+ */
+function withoutCredentials(path: string): string {
+  return path.replace(/\/orders\/[^/]+\/pay$/, "/orders/{pay_token}/pay");
+}
+
+/**
  * Turns a refusal into the error that names it, so callers branch on a type
  * rather than on a status code and a parsed body.
  */
@@ -103,7 +121,8 @@ async function toError(path: string, response: Response): Promise<ApiError> {
     message?: string;
     errors?: Record<string, string[]>;
   };
-  const message = body.message ?? `The write to ${path} failed with ${response.status}.`;
+  const message =
+    body.message ?? `The write to ${withoutCredentials(path)} failed with ${response.status}.`;
 
   if (response.status === 422) return new ApiValidationError(message, body.errors ?? {});
 
