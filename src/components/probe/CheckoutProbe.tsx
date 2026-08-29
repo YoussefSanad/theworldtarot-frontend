@@ -68,6 +68,8 @@ export function CheckoutProbe() {
       // The pay token stays in this scope and dies with it. Not in the URL, not
       // in state that a devtools panel prints, not in a log. It is the whole of
       // the authority to pay this order.
+      // No `return_to`: this page is not a reading page, and the key is a
+      // fixed set the backend validates against rather than an address.
       const instruction = await payOrder(order.payToken);
 
       setReport({
@@ -113,20 +115,37 @@ export function CheckoutProbe() {
           </dd>
           <dt>pay type</dt>
           <dd>{report.instruction.type}</dd>
-          <dt>client secret</dt>
-          <dd className="break-all">
-            {report.instruction.type === "client_secret"
-              ? report.instruction.clientSecret
-              : report.instruction.type === "unrecognised"
-                ? `none — backend reported "${report.instruction.reportedType}"`
-                : "none"}
-          </dd>
+          {/*
+            Whatever the instruction names, and nothing else. A Session URL is
+            not a credential and is shown; the pay token is one and is not, on
+            this page or anywhere.
+          */}
+          <dt>and what it names</dt>
+          <dd className="break-all">{names(report.instruction)}</dd>
         </dl>
       ) : null}
 
       {error ? <p className="mt-8 break-words">{error}</p> : null}
     </section>
   );
+}
+
+/**
+ * The field the instruction's `type` names — read by the type and never
+ * inferred from the shape, which is the rule the contract states and this page
+ * exists to prove is being followed.
+ */
+function names(instruction: PaymentInstruction): string {
+  switch (instruction.type) {
+    case "redirect":
+      return instruction.redirectUrl;
+    case "client_secret":
+      return instruction.clientSecret;
+    case "unrecognised":
+      return `nothing this build knows — the backend reported "${instruction.reportedType}"`;
+    case "nothing_to_pay":
+      return "nothing to collect";
+  }
 }
 
 /**

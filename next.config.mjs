@@ -63,10 +63,11 @@ function assertStripeKeyMatchesApi() {
 
   if (!key) {
     throw new Error(
-      'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is unset, so no wallet button can mount. ' +
-        'Unset it fails silently — loadStripe gets undefined and the payment panel simply ' +
-        'renders nothing where Apple Pay should be. Note the NEXT_PUBLIC_ prefix: only ' +
-        'prefixed variables are inlined into a static export, so a key set as ' +
+      'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is unset. The card road does not load Stripe.js at ' +
+        'all, so unset breaks nothing visible today — which is exactly why it is refused ' +
+        'here: the key is what pairs this build with a Stripe account, and the wallet road ' +
+        'mounts an element from it again. Note the NEXT_PUBLIC_ prefix: only prefixed ' +
+        'variables are inlined into a static export, so a key set as ' +
         'STRIPE_PUBLISHABLE_KEY is configured and inert. Set ALLOW_LOCAL_API_BUILD=1 for a ' +
         'local preview build that does not need checkout.',
     );
@@ -98,16 +99,17 @@ function assertStripeKeyMatchesApi() {
   if (staging && key.startsWith('pk_live_')) {
     throw new Error(
       `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is a live key, but NEXT_PUBLIC_API_BASE_URL is ${apiBase}. ` +
-        'A live key baked into a staging build quotes real money in a wallet sheet against ' +
-        'orders the staging backend prices with test data. Use the pk_test_ key.',
+        'A live key baked into a staging build pairs a live Stripe account with a backend ' +
+        'that prices orders with test data — and on the wallet road it quotes real money in ' +
+        'a sheet against them. Use the pk_test_ key.',
     );
   }
 
   if (!staging && key.startsWith('pk_test_')) {
     throw new Error(
       `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is a test key, but NEXT_PUBLIC_API_BASE_URL is ${apiBase}, ` +
-        'which is not a staging host. The wallet button would mount and take an authorization ' +
-        'that can never be captured. Use the live key, or point the build at staging.',
+        'which is not a staging host. On the wallet road the button would mount and take an ' +
+        'authorization that can never be captured. Use the live key, or point the build at staging.',
     );
   }
 }
