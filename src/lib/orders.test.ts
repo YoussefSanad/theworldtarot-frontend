@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
-import { payOrder, placeOrder } from "./orders.ts";
+import { fetchPaymentStatus, payOrder, placeOrder } from "./orders.ts";
 
 type Call = { url: string; init: RequestInit };
 
@@ -114,15 +114,127 @@ test("an already settled order says there is nothing to pay", async () => {
 
 test("an unrecognised type is returned, never thrown", async () => {
   // A new payment method can add one, and the contract says to handle an
-  // unknown `type` by not crashing. `redirect` is the withdrawn shape, which
-  // makes it the honest example of a type this code must not have a branch for.
+  // unknown `type` by not crashing. `gift_code` is the shape the backend has
+  // reserved and not built, which makes it the honest example of a type this
+  // code must not have a branch for. `redirect` was that example until 29
+  // August; it has a branch now, and the test below is the one that proves it.
   stubFetch(
     new Response(null, { status: 204 }),
-    json({ type: "redirect", redirect_url: "https://example.test" }),
+    json({ type: "gift_code", code: "not-a-shape-this-build-knows" }),
   );
 
   const result = await payOrder("kQ3rN8xvT1sLb0Zy");
 
   assert.equal(result.type, "unrecognised");
-  assert.equal(result.type === "unrecognised" && result.reportedType, "redirect");
+  assert.equal(result.type === "unrecognised" && result.reportedType, "gift_code");
+});
+
+test("a guest may place an order with no name and no email", async () => {
+  // Relaxed on 29 August: Stripe's hosted page collects the buyer's email
+  // *after* the order exists, and the webhook fills identity from the Session's
+  // `customer_details`. The two keys must be absent rather than sent empty — an
+  // empty string is an address, and a 422 on it would refuse a valid order.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json(
+      {
+        id: 42,
+        status: "pending",
+        currency: "EUR",
+        total_amount: 7000,
+        lines: [{ product: "month-ahead", unit_amount: 7000, quantity: 1, question: "What next?" }],
+        pay_token: "kQ3rN8xvT1sLb0Zy",
+      },
+      201,
+    ),
+  );
+
+  const order = await placeOrder({
+    currency: "EUR",
+    lines: [{ product: "month-ahead", quantity: 1, question: "What next?" }],
+  });
+
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), {
+    currency: "EUR",
+    lines: [{ product: "month-ahead", quantity: 1, question: "What next?" }],
+  });
+  assert.deepEqual(order.total, { currency: "EUR", amount: 7000 });
+});
+
+test("paying answers a redirect, read off `redirect_url`", async () => {
+  // The field is `redirect_url` and not `url`. Reading the wrong key hands
+  // `location.assign` an `undefined` and strands a customer whose order is
+  // already placed, which is why this is asserted on the value rather than on
+  // the type alone.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: "https://checkout.stripe.com/c/pay/cs_test_a1" }),
+  );
+
+  const result = await payOrder("kQ3rN8xvT1sLb0Zy");
+
+  assert.equal(result.type, "redirect");
+  assert.equal(
+    result.type === "redirect" && result.redirectUrl,
+    "https://checkout.stripe.com/c/pay/cs_test_a1",
+  );
+});
+
+test("a redirect with no address is unrecognised rather than a redirect to nowhere", async () => {
+  stubFetch(new Response(null, { status: 204 }), json({ type: "redirect" }));
+
+  assert.equal((await payOrder("kQ3rN8xvT1sLb0Zy")).type, "unrecognised");
+});
+
+test("`return_to` is sent as the product key the checkout started from", async () => {
+  // Optional, and a product key — never a path and never a URL. Send nothing
+  // and a cancelled checkout lands on the readings index instead of the page
+  // the customer was on.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: "https://checkout.stripe.com/c/pay/cs_test_a1" }),
+  );
+
+  await payOrder("kQ3rN8xvT1sLb0Zy", { returnTo: "month-ahead" });
+
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { return_to: "month-ahead" });
+});
+
+test("with no page to return to, the body carries no `return_to` at all", async () => {
+  stubFetch(new Response(null, { status: 204 }), json({ type: "nothing_to_pay" }));
+
+  await payOrder("kQ3rN8xvT1sLb0Zy");
+
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), {});
+});
+
+test("a payment's status is read back with the pay token in the body", async () => {
+  stubFetch(new Response(null, { status: 204 }), json({ status: "succeeded" }));
+
+  const status = await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy");
+
+  assert.equal(status, "succeeded");
+  // The token is a credential and a path segment lands in every access log
+  // between the browser and the application, which is why this is a POST with a
+  // body and why the assertion is on the URL as well as on the body.
+  assert.equal(calls[1].url, "https://staging-api.theworldtarot.com/api/v1/orders/status");
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { pay_token: "kQ3rN8xvT1sLb0Zy" });
+});
+
+test("a status this build has never heard of comes back as it was sent", async () => {
+  // The set is Stripe's and can grow. Passing it through unchanged is what lets
+  // the confirmation decide that an unrecognised status is not worth correcting
+  // a screen over; a throw here would take that decision away from it.
+  stubFetch(new Response(null, { status: 204 }), json({ status: "requires_hovercraft" }));
+
+  assert.equal(await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), "requires_hovercraft");
+});
+
+test("a 503 from the status endpoint throws, and says nothing about the payment", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ message: "Stripe could not be reached." }, 503),
+  );
+
+  await assert.rejects(() => fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), { status: 503 });
 });
