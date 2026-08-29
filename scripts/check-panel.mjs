@@ -736,7 +736,7 @@ expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
   meet a hole where the checkout is. None of the three can take money.
 */
 expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
-expect("unreachable", "Buy Now quotes nothing", dead.settled.buyNow, "Buy Now");
+expect("unreachable", "Buy Now quotes nothing", dead.settled.buyNow, "Continue to Checkout");
 expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a
