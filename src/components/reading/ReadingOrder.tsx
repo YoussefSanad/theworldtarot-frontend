@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { AskQuestion } from "@/components/reading/AskQuestion";
 import { GetMyReading } from "@/components/reading/GetMyReading";
 import { RecipientDetails } from "@/components/reading/RecipientDetails";
 import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
+import { recallCheckout } from "@/lib/checkout-session";
 import { useProduct } from "@/lib/product";
 
 /**
@@ -46,6 +47,37 @@ import { useProduct } from "@/lib/product";
  * so the closing call to action at the foot of the page lands on the panel in
  * every state instead of scrolling to an id that is no longer in the document.
  *
+ * ## The question a cancelled checkout left behind
+ *
+ * **Losing several sentences of typed question silently is the worst thing this
+ * flow can do**, and a redirect is what makes it easy to get wrong: a customer
+ * who cancels at Stripe arrives back at an ordinary page load, with nothing in
+ * the URL to say where they came from. The record written before the browser
+ * left is the only evidence, so this reads it on the way in.
+ *
+ * **Only onto the page it was typed on.** The record names the **product key**
+ * it was made against, and a question restored onto a different reading is a
+ * stranger's sentence appearing in a box the visitor did not type it in.
+ *
+ * `useSyncExternalStore` rather than an effect that sets state. Storage is an
+ * external store, and this is a static export: the HTML is built on a machine
+ * that has none, so the build snapshot is `null` and the client's is the record.
+ * Reading it during render instead would hydrate a page whose first paint
+ * disagrees with its second. Nothing subscribes, because nothing changes the
+ * record while this page is open — the one thing that writes it is Buy Now,
+ * immediately before the browser leaves.
+ *
+ * The section is **remounted** rather than re-rendered when a question arrives,
+ * which the `key` is for: the field is uncontrolled, and React applies a
+ * `defaultValue` at mount and ignores it on an update. The key only ever
+ * changes once, on the render after hydration, and only where there is
+ * something to put back.
+ *
+ * **The record is not cleared.** A customer who cancels twice gets their
+ * question back twice, and the confirmation still has a record to paint from
+ * after a reload — clearing it here would trade a rare tidiness for a common
+ * blank screen.
+ *
  * ## One thing here is a deliberate departure
  *
  * The client's frame puts "gift a reading" at the foot of the payment column,
@@ -58,6 +90,10 @@ import { useProduct } from "@/lib/product";
 export function ReadingOrder({ reading }: { reading: ReadingPage }) {
   const [gifting, setGifting] = useState(false);
   const offer = useProduct(reading.productKey);
+  const checkout = useSyncExternalStore(nothingChangesIt, recallCheckout, noRecordWhereThisIsBuilt);
+
+  const restored =
+    checkout?.productKey === reading.productKey ? checkout.question : undefined;
 
   return (
     <div id={readingPageChrome.checkout.anchor}>
@@ -69,7 +105,11 @@ export function ReadingOrder({ reading }: { reading: ReadingPage }) {
           of adding an endpoint rather than restructuring the panel.
         */
         <form className="mt-[clamp(2rem,5.63vw,6.75rem)]">
-          {gifting ? <RecipientDetails /> : <AskQuestion />}
+          {gifting ? (
+            <RecipientDetails />
+          ) : (
+            <AskQuestion key={restored === undefined ? "fresh" : "restored"} question={restored} />
+          )}
 
           <GetMyReading
             reading={reading}
@@ -82,3 +122,9 @@ export function ReadingOrder({ reading }: { reading: ReadingPage }) {
     </div>
   );
 }
+
+/** Nothing writes the record while this page is open, so there is nothing to hear. */
+const nothingChangesIt = () => () => {};
+
+/** The static export is built where there is no sessionStorage to read. */
+const noRecordWhereThisIsBuilt = () => null;

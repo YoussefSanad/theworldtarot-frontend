@@ -160,10 +160,21 @@ function api(body, status = 200) {
  * long enough for a route handler and not for a real round trip to staging,
  * which is exactly the kind of flake that gets a check disbelieved.
  */
-async function drive(state, response, settled, { gift = false, press = false } = {}) {
+async function drive(state, response, settled, { gift = false, press = false, cancelled } = {}) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+
+  /*
+    A checkout the customer walked away from at Stripe. They come back to an
+    ordinary page load with nothing in the address to say where they have been,
+    so the record written before they left is the only evidence there is.
+  */
+  if (cancelled) {
+    await page.addInitScript((value) => {
+      sessionStorage.setItem("checkout", value);
+    }, JSON.stringify(cancelled));
+  }
 
   /*
     Stripe validates its options inside the iframe and reports a bad one by
@@ -245,13 +256,17 @@ async function drive(state, response, settled, { gift = false, press = false } =
   */
   const question = await page.locator("#get-my-reading textarea[name=question]").count();
 
-  if (question > 0) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
-
   const answered = {
     height: Math.round(await page.$eval(PANEL, (node) => node.getBoundingClientRect().height)),
     visibleControls: await page.locator("#get-my-reading button:visible").count(),
     price: (await page.locator(PRICE).first().innerText().catch(() => "")).trim(),
     question,
+    /** What is in the box before anything is typed into it. */
+    restored: await page
+      .locator("#get-my-reading textarea[name=question]")
+      .inputValue()
+      .catch(() => null),
+    counter: (await page.locator("#get-my-reading p.tabular-nums").first().innerText().catch(() => "")).trim(),
     recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
@@ -264,6 +279,8 @@ async function drive(state, response, settled, { gift = false, press = false } =
     panel: (await page.locator("#get-my-reading").innerText().catch(() => "")).trim(),
     stripeFrames: await page.locator(STRIPE_FRAME).count(),
   };
+
+  if (question > 0 && press) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
 
   let landed = null;
   let record = null;
@@ -432,6 +449,44 @@ expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled,
 */
 expect("unreachable", "and no request is possible", dead.orderCalls, []);
 expect("unreachable", "so the browser stays where it is", dead.landed, PAGE);
+
+/**
+ * A record for a checkout that was cancelled at Stripe. Everything the page
+ * needs to put the question back is in it, and the page it belongs to is named.
+ */
+function cancelledCheckout(productKey) {
+  return {
+    payToken: PAY_TOKEN,
+    money: { currency: "EUR", amount: 7000 },
+    sessionId: SESSION_ID,
+    productKey,
+    question: QUESTION,
+  };
+}
+
+const back = await drive("cancelled — back from Stripe, having paid nothing", PRICED, priced, {
+  cancelled: cancelledCheckout("month-ahead"),
+});
+
+assertNoStripeOnThePage("cancelled", back);
+/*
+  The one thing a redirect makes easy to get wrong, and the worst thing this
+  flow can do: losing several sentences of typed question silently.
+*/
+expect("cancelled", "the question is back in the box", back.settled.restored, QUESTION);
+expect("cancelled", "and the counter agrees with it", back.settled.counter, `${QUESTION.length}/500`);
+expect("cancelled", "the panel is offering the reading again", back.settled.buyNowDisabled, "false");
+
+const elsewhere = await drive("cancelled elsewhere — a record from another reading", PRICED, priced, {
+  cancelled: cancelledCheckout("three-card"),
+});
+
+/*
+  A question belongs to the reading it was asked of. Restored onto a different
+  one it is a sentence appearing in a box the visitor did not type it in.
+*/
+expect("another reading", "nothing is restored", elsewhere.settled.restored, "");
+expect("another reading", "and the counter starts at nothing", elsewhere.settled.counter, "0/500");
 
 await browser.close();
 server.close();

@@ -13,10 +13,10 @@ import { cn } from "@/lib/cn";
  * exceeded, and in the counter, so the visitor sees it coming — and both take
  * the same number from `questionLimit`.
  *
- * Uncontrolled apart from the count. Nothing on this page reads the text yet
- * (there is no checkout endpoint — see `GetMyReading`), and holding a
- * controlled value here would re-render the whole order form on every
- * keystroke to do it.
+ * Uncontrolled apart from the count. Buy Now reads the question off the form
+ * at the moment it is pressed (see `BuyNow`), and holding a controlled value
+ * here would re-render the whole order form on every keystroke to save it the
+ * trouble.
  *
  * The label is `sr-only` by default because Figma names these boxes with a
  * placeholder and nothing else — and a placeholder is not a label: it leaves
@@ -30,6 +30,7 @@ export function CountedField({
   required = false,
   rows,
   autoFocusOnMount = false,
+  defaultValue,
   className,
 }: {
   name: string;
@@ -41,10 +42,22 @@ export function CountedField({
   rows?: number;
   /** Takes focus when it mounts, so a section that swaps under the visitor lands them in it. */
   autoFocusOnMount?: boolean;
+  /**
+   * What the field starts with. Uncontrolled still: this is the mounting
+   * value, applied once, and the visitor owns it from then on.
+   *
+   * It arrives after the first render — a question restored from a cancelled
+   * checkout is read out of storage, which the build has none of — so the
+   * caller remounts this field rather than changing the prop under it, which a
+   * `defaultValue` would ignore. See `ReadingOrder`.
+   */
+  defaultValue?: string;
   className?: string;
 }) {
   const id = useId();
-  const [used, setUsed] = useState(0);
+  // Started from the value rather than at zero, or a restored question would
+  // sit above a counter reading 0/500.
+  const [used, setUsed] = useState(defaultValue?.length ?? 0);
 
   /*
     `.field` owns the focus behaviour every input on the site shares; the
@@ -61,6 +74,7 @@ export function CountedField({
     name,
     placeholder,
     required,
+    defaultValue,
     maxLength: limit,
     /*
       Only ever true for a field that has just replaced another under the

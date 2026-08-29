@@ -131,6 +131,18 @@ export function rememberCheckout(record: CheckoutRecord): void {
 }
 
 /**
+ * The last string read, and what it parsed to.
+ *
+ * `recallCheckout` is a **snapshot** as well as a getter: the reading page hands
+ * it to `useSyncExternalStore`, which calls it on every render and compares the
+ * answers with `Object.is`. Parsing afresh each time would answer a new object
+ * each time and render forever. Keyed on the raw string, so a record written
+ * after one was read is reparsed and an unchanged one is not.
+ */
+let lastRaw: string | null = null;
+let lastRecord: CheckoutRecord | null = null;
+
+/**
  * The record, or `null` when there is none, when storage is unreadable, or when
  * what is there is not a record this build wrote.
  *
@@ -140,6 +152,10 @@ export function rememberCheckout(record: CheckoutRecord): void {
  * is the ordinary way this returns something unusable. A record with a client
  * secret and no session is exactly that: the wallet road's shape, from a tab
  * left open across the deploy that replaced it.
+ *
+ * The same object comes back for as long as the stored string is unchanged. See
+ * `lastRaw` above: identical storage parses to an identical record, whatever
+ * produced it.
  */
 export function recallCheckout(): CheckoutRecord | null {
   let raw: string | null;
@@ -150,6 +166,15 @@ export function recallCheckout(): CheckoutRecord | null {
     return null;
   }
 
+  if (raw === lastRaw) return lastRecord;
+
+  lastRaw = raw;
+  lastRecord = parseRecord(raw);
+
+  return lastRecord;
+}
+
+function parseRecord(raw: string | null): CheckoutRecord | null {
   if (!raw) return null;
 
   let parsed: unknown;

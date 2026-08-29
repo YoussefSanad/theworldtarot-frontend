@@ -3,7 +3,7 @@ import { PanelHeading } from "@/components/reading/PanelHeading";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
 
-const { question } = readingPageChrome;
+const { question: copy } = readingPageChrome;
 
 /**
  * The optional question that travels with the order.
@@ -22,11 +22,15 @@ const { question } = readingPageChrome;
  * box, and it carries its own border rather than an `OrnateFrame` so the gold
  * can answer focus — `.field` already owns that behaviour for the newsletter's
  * inputs.
+ *
+ * `question` is what a cancelled checkout puts back. It is the mounting value
+ * and nothing more — see `ReadingOrder` for where it comes from and why it can
+ * only come from the page it was typed on.
  */
-export function AskQuestion() {
+export function AskQuestion({ question }: { question?: string }) {
   return (
     <section className="flex flex-col items-center text-center">
-      <PanelHeading className="text-h2-md">{question.heading}</PanelHeading>
+      <PanelHeading className="text-h2-md">{copy.heading}</PanelHeading>
 
       {/*
         Capped so the client's break lands. Her two phrases come to about 632px
@@ -39,7 +43,7 @@ export function AskQuestion() {
         seven-pixel window; see `src/content/readings.ts`.
       */}
       <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
-        <Phrase parts={question.body} />
+        <Phrase parts={copy.body} />
       </p>
 
       {/*
@@ -51,10 +55,11 @@ export function AskQuestion() {
       <div className="mt-[clamp(0.75rem,1.56vw,1.875rem)] flex w-[88.35cqw] flex-col">
         <CountedField
           name="question"
-          label={question.label}
-          placeholder={question.placeholder}
+          label={copy.label}
+          placeholder={copy.placeholder}
           limit={questionLimit}
           rows={5}
+          defaultValue={question}
           className="min-h-[clamp(7rem,11.98vw,14.375rem)]"
         />
       </div>

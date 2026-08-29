@@ -191,3 +191,19 @@ test("nothing that is not a Session's address yields an id", () => {
   assert.equal(sessionIdFrom("https://example.test/somewhere-else"), null);
   assert.equal(sessionIdFrom("not a url at all"), null);
 });
+
+test("the same object comes back until the record changes, so it can be a snapshot", () => {
+  // `useSyncExternalStore` calls this on every render and compares with
+  // `Object.is`. A fresh parse each time would answer a new object each time
+  // and render the reading page forever.
+  rememberCheckout(record);
+
+  assert.equal(recallCheckout(), recallCheckout());
+
+  const first = recallCheckout();
+
+  rememberCheckout({ ...record, sessionId: "cs_test_d4E5f6" });
+
+  assert.notEqual(recallCheckout(), first);
+  assert.equal(recallCheckout()?.sessionId, "cs_test_d4E5f6");
+});
