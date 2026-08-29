@@ -35,11 +35,26 @@ language, and it is a fixed set the backend validates against.
 _Avoid_: product id, SKU, slug, product name
 
 **Payment method**:
-One way money arrives, as the backend's registry defines it. Apple Pay, Google
-Pay and card are all a single method, `stripe`, because they are one
-PaymentIntent and the choice between them is made inside our page. Gift code
-redemption will be a second.
-_Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe`, not a method)
+One way money arrives, as the backend's registry defines it. There are **two
+Stripe methods**, not one, because they are two integrations that no parameter
+reconciles: `stripe` creates a **hosted page** the browser is sent to, and
+`stripe_wallet` creates a PaymentIntent the **express checkout element**
+confirms against on our own page. The choice between them is made on the panel,
+by which control the customer presses, rather than inside one sheet.
+`stripe_wallet` is agreed with the backend and **not yet published** — ADR 0003
+in that repository is explicit that it becomes a published value the moment this
+frontend switches it on. Gift code redemption will be a third.
+_Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe_wallet`, not a method)
+
+**Hosted page**:
+The Stripe Checkout Session the card button sends the browser to, at
+`checkout.stripe.com`. Stripe collects the buyer's email and their payment
+details there, and returns them to `/checkout/complete/` carrying an opaque
+Session id. **It is styled from the Stripe Dashboard's branding screen and from
+nowhere else** — there is no CSS, and branding is configured separately in test
+and in live. A Session expires after 24 hours, so its URL is never stored: a
+customer coming back calls `/pay` again and is handed a fresh one.
+_Avoid_: checkout page, payment page, Stripe checkout (the act is a checkout; this is the page it happens on)
 
 **Money**:
 A currency and an integer count of its minor units, always together. Never a
@@ -55,7 +70,9 @@ _Avoid_: anonymous user, visitor (a visitor is anyone; a guest is a guest *buyer
 The Stripe element we mount in the payment panel, which draws the wallet
 buttons. It is ours: its theme, type, height and border radius are ours to set,
 within the range Stripe and the wallet vendor allow. It draws buttons; it
-authorizes nothing.
+authorizes nothing. **It is off the reading page during the interim** — the card
+road ships first and `stripe_wallet` has no code behind it yet — which is a fact
+about a sequence and not about this definition.
 _Avoid_: Apple Pay button, wallet button, payment element (that is a different Stripe element, for cards)
 
 **Wallet sheet**:
@@ -63,7 +80,8 @@ The dialog the operating system opens when a wallet button is pressed — Apple'
 or Google's, over our page, outside our document. It quotes Money and takes the
 customer's authorization. It is **not ours**: we cannot style it, and the only
 thing we control about it is the number it is given. A cancelled sheet has
-created nothing.
+created nothing. **Off the page during the same interim**, and for the same
+reason: it is opened by the element above, which is not being rendered yet.
 _Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout element (that is the button, this is the dialog)
 
 ### After the money
