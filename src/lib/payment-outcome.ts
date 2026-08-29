@@ -40,7 +40,33 @@ const OUTCOME: Record<string, PaymentOutcome> = {
     somebody who wants to know whether they have been charged.
   */
   canceled: "unpaid",
+  /*
+    Stripe's other three, spelled out rather than left to the default. They map
+    where the default already put them, so `outcomeFor` is unchanged by their
+    presence — what changes is that `isRecognisedStatus` can now answer for the
+    whole of the contract's list, and only a status Stripe adds *later* reads as
+    one this build has never heard of.
+  */
+  requires_action: "unfinished",
+  requires_confirmation: "unfinished",
+  requires_capture: "unfinished",
 };
+
+/**
+ * Whether this build has heard of a status at all.
+ *
+ * Added for the confirmation screen, which starts at `received` on the card
+ * road and asks the backend only to be corrected. **A status we do not
+ * recognise is not a correction** — the contract's own advice for one is "we do
+ * not know yet" — so it has to be told apart from the six below rather than
+ * arriving as `unfinished` and replacing a true screen with a hedge.
+ *
+ * It reads the same table `outcomeFor` does, which is what keeps this file the
+ * only place a Stripe status string is named.
+ */
+export function isRecognisedStatus(status: string): boolean {
+  return status in OUTCOME;
+}
 
 /**
  * Maps a status to an outcome, defaulting to `unfinished`.

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { outcomeFor } from "./payment-outcome.ts";
+import { isRecognisedStatus, outcomeFor } from "./payment-outcome.ts";
 
 test("succeeded is money received", () => {
   assert.equal(outcomeFor("succeeded"), "received");
@@ -27,4 +27,25 @@ for (const status of ["requires_action", "requires_confirmation", "requires_capt
 
 test("a status this build has never heard of renders rather than throwing", () => {
   assert.equal(outcomeFor("requires_something_stripe_adds_in_2027"), "unfinished");
+});
+
+test("Stripe's seven are all recognised, whatever they map onto", () => {
+  // The contract's list, in full. It is what the confirmation asks before it
+  // corrects a screen: an answer from this set is a fact about the payment,
+  // and anything else is "we do not know yet".
+  for (const status of [
+    "requires_payment_method",
+    "requires_confirmation",
+    "requires_action",
+    "processing",
+    "requires_capture",
+    "canceled",
+    "succeeded",
+  ]) {
+    assert.equal(isRecognisedStatus(status), true, status);
+  }
+});
+
+test("a status Stripe adds later is not recognised, so nothing is corrected on it", () => {
+  assert.equal(isRecognisedStatus("requires_something_stripe_adds_in_2027"), false);
 });
