@@ -78,11 +78,23 @@ export function getStripe(): Promise<Stripe | null> {
 export const walletAppearance: Appearance = {
   theme: "night",
   variables: {
-    // 25px, the resting radius of every bordered control on the site. The
-    // ghost buttons state it as a clamp against the container query; a wallet
-    // button cannot be told a clamp, so this is the clamp's own maximum — the
-    // value the panel holds at every width but the narrowest.
-    borderRadius: "25px",
+    /*
+      ~~25px, the resting radius of every bordered control on the site. The
+      ghost buttons state it as a clamp against the container query; a wallet
+      button cannot be told a clamp, so this is the clamp's own maximum — the
+      value the panel holds at every width but the narrowest.~~ **12px from 29
+      August 2026**, at the client's request.
+
+      Matching the frames' number is what made the two shapes disagree.
+      `.checkout-option` is `min-block-size: 2.6em` — 78px at the panel's type
+      — and 25px on that is a corner. Stripe caps `buttonHeight` at 55, and the
+      same 25px on a button that short is 91% of its half-height, which is a
+      pill sitting at the top of a column of rounded rectangles. The proportion
+      the frames actually hold is about a third of their height; this is
+      deliberately under it, because the ask was squarer than the column rather
+      than the same as it.
+    */
+    borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost
     colorText: "#fffcf6", // --color-snow
     colorPrimary: "#e4c46a", // --color-gold

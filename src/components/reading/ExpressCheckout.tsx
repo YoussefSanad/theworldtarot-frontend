@@ -97,10 +97,21 @@ const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
     Apple allows three themes and Google two, and none of the five is gold. The
     panel is visibly mixed and that is a constraint rather than an oversight:
     these buttons are drawn by their vendors, and the same rule that stops the
-    client's own artwork from shipping stops us styling them. What is chosen
-    here is the nearest each vendor has to a dark panel's outlined frames.
+    client's own artwork from shipping stops us styling them.
+
+    ~~What is chosen here is the nearest each vendor has to a dark panel's
+    outlined frames.~~ **Black on both from 29 August 2026**, at the client's
+    request. `white-outline` and `white` put two filled white slabs above a
+    column of unfilled gold frames, which made the wallet row the brightest
+    thing on a panel where nothing else is filled at all. `black` is the
+    darkest theme either vendor offers and the only one both of them have, so
+    it is also the only way the two buttons agree with each other.
+
+    The cost is real and accepted: a black button on `--color-night` has no
+    edge of its own, and the mark inside it is what separates it from the
+    panel. Neither vendor permits a border, so there is nothing to add here.
   */
-  buttonTheme: { applePay: "white-outline", googlePay: "white" },
+  buttonTheme: { applePay: "black", googlePay: "black" },
   // One reading bought outright, not a basket being checked out. Google spells
   // the same intent `buy`; its `checkout` has no hyphen where Apple's does.
   buttonType: { applePay: "buy", googlePay: "buy" },
