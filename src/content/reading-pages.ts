@@ -55,17 +55,17 @@ export const readingPageChrome = {
    */
   gift: {
     heading: "Recipient Details",
-    body: ["Tell us where to send it, and", "what you would like it to say."],
+    body: ["Who should receive your gift?", "Add their email address and a personal message below."],
     /** Two states of one control; the second is how a visitor gets back. */
     enter: "gift a reading",
     leave: "a reading for myself",
-    email: { label: "Recipient's email address", placeholder: "Their email address…" },
-    message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
+    email: { label: "Recipient's email address", placeholder: "Recipient’s email address…" },
+    message: { label: "Personal message (optional)", placeholder: "Write a personal message…" },
     /**
      * Said once, under the fields, because the flow is not the obvious one:
      * nothing is asked of the reading until the recipient redeems it.
      */
-    note: "They will choose their own question when they redeem it.",
+    note: "They can ask their own question when they redeem their reading.",
   },
 
   checkout: {
