@@ -117,8 +117,21 @@ await new Promise((resolve) => server.listen(PORT, resolve));
 const browser = await chromium.launch();
 const failures = [];
 
+/**
+ * Key order is not a fact about a record. `JSON.stringify` disagrees, so
+ * objects are serialised with their keys sorted — otherwise moving a field in
+ * a type fails a check that is measuring something else entirely.
+ */
+function stable(value) {
+  return JSON.stringify(value, (_, held) =>
+    held && typeof held === "object" && !Array.isArray(held)
+      ? Object.fromEntries(Object.entries(held).sort(([a], [b]) => a.localeCompare(b)))
+      : held,
+  );
+}
+
 function expect(state, what, actual, wanted) {
-  const ok = JSON.stringify(actual) === JSON.stringify(wanted);
+  const ok = stable(actual) === stable(wanted);
   if (!ok) failures.push(`${state}: ${what} was ${JSON.stringify(actual)}, wanted ${JSON.stringify(wanted)}`);
 
   console.log(`  ${ok ? "✓" : "✗"} ${what}: ${JSON.stringify(actual)}`);

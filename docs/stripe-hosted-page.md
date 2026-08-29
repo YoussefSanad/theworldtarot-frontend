@@ -1,3 +1,12 @@
+> **Stripe's own documentation, copied unedited on 29 August 2026.** It is kept
+> here because the **hosted page** is the road the card button takes and the
+> reasoning in `adr/0002-checkout-happens-on-stripes-page.md` leans on it.
+>
+> **The words in it are Stripe's, not ours.** It says "Checkout", "purchase" and
+> "payment page" where `CONTEXT.md` says **hosted page**, **order** and
+> **confirmation**, and that is the one thing to remember when reading it: the
+> vocabulary in this file does not govern anything in this repository.
+
 # How Checkout works
 
 Learn how to use Checkout to collect payments on your website.

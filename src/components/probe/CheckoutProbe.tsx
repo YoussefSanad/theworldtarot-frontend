@@ -121,7 +121,7 @@ export function CheckoutProbe() {
             this page or anywhere.
           */}
           <dt>and what it names</dt>
-          <dd className="break-all">{names(report.instruction)}</dd>
+          <dd className="break-all">{whatItNames(report.instruction)}</dd>
         </dl>
       ) : null}
 
@@ -135,7 +135,7 @@ export function CheckoutProbe() {
  * inferred from the shape, which is the rule the contract states and this page
  * exists to prove is being followed.
  */
-function names(instruction: PaymentInstruction): string {
+function whatItNames(instruction: PaymentInstruction): string {
   switch (instruction.type) {
     case "redirect":
       return instruction.redirectUrl;

@@ -37,9 +37,10 @@ const { checkout } = readingPageChrome;
  * ## The question is read off the form, not held in state
  *
  * A `<button>` inside a form knows its own form, and the question is a named
- * field in it, read at the moment of the press. That is what keeps `CountedField` uncontrolled: holding the text
- * in React would re-render the whole order form on every keystroke to do it,
- * which is the trade its own docblock refuses. In gift mode there is no
+ * field in it, read at the moment of the press. That is what keeps
+ * `CountedField` uncontrolled: holding the text in React would re-render the
+ * whole order form on every keystroke to do it, which is the trade its own
+ * docblock refuses. In gift mode there is no
  * `question` field in the DOM at all — the sections are mutually exclusive —
  * and this reads an empty string, which is the correct answer for a form that
  * has no question in it.
