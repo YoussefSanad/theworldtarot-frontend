@@ -121,9 +121,22 @@ told checkout is not open.~~ From 29 August 2026 it places the order, asks `/pay
 
 **The sentence that survives the change is the reason it was written**: resolving successfully
 would show a green tick for a payment that never happened, which is the one thing a payment
-surface may never do. So every failure arm of the handler still ends in `paymentFailed` and
+surface may never do. ~~So every failure arm of the handler still ends in `paymentFailed` and
 there is no arm that simply returns — a handler that returned quietly leaves the sheet spinning
-on a payment that is never going to happen.
+on a payment that is never going to happen.~~
+
+**Corrected 29 August 2026, against a real device.** Only the arms *before* the confirmation end
+in `paymentFailed`. `stripe.confirmPayment` **is** the payment being submitted, and Stripe
+resolves the wallet interface when it answers — so a `paymentFailed()` after that point is a
+second answer to a settled question, and Stripe throws for it by name: *"Unexpected call to
+paymentFailed(). Ensure you are either submitting a payment or calling paymentFailed() once per
+expressCheckout Element confirm event."* The throw was uncaught and the sheet showed its own
+generic failure instead of anything we wrote.
+
+The rule the old sentence was reaching for is still true, and is better stated as **no arm ends
+without telling the customer**. Before the confirmation that telling is the sheet, because the
+sheet is where they are. After it the sheet is gone and the telling is a line under the row,
+which is what `walletFailed` and `walletUnresolved` are for.
 
 ~~`emailRequired: true` is set even though nothing is done with the value.~~ **It is
 load-bearing, and it is the sentence the buyer's identity rests on.** A wallet PaymentIntent has

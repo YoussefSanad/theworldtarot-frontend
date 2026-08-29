@@ -113,6 +113,36 @@ export const readingPageChrome = {
      */
     buyFailed: "We could not start the checkout, and nothing has been charged. Please try again.",
     /**
+     * The wallet's "it did not happen" sentence, and **the one place two
+     * channels share a form of words on purpose**.
+     *
+     * It is the message `paymentFailed()` writes into the wallet sheet when the
+     * sheet is still open, and the message that lands under the row when the
+     * confirmation refused the payment after Stripe had already closed it. The
+     * customer's situation is identical in both — nothing was taken, and they
+     * may press again — so a second wording would be a difference that says
+     * nothing.
+     */
+    walletFailed: "We could not take this payment. Nothing has been charged.",
+    /**
+     * Under the wallet row, after `stripe.confirmPayment` has already been
+     * called and has come back wrong.
+     *
+     * **It does not say nothing was charged, and that is the whole reason it is
+     * a second sentence rather than `buyFailed`.** By the time this is reached
+     * a client secret exists and has been used; the request may have reached
+     * Stripe and been acted on before the answer came back. A false claim about
+     * a customer's money is worse than an unhelpful true one, so this points at
+     * the receipt, which is the record that counts.
+     *
+     * It is on the page rather than in the wallet sheet because Stripe has
+     * already closed the sheet by this point — see `ExpressCheckout.tsx`, where
+     * calling `paymentFailed()` after a confirmation is the defect this copy
+     * was added for on 29 August 2026.
+     */
+    walletUnresolved:
+      "We could not complete this payment. If you were charged, your receipt will arrive by email.",
+    /**
      * Read out where the price will be while the catalogue is being asked for
      * it. The resting state itself is a shape rather than words — the panel
      * holds its height and says nothing it might have to take back — so this is

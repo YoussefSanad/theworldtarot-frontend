@@ -14,6 +14,7 @@ import type {
 } from "@stripe/stripe-js";
 import { useMemo, useRef, useState } from "react";
 
+import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
 import { formatPrice, type Money } from "@/lib/price";
@@ -83,6 +84,8 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
  * registers **exact hostnames**, so `staging.theworldtarot.com` is its own
  * registration and not covered by the apex. See ADR 0001.
  */
+
+const { checkout } = readingPageChrome;
 
 const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
   paymentMethods: {
@@ -160,6 +163,25 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
   const [available, setAvailable] = useState(false);
 
   /*
+    A sentence under the row, and **the only channel left once the confirmation
+    has been attempted**. Added 29 August 2026.
+
+    Before the confirmation, the sheet is ours to fail: `event.paymentFailed()`
+    writes into the wallet interface the customer is looking at, which is the
+    right place for it because that is where they still are. After
+    `stripe.confirmPayment` has been called there is no sheet to write into —
+    Stripe has closed it — and the message has to land on the page instead. See
+    `handleConfirm`, where calling `paymentFailed()` at that point is the
+    `IntegrationError` this state was added to fix.
+
+    Held here rather than in `Wallet` because the row is a centred flex box
+    sized to the button: a paragraph inside it would sit *beside* the wallet
+    button rather than under it. This is a sibling of the row, so it takes its
+    own line in `GetMyReading`'s column and is gapped like every other child.
+  */
+  const [failure, setFailure] = useState<string | null>(null);
+
+  /*
     Memoised on the money, because `Elements` treats a new `options` object as
     something to apply — and `mode` and `currency` are exactly the two keys
     Stripe refuses to change on a mounted group. Rebuilding this every render
@@ -184,6 +206,43 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
       amount: money.amount,
       // Stripe wants the ISO code lowercased; the API answers "EUR".
       currency: money.currency.toLowerCase(),
+      /*
+        **What the backend's PaymentIntent declares, said again on this side,
+        because the two are one setting split across a network.**
+
+        Added 29 August 2026, and it is what #48 was actually broken on. Omit
+        this key and the group is on *automatic* payment methods — that is what
+        omitting it means, per the option's own type: "Instead of using
+        automatic payment methods, declare specific payment methods to enable."
+        `StripeWallet::begin` mints the intent with
+        `payment_method_types: ['card']`, and Stripe refuses the pair at the
+        moment of confirmation in its own words: _"Payment details were
+        collected through Stripe Elements using automatic payment methods and
+        cannot be confirmed through the API configured with
+        payment_method_types or allowed_payment_method_types."_ Every visible
+        thing worked — the button drew, the sheet opened, Face ID passed — and
+        the confirm returned 400.
+
+        **This side rather than the backend's, and Stripe's docs are what
+        decides which side owns the list:** "If you collect payments before
+        creating an intent, then list payment methods in the
+        `paymentMethodTypes` attribute on your Elements provider options. If
+        you create an intent before rendering Elements, then list payment
+        methods in the `payment_method_types` attribute on your Intent." This
+        group mounts with no client secret and mints the intent at
+        confirmation, so it is the first case. Moving the backend to
+        `automatic_payment_methods` would have agreed just as well and cost
+        `StripeWallet` the argument its docblock makes for naming card
+        explicitly — that nothing can be switched on from a Dashboard nobody is
+        watching, and that the only redirect in play stays 3D Secure.
+
+        **`card` alone still draws both buttons**: "Apple Pay and Google Pay are
+        automatically enabled when using `card` payment method type." It is also
+        a second lock on the four methods `ELEMENT_OPTIONS` sets to `never` —
+        PayPal, Klarna and Amazon Pay are payment method types of their own and
+        cannot come from a list that names only this one.
+      */
+      paymentMethodTypes: ["card"],
       /*
         No `paymentMethodCreation: 'manual'`. That option exists to create a
         PaymentMethod from the group and confirm it **server-side**, and ADR
@@ -210,69 +269,94 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
   }
 
   return (
-    /*
-      The row, not the button. Stripe's button is a fixed pixel height and the
-      column around it is `em` against the panel's container query, so the two
-      cannot track each other across the four widths this panel is laid out at.
-      Holding `2.6em` here — the ghost buttons' own `min-block-size` — keeps the
-      column's rhythm at every width and centres whatever the wallet draws inside
-      it. A `min` rather than a fixed height, so the rare device offering both
-      wallets grows the row to fit the second rather than clipping it.
+    <>
+      {/*
+        The row, not the button. Stripe's button is a fixed pixel height and the
+        column around it is `em` against the panel's container query, so the two
+        cannot track each other across the four widths this panel is laid out at.
+        Holding `2.6em` here — the ghost buttons' own `min-block-size` — keeps the
+        column's rhythm at every width and centres whatever the wallet draws inside
+        it. A `min` rather than a fixed height, so the rare device offering both
+        wallets grows the row to fit the second rather than clipping it.
 
-      `hidden` rather than a height animation once the answer is `false`: this
-      only ever moves the rows below it *up*, and only on a device with no
-      wallet, where there is no wallet button under the thumb to mis-tap.
-    */
-    <div
-      /*
-        `check:panel` selects the row by this rather than by its `aria-label`,
-        which ends in a wallet's name on the ghost button it replaces and would
-        match both. A collapsed row and an absent one are the two things that
-        check has to tell apart.
-      */
-      data-express-checkout=""
-      inert={!available}
-      className={cn(
-        "flex w-full items-center justify-center",
+        `hidden` rather than a height animation once the answer is `false`: this
+        only ever moves the rows below it *up*, and only on a device with no
+        wallet, where there is no wallet button under the thumb to mis-tap.
+      */}
+      <div
         /*
-          Not `hidden`, and not `sr-only`. The element has to stay rendered with
-          its real width or it may never initialise far enough to tell us
-          whether it has anything to show — and `display:none` is exactly the
-          zero-size box that would prevent the event this row is waiting for.
-          `h-0 overflow-hidden` keeps the width and clips the height, so there
-          is nothing to see and nothing to scroll past.
-
-          `inert` alongside it, so a wallet button that is not being offered is
-          not announced to a screen reader or reachable by a tab — the same
-          treatment the panel already gives its controls while the price loads.
-
-          **`-mb-[0.4em]` is what makes "no gap" literally true.** The column
-          this sits in is a flex `gap-[0.4em]`, and a gap applies to every
-          *rendered* child including a zero-height one — so a row that only
-          collapsed its height would still leave exactly the gap it promises
-          not to, on every device without a wallet. The negative margin cancels
-          the one gap this row is responsible for. It is the only number here
-          that belongs to `GetMyReading`'s column rather than to this file, and
-          it has to move if that `gap` does.
+          `check:panel` selects the row by this rather than by its `aria-label`,
+          which ends in a wallet's name on the ghost button it replaces and would
+          match both. A collapsed row and an absent one are the two things that
+          check has to tell apart.
         */
-        available ? "min-h-[2.6em]" : "-mb-[0.4em] h-0 overflow-hidden",
-      )}
-      /*
-        The amount is in the sheet, not on the page, so a screen reader that
-        never opens one still gets told what this button is for. It names no
-        single wallet, because which one is drawn here is Stripe's decision at
-        runtime and may be both.
-      */
-      aria-label={`Pay ${formatPrice(money)} with a saved wallet`}
-    >
-      <Elements stripe={getStripe()} options={elementsOptions}>
-        <Wallet
-          productKey={productKey}
-          money={money}
-          onAvailability={handleAvailability}
-        />
-      </Elements>
-    </div>
+        data-express-checkout=""
+        inert={!available}
+        className={cn(
+          "flex w-full items-center justify-center",
+          /*
+            Not `hidden`, and not `sr-only`. The element has to stay rendered with
+            its real width or it may never initialise far enough to tell us
+            whether it has anything to show — and `display:none` is exactly the
+            zero-size box that would prevent the event this row is waiting for.
+            `h-0 overflow-hidden` keeps the width and clips the height, so there
+            is nothing to see and nothing to scroll past.
+
+            `inert` alongside it, so a wallet button that is not being offered is
+            not announced to a screen reader or reachable by a tab — the same
+            treatment the panel already gives its controls while the price loads.
+
+            **`-mb-[0.4em]` is what makes "no gap" literally true.** The column
+            this sits in is a flex `gap-[0.4em]`, and a gap applies to every
+            *rendered* child including a zero-height one — so a row that only
+            collapsed its height would still leave exactly the gap it promises
+            not to, on every device without a wallet. The negative margin cancels
+            the one gap this row is responsible for. It is the only number here
+            that belongs to `GetMyReading`'s column rather than to this file, and
+            it has to move if that `gap` does.
+          */
+          available ? "min-h-[2.6em]" : "-mb-[0.4em] h-0 overflow-hidden",
+        )}
+        /*
+          The amount is in the sheet, not on the page, so a screen reader that
+          never opens one still gets told what this button is for. It names no
+          single wallet, because which one is drawn here is Stripe's decision at
+          runtime and may be both.
+        */
+        aria-label={`Pay ${formatPrice(money)} with a saved wallet`}
+      >
+        <Elements stripe={getStripe()} options={elementsOptions}>
+          <Wallet
+            productKey={productKey}
+            money={money}
+            onAvailability={handleAvailability}
+            onFailure={setFailure}
+          />
+        </Elements>
+      </div>
+
+      {/*
+        `role="alert"`, because it answers something the customer just did with
+        their face and they are looking at where the sheet was, not at the panel.
+
+        Rendered only after a confirmation that went wrong. Everything that
+        fails *before* the confirmation fails in the sheet instead, where the
+        customer still is, and never reaches this line.
+
+        **Cleared by the next `onConfirm`, and that matters more than it looks.**
+        A second press reopens the sheet on a payment that has not been refused
+        yet; leaving the first refusal under it would be a live sentence about a
+        payment now in flight, which is the one thing this row must never say.
+      */}
+      {failure ? (
+        <p
+          role="alert"
+          className="max-w-[70cqw] text-fine leading-[1.2] font-light text-champagne/73"
+        >
+          {failure}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -289,10 +373,16 @@ function Wallet({
   productKey,
   money,
   onAvailability,
+  onFailure,
 }: {
   productKey: string;
   money: Money;
   onAvailability: (event: StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent) => void;
+  /**
+   * A sentence for the page, for the arms that no longer have a sheet, and
+   * `null` to take it back down when a fresh attempt starts.
+   */
+  onFailure: (message: string | null) => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -311,35 +401,70 @@ function Wallet({
       2026 at review, and the line between them is what is actually known about
       the customer's money rather than which call went wrong.
 
-      The customer is looking at a sheet they have already authorised with Face
-      ID. Before there is a client secret, nothing can have been taken and the
-      sentence says so. Once the confirmation has been attempted, a failure of
-      the *call* is not a failure of the *payment*, and the sentence stops
-      claiming one. Which of the six things went wrong is a matter for the
-      console, and is logged there.
+      ~~There is no arm of this function that ends without either a confirmed
+      payment or one of those two calls.~~ **The line is now also about *where*
+      the sentence can go**, corrected 29 August 2026 against a real device.
+      `stripe.confirmPayment` is itself the payment being submitted, and Stripe
+      resolves the wallet interface when it returns — so `paymentFailed()` after
+      that point is a second answer to a question already answered, and Stripe
+      throws for it by name: _"Unexpected call to paymentFailed(). Ensure you
+      are either submitting a payment or calling paymentFailed() once per
+      expressCheckout Element confirm event."_ The throw was uncaught, and the
+      sheet showed its own generic failure rather than anything written here.
 
-      **There is no arm of this function that ends without either a confirmed
-      payment or one of those two calls.** A handler that returned quietly would
-      leave the sheet spinning on a payment that is never going to happen.
+      So the two arms are no longer two sentences down one channel. They are two
+      channels: **before** the confirmation the customer is looking at a sheet
+      that is still ours to fail, and **after** it the sheet is gone and the
+      only place left is the panel underneath.
+
+      Which of the six things went wrong is a matter for the console either way,
+      and is logged there.
     */
-    const tell = (why: string, message: string, cause?: unknown) => {
+    const log = (why: string, cause?: unknown) =>
       console.error(`The wallet payment could not be completed: ${why}`, cause);
 
-      event.paymentFailed({ reason: "fail", message });
+    /*
+      Whatever the last attempt left under the row comes down before this one
+      starts. The customer is looking at a reopened sheet, and a refusal still
+      standing beneath it describes a payment that is no longer the one being
+      made.
+    */
+    onFailure(null);
+
+    /**
+     * It did not happen, we know that, and the sheet is still open to say so.
+     *
+     * Every arm **before** the confirmation ends here: the sheet was refused,
+     * the order was, or `/pay` was — and in all of them there is no secret yet,
+     * so there is nothing that could have taken money. This is the only helper
+     * that may call `paymentFailed`, and it is the reason the call is safe: no
+     * payment has been submitted at any point that reaches it.
+     */
+    const fail = (why: string, cause?: unknown) => {
+      log(why, cause);
+
+      event.paymentFailed({ reason: "fail", message: checkout.walletFailed });
     };
 
     /**
-     * It did not happen, and we know that. Every arm before the confirmation
-     * ends here: the sheet was refused, the order was, or `/pay` was — and in
-     * all of them there is no secret yet, so there is nothing that could have
-     * taken money.
+     * Stripe answered the confirmation, and its answer was no.
+     *
+     * **The same fact as `fail` and a different channel, which is the whole
+     * reason it is a third helper.** A resolved `{ error }` is Stripe saying
+     * the payment did not go through — a declined wallet card, an abandoned 3D
+     * Secure step, an intent it refused — so "nothing has been charged" is as
+     * true here as it is above. What is not true here is that there is still a
+     * sheet: the confirmation is the submitted payment, and it closed.
      */
-    const fail = (why: string, cause?: unknown) =>
-      tell(why, "We could not take this payment. Nothing has been charged.", cause);
+    const refused = (why: string, cause?: unknown) => {
+      log(why, cause);
+
+      onFailure(checkout.walletFailed);
+    };
 
     /**
-     * The confirmation itself went wrong, and **what happened to the money is
-     * not known here**.
+     * The confirmation itself went wrong, **what happened to the money is not
+     * known here**, and there is no sheet left to say either thing in.
      *
      * A rejected `confirmPayment` is not a refused payment. The request may
      * have reached Stripe and been acted on before the connection dropped, so
@@ -347,13 +472,15 @@ function Wallet({
      * false claim about a customer's money is worse than an unhelpful true one.
      * It points at the receipt, which is the record that counts and the one
      * channel that knows.
+     *
+     * **No `paymentFailed` here.** Stripe closed the interface when the
+     * confirmation came back; this hands the sentence to the page instead.
      */
-    const unresolved = (why: string, cause?: unknown) =>
-      tell(
-        why,
-        "We could not complete this payment. If you were charged, your receipt will arrive by email.",
-        cause,
-      );
+    const unresolved = (why: string, cause?: unknown) => {
+      log(why, cause);
+
+      onFailure(checkout.walletUnresolved);
+    };
 
     if (!stripe || !elements) return fail("Stripe.js is not loaded.");
 
@@ -413,11 +540,17 @@ function Wallet({
         browser has already left for `return_url`. A declined wallet card, an
         abandoned 3D Secure step, an intent Stripe refused: all of them arrive
         here, and all of them are a payment that did not happen.
+
+        ~~`fail`~~ **`refused`** from 29 August 2026. The fact is `fail`'s and
+        the channel is not: this is the line that threw `IntegrationError:
+        Unexpected call to paymentFailed()` on a real device, because by the
+        time a confirmation has answered, the payment has been submitted and
+        the interface is Stripe's to close.
       */
-      if (error) return fail(error.message ?? "Stripe refused the confirmation.", error);
+      if (error) return refused(error.message ?? "Stripe refused the confirmation.", error);
     } catch (cause: unknown) {
       /*
-        **Not `fail`.** A resolved `{ error }` above is Stripe telling us the
+        **Not `refused`.** A resolved `{ error }` above is Stripe telling us the
         payment did not go through, which is a fact. A *rejection* here is the
         call itself failing — and it can fail after the request reached Stripe,
         which means the charge may exist. There is a secret by this point and it
