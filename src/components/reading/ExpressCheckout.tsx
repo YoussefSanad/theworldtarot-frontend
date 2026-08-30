@@ -17,8 +17,8 @@ import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from "reac
 import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
+import { orderFormAccepts, orderNoteIn } from "@/lib/order-note";
 import { formatPrice, type Money } from "@/lib/price";
-import { questionIn } from "@/lib/question";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
 /**
@@ -46,6 +46,20 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
  * a type error rather than a rule somebody remembers. **The number in the sheet
  * is the number the customer believes they agreed to**; it is the whole reason
  * #34 gated this ticket.
+ *
+ * ## It is on the panel in gift mode too, from 30 August 2026
+ *
+ * The row used to be removed by `!gifting`, on the grounds that a wallet takes
+ * the money the instant a face is recognised and `POST /orders` had nowhere to
+ * put a recipient. The client asked for it back: the button vanishing under a
+ * thumb was the more visible fault, and the money is wanted now rather than at
+ * the end of the gifting milestone.
+ *
+ * Why that is safe to charge on is argued at the gate it replaced, in
+ * `GetMyReading`. This file changed by almost nothing: the row reads whatever
+ * section the form has mounted and never knew which one that was, so what is
+ * new here is one guard — a gift with no recipient on it must not reach a
+ * PaymentIntent, and `onConfirm` is the last place it can be stopped.
  *
  * ## It charges, and it is the road that does it in the page
  *
@@ -556,10 +570,13 @@ function Wallet({
   const options = useMemo(() => ({ ...ELEMENT_OPTIONS, buttonHeight }), [buttonHeight]);
 
   /*
-    The question is read out of the DOM at the moment of confirmation, off the
-    order form this row sits inside — the same field, read the same way, as the
-    card button reads it. There is no node of ours inside the element to hang
-    this on, so it hangs on a marker beside it.
+    What the customer typed is read out of the DOM at the moment of
+    confirmation, off the order form this row sits inside — the same fields,
+    read the same way, as the card button reads them. In gift mode that is the
+    recipient and the message rather than a question, and this file does not
+    know the difference: `orderNoteIn` reads the form and decides. There is no
+    node of ours inside the element to hang this on, so it hangs on a marker
+    beside it.
   */
   const anchor = useRef<HTMLSpanElement>(null);
 
@@ -608,10 +625,10 @@ function Wallet({
      * that may call `paymentFailed`, and it is the reason the call is safe: no
      * payment has been submitted at any point that reaches it.
      */
-    const fail = (why: string, cause?: unknown) => {
+    const fail = (why: string, cause?: unknown, message: string = checkout.walletFailed) => {
       log(why, cause);
 
-      event.paymentFailed({ reason: "fail", message: checkout.walletFailed });
+      event.paymentFailed({ reason: "fail", message });
     };
 
     /**
@@ -652,6 +669,22 @@ function Wallet({
 
     if (!stripe || !elements) return fail("Stripe.js is not loaded.");
 
+    /*
+      **Before the group is submitted and before an order exists.** Nothing
+      submits this form, so the `required` on the recipient's address is
+      enforced by nobody unless something asks — and without asking, a customer
+      reaches this line having authorised with their face for a gift addressed
+      to no one. `giftNote` would record the absence rather than prevent it.
+
+      Safe to `paymentFailed` here for the reason every arm above the
+      confirmation is: there is no secret yet, so nothing can have been charged.
+      `orderFormAccepts` marks and focuses the field underneath at the same
+      time, for when Stripe closes the sheet over it.
+    */
+    if (!orderFormAccepts(anchor.current)) {
+      return fail("The gift has no recipient on it.", undefined, checkout.walletNeedsRecipient);
+    }
+
     let clientSecret: string;
 
     /*
@@ -671,10 +704,13 @@ function Wallet({
 
       if (invalid) return fail(invalid.message ?? "The wallet sheet was refused.", invalid);
 
+      const note = orderNoteIn(anchor.current);
+
       clientSecret = await startWalletPayment({
         productKey,
         money,
-        question: questionIn(anchor.current),
+        question: note.text,
+        gift: note.gift,
       });
     } catch (cause: unknown) {
       /*

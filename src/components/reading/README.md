@@ -339,21 +339,41 @@ screen. Rather than move her button:
   mode is never somewhere a visitor is stuck.
 
 The recipient's side of the flow — redeem, then ask — is not built. `redeem
-gift code` is a dud, and **Buy Now is inert while gift mode is on**: `POST
-/orders` has no field for a recipient, so a live button here would charge
-somebody for a gift delivered to themselves. Gifting is the code model and a
-separate milestone.
+gift code` is a dud. **Both payment controls take money in gift mode**, from 30
+August 2026 and at the client's request.
 
-**The wallet row goes rather than going inert, and one sentence answers for
-both.** A wallet takes the money the instant a face is recognised, with no
-second press in between, so there is no inert state worth leaving it in — it is
-unmounted instead. That made it the one control here that became unavailable
-without saying anything, and only on the devices that had it to lose, which is
-why it read as a bug rather than as "not yet". `checkout.giftingComing` has
-carried both controls since 30 August 2026 — "no way to pay for one", naming
-neither, because on a device with no wallet the row was already collapsed and
-nothing visibly went. There is no second note where the row was: two sentences
-saying one thing is not what this panel does.
+They did not until then, and the reason they did not was sound as far as it
+went: `POST /orders` has no field for a recipient, so an order placed in gift
+mode arrived carrying no evidence that it was one. Why that stopped being a
+reason to refuse the money is argued in `GetMyReading`, beside the gate it
+removed.
+
+So the recipient rides to the backend on the order line instead. `orderNoteIn`
+reads whichever of the two sections is mounted and composes the gift's two
+fields into the line's `question`, which is the field the admin orders table
+already prints; see `lib/order-note.ts`. Two things fall out of that and are
+worth knowing before reading either file:
+
+- **A gift order is never indistinguishable from a self-purchase**, however
+  little the buyer typed — which is also why `orderFormAccepts` exists. Nothing
+  submits this form, so the `required` on the recipient's address was decoration
+  until the panel could take money; both controls now ask for it before they
+  place anything.
+- **The record is flagged and the restore refuses it.** A cancelled gift
+  checkout must not refill the question textarea with a note this code composed,
+  so `CheckoutRecord.gift` marks it and `questionFor` turns it down.
+
+**What the wallet row taught, and why it came back first.** The row was
+unmounted rather than made inert, because a wallet takes the money the instant a
+face is recognised and there is no inert state worth leaving that in. That made
+it the one control here that became unavailable without saying anything, and
+only on the devices that had it to lose — which is why it read as a bug rather
+than as "not yet", and why it is what the client noticed. `checkout.giftingComing`
+still stands under Buy Now and still names neither control and no payment
+method, but it no longer refuses the payment: what is unfinished is the delivery
+behind it, and the note says a person will arrange that by email. There is no
+second note anywhere: two sentences saying one thing is not what this panel
+does.
 
 ### One of the three controls is a dud, on purpose
 
@@ -362,9 +382,9 @@ nothing behind it. **Inert rather than submitting**: the form has no action, so
 a submit would reload the page with the visitor's question in the query string,
 which is a worse nothing than nothing. It is a real button rather than a
 disabled one because the client rejected a disabled control elsewhere on the
-site — it reads as a bug rather than as "not yet", and that is why the two
-states in which Buy Now cannot be pressed are `aria-disabled` rather than
-`disabled` too.
+site — it reads as a bug rather than as "not yet", and that is why the one
+state in which Buy Now cannot be pressed — no live price — is `aria-disabled`
+rather than `disabled` too.
 
 The form itself stays, with its fields named. That is what makes wiring the
 checkout a matter of adding an endpoint rather than restructuring the panel.
@@ -389,9 +409,10 @@ so it cannot be exceeded, and `0/500` under it, so the visitor sees it coming.
 A `maxlength` alone stops somebody typing and never says why, which reads as
 the keyboard breaking. Both numbers come from `questionLimit`.
 
-It is uncontrolled apart from the count — nothing reads the text yet, and
-holding a controlled value in `ReadingOrder` would re-render the whole panel on
-every keystroke to do it.
+It is uncontrolled apart from the count. What is typed is read off the form at
+the moment of a press, by `orderNoteIn`, rather than held in React — a
+controlled value in `ReadingOrder` would re-render the whole panel on every
+keystroke to do it.
 
 ## The rest of the furniture
 

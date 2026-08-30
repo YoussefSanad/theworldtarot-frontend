@@ -82,9 +82,17 @@ export const readingPageChrome = {
     message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
     /**
      * Said once, under the fields, because the flow is not the obvious one:
-     * nothing is asked of the reading until the recipient redeems it.
+     * nothing is asked of the reading until it reaches the person it is for.
+     *
+     * ~~"They will choose their own question when they redeem it."~~
+     * **Reworded on 30 August 2026**, in the change that made this panel take
+     * money in gift mode. "Redeem" describes the code model, which is a
+     * milestone nobody has started — and a mechanic named to a buyer who is
+     * about to pay is a promise about how their gift arrives. What is true is
+     * the part that survives either model: the recipient is asked, not the
+     * buyer, which is why there is no question field on this section.
      */
-    note: "They will choose their own question when they redeem it.",
+    note: "They will choose their own question when the reading reaches them.",
   },
 
   checkout: {
@@ -146,37 +154,41 @@ export const readingPageChrome = {
      */
     buying: "Taking you to checkout…",
     /**
-     * Under the button in gift mode, where the button is inert — and from 30
-     * August 2026 **the panel's one answer for the wallet row as well**, which
-     * is absent in gift mode rather than inert.
+     * Under the button in gift mode, where **both controls now take money** and
+     * what is not yet built is the delivery behind them.
      *
      * ~~"Gifting is not open yet. A reading for yourself can be bought now."~~
-     * **The clause about paying was added on 30 August 2026**, so that one
-     * sentence answers for both controls rather than for the button alone.
-     * Unlike the copy above it this wording is ours and not the client's — gift
-     * mode has no frame in her design — and it goes to her with the rest.
+     * ~~"Gifting is not open yet, so there is no way to pay for one. A reading
+     * for yourself can be bought now."~~ **Rewritten on 30 August 2026, later
+     * the same day**, when the client asked for the wallet row to stay on the
+     * panel through the gift toggle and Buy Now was un-gated beside it. Both
+     * superseded strings say gifting cannot be paid for, and the moment either
+     * control charged a card that stopped being true — a note contradicting the
+     * button above it is worse than no note at all. Unlike the copy around it
+     * this wording is ours and not the client's — gift mode has no frame in her
+     * design — and it goes to her with the rest.
      *
-     * `POST /orders` has no field for a recipient email or a gift message, so a
-     * live button here would charge somebody for a gift delivered to
-     * themselves. Gifting is the code model and a separate milestone: the buyer
-     * names a recipient, the recipient redeems a code and writes their own
-     * question.
+     * **What it now has to say is that a person is in the loop.** `POST
+     * /orders` still has no field for a recipient, so the two gift fields ride
+     * to the backend on the order line as prose and a human reads them there;
+     * see `lib/order-note.ts`. That is a real difference from buying for
+     * yourself and the buyer is owed it before they pay, because the reading
+     * does not simply arrive at the address they typed.
      *
-     * **"No way to pay for one" is what makes one note do for two controls.**
-     * Not proximity: the button stands between this sentence and the space the
-     * wallet row left, so the note is under the one control that remains rather
-     * than under the gap. What lets it answer for the gap anyway is that both
-     * controls are unavailable for the same reason — so the sentence gives the
-     * reason and names neither control.
+     * **It promises email rather than a timeframe.** Fulfilment is manual on
+     * every order here, gift or not, so no sentence on this panel can honestly
+     * quote a delay — and one that did would be a promise the panel has no way
+     * of keeping.
      *
-     * **It names no method either, and that is the constraint that wrote it.**
-     * This note is shown in gift mode on every device, and on one with no
-     * wallet the row was already collapsed to nothing — so copy naming Apple
-     * Pay or Google Pay would explain the loss of a button that customer never
-     * had. "No way to pay" is true on both.
+     * **It names no payment method, and that is the constraint that wrote it.**
+     * This note is shown in gift mode on every device, including one with no
+     * wallet where the row is collapsed to nothing — so copy naming Apple Pay
+     * or Google Pay would describe a button that customer has never seen.
+     * Naming neither is true on both, and it is what lets one note stand for
+     * whichever controls are drawn.
      */
     giftingComing:
-      "Gifting is not open yet, so there is no way to pay for one. A reading for yourself can be bought now.",
+      "Gifting is still being set up, so we will arrange delivery with you by email once you have paid.",
     /**
      * A refused order, a refused payment, or an instruction this build cannot
      * act on. **It says nothing has been charged**, because nothing has: an
@@ -196,6 +208,22 @@ export const readingPageChrome = {
      * nothing.
      */
     walletFailed: "We could not take this payment. Nothing has been charged.",
+    /**
+     * Written into the wallet sheet when the gift has no recipient on it.
+     *
+     * **A separate sentence from `walletFailed`, because the customer can act
+     * on this one.** "We could not take this payment" is true of both, and on
+     * its own it would send somebody to try a second time at a form that will
+     * refuse them identically. This names the field.
+     *
+     * It reaches the sheet rather than the page because the sheet is where the
+     * customer is: the check runs before `elements.submit()`, so no payment has
+     * been submitted and `paymentFailed()` is still ours to call. The field is
+     * marked and focused underneath by `orderFormAccepts`, for when Stripe
+     * closes the sheet over it.
+     */
+    walletNeedsRecipient:
+      "Please add the recipient's email address before paying for a gift. Nothing has been charged.",
     /**
      * Under the wallet row, after `stripe.confirmPayment` has already been
      * called and has come back wrong.

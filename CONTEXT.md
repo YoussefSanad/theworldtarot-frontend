@@ -34,6 +34,17 @@ A product's permanent, untranslated identifier — `month-ahead`, `one-card`,
 language, and it is a fixed set the backend validates against.
 _Avoid_: product id, SKU, slug, product name
 
+**Order note**:
+The one free-text string an order line carries, as `lines[].question` on the
+wire. It is the customer's **question** on a self-purchase and a composed
+**gift note** in gift mode — "Gift — send this reading to …", built from the
+recipient's address and the buyer's message, because `POST /orders` has no
+field for either. The wire name is the backend's and does not describe the
+contents; `lib/order-note.ts` is where the two are told apart, by which section
+the form has mounted. A stopgap: the gifting milestone gives the recipient a
+column of their own.
+_Avoid_: "the question" for the gift case (it is not one), comment, note field, message
+
 **Payment method**:
 One way money arrives, as the backend's registry defines it. There are **two
 Stripe methods**, not one, because they are two integrations that no parameter

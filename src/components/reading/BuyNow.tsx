@@ -7,8 +7,8 @@ import { Mark } from "@/components/ui/Mark";
 import { readingPageChrome } from "@/content/reading-pages";
 import { checkout as marks } from "@/lib/assets";
 import { startCheckout } from "@/lib/buy";
+import { orderFormAccepts, orderNoteIn } from "@/lib/order-note";
 import { type Money } from "@/lib/price";
-import { questionIn } from "@/lib/question";
 
 const { checkout } = readingPageChrome;
 
@@ -54,19 +54,28 @@ const { checkout } = readingPageChrome;
  * the catalogue prices at EUR 7000, and an order placed from it would be an
  * order at an amount no server ever agreed to.
  *
- * ## It is inert in gift mode
+ * ## It takes money in gift mode too, from 30 August 2026
  *
- * `POST /orders` has no field for a recipient email or a gift message. Today
+ * ~~`POST /orders` has no field for a recipient email or a gift message. Today
  * every control in gift mode is a dud, which is harmless; one live button makes
  * it a bug that charges somebody for a gift delivered to themselves. So the
- * button stands, states that gifting is coming, and places nothing.
+ * button stands, states that gifting is coming, and places nothing.~~
  *
- * ## The question is read off the form, not held in state
+ * The endpoint still has no such field and the backend has grown nothing. What
+ * changed is where the recipient goes: `orderNoteIn` composes the two gift
+ * fields into the line's `question`. Why that is enough to charge on is argued
+ * at the gate it replaced, in `GetMyReading`.
  *
- * A `<button>` inside a form knows its own form, and the question is a named
- * field in it, read at the moment of the press. See `questionIn` in
- * `lib/question.ts`, which the wallet button reads through as well — the
- * question has to reach the order line identically on both roads.
+ * `gifting` stays a prop and is now only about the note underneath: the button
+ * is buyable in both modes, and the sentence under it is what differs.
+ *
+ * ## What was typed is read off the form, not held in state
+ *
+ * A `<button>` inside a form knows its own form, and what the customer typed is
+ * a named field in it — `question`, or the recipient's two in gift mode — read
+ * at the moment of the press. See `orderNoteIn` in `lib/order-note.ts`, which
+ * the wallet button reads through as well: it has to reach the order line
+ * identically on both roads, and by the same rules.
  */
 export function BuyNow({
   productKey,
@@ -82,22 +91,33 @@ export function BuyNow({
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const buyable = money !== null && !gifting;
+  const buyable = money !== null;
 
-  async function buy(question: string) {
+  async function buy(control: HTMLButtonElement) {
     /*
       Not `disabled`. The client rejected a disabled control elsewhere on the
       site — it reads as a bug rather than as "not yet" — so the frame stands in
       every state and the refusal is here, where it can also refuse a second
       press of a button whose first press is still in flight.
     */
-    if (money === null || gifting || pending) return;
+    if (money === null || pending) return;
+
+    /*
+      **Before an order exists**, which is the only place it is worth being.
+      Nothing submits this form, so the `required` on the recipient's address is
+      the browser's to enforce and nobody's to trigger; this is what triggers
+      it. Silent on a form with nothing wrong with it, so a self-purchase — where
+      the question is not required and never was — is untouched.
+    */
+    if (!orderFormAccepts(control)) return;
+
+    const note = orderNoteIn(control);
 
     setPending(true);
     setFailed(false);
 
     try {
-      const url = await startCheckout({ productKey, money, question });
+      const url = await startCheckout({ productKey, money, question: note.text, gift: note.gift });
 
       /*
         The pending state is deliberately not cleared. The browser is leaving,
@@ -131,19 +151,22 @@ export function BuyNow({
         size="fluid"
         className="checkout-option"
         /*
-          Announced as unavailable rather than rendered as disabled, so the two
-          inert cases — no live price, and gift mode — are as legible to a
-          screen reader as the line under the button makes them on screen.
+          Announced as unavailable rather than rendered as disabled, so the
+          one inert case left — no live price — is as legible to a screen reader
+          as the panel makes it on screen. ~~The two inert cases: no live price,
+          and gift mode.~~ Gift mode takes money from 30 August 2026, and the
+          note under the button no longer answers for this attribute.
         */
         aria-disabled={!buyable}
         aria-busy={pending}
         /*
-          The question is read here, synchronously, off the button's own form —
-          `currentTarget` is only the button for as long as the handler is
-          running, and everything past the first `await` in `buy` happens after
-          React has emptied it.
+          The **node** is what is handed over, read here because `currentTarget`
+          is only the button for as long as the handler is running. What is done
+          with it — the validity check and the read of the form around it — both
+          happen before the first `await` in `buy`, and a direct reference to the
+          node outlives the event React empties.
         */
-        onClick={(event) => void buy(questionIn(event.currentTarget))}
+        onClick={(event) => void buy(event.currentTarget)}
       >
         {pending ? (
           checkout.buying
