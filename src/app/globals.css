@@ -1911,10 +1911,25 @@
     they are shares of.
 
     The height is `em` off the label, as every other button on the site is, so
-    the row keeps its proportion as the type scales rather than pinning to
-    78px. Unlike `.readings-cta` these never hug their labels — each fills the
-    width it is given, which is also the only thing that keeps an Apple Pay
-    mark and a five-word label the same size as each other.
+    the row keeps its proportion as the type scales rather than pinning to 78px
+    — **but between two pixel bounds from 30 August 2026, and the bounds are
+    Stripe's rather than ours.**
+
+    The wallet button now stands at this same height; see `useFrameHeight` in
+    `ExpressCheckout`. `buttonHeight` is a number of pixels and Stripe will not
+    take one outside 40–55, so the `em` is held inside that range: below about
+    985px of viewport it would fall under Stripe's floor and above about 1354px
+    it would climb past Stripe's ceiling, and at either end the wallet could not
+    follow. Clamping is what lets all five frames be one height at every width
+    instead of four agreeing and the vendor's disagreeing.
+
+    **The cost is at the wide end and it is the client's drawing.** Figma draws
+    78px at 30px type; above ~1354px this holds 55px, so the frames stop growing
+    with the type there. Taken deliberately, as the price of the agreement.
+
+    Unlike `.readings-cta` these never hug their labels — each fills the width
+    it is given, which is also the only thing that keeps an Apple Pay mark and a
+    five-word label the same size as each other.
   */
   .checkout-option {
     background-color: transparent;
@@ -1951,7 +1966,13 @@
       orders `utilities` after `components`.
     */
     inline-size: 100%;
-    min-block-size: 2.6em; /* 78px at 30px */
+    /*
+      `2.6em` — the 78px Figma draws at 30px type — held inside the only range
+      Stripe's `buttonHeight` accepts, so the wallet button can stand at the
+      same height as the frames beside it. The row in `ExpressCheckout` states
+      the same clamp and has to keep stating it.
+    */
+    min-block-size: clamp(40px, 2.6em, 55px);
     /*
       ~~`0.3em 0.9em`.~~ **Both loosened on 29 August 2026**, and neither number
       is decoration: they are the two things that decide whether this column is
@@ -1977,11 +1998,43 @@
       The block padding answers the narrow end, where no inline padding saves a
       label: the type clamps at 15px while the panel keeps narrowing, so a long
       label needs more `em` than its box has. Two lines is 2em, and at `0.15em`
-      a wrapped label still stands inside the `2.6em` the frames are drawn at —
-      so the box holds its height instead of growing. It costs nothing where a
-      label fits, since `min-block-size` is what decides those.
+      a wrapped label still stands inside the 40px the frames hold there — so
+      the box keeps its height instead of growing.
+
+      **At the wide end it is the cap that wants watching.** Above ~1354px the
+      minimum is 55px, while two lines of 30px type plus this padding is 69px —
+      so a label that wrapped *there* would grow its frame, which the old 78px
+      minimum would have absorbed. Nothing on the panel comes close: the longest
+      is "Redeem A Gift Code", in the narrower of the two frame widths, and it
+      stands on one line with room to spare. Measure rather than assume the next
+      time a label here gets longer.
     */
     padding: 0.15em 0.75em;
+  }
+
+  /*
+    **Nothing inside a frame outgrows the frame**, and from 30 August 2026 that
+    needs saying because the two are sized against different things: `Mark` is a
+    share of the panel in `cqw` and the box around it is now bounded in pixels
+    by Stripe's range. Between about 1024px and 1500px of viewport the two scale
+    together and this changes nothing. Outside that band they come apart —
+    above it the type and the marks go on growing while the box stops at 55px,
+    below it the type floors at 15px while the panel keeps narrowing — and it
+    was the marks, not the labels, that pushed the two gift frames to 65px and
+    66.9px beside a 55px Buy Now at 1920, and to 63.9px and 66px beside a 45.8px
+    one at 900.
+
+    `0.667` is the proportion Figma draws: a 52px mark in a 78px frame. So this
+    is the drawing's own ratio, applied as a ceiling rather than as a size —
+    which is why the card mark, drawn shorter, is never reached by it and the
+    two square ones are, exactly where they would otherwise burst the box.
+
+    The same rule closes the 600px-to-1023px unevenness that `085774b` left open
+    as a decision rather than a tidy-up. This is that decision: **a mark is a
+    share of the panel until that would make it a share too big for the frame.**
+  */
+  .checkout-option img {
+    max-block-size: calc(clamp(40px, 2.6em, 55px) * 0.667);
   }
 
   /*

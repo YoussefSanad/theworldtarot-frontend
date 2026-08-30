@@ -65,7 +65,7 @@ that stops the client's own Apple Pay artwork from shipping stops us restyling S
 |---|---|---|
 | theme | element options | `white-outline` — the only one of Apple's three that reads as belonging beside a gold-outlined frame on a dark panel |
 | type | element options | `buy` — one reading bought outright, not a basket checked out |
-| height | element options | `55`, Stripe's ceiling, and still short of the frames' 78px |
+| height | element options | measured off a frame and clamped into Stripe's 40-55 range — see `useFrameHeight`. ~~`55`, Stripe's ceiling, and still short of the frames' 78px.~~ The frames were clamped into the same range on 30 August 2026, so the two now agree at every width |
 | border radius | `appearance.variables` | `25px`, the site's resting radius |
 | the gold | nowhere | — |
 

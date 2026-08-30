@@ -12,7 +12,7 @@ import type {
   StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent,
   StripeExpressCheckoutElementConfirmEvent,
 } from "@stripe/stripe-js";
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
@@ -87,6 +87,26 @@ import { getStripe, walletAppearance } from "@/lib/stripe";
 
 const { checkout } = readingPageChrome;
 
+/*
+  Stripe's floor and ceiling for `buttonHeight`, in CSS pixels, quoted from the
+  docs for `elements.create('expressCheckout')`: "By default, the height of the
+  buttons are 44px. You can override this to specify a custom button height in
+  the range of 40px-55px." Read against `@stripe/stripe-js@9.14.0`, where the
+  option is typed `number` and neither bound is enforced by the types.
+
+  **There is no `em` here and no percentage.** The option is a number of pixels
+  or it is nothing, which is why `useFrameHeight` resolves the frames' `em` and
+  hands over the answer rather than passing a unit through.
+*/
+const BUTTON_HEIGHT = { min: 40, max: 55 } as const;
+
+/*
+  The class `GetMyReading` puts on every frame in the payment column, Buy Now
+  included. Reached through the row's parent because the frames belong to that
+  component and not to this one; what the two share is the column.
+*/
+const FRAME = ".checkout-option";
+
 const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
   paymentMethods: {
     applePay: "auto",
@@ -118,9 +138,6 @@ const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
   // One reading bought outright, not a basket being checked out. Google spells
   // the same intent `buy`; its `checkout` has no hyphen where Apple's does.
   buttonType: { applePay: "buy", googlePay: "buy" },
-  // Stripe's ceiling, and still short of the 78px the ghost buttons stand at
-  // — which is why the wrapper below holds the row's height instead.
-  buttonHeight: 55,
   /*
     **Load-bearing, and the sentence the buyer's identity rests on.** A wallet
     PaymentIntent has no Checkout Session, so the backend cannot resolve who
@@ -144,6 +161,104 @@ const ELEMENT_OPTIONS: StripeExpressCheckoutElementOptions = {
   */
   layout: { maxColumns: 1, maxRows: 0, overflow: "never" },
 };
+
+/**
+ * The height to draw the wallet buttons at: **the height of the ghost frames
+ * standing beside them**, in the pixels Stripe insists on.
+ *
+ * ## Why it is measured rather than declared
+ *
+ * The frames are an `em` off `--text-nav`, which is itself a `clamp` on the
+ * viewport, so their height is a different number at every width of the page.
+ * `buttonHeight` is a number of CSS pixels. There is no unit that can be handed
+ * from the first to the second, so the only way the two agree at more than one
+ * width is to resolve the `em` here, where it has a value, and to go on
+ * resolving it as it changes.
+ *
+ * ~~`buttonHeight: 55`, Stripe's ceiling, with the row holding the difference.~~
+ * That constant was right at one width and wrong either side of it. Below about
+ * 1330px it drew the wallet button **taller than every frame beneath it** — 3px
+ * at 1280, 16px at 430 — and the row's height being a `min` meant the row grew
+ * to fit it. A panel whose whole premise is one set of frames at one height had
+ * a wallet button standing proud of them on every laptop and every phone.
+ *
+ * ## The frames were brought to meet it in the same change
+ *
+ * ~~The ceiling is still 55, so from about 1400px up the button stays shorter
+ * than the frame — 23px of it at 1920 — and the row holds the difference. The
+ * floor bites once at the narrow end, where 40 meets a frame drawn at 39.~~
+ *
+ * **`.checkout-option` was clamped into Stripe's own range instead**, at the
+ * client's request: `clamp(40px, 2.6em, 55px)`. The frames now stop where the
+ * button stops, at both ends, so the two agree at every width rather than at
+ * one. What is left is sub-pixel — the frames are fractional at the middle
+ * widths and `buttonHeight` is an integer, so the button lands up to 0.6px
+ * short of its frame and never over it.
+ *
+ * The trade is in the stylesheet rather than here, and it is the client's
+ * drawing: 78px at 30px type becomes 55px above about 1354px. See the comment
+ * on `.checkout-option`.
+ *
+ * ## Measured off a sibling rather than computed from the token
+ *
+ * The number read here is the number on the screen, not `2.6 × font-size`,
+ * which would be this file's copy of a figure that belongs to the stylesheet
+ * and would go quietly wrong the day `.checkout-option` changes. The row's own
+ * box is no use for it: that box is `h-0` until a wallet answers, which is the
+ * whole point of it.
+ */
+function useFrameHeight(row: RefObject<HTMLDivElement | null>) {
+  /*
+    Stripe's ceiling until a frame has been measured, which is exactly what this
+    file passed unconditionally before today. So the first paint is yesterday's
+    behaviour and the layout effect below corrects it — before any wallet has
+    answered, and therefore before there is a button on the screen to correct.
+  */
+  const [height, setHeight] = useState<number>(BUTTON_HEIGHT.max);
+
+  useLayoutEffect(() => {
+    const frame = row.current?.parentElement?.querySelector(FRAME);
+
+    /*
+      A column with no frame in it is not a state this panel has — Buy Now is
+      always one of them — but if it ever became one, the state already holds
+      Stripe's ceiling, so the wallet draws at the size it drew at yesterday
+      rather than not drawing at all. Nothing to set, and nothing to observe.
+    */
+    if (!frame) return;
+
+    /*
+      **The observer is the only reader**, first measurement included:
+      `observe()` delivers a callback with the initial size, and it is delivered
+      after layout and before paint. So there is no synchronous `setState` in
+      this effect and no cascading render — and no first frame drawn at a height
+      that is about to change either.
+
+      After that it fires on a resize and on nothing else, the frame being `em`
+      off a `clamp` on the viewport. React bails out of a `setState` that lands
+      on the value already held, so an observer firing all the way through a
+      drag re-renders only at the dozen or so widths where the floored pixel
+      actually moves — and `element.update()` reaches Stripe only that often.
+    */
+    const observer = new ResizeObserver(() => {
+      /*
+        Floored rather than rounded, and that is the difference between fixing
+        this and halving it: the row's height is a `min`, so a button half a
+        pixel taller than the frame grows the row by half a pixel — which is the
+        fault being corrected, in miniature. Short is free; tall is the bug.
+      */
+      const drawn = frame.getBoundingClientRect().height;
+
+      setHeight(Math.floor(Math.min(Math.max(drawn, BUTTON_HEIGHT.min), BUTTON_HEIGHT.max)));
+    });
+
+    observer.observe(frame);
+
+    return () => observer.disconnect();
+  }, [row]);
+
+  return height;
+}
 
 export function ExpressCheckout({ productKey, money }: { productKey: string; money: Money }) {
   /*
@@ -180,6 +295,20 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
     `GetMyReading`'s column and is gapped like every other child.
   */
   const [failure, setFailure] = useState<string | null>(null);
+
+  /*
+    The row's own node, and the handle `useFrameHeight` reaches the frames
+    through. It is a ref rather than a query off `document` so this component
+    finds the column it is actually in, not the first one on the page.
+  */
+  const row = useRef<HTMLDivElement>(null);
+
+  /*
+    **The wallet buttons stand at the frames' height**, from 30 August 2026.
+    Passed down rather than read in `Wallet`, because the frames are out here
+    beside the row and `Wallet` is inside the element's own provider.
+  */
+  const buttonHeight = useFrameHeight(row);
 
   /*
     Memoised on the money, because `Elements` treats a new `options` object as
@@ -274,13 +403,19 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
         The row, not the button, and it settles one of the button's two
         dimensions rather than both.
 
-        **Height is the row's.** Stripe's button is a fixed pixel height and the
-        column around it is `em` against the panel's container query, so the two
-        cannot track each other across the four widths this panel is laid out at.
-        Holding `2.6em` here — the ghost buttons' own `min-block-size` — keeps the
-        column's rhythm at every width and centres whatever the wallet draws inside
-        it. A `min` rather than a fixed height, so the rare device offering both
-        wallets grows the row to fit the second rather than clipping it.
+        **Height is the row's, and from 30 August 2026 the button follows it as
+        far as Stripe allows.** `buttonHeight` is a number of pixels and the
+        column is `em` against the panel's container query, so the two cannot be
+        given the same unit — but `useFrameHeight` resolves the frames' `em` on
+        this side and hands Stripe the pixel, which closes the gap everywhere
+        between Stripe's floor of 40 and its ceiling of 55.
+
+        Holding the ghost buttons' own `min-block-size` here — the same clamp,
+        restated — is what keeps the column's rhythm, and since 30 August 2026
+        that clamp is bounded by Stripe's range at both ends, so the row and the
+        button it holds are the same height at every width. A `min` rather than a
+        fixed height, so the rare device offering both wallets grows the row to
+        fit the second rather than clipping it.
 
         **Width is the element's**, and it has to be: this is a flex box, so a
         child with no width of its own is sized by its content, and Stripe's
@@ -292,6 +427,7 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
         wallet, where there is no wallet button under the thumb to mis-tap.
       */}
       <div
+        ref={row}
         /*
           `check:panel` selects the row by this rather than by its `aria-label`,
           which ends in a wallet's name on the ghost button it replaces and would
@@ -323,7 +459,14 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
             that belongs to `GetMyReading`'s column rather than to this file, and
             it has to move if that `gap` does.
           */
-          available ? "min-h-[2.6em]" : "-mb-[0.4em] h-0 overflow-hidden",
+          /*
+            `.checkout-option`'s own `min-block-size`, restated. The two are one
+            number in two stylesheets — this row is not a `.checkout-option`,
+            because it has no border and no label — so a change to the clamp
+            there has to be made here as well or the wallet row alone stops
+            agreeing with the column.
+          */
+          available ? "min-h-[clamp(40px,2.6em,55px)]" : "-mb-[0.4em] h-0 overflow-hidden",
         )}
         /*
           The amount is in the sheet, not on the page, so a screen reader that
@@ -337,6 +480,7 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
           <Wallet
             productKey={productKey}
             money={money}
+            buttonHeight={buttonHeight}
             onAvailability={handleAvailability}
             onFailure={setFailure}
           />
@@ -380,11 +524,14 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
 function Wallet({
   productKey,
   money,
+  buttonHeight,
   onAvailability,
   onFailure,
 }: {
   productKey: string;
   money: Money;
+  /** Resolved from the frames beside the row; see `useFrameHeight`. */
+  buttonHeight: number;
   onAvailability: (event: StripeExpressCheckoutElementAvailablePaymentMethodsChangeEvent) => void;
   /**
    * A sentence for the page, for the arms that no longer have a sheet, and
@@ -394,6 +541,19 @@ function Wallet({
 }) {
   const stripe = useStripe();
   const elements = useElements();
+
+  /*
+    `ELEMENT_OPTIONS` plus the one key that is not a constant.
+
+    Memoised on the height because react-stripe-js diffs this object by identity
+    and calls `element.update()` with whatever changed — a fresh object every
+    render would be a fresh `update()` every render. `buttonHeight` is a member
+    of `StripeExpressCheckoutElementUpdateOptions` as well as of the create
+    options, which is what makes changing it after mount legal rather than a
+    remount; it is not in react-stripe-js's immutable list either, so it goes
+    through as an update and the mounted element redraws at the new size.
+  */
+  const options = useMemo(() => ({ ...ELEMENT_OPTIONS, buttonHeight }), [buttonHeight]);
 
   /*
     The question is read out of the DOM at the moment of confirmation, off the
@@ -601,12 +761,13 @@ function Wallet({
           by the same amount, so the *button* lands on the frames' edges. Nothing
           overflows — the document and the panel both scroll to their own width.
 
-          Height is the one dimension this cannot reach. Stripe caps
-          `buttonHeight` at 55 and the frames stand at 2.6em, so the row holds
-          the difference rather than the button closing it.
+          Height is the dimension `className` cannot reach — it is drawn inside
+          the iframe — so it is set through `buttonHeight` in the options
+          instead, resolved from the frames by `useFrameHeight`. Stripe's ceiling
+          of 55 is the only part of it still left to the row.
         */
         className="w-full"
-        options={ELEMENT_OPTIONS}
+        options={options}
         onAvailablePaymentMethodsChange={onAvailability}
         onConfirm={(event) => void handleConfirm(event)}
       />

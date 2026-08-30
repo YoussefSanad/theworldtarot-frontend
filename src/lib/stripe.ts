@@ -86,13 +86,22 @@ export const walletAppearance: Appearance = {
       August 2026**, at the client's request.
 
       Matching the frames' number is what made the two shapes disagree.
-      `.checkout-option` is `min-block-size: 2.6em` — 78px at the panel's type
+      `.checkout-option` was `min-block-size: 2.6em` — 78px at the panel's type
       — and 25px on that is a corner. Stripe caps `buttonHeight` at 55, and the
       same 25px on a button that short is 91% of its half-height, which is a
       pill sitting at the top of a column of rounded rectangles. The proportion
-      the frames actually hold is about a third of their height; this is
+      the frames actually held was about a third of their height; this is
       deliberately under it, because the ask was squarer than the column rather
       than the same as it.
+
+      **The two numbers met on 30 August 2026 and this one did not move.** The
+      frames now hold `clamp(40px, 2.6em, 55px)` so the wallet button can stand
+      at their height, which means the button is no longer the short one — but
+      the client asked for 12px against the frames' 25px, and a request for a
+      squarer wallet button is not answered by the frames getting shorter. The
+      frames' own radius is untouched by that clamp and is worth a look next to
+      it: `clamp(0.5rem, 1.302vw, 1.5625rem)` reaches 25px on a box that now
+      stops at 55px, where Figma drew it on 78px.
     */
     borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost

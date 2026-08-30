@@ -13,6 +13,15 @@ import { cn } from "@/lib/cn";
  * `7.57cqw`, gift is 53 and asks for `7.71cqw`, card is 49 and asks for
  * `7.13cqw`. A new mark derives its number the same way rather than guessing.
  *
+ * **A ceiling arrived on 30 August 2026, and it is not stated here.** The
+ * checkout frames became bounded in pixels that day — they hold Stripe's 40-55
+ * range so a wallet button can stand at their height — and a mark that is a
+ * share of the panel outgrows a box that has stopped growing. `.checkout-option
+ * img` in `globals.css` caps the height at the proportion Figma draws, and it
+ * lives there rather than here because it is a fact about that frame and not
+ * about marks in general. This component still sets no height at all: the
+ * ceiling clips one, and the browser holds the ratio.
+ *
  * `alt=""`: every caller puts the label beside it, so the mark is decoration
  * and announcing it would read the same thing twice.
  *

@@ -244,8 +244,36 @@ row is a flex box, so the div react-stripe-js mounts the element into was sized
 by its content — and Stripe's content asks for 300px, which drew a 292px wallet
 button in a 498px column of 498px frames. `w-full` on the element is the whole
 fix; the iframe reads 8px wider than the column because Stripe insets what it
-draws by the 4px it bleeds. **Height cannot follow**: Stripe caps `buttonHeight`
-at 55 against frames that stand at 2.6em, so the row holds the difference.
+draws by the 4px it bleeds.
+
+**Height followed on 30 August 2026**, and the frames came to meet it. Three
+changes in one, all at the client's request, and none of them stands alone.
+
+`buttonHeight` is a number of pixels while the frames are an `em` off a `clamp`
+on the viewport, so no unit passes between them — but `useFrameHeight` measures
+a frame with a `ResizeObserver` and hands Stripe the pixel, which is legal after
+mount because `buttonHeight` is a member of the element's update options. Before
+that it was the constant 55, right at one width of the page and wrong either
+side: below about 1330px the wallet button stood **taller than every frame
+beneath it**, by 3px at 1280 and 16px at 430.
+
+That alone left the two ends open, because Stripe will not take a height outside
+40px to 55px. So `.checkout-option` holds `clamp(40px, 2.6em, 55px)` — the
+frames stop where the button stops. **The cost is the client's drawing**: 78px
+at 30px type becomes 55px above about 1354px.
+
+And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
+so once the frame stopped growing the marks did not: at 1920 the two gift frames
+stood at 65px and 66.9px beside a 55px Buy Now. `.checkout-option img` caps a
+mark at the proportion Figma draws — a 52px mark in a 78px frame — which the
+card mark, drawn shorter, never reaches. **The same rule closes the 600px to
+1023px unevenness `085774b` left open** as a decision rather than a tidy-up.
+
+Measured against the built export at seventeen widths from 320 to 1920: the
+three frames are the same height at every one of them, and the wallet button is
+never taller than the frame it stands in — level at eleven widths and at most
+0.7px short at the rest, where the frame is fractional and `buttonHeight` is an
+integer.
 
 **The row collapses to nothing where the browser has no wallet**, which is every
 browser this repo's checks run in. Two facts, not one: zero height, and no gap.
@@ -377,7 +405,8 @@ every keystroke to do it.
   equal**, and both halves of it earn their number: the inline padding is never
   seen on a box that fills its width with centred contents, so it is only the
   width at which a label wraps, and the block padding is what lets a label that
-  wraps anyway still stand inside `2.6em` rather than growing the frame.
+  wraps anyway still stand inside the frame's own minimum rather than growing
+  it.
   **Two things moved on 30 August 2026**, both at the client's request. The box
   sets Gill Sans Light rather than inheriting `.btn-ghost`'s serif — which is
   why the labels were re-cased in `reading-pages.ts` in the same change, since
