@@ -20,6 +20,21 @@ const asset = (src: string, width: number, height: number): ImageAsset => ({ src
 
 export const brand = {
   logo: asset("/figma/logo.webp", 401, 209),
+  /**
+   * The wordmark on its own, supplied by the client as vector rather than
+   * exported from Figma — hence the public root and not `/figma`.
+   *
+   * Not a drop-in for `logo`: that one bakes a blue starfield halo in behind
+   * the letters, which is most of its 401×209 box (the type itself runs about
+   * 401×75 inside it, near enough to this file's 5.5:1). Swapping one for the
+   * other at a fixed *width* therefore leaves the lettering the same size and
+   * simply drops the halo — so anywhere the halo is load-bearing, or where the
+   * layout was tuned against the taller box, wants looking at before switching.
+   *
+   * `viewBox` is 426.3×77.26; rounded here because next/image only needs the
+   * ratio to reserve the box.
+   */
+  wordmark: asset("/wt-logo.svg", 426, 77),
   livingTarotBadge: asset("/figma/living-tarot-badge.webp", 271, 33),
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),

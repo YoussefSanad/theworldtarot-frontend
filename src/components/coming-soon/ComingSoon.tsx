@@ -72,11 +72,21 @@ export function ComingSoon() {
         width="hero"
         className="relative z-10 flex max-w-240 flex-col items-center gap-[clamp(0.75rem,1.5vw,1.25rem)] py-[clamp(1rem,2.5vw,2rem)]"
       >
+        {/*
+          `brand.wordmark`, not `brand.logo` — the vector wordmark rather than
+          the raster one the headers still use. The widths below are unchanged
+          by that swap and deliberately so: the two files carry the lettering at
+          the same proportion of their width, so the type lands at exactly the
+          size it did, and what goes away is the halo of empty box above and
+          below it (0.52w of height becomes 0.18w). The column's `gap` closes
+          that back up, which only buys the composition vertical room it was
+          already short of.
+        */}
         <Image
-          src={brand.logo.src}
+          src={brand.wordmark.src}
           alt={siteName}
-          width={brand.logo.width}
-          height={brand.logo.height}
+          width={brand.wordmark.width}
+          height={brand.wordmark.height}
           priority
           className="w-[clamp(8rem,18vw,20.5rem)] md:max-xl:w-60"
         />
