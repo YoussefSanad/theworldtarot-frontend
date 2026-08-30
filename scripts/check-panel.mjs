@@ -80,6 +80,13 @@ const BUY = "#get-my-reading [data-buy-now]";
 const GIFT = '#get-my-reading button:has-text("Gift a Reading")';
 
 /**
+ * The same button on the way back. Its label is the way out rather than a state
+ * to infer — `gift.leave` — which is exactly why `GIFT` cannot select it: in
+ * gift mode the words that one matches are not on the page.
+ */
+const LEAVE = '#get-my-reading button:has-text("A Reading for Myself")';
+
+/**
  * Proof Stripe.js built an element. **Page-wide rather than inside the panel**:
  * in the states that must not mount one, an element appearing anywhere else on
  * the page would be the same accident.
@@ -196,7 +203,7 @@ async function drive(
   state,
   response,
   settled,
-  { gift = false, press = false, cancelled, payAnswer, holdWrites = false, wallet = true } = {},
+  { gift = false, giftBack = false, press = false, cancelled, payAnswer, holdWrites = false, wallet = true } = {},
 ) {
   console.log(`\n${state}`);
 
@@ -507,9 +514,35 @@ async function drive(
       ? (await page.locator("#get-my-reading").innerText().catch(() => "")).trim()
       : "";
 
+  /*
+    **The way back, taken last.** Every other fact has been read by this point,
+    so a click this late cannot move a measurement above it — which is the only
+    reason a second press belongs in the same page as the first.
+
+    It proves the half of the gate that removal cannot: `!gifting` takes the row
+    away, and a row that left and stayed gone would satisfy every assertion
+    before this one. The row is React's to re-render rather than Stripe's to
+    re-fetch, so what is waited for is the row attaching and not an iframe
+    arriving inside it — and the wait's expiry is a legitimate answer, left to
+    the count below rather than thrown from here.
+  */
+  let returned = null;
+
+  if (gift && giftBack) {
+    await page.locator(LEAVE).click();
+    await page.locator(WALLET).waitFor({ state: "attached", timeout: 5000 }).catch(() => {});
+
+    returned = {
+      walletRow: await page.locator(WALLET).count(),
+      question: await page.locator("#get-my-reading textarea[name=question]").count(),
+      recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
+    };
+  }
+
   await page.close();
 
   return {
+    returned,
     afterPanel,
     resting,
     walletWouldSend,
@@ -715,6 +748,7 @@ expect("ahead", "nothing was remembered", ahead.record, null);
 
 const gifted = await drive("gifting — a recipient rather than a question", PRICED, priced, {
   gift: true,
+  giftBack: true,
   press: true,
 });
 
@@ -769,6 +803,16 @@ expect("gifting", "and there is no wallet to press either", gifted.settled.walle
 */
 expect("gifting", "and the element it held was destroyed with it", gifted.settled.panelStripeFrames, 0);
 expect("gifting", "so the browser stays where it is", gifted.landed, PAGE);
+/*
+  **And the row comes back, which every assertion above this one would pass
+  without.** They all read a panel with the gift toggle down; a `!gifting` that
+  removed the row and never restored it satisfies the lot. Taken on the same
+  page as the press rather than on a fresh load, so what is proved is the toggle
+  and not a re-render that any reload would give.
+*/
+expect("gifting", "leaving gift mode brings the row back", gifted.returned.walletRow, 1);
+expect("gifting", "with the question field the recipient's replaced", gifted.returned.question, 1);
+expect("gifting", "and the recipient's fields gone with it", gifted.returned.recipient, 0);
 
 const gone = await drive("withdrawn — a 404", WITHDRAWN, unsold);
 
