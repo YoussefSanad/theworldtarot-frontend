@@ -36,8 +36,9 @@ export default function ReadingsPage() {
     ~83px at 375 and ~90px at 1023, and 6rem cleared that; the wordmark lost its
     starfield and with it two thirds of its height, so what sets the masthead
     below `lg` is now the menu button opposite it — 2.75em of `text-note`, which
-    floors at 14px, so about 50px at every width down here. 4rem is the same
-    clearance over that as 6rem was over the old one. It is the element that
+    floors at 14px — plus the masthead's own `pt-5 pb-2`, so about 66px at every
+    width down here. 5rem is the same clearance over that as 6rem was over the
+    old one. It is the element that
     moves rather than the sky inside it,
     because the atmosphere clips its own overflow. No artwork is lost either
     way — what ends 6rem higher is the layer's reach, not the top of the
@@ -46,7 +47,7 @@ export default function ReadingsPage() {
   */
   return (
     <div className="relative isolate">
-      <PageAtmosphere variant="readings" className="max-lg:-top-16" />
+      <PageAtmosphere variant="readings" className="max-lg:-top-20" />
       <ReadingsIntro />
       <SignatureExperience />
       <TraditionalReadings />

@@ -116,6 +116,13 @@ the middle mark**, and that is the only difference:
   child of `.panel-marks`. It is `frame-ornament-trio-sm.webp`, the crop the
   readings cards already wear — 26x17 here against 26x16 there, the same art.
 
+The panels are also not level with one another. Figma starts the right one's
+top border 28px below the left one's, so the pair steps down rather than
+squaring off, and it is the border that moves — the offset is a margin on the
+grid item in `readings/month-ahead/page.tsx`, not extra padding in the body.
+It is desktop-only, since below `lg` there is no second column for it to be out
+of step with.
+
 `legendMark` is what tells the frame the legend is an ornament. Everything the
 open frame does above that prop is about a heading's *first line* — where the
 rule crosses the capitals, how far a bracket hangs to meet it — and a mark has

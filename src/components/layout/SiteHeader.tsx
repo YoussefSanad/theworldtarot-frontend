@@ -40,9 +40,16 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  * The same width of the new one is 51px, which is shorter than the row beside
  * it everywhere — above `lg` the actions and the nav stack to more than that,
  * and below it the menu button's 2.75em does. The masthead is now as tall as
- * whatever is opposite the logo, and on a phone that is about 50px against the
- * 83px it used to be. Anything tuned to clear this header wants re-measuring;
- * `readings/page.tsx` was the only such thing when the mark changed.
+ * whatever is opposite the logo, so at the old `py-1.5` a phone got about 50px
+ * of masthead where the old mark gave it 83px — the row went slack at the top,
+ * which is what `pt-5 pb-2` buys back. Top-weighted rather than even: the logo
+ * wants air above it more than the hero below wants pushing down. That puts a
+ * phone at roughly 66px.
+ *
+ * Anything tuned to clear this header wants re-measuring when these change.
+ * Two things are: the `max-lg:-top-20` on the atmosphere in `readings/page.tsx`
+ * and the one in `readings/month-ahead/page.tsx`, both lifting a mobile sky's
+ * top edge clear of this masthead. Both carry the same note.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,14 +76,53 @@ export function SiteHeader() {
       if (event.key === "Escape") closeMenu();
     };
 
-    const previousOverflow = document.body.style.overflow;
+    /*
+      On `<html>`, not just `<body>`. The root element carries `overflow-x:
+      hidden` (see the root layout), which makes it the scrolling box for the
+      viewport rather than passing that role down — so the old `body` lock
+      clipped a box that was already auto-height and the page went on
+      scrolling underneath the open drawer. Padding the root by the scrollbar's
+      width keeps the layout from jumping sideways as that scrollbar goes; the
+      drawer is below `lg` only, but a narrow desktop window still gets here.
+    */
+    const root = document.documentElement;
+    const previous = {
+      rootOverflow: root.style.overflow,
+      rootPaddingRight: root.style.paddingRight,
+      bodyOverflow: document.body.style.overflow,
+    };
+    const scrollbarWidth = window.innerWidth - root.clientWidth;
+
+    root.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) root.style.paddingRight = `${scrollbarWidth}px`;
+
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      root.style.overflow = previous.rootOverflow;
+      root.style.paddingRight = previous.rootPaddingRight;
+      document.body.style.overflow = previous.bodyOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
+  }, [menuOpen, closeMenu]);
+
+  /*
+    The drawer is `lg:hidden`, so widening past the breakpoint with it open
+    hides the panel while leaving the scroll lock on — a page that cannot be
+    scrolled and nothing on screen to explain why. Close it instead.
+  */
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const desktop = window.matchMedia("(min-width: 64rem)");
+    const onChange = () => {
+      if (desktop.matches) closeMenu();
+    };
+
+    onChange();
+    desktop.addEventListener("change", onChange);
+    return () => desktop.removeEventListener("change", onChange);
   }, [menuOpen, closeMenu]);
 
   useEffect(() => {
@@ -89,8 +135,14 @@ export function SiteHeader() {
   const motionDuration = reducedMotion ? 0 : 0.32;
 
   return (
-    <header className="relative z-20">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-1.5">
+    /*
+      `z-50`, not the `z-20` this used to carry: the drawer renders inside this
+      header, so the header's layer is the drawer's layer, and `ScrollToTop`
+      floats at `z-40` in the same stacking context. At `z-20` that button sat
+      on top of an open drawer.
+    */
+    <header className="relative z-50">
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
             src={brand.logo.src}
@@ -111,6 +163,13 @@ export function SiteHeader() {
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
         >
+          {/*
+            One button that morphs into the X, rather than a close control
+            inside the drawer. It can hold its place in the masthead because
+            the page beneath is locked while the drawer is open, and it is only
+            reachable in the first place when the masthead is on screen — so
+            wherever it was tapped is where the X appears.
+          */}
           <span aria-hidden className="flex h-[0.75em] w-[1.25em] flex-col justify-between">
             <span
               className={cn(
@@ -193,7 +252,7 @@ export function SiteHeader() {
             key="backdrop"
             type="button"
             aria-label="Close menu"
-            className="fixed inset-0 z-50 bg-night/55 lg:hidden"
+            className="fixed inset-0 z-50 touch-none bg-night/55 lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -211,7 +270,7 @@ export function SiteHeader() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={labelId}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[min(100vw,28rem)] flex-col overflow-y-auto shadow-[-12px_0_48px_rgba(0,0,0,0.35)] lg:hidden"
+            className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-[min(100vw,28rem)] flex-col overflow-hidden shadow-[-12px_0_48px_rgba(0,0,0,0.35)] lg:hidden"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -225,7 +284,15 @@ export function SiteHeader() {
               }}
             />
 
-            <div className="relative flex flex-1 flex-col gap-10 px-gutter py-[max(1.25rem,var(--spacing-gutter))]">
+            {/*
+              The scroller is this column, not the panel around it. The veil
+              above is `absolute inset-0`, and inside a scroll container that
+              resolves against the scrolling padding box — so when the panel
+              itself scrolled, the background slid up with the content and left
+              the foot of the drawer bare over the page. An unscrolling panel
+              keeps the veil pinned to the full height of the screen.
+            */}
+            <div className="relative flex flex-1 flex-col gap-10 overflow-y-auto overscroll-contain px-gutter py-[max(1.25rem,var(--spacing-gutter))]">
               <Link
                 href="/"
                 id={labelId}
