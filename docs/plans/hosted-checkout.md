@@ -12,6 +12,15 @@
 > behind it yet**. `docs/plans/apple-pay-sheet.md` is its plan, it is not
 > superseded, and `ExpressCheckout.tsx` is unrendered rather than removed for
 > the length of the interim. See "The wallet is coming back" below.
+>
+> **The interim ended on 29 August 2026.** The backend built `stripe_wallet` and
+> frontend #48 mounted the element above Buy Now, so every sentence in this plan
+> about the wallet having no code behind it, and about `ExpressCheckout.tsx`
+> being unrendered, is history. **The card road this plan is actually about is
+> unaffected** — it is still a redirect to a hosted page, and the `/pay` call
+> that starts it now names itself `method: "stripe"` rather than leaving the
+> method to a default. The current shape of the panel is in
+> `src/components/reading/README.md`.
 
 ---
 
@@ -75,15 +84,15 @@ otherwise be found on staging rather than here.
 
 `GetMyReading` draws five frames. Three of them — Apple Pay, Google Pay, Pay
 with Card — become **one Buy Now button** for the length of the interim.
-`redeem gift code` stays a dud until gifting ships; `gift a reading` stays live.
+`Redeem A Gift Code` stays a dud until gifting ships; `Gift a Reading` stays live.
 
 | frame | before | after this ticket | after the wallet road |
 |---|---|---|---|
 | Apple Pay | `ExpressCheckout` on `live`, ghost otherwise | — | `ExpressCheckout`, wired |
 | Google Pay | dud (#36) | — | drawn by the same element |
 | Pay with Card | dud (#38) | **Buy Now**, real | **Buy Now**, unchanged |
-| redeem gift code | dud | dud, unchanged | dud, unchanged |
-| gift a reading | live | live, unchanged | live, unchanged |
+| Redeem A Gift Code | dud | dud, unchanged | dud, unchanged |
+| Gift a Reading | live | live, unchanged | live, unchanged |
 
 **The rule the panel turns on is unchanged**: where there is no live money there
 is nothing that can take a payment. `Buy Now` needs `offer.money`, so it renders
@@ -236,8 +245,13 @@ the backend agreed the shape the same day: **`/pay` gains a second method**,
 the express checkout element to confirm against. Backend ADR 0003 has the
 reasoning, the trap and the naming.
 
-**It has no code behind it.** `grep stripe_wallet` across the backend returns
-nothing and `config/payments.php` still registers one Stripe method. So:
+~~**It has no code behind it.** `grep stripe_wallet` across the backend returns
+nothing and `config/payments.php` still registers one Stripe method.~~ **It was
+built on 29 August 2026** — backend #43, merged to `staging` — and frontend #48
+switched it on the same day, so the three bullets below describe an interim that
+is over. They are kept because the reasoning in them is why the row was held
+back rather than deleted, and that reasoning is what brought it back working.
+As written at the time:
 
 - **`ExpressCheckout.tsx` is unrendered, not deleted, and not because the wallet
   was rejected.** It is a dud — its `onConfirm` calls `paymentFailed` — and a

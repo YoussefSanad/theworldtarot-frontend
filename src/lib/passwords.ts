@@ -38,8 +38,16 @@ function requestBody(submission: PasswordSubmission) {
  * Nothing is returned. The backend sends a message on success and it is not
  * rendered: the words a person reads here belong to the page, which knows
  * whether it just set a first password or replaced an old one.
+ *
+ * **Named for the act rather than for the endpoint it posts to**, unlike its
+ * neighbour below. `setPassword` was the obvious name and it collided with the
+ * setter half of a `useState` in the one component that calls this, where the
+ * import and the setter shadowed each other and the file worked only because
+ * `FLOW` captured the import at module scope. It is also the name both sides
+ * already use for this act: `ClaimAccount` in the backend, "claim link" in
+ * `CONTEXT.md`, and the `claim` arm of `PasswordFlow`.
  */
-export async function setPassword(submission: PasswordSubmission): Promise<void> {
+export async function claimAccount(submission: PasswordSubmission): Promise<void> {
   await apiWrite<{ message: string }>("/api/v1/set-password", requestBody(submission));
 }
 

@@ -25,7 +25,7 @@ import { type Customer, currentCustomer } from "@/lib/session";
  * in memory for as long as the tab does and is re-read on every load.
  */
 
-/** `undefined` until `/me` has answered — which is not the same as a visitor. */
+/** `undefined` until `/me` has answered, which is not the same as nobody being signed in. */
 type Snapshot = Customer | null | undefined;
 
 let snapshot: Snapshot;
@@ -77,7 +77,7 @@ function ask(): void {
       (customer) => publish(customer),
       // A 401 already answered `null` rather than throwing, so this is a broken
       // API or a browser with no network. Both are answered the same way and
-      // neither is worth a red line in the console of a visitor who was only
+      // neither is worth a red line in the console of somebody who was only
       // reading the homepage: the masthead cannot act on the difference between
       // "signed out" and "we could not tell", and offering to sign in is the
       // right thing to draw in both.

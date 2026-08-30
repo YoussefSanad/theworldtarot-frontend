@@ -10,7 +10,8 @@
  * a rule the backend keeps and the page must not contradict:
  *
  * - `refused` stands for a wrong password, an address with no account, and an
- *   account made by a purchase whose owner has never chosen a password. The API
+ *   account made when an order settled whose owner has never chosen a password.
+ *   The API
  *   answers all three identically and will not change, so this wording must
  *   leave every door open and name none of them
  * - `forgot.sent` is shown whatever the answer was, because asking for a link
@@ -31,9 +32,9 @@ export const loginCopy = {
   busyLabel: "Signing in…",
   /**
    * One refusal for three causes, and no wording that separates them. The
-   * second sentence is the whole exit for somebody whose account was made by a
-   * purchase — including the customer of #49's second item, whose claim link
-   * has been spent or overwritten.
+   * second sentence is the whole exit for somebody whose account was made by an
+   * order settling — including the customer of #49's second item, whose claim
+   * link has been spent or overwritten.
    */
   refused:
     "Those details do not sign you in. If you bought a reading and have not chosen a password yet, ask for a link below and choose one now.",

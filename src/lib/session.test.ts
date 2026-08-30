@@ -158,15 +158,15 @@ test("reads who is signed in, with the session cookie and no cache anywhere", as
   assert.equal(customer?.name, "Jane Doe");
 });
 
-test("a 401 from /me is a visitor, not a failure", async () => {
+test("a 401 from /me means nobody is signed in, not that anything failed", async () => {
   // The normal answer for anybody who has not signed in. Thrown, it would put a
-  // red line in the console of every visitor to the homepage.
+  // red line in the console of everybody who loads the homepage.
   stubFetch(json({ message: "Unauthenticated." }, 401));
 
   assert.equal(await currentCustomer(), null);
 });
 
-test("a broken /me still throws, so it stays distinguishable from a visitor", async () => {
+test("a broken /me still throws, so it stays apart from nobody being signed in", async () => {
   stubFetch(json({ message: "Server Error" }, 500));
 
   await assert.rejects(() => currentCustomer());

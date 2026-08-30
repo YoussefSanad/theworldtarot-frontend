@@ -12,7 +12,7 @@ import { useProduct } from "@/lib/product";
 /**
  * The left panel's form, and the one piece of state on this page.
  *
- * **Gift is a mode, not a page.** Clicking "gift a reading" turns this form
+ * **Gift is a mode, not a page.** Clicking "Gift a Reading" turns this form
  * into a gift order in place: the question section becomes recipient details,
  * the payment stays exactly where it was, and the price, the product and
  * everything else the visitor was looking at holds still. A separate
@@ -26,7 +26,7 @@ import { useProduct } from "@/lib/product";
  * satisfied the design and not the requirement.
  *
  * The recipient's own question is asked after they redeem, which is a flow
- * this page does not build yet: `redeem gift code` is a dud, as the payment
+ * this page does not build yet: `Redeem A Gift Code` is a dud, as the payment
  * controls are. See `GetMyReading`.
  *
  * ## What is for sale, and whether anything is
@@ -84,7 +84,7 @@ import { useProduct } from "@/lib/product";
  *
  * ## One thing here is a deliberate departure
  *
- * The client's frame puts "gift a reading" at the foot of the payment column,
+ * The client's frame puts "Gift a Reading" at the foot of the payment column,
  * and what it changes is most of a panel above it — an action whose effect is
  * off screen. Rather than move her button, `CountedField`'s `autoFocusOnMount`
  * brings the visitor to the fields that replaced the question. The control

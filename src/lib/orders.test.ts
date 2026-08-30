@@ -208,6 +208,38 @@ test("with no page to return to, the body carries no `return_to` at all", async 
   assert.deepEqual(JSON.parse(String(calls[1].init.body)), {});
 });
 
+test("`method` names the road, and the two roads are not interchangeable", async () => {
+  // The card button and the wallet button ask this endpoint for different
+  // things, and it cannot tell them apart otherwise. Relying on the backend's
+  // default would mean the road changes when somebody edits a config file on
+  // the other side.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ type: "client_secret", client_secret: "pi_1_secret_2" }),
+  );
+
+  await payOrder("kQ3rN8xvT1sLb0Zy", { returnTo: "month-ahead", method: "stripe_wallet" });
+
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), {
+    return_to: "month-ahead",
+    method: "stripe_wallet",
+  });
+});
+
+test("a method nobody named is absent rather than null", async () => {
+  // `sometimes` is what the backend validates both of these with, and a key
+  // present holding nothing is a key present: it fails the rule rather than
+  // skipping it.
+  stubFetch(new Response(null, { status: 204 }), json({ type: "nothing_to_pay" }));
+
+  await payOrder("kQ3rN8xvT1sLb0Zy", { method: "stripe" });
+
+  const body = JSON.parse(String(calls[1].init.body));
+
+  assert.deepEqual(body, { method: "stripe" });
+  assert.equal("return_to" in body, false);
+});
+
 test("a payment's status is read back with the pay token in the body", async () => {
   stubFetch(new Response(null, { status: 204 }), json({ status: "succeeded" }));
 

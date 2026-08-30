@@ -158,7 +158,7 @@ all of them: **where there is no live money there are no payment controls.**
 | State | Price line | Controls |
 | --- | --- | --- |
 | Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
-| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live and quoting it |
+| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live — and the only place the price is said |
 | Unreachable | The bundled `reading.price`, as plain copy | The frames, none of which can pay |
 | Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
 
@@ -185,14 +185,16 @@ against the API in `.env.local` instead and presses nothing, from port 3000
 because that is the origin staging's CORS list carries. See
 `docs/plans/reading-page-live-price.md` and `docs/plans/hosted-checkout.md`.
 
-### Buy Now is a redirect, and the wallet is coming back
+### Buy Now is a redirect, and the wallet is not
 
-`BuyNow` is the only control on the panel that takes money, and it does not
-take it here: pressing it places an order, starts its payment and sends the
-browser to Stripe's **hosted page**. Nothing is collected on this page and no
-Stripe.js is loaded on it. See
-`docs/adr/0002-checkout-happens-on-stripes-page.md` and
-`docs/plans/hosted-checkout.md`.
+`BuyNow` is ~~the only control on the panel that takes money~~ — from 29 August
+2026 the wallet row above it takes money too, and the two do it in different
+places, which is the whole of the difference between them. Pressing Buy Now
+places an order, starts its payment and sends the browser to Stripe's **hosted
+page**: nothing is collected on this page and, on this road, no Stripe.js is
+loaded on it. The wallet stays here and confirms in an iframe on our own origin.
+See `docs/adr/0002-checkout-happens-on-stripes-page.md`,
+`docs/plans/hosted-checkout.md` and the wallet row below.
 
 It is mounted from `offer.money` — which exists on `live` and on no other state
 — so an order placed at a price this repo typed will not compile.
@@ -207,10 +209,12 @@ Four things about it are worth knowing before changing any of it.
   sentence and leaves
 - **The checkout is remembered before the navigation**, because afterwards there
   is no code of ours left running to remember anything. `lib/checkout-session.ts`
-  holds the pay token, the Money the backend priced, the Session id the
-  confirmation is guarded on, and the question — which is what a cancelled
-  checkout puts back in the textarea, and only on the page whose `productKey`
-  matches
+  holds the pay token, the Money the backend priced, the question — which is what
+  a cancelled checkout puts back in the textarea, and only on the page whose
+  `productKey` matches — and the id the confirmation is guarded on: a Session id
+  on the card road, a **client secret** on the wallet road, from which the intent
+  id is derived. Each road's guard refuses the other's record, so neither branch
+  of the confirmation has to know the other exists
 - **It is inert in gift mode**, and says so. `POST /orders` has no field for a
   recipient email or a gift message, so one live button there charges somebody
   for a gift delivered to themselves
@@ -219,31 +223,94 @@ Four things about it are worth knowing before changing any of it.
   has no element for, or a `type` a later backend invents: the order exists, it
   is `pending`, nothing has been charged, and the panel says exactly that
 
-`ExpressCheckout.tsx` is **unrendered rather than removed**, and not because the
-wallet was rejected. The client asked for Apple Pay and Google Pay back on our
-own page on 29 August 2026 and the backend agreed the shape the same day, in its
-`docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md` — `/pay` gains a
-second method, `stripe_wallet`, answering a `client_secret` the element confirms
-against. **That method has no code behind it yet.** The file is a dud in the
-meantime — its `onConfirm` calls `paymentFailed` — and a button that fails after
-Face ID has no business sitting beside one that charges. It comes back above Buy
-Now when it works, which is #48, and `docs/plans/apple-pay-sheet.md` and
-`walletAppearance` are its plan and its styling, both still here.
+### The wallet row, above Buy Now
 
-**Three frames is an interim, not a destination.** The wallet row returns above
-Buy Now, and collapses to nothing on any device without a wallet — which is
-every device the panel is likely to be shown on for approval.
+`ExpressCheckout.tsx` **renders again** from 29 August 2026, which is #48.
+~~Unrendered rather than removed~~ — it was a dud while `/pay` had no
+`stripe_wallet` behind it, and a button that fails after Face ID had no business
+sitting beside one that charges. The backend's
+`docs/adr/0003-the-wallet-keeps-its-own-payment-intent.md` gave it one: `/pay`
+takes a `method`, and answers a `client_secret` the element confirms against.
+Both roads now name themselves in that call — the card road sends
+`method: "stripe"` — so neither is a default the backend has to assume.
 
-`check:panel` used to assert what the wallet row did. It asserts the negative
-instead now, and it is worth more than it looks: **no Stripe iframe mounts on
-this page in any state, and js.stripe.com is never fetched.** A request to it
-reappearing is what a half-finished wallet ticket shipping by accident looks
-like. That the hosted page opens, quotes the order total and takes a test card
-is proved by hand on `staging.theworldtarot.com` — #47.
+It is drawn on `live` **and** where the API offers the method **and** not while
+gifting. The middle one is `lib/payment-methods.ts`, and it rests at `false`: an
+environment with no Stripe keys — a laptop — must draw the card button alone
+rather than a wallet that would fail on its first call.
+
+**The buttons are the frames' width**, and were not until 29 August 2026. The
+row is a flex box, so the div react-stripe-js mounts the element into was sized
+by its content — and Stripe's content asks for 300px, which drew a 292px wallet
+button in a 498px column of 498px frames. `w-full` on the element is the whole
+fix; the iframe reads 8px wider than the column because Stripe insets what it
+draws by the 4px it bleeds.
+
+**Height followed on 30 August 2026**, and the frames came to meet it. Three
+changes in one, all at the client's request, and none of them stands alone.
+
+`buttonHeight` is a number of pixels while the frames are an `em` off a `clamp`
+on the viewport, so no unit passes between them — but `useFrameHeight` measures
+a frame with a `ResizeObserver` and hands Stripe the pixel, which is legal after
+mount because `buttonHeight` is a member of the element's update options. Before
+that it was the constant 55, right at one width of the page and wrong either
+side: below about 1330px the wallet button stood **taller than every frame
+beneath it**, by 3px at 1280 and 16px at 430.
+
+That alone left the two ends open, because Stripe will not take a height outside
+40px to 55px. So `.checkout-option` holds `clamp(40px, 2.6em, 55px)` — the
+frames stop where the button stops. **The cost is the client's drawing**: 78px
+at 30px type becomes 55px above about 1354px.
+
+And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
+so once the frame stopped growing the marks did not: at 1920 the two gift frames
+stood at 65px and 66.9px beside a 55px Buy Now. `.checkout-option img` caps a
+mark at the proportion Figma draws — a 52px mark in a 78px frame — which the
+card mark, drawn shorter, never reaches. **The same rule closes the 600px to
+1023px unevenness `085774b` left open** as a decision rather than a tidy-up.
+
+Measured against the built export at seventeen widths from 320 to 1920: the
+three frames are the same height at every one of them, and the wallet button is
+never taller than the frame it stands in — level at eleven widths and at most
+0.7px short at the rest, where the frame is fractional and `buttonHeight` is an
+integer.
+
+**The row collapses to nothing where the browser has no wallet**, which is every
+browser this repo's checks run in. Two facts, not one: zero height, and no gap.
+The row is a child of a flex column with `gap-[0.4em]` and **a gap applies to a
+zero-height child like any other**, so the collapsed row carries `-mb-[0.4em]`
+to cancel the one gap it is responsible for. That number belongs to
+`GetMyReading`'s column and has to move if the `gap` does. `check:panel` proves
+it the only way it can be seen from outside: the panel's settled height equals
+its loading height, so the row costs the column nothing.
+
+`check:panel` asserts everything around the button, because no headless browser
+will ever see the button itself — Stripe draws one only in Safari with a card in
+Wallet, or Chrome signed into Google Pay, on a registered payment method domain.
+So: that the element **mounts** on `live`, that the row quotes the API's money,
+that it collapses, and that **no other state mounts one** — gifting having
+mounted one first, at which point the toggle has to take it away again.
+
+**Where no row is drawn at all, `js.stripe.com` is not fetched either.** That
+assertion earns its place: it failed on 29 August 2026 in three states at once
+and what it had caught was real. `@stripe/stripe-js`'s main entry point injects
+the script from its own top level, so importing it anywhere fetched it
+everywhere, however carefully `lib/stripe.ts` deferred its own `loadStripe`.
+`lib/stripe.ts` imports `@stripe/stripe-js/pure` for that reason and must keep
+doing so. Nothing visible was wrong, which is why nothing else would have found
+it.
+
+That a real device draws a real button and the sheet takes a real payment is
+proved by hand on `staging.theworldtarot.com`, in Safari and in Chrome — and it
+needs `staging.theworldtarot.com` registered as a Stripe **payment method
+domain** in test mode. Stripe registers exact hostnames, so the apex does not
+cover it, and an unregistered one fails by the button silently not appearing,
+which is indistinguishable from a device with no wallet. That the hosted card
+page opens, quotes the order total and takes a test card is #47.
 
 ### Gift is a mode, not a page
 
-Clicking "gift a reading" turns the order into a gift order **in place**: the
+Clicking "Gift a Reading" turns the order into a gift order **in place**: the
 question section becomes recipient details, the payment stays where it was, and
 the price, the product and everything else the visitor was looking at holds
 still. A separate `/readings/gift` page would have to restate all of it and
@@ -257,7 +324,7 @@ design and not the requirement. The recipient asks their own question after
 they redeem.
 
 Two departures from the frame come with it, and both answer the same problem.
-The client puts "gift a reading" at the foot of the payment column, and what it
+The client puts "Gift a Reading" at the foot of the payment column, and what it
 changes is a section most of a panel above it — an action whose effect is off
 screen. Rather than move her button:
 
@@ -285,7 +352,7 @@ separate milestone.
 
 ### One of the three controls is a dud, on purpose
 
-There is no redemption flow, so `redeem gift code` is `type="button"` with
+There is no redemption flow, so `Redeem A Gift Code` is `type="button"` with
 nothing behind it. **Inert rather than submitting**: the form has no action, so
 a submit would reload the page with the visitor's question in the query string,
 which is a worse nothing than nothing. It is a real button rather than a
@@ -340,9 +407,22 @@ every keystroke to do it.
   `.btn-ghost`. Figma draws all five identically (498x78, 2px gold, 25px
   corner) and changes only the mark inside; Buy Now wears the same box, so the
   column still reads as one set of frames while it stands where three of them
-  did. Unlike `.readings-cta` they never hug their labels: the client stacks
-  them as one column of equal buttons, and that is also the only thing keeping
-  a mark and a five-word label the same size as each other.
+  did. Unlike `.readings-cta` they never hug their labels: each fills the width
+  it is given, and that is also the only thing keeping a mark and a five-word
+  label the same size as each other. **The padding is what makes their heights
+  equal**, and both halves of it earn their number: the inline padding is never
+  seen on a box that fills its width with centred contents, so it is only the
+  width at which a label wraps, and the block padding is what lets a label that
+  wraps anyway still stand inside the frame's own minimum rather than growing
+  it.
+  **Two things moved on 30 August 2026**, both at the client's request. The box
+  sets Gill Sans Light rather than inheriting `.btn-ghost`'s serif — which is
+  why the labels were re-cased in `reading-pages.ts` in the same change, since
+  Cinzel's small capitals had been doing the shouting for two of them and Gill
+  Sans draws what the string says. And the two gift frames under the Stripe
+  line were pulled in to 84% of the payment frames' width, so the width is now
+  set per frame in `GetMyReading` rather than once here. See the comment on
+  `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty
@@ -463,8 +543,11 @@ the masthead's copy of it:
   check out.
 
 Both already held before this page existed (`headerActions.cta` and
-`closingCta` are both `/readings`); the rule is now stated rather than
-incidental.
+`closingCta` both point at the readings index); the rule is now stated rather
+than incidental. **They no longer spell it identically**: `headerActions.cta`
+became `/readings/` on 29 August 2026, because the export is a directory of
+`index.html` files and the unslashed form costs a 308. `closingCta` in
+`content/home.ts` has not been moved yet. Same destination, one redirect apart.
 
 ### The gift flow
 

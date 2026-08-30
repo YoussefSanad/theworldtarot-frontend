@@ -1907,12 +1907,32 @@
     resting border is the same gold at 55%, which is the one value that would
     have drifted if this were a copy.
 
+    ~~One width for all five.~~ **The two gift frames were pulled in on 30
+    August 2026**, at the client's request, so the width stated here is the
+    payment frames' and the two below the Stripe line set a narrower one over
+    the top of it. Both numbers live in `GetMyReading`, which owns the column
+    they are shares of.
+
     The height is `em` off the label, as every other button on the site is, so
-    the row keeps its proportion as the type scales rather than pinning to
-    78px. Unlike `.readings-cta` these never hug their labels — the client
-    stacks them as one column of equal buttons at every width, which is also
-    the only thing that keeps an Apple Pay mark and a five-word label the same
-    size as each other.
+    the row keeps its proportion as the type scales rather than pinning to 78px
+    — **but between two pixel bounds from 30 August 2026, and the bounds are
+    Stripe's rather than ours.**
+
+    The wallet button now stands at this same height; see `useFrameHeight` in
+    `ExpressCheckout`. `buttonHeight` is a number of pixels and Stripe will not
+    take one outside 40–55, so the `em` is held inside that range: below about
+    985px of viewport it would fall under Stripe's floor and above about 1354px
+    it would climb past Stripe's ceiling, and at either end the wallet could not
+    follow. Clamping is what lets all five frames be one height at every width
+    instead of four agreeing and the vendor's disagreeing.
+
+    **The cost is at the wide end and it is the client's drawing.** Figma draws
+    78px at 30px type; above ~1354px this holds 55px, so the frames stop growing
+    with the type there. Taken deliberately, as the price of the agreement.
+
+    Unlike `.readings-cta` these never hug their labels — each fills the width
+    it is given, which is also the only thing that keeps an Apple Pay mark and a
+    five-word label the same size as each other.
   */
   .checkout-option {
     background-color: transparent;
@@ -1927,13 +1947,101 @@
     border-style: solid;
     border-width: 2px;
     color: var(--color-snow);
+    /*
+      ~~`.btn-ghost`'s serif.~~ **Gill Sans Light from 30 August 2026**, at the
+      client's request. Set here rather than on `.btn-ghost` so it lands on this
+      panel's frames and on no other ghost button on the site.
+
+      **The case of the labels moved with it, and neither half is correct
+      alone.** Cinzel has no lowercase — it draws small capitals in their place
+      — which is what let two of these labels be stored lowercase and still read
+      as capitals on the page. Gill Sans draws what the string says, so the
+      labels were re-cased in `content/reading-pages.ts` in the same change.
+
+      The weight is stated because it is the face the client asked for: Light,
+      not the 400 the body would otherwise hand down.
+    */
+    font-family: var(--font-sans);
+    font-weight: 300;
+    /*
+      The payment frames' width, and the column's. The two gift frames override
+      it from `GetMyReading`; a `w-*` utility wins over this because Tailwind
+      orders `utilities` after `components`.
+    */
     inline-size: 100%;
-    min-block-size: 2.6em; /* 78px at 30px */
-    padding: 0.3em 0.9em;
+    /*
+      `2.6em` — the 78px Figma draws at 30px type — held inside the only range
+      Stripe's `buttonHeight` accepts, so the wallet button can stand at the
+      same height as the frames beside it. The row in `ExpressCheckout` states
+      the same clamp and has to keep stating it.
+    */
+    min-block-size: clamp(40px, 2.6em, 55px);
+    /*
+      ~~`0.3em 0.9em`.~~ **Both loosened on 29 August 2026**, and neither number
+      is decoration: they are the two things that decide whether this column is
+      one set of equal frames or four heights.
+
+      These boxes fill the width they are given and their contents are centred,
+      so the inline padding is never seen — it is only the width at which a
+      label gives up and wraps. `0.9em` left "Continue to Checkout" 12.27em to
+      stand in and the words wanted 12.46em, so the longest label on the panel
+      wrapped and its frame grew to 82px beside its siblings' 78px. `0.75em`
+      hands back the 0.3em that settled it, and the same ratio holds at every
+      width above the type's floor because both are `em` off the same size.
+
+      **Both figures are history rather than the live measurement**, and are
+      kept because they are why the number is what it is. That label went on 30
+      August 2026 — the card button says "Pay Another Way", which is shorter,
+      and the face under it is Gill Sans rather than Cinzel. The padding is left
+      at the settled value rather than tightened back towards `0.9em`: at the old
+      number it was doing nothing but letting a label wrap, and the two frames
+      that were narrowed in the same change are now the ones with the least room
+      to spare.
+
+      The block padding answers the narrow end, where no inline padding saves a
+      label: the type clamps at 15px while the panel keeps narrowing, so a long
+      label needs more `em` than its box has. Two lines is 2em, and at `0.15em`
+      a wrapped label still stands inside the 40px the frames hold there — so
+      the box keeps its height instead of growing.
+
+      **At the wide end it is the cap that wants watching.** Above ~1354px the
+      minimum is 55px, while two lines of 30px type plus this padding is 69px —
+      so a label that wrapped *there* would grow its frame, which the old 78px
+      minimum would have absorbed. Nothing on the panel comes close: the longest
+      is "Redeem A Gift Code", in the narrower of the two frame widths, and it
+      stands on one line with room to spare. Measure rather than assume the next
+      time a label here gets longer.
+    */
+    padding: 0.15em 0.75em;
   }
 
   /*
-    The one of the five that holds a state: `gift a reading`, while the order
+    **Nothing inside a frame outgrows the frame**, and from 30 August 2026 that
+    needs saying because the two are sized against different things: `Mark` is a
+    share of the panel in `cqw` and the box around it is now bounded in pixels
+    by Stripe's range. Between about 1024px and 1500px of viewport the two scale
+    together and this changes nothing. Outside that band they come apart —
+    above it the type and the marks go on growing while the box stops at 55px,
+    below it the type floors at 15px while the panel keeps narrowing — and it
+    was the marks, not the labels, that pushed the two gift frames to 65px and
+    66.9px beside a 55px Buy Now at 1920, and to 63.9px and 66px beside a 45.8px
+    one at 900.
+
+    `0.667` is the proportion Figma draws: a 52px mark in a 78px frame. So this
+    is the drawing's own ratio, applied as a ceiling rather than as a size —
+    which is why the card mark, drawn shorter, is never reached by it and the
+    two square ones are, exactly where they would otherwise burst the box.
+
+    The same rule closes the 600px-to-1023px unevenness that `085774b` left open
+    as a decision rather than a tidy-up. This is that decision: **a mark is a
+    share of the panel until that would make it a share too big for the frame.**
+  */
+  .checkout-option img {
+    max-block-size: calc(clamp(40px, 2.6em, 55px) * 0.667);
+  }
+
+  /*
+    The one of the five that holds a state: `Gift a Reading`, while the order
     is a gift. It takes the same gold light every chosen thing on this site
     answers with rather than a second colour, and it keeps it whether or not a
     pointer is anywhere near it — which is the difference between a hover and a

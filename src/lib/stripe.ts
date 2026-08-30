@@ -1,4 +1,5 @@
-import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js/pure";
+import type { Appearance, Stripe } from "@stripe/stripe-js";
 
 /**
  * Stripe.js, loaded once and only when something is about to mount an element.
@@ -36,6 +37,17 @@ let pending: Promise<Stripe | null> | undefined;
  * fraud signals want the script on pages that lead to checkout, not on every
  * page a visitor has ever seen.
  *
+ * **`@stripe/stripe-js/pure` is load-bearing, and the plain entry point is the
+ * bug it fixes.** `@stripe/stripe-js`'s main module injects the script tag from
+ * its own top level — `Promise.resolve().then(() => getStripePromise())` in
+ * `src/index.ts`, one tick after the module is evaluated — so importing it at
+ * all defeats every word above, whatever this function does. `check:panel`
+ * caught it on 29 August 2026: `js.stripe.com` was fetched in the 404 state,
+ * the 500 state and the state where the API offers no wallet, none of which
+ * mounts anything. `/pure` is the same `loadStripe` with that side effect
+ * removed. Pinned against `@stripe/stripe-js@9.14.0`; the types come from the
+ * package root, which is types-only and erases.
+ *
  * Resolves to `null` when the script cannot load, which `Elements` handles by
  * rendering nothing. That is the same visual outcome as a device with no
  * wallet, and `ExpressCheckout` collapses for both.
@@ -66,11 +78,32 @@ export function getStripe(): Promise<Stripe | null> {
 export const walletAppearance: Appearance = {
   theme: "night",
   variables: {
-    // 25px, the resting radius of every bordered control on the site. The
-    // ghost buttons state it as a clamp against the container query; a wallet
-    // button cannot be told a clamp, so this is the clamp's own maximum — the
-    // value the panel holds at every width but the narrowest.
-    borderRadius: "25px",
+    /*
+      ~~25px, the resting radius of every bordered control on the site. The
+      ghost buttons state it as a clamp against the container query; a wallet
+      button cannot be told a clamp, so this is the clamp's own maximum — the
+      value the panel holds at every width but the narrowest.~~ **12px from 29
+      August 2026**, at the client's request.
+
+      Matching the frames' number is what made the two shapes disagree.
+      `.checkout-option` was `min-block-size: 2.6em` — 78px at the panel's type
+      — and 25px on that is a corner. Stripe caps `buttonHeight` at 55, and the
+      same 25px on a button that short is 91% of its half-height, which is a
+      pill sitting at the top of a column of rounded rectangles. The proportion
+      the frames actually held was about a third of their height; this is
+      deliberately under it, because the ask was squarer than the column rather
+      than the same as it.
+
+      **The two numbers met on 30 August 2026 and this one did not move.** The
+      frames now hold `clamp(40px, 2.6em, 55px)` so the wallet button can stand
+      at their height, which means the button is no longer the short one — but
+      the client asked for 12px against the frames' 25px, and a request for a
+      squarer wallet button is not answered by the frames getting shorter. The
+      frames' own radius is untouched by that clamp and is worth a look next to
+      it: `clamp(0.5rem, 1.302vw, 1.5625rem)` reaches 25px on a box that now
+      stops at 55px, where Figma drew it on 78px.
+    */
+    borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost
     colorText: "#fffcf6", // --color-snow
     colorPrimary: "#e4c46a", // --color-gold

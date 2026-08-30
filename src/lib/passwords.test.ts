@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
 import { ApiError, ApiRateLimitError, ApiValidationError } from "./api-write.ts";
-import { readPasswordFailure, resetPassword, setPassword } from "./passwords.ts";
+import { claimAccount, readPasswordFailure, resetPassword } from "./passwords.ts";
 
 type Call = { url: string; init: RequestInit };
 
@@ -56,7 +56,7 @@ after(() => {
 test("claims an account at the set-password endpoint, sending the link's pair unchanged", async () => {
   stubFetch(new Response(null, { status: 204 }), json({ message: "Your account is ready." }));
 
-  await setPassword(submission);
+  await claimAccount(submission);
 
   const write = calls[1];
   assert.equal(write.url, "https://staging-api.theworldtarot.com/api/v1/set-password");

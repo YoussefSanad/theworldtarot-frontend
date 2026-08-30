@@ -3,9 +3,12 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { Mark } from "@/components/ui/Mark";
 import { readingPageChrome } from "@/content/reading-pages";
+import { checkout as marks } from "@/lib/assets";
 import { startCheckout } from "@/lib/buy";
-import { formatPrice, type Money } from "@/lib/price";
+import { type Money } from "@/lib/price";
+import { questionIn } from "@/lib/question";
 
 const { checkout } = readingPageChrome;
 
@@ -17,6 +20,30 @@ const { checkout } = readingPageChrome;
  * than a payment: pressing it places an order, starts its payment and sends the
  * browser to Stripe's **hosted page**. Nothing is collected here, and this file
  * loads no Stripe.js. See `docs/adr/0002-checkout-happens-on-stripes-page.md`.
+ *
+ * ## It does not quote the price, and that is a layout fact
+ *
+ * ~~The amount set beside the label, in champagne.~~ **Gone from the button on
+ * 29 August 2026**, at the client's request. The panel states the price once,
+ * in display type above these frames, so the number in the button was the
+ * second place it was said and the only one that had to be read at nav size.
+ *
+ * What it cost was the column's shape. `.checkout-option` was the same box
+ * five times over — the client stacked them as one set of equal frames — and a
+ * third child pushed "Continue to Checkout" past the width it fits on one line:
+ * the label wrapped, and the frame stood 82px against its siblings' 78px.
+ * Removing the amount alone did not settle that (the label wanted 12.46em and
+ * had 12.27em of it), which is why `.checkout-option` gives back some of its
+ * inline padding in the same change. `money` stays a prop: it is what the order
+ * is placed in, not what the button says.
+ *
+ * **Both of those facts have since moved and the conclusion has not.** The
+ * label is "Pay Another Way" from 30 August 2026 and the face is Gill Sans
+ * rather than Cinzel, so this button has more room than the measurement above
+ * describes; the two frames under it were narrowed in the same change and now
+ * have less. The amount stays off the button for the reason it came off, which
+ * was never the width alone: the panel says the price once, above these frames,
+ * in display type.
  *
  * ## It takes Money, or nothing at all
  *
@@ -37,13 +64,9 @@ const { checkout } = readingPageChrome;
  * ## The question is read off the form, not held in state
  *
  * A `<button>` inside a form knows its own form, and the question is a named
- * field in it, read at the moment of the press. That is what keeps
- * `CountedField` uncontrolled: holding the text in React would re-render the
- * whole order form on every keystroke to do it, which is the trade its own
- * docblock refuses. In gift mode there is no
- * `question` field in the DOM at all — the sections are mutually exclusive —
- * and this reads an empty string, which is the correct answer for a form that
- * has no question in it.
+ * field in it, read at the moment of the press. See `questionIn` in
+ * `lib/question.ts`, which the wallet button reads through as well — the
+ * question has to reach the order line identically on both roads.
  */
 export function BuyNow({
   productKey,
@@ -127,20 +150,29 @@ export function BuyNow({
         ) : (
           <>
             {/*
-              No face of its own. `.btn-ghost` sets the serif every other button
-              on the site is in, and this span carried the site's only
-              `font-sans` until 29 August 2026 — inherited from the five-frame
-              panel, where four siblings hid it, into a three-frame one where it
-              was the odd one out. See #49.
+              Still no face of its own, and the face it inherits has now changed
+              twice. ~~It carried the site's only `font-sans` until 29 August
+              2026 — inherited from the five-frame panel, where four siblings
+              hid it, into a three-frame one where it was the odd one out (#49)
+              — and then `.btn-ghost`'s serif with the rest of the panel.~~
+              From 30 August 2026 `.checkout-option` sets Gill Sans Light on
+              every frame here (#50), so this span is in the sans it started in
+              by inheritance, and there is no longer an odd one out to be.
             */}
-            <span>{checkout.buy}</span>
             {/*
-              The amount is the API's, formatted against the site's locale. It
-              is set beside the label rather than inside it so the words do not
-              move as the price lands, and so a state with no live money simply
-              has no number rather than a different sentence.
+              `marks.card` is the client's own frame icon, drawn for the "Pay
+              with Card" frame this button replaced and unused between `1fd46f6`
+              and 29 August 2026. Restored at the client's request, at the scale
+              its two siblings on this panel already use: 49px ÷ 6.87 = 7.13cqw.
+
+              **It is narrower than the road it opens**, and that is argued in
+              `content/reading-pages.ts` beside the label rather than here: the
+              hosted page takes Apple Pay and Google Pay too. The wallets have
+              their own buttons above this one, so card is what is left by the
+              time a customer is reading this frame.
             */}
-            {money ? <span className="text-champagne">{formatPrice(money)}</span> : null}
+            <Mark art={marks.card} className="w-[7.13cqw]" />
+            <span>{checkout.buy}</span>
           </>
         )}
       </Button>
@@ -166,21 +198,4 @@ function Note({ alert = false, children }: { alert?: boolean; children: string }
       {children}
     </p>
   );
-}
-
-/**
- * What the customer typed, read out of the form this button sits in.
- *
- * An empty string when there is no form, no field, or nothing typed — all three
- * mean the same thing to an order, whose `question` is optional on every
- * product.
- */
-function questionIn(button: HTMLButtonElement | null): string {
-  const form = button?.form;
-
-  if (!form) return "";
-
-  const typed = new FormData(form).get("question");
-
-  return typeof typed === "string" ? typed : "";
 }

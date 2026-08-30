@@ -41,9 +41,13 @@ reconciles: `stripe` creates a **hosted page** the browser is sent to, and
 `stripe_wallet` creates a PaymentIntent the **express checkout element**
 confirms against on our own page. The choice between them is made on the panel,
 by which control the customer presses, rather than inside one sheet.
-`stripe_wallet` is agreed with the backend and **not yet published** — ADR 0003
-in that repository is explicit that it becomes a published value the moment this
-frontend switches it on. Gift code redemption will be a third.
+~~`stripe_wallet` is agreed with the backend and not yet published~~ — it went
+live on **29 August 2026**, which is the moment ADR 0003 in that repository said
+would publish it. **Both methods are now named** in the `/pay` call: the card
+road sends `method: "stripe"` rather than leaving it to a default, so neither
+road is the one the backend has to assume. Which methods an environment offers
+is answered by `GET /payment-methods`, and an environment that offers no wallet
+draws no wallet row. Gift code redemption will be a third.
 _Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe_wallet`, not a method)
 
 **Hosted page**:
@@ -70,26 +74,42 @@ _Avoid_: anonymous user, visitor (a visitor is anyone; a guest is a guest *buyer
 The Stripe element we mount in the payment panel, which draws the wallet
 buttons. It is ours: its theme, type, height and border radius are ours to set,
 within the range Stripe and the wallet vendor allow. It draws buttons; it
-authorizes nothing. **It is off the reading page during the interim** — the card
-road ships first and `stripe_wallet` has no code behind it yet — which is a fact
-about a sequence and not about this definition.
-_Avoid_: Apple Pay button, wallet button, payment element (that is a different Stripe element, for cards)
+authorizes nothing. ~~It is off the reading page during the interim~~ — it is
+**on the reading page from 29 August 2026**, above the card button, and the
+interim it was waiting out has ended. It draws **nothing at all** on a device
+with no wallet, and the row it sits in collapses to no height and no gap when it
+does, so its absence costs the panel nothing.
+_Avoid_: Apple Pay button, payment element (that is a different Stripe element, for cards), and **"the wallet button" as a name for _this_** — it draws buttons, plural, and which ones is Stripe's decision at runtime. ~~"wallet button" outright~~: corrected 29 August 2026, because it is the right name for the thing Stripe draws *inside* the element, which had no other name and which this file already used it for twice. The element is not a button; a wallet button is what it renders.
 
 **Wallet sheet**:
 The dialog the operating system opens when a wallet button is pressed — Apple's
 or Google's, over our page, outside our document. It quotes Money and takes the
 customer's authorization. It is **not ours**: we cannot style it, and the only
 thing we control about it is the number it is given. A cancelled sheet has
-created nothing. **Off the page during the same interim**, and for the same
-reason: it is opened by the element above, which is not being rendered yet.
+created nothing. ~~Off the page during the same interim~~, and reachable from
+29 August 2026 for the same reason the element above it is: it is opened by
+that element, which is now rendered.
+
+It is also the one thing in this vocabulary that **no automated check in this
+repo can reach**. Stripe draws a wallet button only in Safari with a card in
+Wallet, or in Chrome signed into Google Pay, on a registered payment method
+domain — so `check:panel` proves the row and the collapse, and a real device is
+what proves the sheet.
 _Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout element (that is the button, this is the dialog)
 
 ### After the money
 
 **Confirmation**:
-The screen that tells a customer their payment was received, rendered from the
-payment intent rather than from an order. It reports what Stripe says, never
-what we hope the backend has since done.
+The screen that tells a customer what happened to their payment, rendered from
+the payment rather than from an order. It reports what our backend says about
+it, never what we hope it has since done.
+
+**Both roads land here and they do not paint the same way.** The hosted page's
+`success_url` is reached only after Stripe has taken the payment, so that road
+says so at once and verifies behind it. The wallet's `return_url` is reached
+**whatever happened**, so that road asks before it says anything — a green tick
+shown to somebody who was never charged is the one thing this screen may never
+produce.
 _Avoid_: success page, thank you page, receipt
 
 **Receipt**:

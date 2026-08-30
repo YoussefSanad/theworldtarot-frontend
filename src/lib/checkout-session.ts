@@ -73,13 +73,20 @@ export type CheckoutRecord = {
    */
   question?: string;
   /**
-   * The PaymentIntent's client secret. **Optional, and not written on the card
-   * road** — a hosted Session leaves no secret on the client.
+   * The PaymentIntent's client secret. **Optional, and written on the wallet
+   * road only** — a hosted Session leaves no secret on the client.
    *
-   * Kept rather than deleted because the wallet road brings it back, and the
-   * confirmation will then have to read records left by either road. Making the
-   * field optional now is cheaper than deleting it and re-adding it inside a
-   * fortnight.
+   * It is what tells the two roads apart on the way home. A wallet payment
+   * leaves this and no Session id; a card payment leaves a Session id and no
+   * secret. `walletCheckoutFor` derives the intent id from it and matches that
+   * against the address Stripe returns to, which is the wallet road's
+   * stale-result guard and the card road's `sessionId` under another name.
+   *
+   * **Not shown, not logged, and not sent anywhere.** It is a bearer credential
+   * scoped to one intent. Stripe puts it in the return address itself, which is
+   * why the confirmation reads `payment_intent` out of that address and never
+   * this — an id identifies the payment without being the authority to confirm
+   * it.
    */
   clientSecret?: string;
 };
@@ -97,7 +104,8 @@ export type CheckoutRecord = {
  * that cannot be remembered rather than as one that cannot proceed.
  *
  * This replaced `paymentIntentId`, which derived the same guard from a client
- * secret. That road returns, and so will a function like it.
+ * secret. **That road returned on 29 August 2026 and so did the function** —
+ * `paymentIntentFrom`, below.
  */
 export function sessionIdFrom(redirectUrl: string): string | null {
   let path: string;
@@ -111,6 +119,32 @@ export function sessionIdFrom(redirectUrl: string): string | null {
   const found = path.match(/cs_[A-Za-z0-9_]+/);
 
   return found ? found[0] : null;
+}
+
+/**
+ * `pi_3Abc123_secret_XyZ789` becomes `pi_3Abc123`.
+ *
+ * The wallet road's half of the guard. Stripe appends `payment_intent` to the
+ * address it returns to, and what the tab holds is the **secret** — so the two
+ * are compared by deriving the id from the secret rather than by storing the id
+ * as a second field that could disagree with it.
+ *
+ * **The part before `_secret_`, and nothing cleverer.** A client secret is an
+ * intent id, that separator, and an opaque tail; matching `pi_[A-Za-z0-9]+`
+ * against the whole string would also match inside the tail on a secret whose
+ * id it did not begin with. Splitting on the separator is the only reading that
+ * cannot produce an id the secret does not belong to.
+ *
+ * `null` when there is no separator to split on, which the caller treats the
+ * way it treats a card record with no Session id: a payment it cannot identify,
+ * and therefore one it may show nothing about.
+ */
+export function paymentIntentFrom(clientSecret: string): string | null {
+  const [id, ...rest] = clientSecret.split("_secret_");
+
+  if (rest.length === 0 || !id.startsWith("pi_")) return null;
+
+  return id;
 }
 
 /**
@@ -227,19 +261,22 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
 }
 
 /**
- * The record for one payment: the stale-result guard, as a function.
+ * The record for one **card** payment: the stale-result guard, as a function.
  *
  * A record that names a different payment than the one being displayed
  * describes some other purchase — almost always a newer one, made in this tab
  * after the customer navigated back — and none of it may be shown against the
  * session on screen.
  *
- * **`null` for `sessionId` shows nothing**, and that is a change from the
- * wallet road, where it meant "an in-place payment that never left the page, so
- * the record *is* what is being displayed". On this road every payment leaves
+ * **`null` for `sessionId` shows nothing.** Every payment on this road leaves
  * the page and returns naming itself, so an address with no session id is a
  * typed one or a bookmarked one — and a confirmation reached that way must not
  * paint the last purchase it can find in the tab.
+ *
+ * **It refuses a wallet record**, which is what having two of these buys. A
+ * wallet record carries no `sessionId`, so it falls out here without the caller
+ * having to know there is another road; `walletCheckoutFor` is the one that
+ * takes it.
  */
 export function checkoutFor(sessionId: string | null): CheckoutRecord | null {
   if (sessionId === null) return null;
@@ -249,6 +286,33 @@ export function checkoutFor(sessionId: string | null): CheckoutRecord | null {
   if (record === null || record.sessionId === undefined) return null;
 
   return record.sessionId === sessionId ? record : null;
+}
+
+/**
+ * The record for one **wallet** payment, guarded on the intent rather than the
+ * Session.
+ *
+ * The same guard as `checkoutFor` against a different id, and it is a second
+ * function rather than a second branch inside the first for the reason
+ * `questionFor` sits beside it: a caller left to work out which field applies
+ * to which road is a caller that will one day compare the wrong ones, and what
+ * that costs here is one customer's payment shown against another's.
+ *
+ * `paymentIntentId` is read out of the address Stripe returns to. The record's
+ * end of the comparison is derived from the **secret** it holds, so there is no
+ * second stored field that could disagree with it.
+ *
+ * **A card record cannot satisfy this**, because it carries no client secret to
+ * derive an id from — the mirror of `checkoutFor` refusing a wallet record.
+ */
+export function walletCheckoutFor(paymentIntentId: string | null): CheckoutRecord | null {
+  if (paymentIntentId === null) return null;
+
+  const record = recallCheckout();
+
+  if (record === null || record.clientSecret === undefined) return null;
+
+  return paymentIntentFrom(record.clientSecret) === paymentIntentId ? record : null;
 }
 
 /**
