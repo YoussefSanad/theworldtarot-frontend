@@ -19,7 +19,24 @@ export type ImageAsset = {
 const asset = (src: string, width: number, height: number): ImageAsset => ({ src, width, height });
 
 export const brand = {
-  logo: asset("/figma/logo.webp", 401, 209),
+  /**
+   * The one mark in here that is not a Figma export: the client's own vector
+   * wordmark, cropped to the letters.
+   *
+   * `logo.webp` drew the same words inside a pale starfield swirl, and 401x209
+   * was mostly that swirl — the cream measured 400x74 of it, flush to both
+   * side edges. So the box changes shape (1.92:1 to 5.52:1) while the words do
+   * not: every caller sizes this by width, and at the width each already sets
+   * the wordmark lands the size it always was. What goes is the halo, and with
+   * it the height the halo needed — see `SiteHeader`, whose masthead is no
+   * longer the tallest thing on a phone.
+   *
+   * SVG, and the only one on the site. `images.unoptimized` is on for the
+   * static export, so `next/image` writes a plain `<img>` and none of the
+   * optimizer's SVG handling — `dangerouslyAllowSVG` and the CSP that should
+   * come with it — is in play.
+   */
+  logo: asset("/wt-logo.svg", 426, 77),
   livingTarotBadge: asset("/figma/living-tarot-badge.webp", 271, 33),
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),

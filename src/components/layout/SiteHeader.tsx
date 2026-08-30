@@ -24,11 +24,25 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  * which drew a 225px-tall masthead — too much of a laptop viewport to spend
  * before the hero starts. Type runs at 82.5% via `text-nav-sm` (see
  * globals.css) and the action icons match it, but the logo goes further, to
- * 70% (401px wide in Figma → 281px), because its height alone sets the
+ * 70% (401px wide in Figma → 281px), because its height alone used to set the
  * header's: at parity with the rest it stayed the tallest thing here by a
  * wide margin. Below `lg` the clamp floors take over and hold the logo near
  * its old mobile size — the collapsed header is already short there, so
  * shrinking the wordmark further only costs legibility.
+ *
+ * **The widths are the old ones on purpose.** The mark is the client's vector
+ * wordmark now rather than the starfield export, and the cream ran the full
+ * width of that export — so a width that framed the words then frames them
+ * still, and only the halo and its height are gone. See `brand.logo`.
+ *
+ * What that height was holding up: 281px of the old box came to 146px tall and
+ * nothing else here was close, so the logo set the masthead at every width.
+ * The same width of the new one is 51px, which is shorter than the row beside
+ * it everywhere — above `lg` the actions and the nav stack to more than that,
+ * and below it the menu button's 2.75em does. The masthead is now as tall as
+ * whatever is opposite the logo, and on a phone that is about 50px against the
+ * 83px it used to be. Anything tuned to clear this header wants re-measuring;
+ * `readings/page.tsx` was the only such thing when the mark changed.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
