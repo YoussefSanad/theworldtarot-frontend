@@ -440,8 +440,19 @@ every keystroke to do it.
   and reads as sitting low, and so does a quarter. An eighth is the one number
   in that file that is neither Figma's nor arithmetic: it was settled by eye
   against the rendered page over three passes, so move it by eye too. The line
-  count is the copy's own shape: `included` is a list of phrases per line, so
-  its length *is* how many lines the entry sets at the width she drew.
+  count is the copy's own shape: `included` is a list of the places a line may
+  break, so one phrase is one line and more than one is two at the width she
+  drew.
+- **"Presented on original World Tarot artwork" is written as three phrases for
+  two lines.** A `Phrase` that will not fit the measure does not hold together —
+  it shrinks and wraps *inside* itself — and on a phone that one is wider than
+  the measure a panel at 81.33% leaves once the medallion, its gap and the two
+  `cqw` insets are out. It broke mid-name and spilled "artwork" onto a third
+  row. Splitting a phrase only ever adds a place the line may break and never
+  moves one, so the frame at 1920 still breaks where she breaks it — "artwork"
+  is what does not fit there either way — and the phone now breaks after
+  "original" instead of through the house name. `<HouseName>` is `nowrap` for
+  the same reason: it is one proper noun.
 - **A feature prop turns on its side below `md`, and the row of three breaks
   much later, at `xl`.** Two different widths on purpose. The compass stands
   beside the words at `md` and up, which is what the frame draws, and over them

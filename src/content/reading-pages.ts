@@ -301,8 +301,18 @@ export const monthAhead: ReadingPage = {
     ["A Month-Ahead Reading", "focused on your path forward"],
     ["Prepare for the weeks ahead", "with insight"],
     ["Thoughtful written interpretation"],
-    /* The house name is set in the brand's own face here; see `<HouseName>`. */
-    ["Presented on original World Tarot", "artwork"],
+    /*
+      The house name is set in the brand's own face here; see `<HouseName>`.
+
+      Three phrases for the two lines the frame draws, because at 1920 "artwork"
+      is what will not fit and the break falls after the name either way —
+      splitting a phrase only ever *adds* a place the line may break, it never
+      moves one. The extra place is the one a phone needs: the whole of
+      "Presented on original World Tarot" is wider than the measure a 375px
+      panel leaves, and without a break inside it the line wraps mid-name and
+      spills "artwork" onto a third row.
+    */
+    ["Presented on original", "World Tarot", "artwork"],
     ["Delivered by email within 24 hours"],
   ],
   testimonial: {
