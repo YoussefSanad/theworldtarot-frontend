@@ -2,11 +2,35 @@
 
 `site.ts`, `home.ts` and `cards.ts` hold every piece of copy and every
 content-driven list (nav links, products, testimonials, the card roster) that
-appears on the homepage. Components import from here and render; they don't
+appears on the homepage. `readings.ts` does the same for the readings index and
+`reading-pages.ts` for a single reading's page — the latter split into the
+copy the three written readings share and the handful of things each changes,
+because they are one page template (see below).
+
+Two exports there are settings rather than copy, and both are the CMS's to own
+when there is one: `rushDelivery.enabled`, the switch that decides whether a
+reading offers a paid delivery upgrade at all, and `questionLimit`, the number
+the question field enforces and its counter reads from. Components import from here and render; they don't
 own strings. This split exists so the wording — which comes directly from the
 client, a designer rather than a developer, working from a PSD — can move to
 a CMS later without touching layout or JSX. If you're adding a new piece of
 homepage copy, it belongs in `home.ts`, not inlined in a component.
+
+## "A CMS later" has started, for products
+
+**`products` in `home.ts` is no longer where the tile copy comes from.** Name,
+description and price are read from `GET /api/v1/{locale}/products` at runtime
+and the bundled entries are the fallback for when the backend can't be reached.
+See [`docs/plans/products-api-wiring.md`](../../docs/plans/products-api-wiring.md).
+
+What stayed here, because none of it is in the product contract and none of it
+is coming: `key`, `action`, `href` and `image`. A tile can't render without its
+artwork, so **this list still decides which tiles exist and in what order** —
+the API only decides what they say. Publishing a fifth product doesn't put it on
+the homepage; adding it here does.
+
+Nothing else on the page is wired this way yet. The rest of `home.ts` is still
+the only source for its own copy.
 
 ## `cards.ts` and the one-card constraint
 
@@ -37,7 +61,12 @@ When the full set lands:
 This flipped twice. `10ad8ee` replaced the reveal's playing video with a still
 image; the client has since reversed that, so the reveal plays a video again.
 
-The videos are to be served from a **backend endpoint**, not `public/`.
+One video is not part of this and should not be moved behind that seam: the
+loop under a reading page's title (`videos.readingCards`) is page furniture —
+the deck, shared by all three written readings — rather than a card. It lives
+in `public/videos` and stays there.
+
+The Living Tarot films are to be served from a **backend endpoint**, not `public/`.
 `TarotCard.video` is a plain URL string precisely so that switch costs nothing
 downstream — the seam is `RevealProvider` picking the card, which is what will
 fetch `{ id, number, name, video }`. The MP4 in `public/videos` is a
@@ -60,7 +89,13 @@ linked to it.
 
 The four `products` (One Card, Three Card, Month Ahead, Viewing Room) look
 like four equally-custom flows, but per the client only two actually differ
-in workflow:
+in workflow.
+
+A fifth reading, **In Depth**, exists in the backend catalogue and is seeded and
+priced, so it comes back from `/products`. It has no tile here and no artwork,
+so the merge ignores it. Giving it one is a frontend change, not a backend one.
+
+The workflows:
 
 - **Three Card** and **Month Ahead** (plus a future "In-Depth" reading, not
   yet in this list) share one page template and one fulfillment path: the
@@ -68,6 +103,11 @@ in workflow:
   client prepares the reading offline and emails a PDF. Spread, card count and
   reading format only affect page copy/pricing, never frontend logic — don't
   build per-product reading-delivery UI for these beyond the shared template.
+  **That template is built**, from the Month Ahead frame: the page lives at
+  `src/app/(site)/readings/month-ahead/page.tsx` and its copy at
+  `reading-pages.ts`. Adding Three Card or In-Depth is a `ReadingPage` entry
+  and a route that imports it — see
+  [`src/components/reading/README.md`](../components/reading/README.md).
 - **One Card** is the interactive online AI experience — genuinely different
   functionality, not just different copy.
 - **Viewing Room** is a paid pass into the full cinematic card collection

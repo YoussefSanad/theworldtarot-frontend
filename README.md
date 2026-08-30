@@ -1,8 +1,16 @@
-# The World Tarot — homepage & reveal
+# The World Tarot
 
-A Next.js implementation of the World Tarot homepage built from the Figma design
-(`node 102:3`), together with the reusable card **Reveal** that the rest of the
-site will be built around.
+A Next.js implementation of the World Tarot site, built from the Figma designs
+converted from the client's PSDs. Three pages so far:
+
+- the **homepage** (`node 102:3`), together with the reusable card **Reveal**
+  the rest of the site is built around;
+- **Readings** (`node 300:68`) — see
+  [`src/components/readings/README.md`](src/components/readings/README.md) for
+  what that frame's conversion gets wrong and how the bordered panels are built;
+- **Month Ahead Reading** (`node 329:496`), the first of the three written
+  readings that share one page template — see
+  [`src/components/reading/README.md`](src/components/reading/README.md).
 
 ```bash
 npm install
@@ -97,12 +105,36 @@ npm run check:reveal    # walks the whole reveal interaction
 npm run check:images    # flags images that failed or rendered at zero size
 ```
 
+Two need a build first, because they drive the real export rather than `next dev`:
+
+```bash
+npm run build
+npm run check:panel         # the payment panel's four states, and the wallet row
+npm run check:confirmation  # /checkout/complete/ through every payment outcome
+```
+
 At 1920px the hero grid, card, buttons and product row land on the Figma
 geometry exactly. The page runs about 7% taller than the 6674px frame, which is
 the flow layout resolving overlaps that the design draws as stacked boxes.
 
 ## Scope
 
-Homepage and reveal only. Navigation links point at routes from the navigation
-document that do not exist yet; the newsletter form has markup and validation
-but no endpoint.
+Homepage, the reveal, the Readings index, and one reading's own page. Navigation
+links — including the remaining reading products and the gift panel — point at
+routes from the navigation document that do not exist yet.
+
+Two forms have markup and field names but no endpoint: the newsletter signup in
+the footer, and the checkout on a reading page. Both are waiting on a backend
+contract rather than on frontend work — a reading page's payment controls and
+its redeem-gift-code button are deliberately inert until one exists. Its **gift
+mode** is live and needs no backend: it swaps the question for recipient
+details in place, so nothing is sent either way.
+
+A reading's delivery upgrade (`24-Hour Rush`) ships switched **off**, behind a
+flag the CMS will own. Off, the page states its one delivery exactly as the
+frame draws it.
+
+Each page owns its own backdrop: `<PageAtmosphere>` renders as the page's first
+element and fills the layout column behind the header, main and footer. The site
+layout carries `isolate` so that layer can sit at `-z-10` without every section
+needing a z-index; see `src/components/layout/PageAtmosphere.tsx`.

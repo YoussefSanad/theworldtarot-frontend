@@ -13,14 +13,86 @@ no runtime optimization (`unoptimized: true`), which is why
 every image rather than relying on Next to derive them.
 
 Both `next.config.ts` and `next.config.mjs` exist side by side with
-equivalent settings. Next only loads one config file; treat `next.config.ts`
-as the authoritative copy and update both (or delete the `.mjs`) if you
-change build settings — a fix applied to only one will silently not take
-effect depending on which Next actually resolves.
+equivalent settings, and Next loads only one: it resolves `next.config.mjs`
+ahead of `next.config.ts`, so the `.mjs` is the copy that actually runs.
+Change both — a fix applied only to the `.ts` silently does nothing.
+
+## The API base URL
+
+`NEXT_PUBLIC_API_BASE_URL` is inlined at build time, so each environment is a
+separate build. Staging builds against `https://staging-api.theworldtarot.com`.
+
+It must be a subdomain of `theworldtarot.com` — not the Laravel Cloud platform
+URL, not a `pages.dev` or `workers.dev`. Cookies are issued for
+`.theworldtarot.com`, so from any other registrable domain the browser treats
+them as third party, Safari discards them, and every write is refused while
+unauthenticated reads keep working. See
+[`docs/adr/0001-one-registrable-domain.md`](docs/adr/0001-one-registrable-domain.md).
+
+The build refuses a loopback address outright (see `assertDeployableApiBase`
+in both config files); `ALLOW_LOCAL_API_BUILD=1` overrides it for a deliberate
+local preview build.
+
+## The Stripe publishable key
+
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is what the wallet button mounts from. It
+is inlined at build time like the API base, so staging and production carry
+different keys for the same reason they carry different API bases.
+
+**The `NEXT_PUBLIC_` prefix is the whole point of this section.** Only prefixed
+variables reach the bundle. Set as `STRIPE_PUBLISHABLE_KEY` — which is where it
+originally lived, on the *backend* environment, where nothing read it — the key
+reads as configured in every dashboard and is inert in every browser:
+`loadStripe` gets `undefined`, no element mounts, and the payment panel renders
+a gap behind a green build. Check the name, not just the presence.
+
+The build refuses three things (`assertStripeKeyMatchesApi`, in **both** config
+files):
+
+| build | key | result |
+|---|---|---|
+| `staging-api.theworldtarot.com` | `pk_test_` | builds |
+| `staging-api.theworldtarot.com` | `pk_live_` | **refused** — quotes real money against test-priced orders |
+| any non-staging host | `pk_test_` | **refused** — takes an authorization that can never be captured |
+| any | unset | **refused** — the silent gap above |
+
+Any host that does not begin with `staging` is treated as production and
+demands a live key. That is deliberate: production is not stood up yet, and an
+unrecognised host failing a build is safer than one passing it.
+
+`ALLOW_LOCAL_API_BUILD=1` exempts this guard as well as the API base one — a
+deliberate local preview build is exempt from every deployability guard rather
+than a subset.
+
+The key is publishable, not secret: it ships in the bundle by design and
+identifies the account rather than authorising anything. The secret key is the
+backend's and never appears in this repository.
+
+## The checkout probe
+
+`/checkout-probe/` places a real pending order against the API the build points
+at and shows what came back. It is the proof that a browser on our own origin
+can complete the Sanctum cookie handshake — something no test can establish,
+because the tests around [`src/lib/api-write.ts`](src/lib/api-write.ts) stub
+`fetch` and so verify the request we build rather than what the browser does
+with it.
+
+It is behind no flag, deliberately: this branch is not one production is cut
+from, and the route is deleted at #38 when a real payment panel does the same
+thing. Deleting the file is a stronger guarantee than an environment variable
+somebody can set by accident.
+
+**So do not cut a production build from a branch that still has this route.**
+Anybody who loads it places a real pending order against whatever
+`NEXT_PUBLIC_API_BASE_URL` names.
+
+It proves nothing anywhere but `staging.theworldtarot.com`: cookies are issued
+for `.theworldtarot.com`, so on a `pages.dev` preview URL the handshake fails
+for reasons that say nothing about the code.
 
 ## Cloudflare: static assets, not a Worker
 
-`wrangler.toml` currently reads:
+`wrangler.toml` reads in full:
 
 ```toml
 name = "theworldtarot-frontend"
@@ -31,19 +103,11 @@ directory = "./out"
 not_found_handling = "404-page"
 ```
 
-Cloudflare serves `./out` directly as static assets. **`workers/index.js` is
-not wired up** — an earlier version of `wrangler.toml` had
-`main = "workers/index.js"` and used the legacy `[site]`/bucket config; the
-migration to `[assets]` dropped the `main` key without removing the worker
-file. With no `main`, Cloudflare never invokes that script, so its `fetch`
-handler (which — notably — returns an *empty* 200 body for `/` and a plain
-404 for everything else, i.e. it doesn't even proxy to the built assets) is
-dead code as written.
+There is no `main` key and no Worker script in this repo. Cloudflare serves
+`./out` directly as static assets, and that is the whole deployment.
 
-If you need Worker-level logic again (redirects, headers, edge auth, custom
-404 handling beyond `not_found_handling`), re-add `main = "workers/index.js"`
-**and** rewrite the handler to serve from the assets binding
-(`env.ASSETS.fetch(request)`) rather than the stub above — don't assume
-restoring `main` alone makes the site work, since the current handler would
-start intercepting every request and serving blank/404 responses instead of
-the site.
+If you need Worker-level logic (redirects, headers, edge auth, custom 404
+handling beyond `not_found_handling`), add a `main` **and** write a handler
+whose fallthrough serves from the assets binding — `env.ASSETS.fetch(request)`.
+A handler that answers requests itself without that binding intercepts every
+request and serves nothing.

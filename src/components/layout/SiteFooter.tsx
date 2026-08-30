@@ -8,7 +8,7 @@ import { surfaces } from "@/lib/assets";
 
 export function SiteFooter() {
   return (
-    <footer className="stack mt-[clamp(0.5rem,0.73vw,0.875rem)]">
+    <footer className="relative z-10 stack mt-[clamp(0.5rem,0.73vw,0.875rem)]">
       <div
         aria-hidden
         className="veil size-full"

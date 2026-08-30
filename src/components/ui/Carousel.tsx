@@ -2,7 +2,8 @@
 
 import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
-import { createContext, use, useCallback, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { useReducedMotion } from "motion/react";
+import { createContext, use, useCallback, useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -28,6 +29,20 @@ type CarouselContextValue = {
 
 const CarouselContext = createContext<CarouselContextValue | null>(null);
 
+/** Embla's own default (embla-carousel@8.6.0) — not part of its public API to import, so pinned here. */
+const EMBLA_DEFAULT_DURATION = 25;
+
+/**
+ * Embla animates a transform on rAF, so globals.css's reduced-motion block —
+ * which only collapses CSS transitions — can't reach it. `duration` is a frame
+ * count: 0 takes Embla's explicit "instant" branch. Passing `undefined` would
+ * disable scroll animation outright, since Embla's option merge overwrites a
+ * key whenever it's present, even with an undefined value.
+ */
+export function useCarouselDuration() {
+  return useReducedMotion() ? 0 : EMBLA_DEFAULT_DURATION;
+}
+
 function useCarousel(component: string) {
   const context = use(CarouselContext);
   if (!context) throw new Error(`<${component} /> must be rendered inside <Carousel>`);
@@ -37,6 +52,7 @@ function useCarousel(component: string) {
 export function Carousel({
   options,
   initialSnapCount = 0,
+  slideCount,
   className,
   children,
   ...props
@@ -49,27 +65,73 @@ export function Carousel({
    * slide); otherwise Embla's own count wins the moment it initialises.
    */
   initialSnapCount?: number;
+  /**
+   * How many slides `children` currently holds, when that can change after
+   * mount. Leave it out for a fixed set.
+   *
+   * **Embla does not notice slides being added or removed.** It re-measures on
+   * resize and when its options change, and on nothing else, so a track whose
+   * children React has just rewritten keeps the old snap list: dots that scroll
+   * nowhere, or slides with no dot at all. Passing the count is what triggers
+   * the re-measure.
+   */
+  slideCount?: number;
   children: ReactNode;
 } & ComponentPropsWithoutRef<"div">) {
   const [viewportRef, api] = useEmblaCarousel(options);
-  const [snapCount, setSnapCount] = useState(initialSnapCount);
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const onReInit = useCallback((embla: EmblaCarouselType) => {
-    setSnapCount(embla.scrollSnapList().length);
-    setSelectedIndex(embla.selectedScrollSnap());
-  }, []);
+  /**
+   * Embla owns the snap list and the selected index; this component only
+   * mirrors them, which is what makes them an external store rather than
+   * state of ours.
+   *
+   * Subscribing was previously an effect that also called its own handler once
+   * to catch up, because Embla emits `init` while it is being constructed —
+   * before any effect could have been listening. That catch-up was a `setState`
+   * in an effect body, and so a render that immediately scheduled another.
+   * Reading the value in a snapshot instead removes the catch-up entirely:
+   * there is nothing to miss, because nothing is being mirrored into state.
+   */
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (!api) return () => {};
 
-  const onSelect = useCallback((embla: EmblaCarouselType) => {
-    setSelectedIndex(embla.selectedScrollSnap());
-  }, []);
+      api.on("reInit", onStoreChange).on("select", onStoreChange);
+
+      return () => void api.off("reInit", onStoreChange).off("select", onStoreChange);
+    },
+    [api],
+  );
+
+  // The server snapshot is the caller's declared count, which is the whole
+  // reason `initialSnapCount` exists: dots that render before Embla has
+  // measured anything, so the row does not appear a frame late.
+  const snapCount = useSyncExternalStore(
+    subscribe,
+    () => (api ? api.scrollSnapList().length : initialSnapCount),
+    () => initialSnapCount,
+  );
+
+  const selectedIndex = useSyncExternalStore(
+    subscribe,
+    () => (api ? api.selectedScrollSnap() : 0),
+    () => 0,
+  );
+
+  // Skipped on mount, where Embla has just measured the slides itself and a
+  // second pass would only risk throwing away the position it settled on.
+  const measured = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!api) return;
-    onReInit(api);
-    api.on("reInit", onReInit).on("select", onSelect);
-    return () => void api.off("reInit", onReInit).off("select", onSelect);
-  }, [api, onReInit, onSelect]);
+    if (!api || slideCount === undefined) return;
+
+    if (measured.current !== undefined && measured.current !== slideCount) {
+      // Fires the `reInit` event above, which is what resyncs the dots.
+      api.reInit();
+    }
+
+    measured.current = slideCount;
+  }, [api, slideCount]);
 
   return (
     <CarouselContext value={{ viewportRef, api, snapCount, selectedIndex }}>
