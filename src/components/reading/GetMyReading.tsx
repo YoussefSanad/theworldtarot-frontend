@@ -162,22 +162,37 @@ export function GetMyReading({
         {/*
           The wallet row, above Buy Now and nowhere else.
 
-          **Three conditions, and each removes it for a different reason.**
+          **Two conditions, and each removes it for a different reason.**
           `live`, because `money` exists in no other state and a sheet quoting a
           price no server agreed to is the one thing this panel may never open.
-          `walletOffered`, because an environment that configured no Stripe has
-          no wallet to offer. And not `gifting`, for the reason Buy Now goes
-          inert there: `POST /orders` has no field for a recipient, so a live
-          control in gift mode charges somebody for a gift delivered to
-          themselves — and a wallet is the worse of the two to get wrong, since
-          it takes the money the instant a face is recognised.
+          And `walletOffered`, because an environment that configured no Stripe
+          has no wallet to offer.
 
-          Absent rather than collapsed in all three. The row's own collapse
-          answers a fourth question — this device has no wallet — and it must
-          stay the only reason the row is ever zero-height, or the check that
-          tells a collapsed row from an absent one is measuring nothing.
+          ~~And not `gifting`, for the reason Buy Now goes inert there: `POST
+          /orders` has no field for a recipient, so a live control in gift mode
+          charges somebody for a gift delivered to themselves — and a wallet is
+          the worse of the two to get wrong, since it takes the money the
+          instant a face is recognised.~~ **Gone on 30 August 2026, at the
+          client's request**, and with it the one absence on this panel a
+          customer could watch happen. The row now survives the toggle, which is
+          what was actually asked for: a wallet button disappearing under a
+          thumb is a worse fault than a gift order that needs a human to send
+          it, and a human sends every reading here anyway.
+
+          What made the old gate right was never the charge — `MarkOrderFulfilled`
+          is a timestamp and Jennifer emails each reading by hand, so nothing
+          was going to auto-deliver a gift to its buyer. It was that the order
+          arrived carrying no evidence it was a gift. `orderNoteIn` closes that
+          on the line itself, and both controls read through it; see
+          `lib/order-note.ts`.
+
+          Absent rather than collapsed in both conditions that remain. The row's
+          own collapse answers a third question — this device has no wallet —
+          and it must stay the only reason the row is ever zero-height, or the
+          check that tells a collapsed row from an absent one is measuring
+          nothing.
         */}
-        {offer.status === "live" && walletOffered && !gifting ? (
+        {offer.status === "live" && walletOffered ? (
           <ExpressCheckout productKey={reading.productKey} money={offer.money} />
         ) : null}
 

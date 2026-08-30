@@ -34,6 +34,17 @@ A product's permanent, untranslated identifier — `month-ahead`, `one-card`,
 language, and it is a fixed set the backend validates against.
 _Avoid_: product id, SKU, slug, product name
 
+**Order note**:
+The one free-text string an order line carries, as `lines[].question` on the
+wire. It is the customer's **question** on a self-purchase and a composed
+**gift note** in gift mode — "Gift — send this reading to …", built from the
+recipient's address and the buyer's message, because `POST /orders` has no
+field for either. The wire name is the backend's and does not describe the
+contents; `lib/order-note.ts` is where the two are told apart, by which section
+the form has mounted. A stopgap: the gifting milestone gives the recipient a
+column of their own.
+_Avoid_: "the question" for the gift case (it is not one), comment, note field, message
+
 **Payment method**:
 One way money arrives, as the backend's registry defines it. There are **two
 Stripe methods**, not one, because they are two integrations that no parameter
@@ -102,7 +113,15 @@ _Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout elemen
 **Confirmation**:
 The screen that tells a customer what happened to their payment, rendered from
 the payment rather than from an order. It reports what our backend says about
-it, never what we hope it has since done.
+the payment, ~~never what we hope it has since done~~ — and on **one** of its
+seven states it also promises the reading itself.
+
+That exception is the client's, made knowingly on #51 (30 August 2026) and not
+the code's to make or to take back: the `received` screen says the reading is on
+its way and names it, from the product key the checkout left in the tab. **The
+other six still may not.** Four of them say no money was taken, and a screen
+that hedges about a payment while promising a reading is worse than either
+half. `scripts/check-confirmation.mjs` holds the line, one run per state.
 
 **Both roads land here and they do not paint the same way.** The hosted page's
 `success_url` is reached only after Stripe has taken the payment, so that road
@@ -114,7 +133,12 @@ _Avoid_: success page, thank you page, receipt
 
 **Receipt**:
 The email the backend sends when an order settles. Not a page and not ours.
-_Avoid_: confirmation email
+_Avoid_: confirmation email — **in this vocabulary and in the code, not in what
+a customer reads**. The confirmation screen says "A confirmation email is on its
+way" because that is the client's line and the words a buyer knows the mail by;
+nothing that names the thing in either repository moved. The two are allowed to
+differ here in a way the rest of this file's entries are not, and stating that
+is cheaper than the next person renaming one to match the other.
 
 **Claim link**:
 The link in that email inviting a buyer with no password to set one. It points

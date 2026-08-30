@@ -141,6 +141,45 @@ test("the record holds what the backend charged, not what the page was quoting",
   });
 });
 
+test("a gift rides to the backend on the line and is flagged on the record", async () => {
+  /*
+    **The flag goes one way and the note goes both.** `POST /orders` has no
+    field for a gift and never sees one; the record keeps it, because that is
+    what stops a cancelled gift checkout refilling the question textarea with a
+    note this code composed. See `questionFor` in `lib/checkout-session.ts`.
+  */
+  const note = "Gift — send this reading to alice@example.com";
+
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({ productKey: "month-ahead", money: offer, question: note, gift: true });
+
+  assert.deepEqual(bodies()[0].lines, [{ product: "month-ahead", quantity: 1, question: note }]);
+  assert.equal("gift" in bodies()[0], false);
+  assert.equal(recallCheckout()?.question, note);
+  assert.equal(recallCheckout()?.gift, true);
+});
+
+test("a self-purchase leaves no gift key on the record at all", async () => {
+  // Absent rather than `false`, so a record carries the keys it always has
+  // unless there is something new to say about it.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({ productKey: "month-ahead", money: offer, question: "Where next?" });
+
+  assert.equal("gift" in recallCheckout()!, false);
+});
+
 test("a question nobody typed is neither sent nor remembered", async () => {
   stubFetch(
     new Response(null, { status: 204 }),
@@ -286,6 +325,27 @@ test("a wallet press places an order, pays it as a wallet, remembers it, and ans
     */
     { method: "stripe_wallet" },
   ]);
+});
+
+test("the wallet road flags a gift the same way the card road does", async () => {
+  // The two roads write the record separately, which is exactly why this is
+  // asserted on both: a flag added to one and forgotten on the other is a gift
+  // note in a question box on whichever road the customer happened to take.
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "client_secret", client_secret: SECRET }),
+  );
+
+  await startWalletPayment({
+    productKey: "month-ahead",
+    money: offer,
+    question: "Gift — the buyer gave no recipient address.",
+    gift: true,
+  });
+
+  assert.equal(recallCheckout()?.gift, true);
 });
 
 test("the wallet record carries the secret and no Session id", async () => {

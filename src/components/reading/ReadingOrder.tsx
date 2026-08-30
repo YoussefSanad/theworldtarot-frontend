@@ -61,6 +61,11 @@ import { useProduct } from "@/lib/product";
  * comparison is `questionFor`, beside the guard the confirmation uses, rather
  * than a pair of fields compared here.
  *
+ * **And never a gift**, from 30 August 2026, which `questionFor` decides and
+ * argues. What it means here is that a cancelled gift checkout comes back to an
+ * empty panel in self mode: this reads one string for one textarea, and gift
+ * mode is two fields and a toggle it has no way to restore.
+ *
  * `useSyncExternalStore` rather than an effect that sets state. Storage is an
  * external store, and this is a static export: the HTML is built on a machine
  * that has none, so the build snapshot is `null` and the client's is the record.

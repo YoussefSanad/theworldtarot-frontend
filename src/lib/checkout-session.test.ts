@@ -254,6 +254,38 @@ test("no record offers no question", () => {
   assert.equal(questionFor("month-ahead"), undefined);
 });
 
+test("a gift is remembered as one, and the flag survives the round trip", () => {
+  rememberCheckout({ ...record, gift: true });
+
+  assert.equal(recallCheckout()?.gift, true);
+});
+
+test("a gift's note is kept on the record and never offered to the question box", () => {
+  /*
+    **The one thing `questionFor` exists to prevent, in its gift form.** In gift
+    mode the line's `question` is a note this code composed — "Gift — send this
+    reading to …" — and putting that back in the textarea a customer types their
+    own sentence into is the same fault as restoring a stranger's question,
+    arriving by a different door.
+
+    Kept on the record rather than dropped, because the confirmation and anybody
+    reading this from support still want to know what was bought and for whom.
+    It is the restore that refuses it, not the record.
+  */
+  rememberCheckout({ ...record, gift: true });
+
+  assert.equal(recallCheckout()?.question, record.question);
+  assert.equal(questionFor("month-ahead"), undefined);
+});
+
+test("a gift flag of the wrong type refuses the whole record", () => {
+  // The same treatment every other optional field gets: validated when present,
+  // and a record that reads back is the object that was written.
+  sessionStorage.setItem("checkout", JSON.stringify({ ...record, gift: "yes" }));
+
+  assert.equal(recallCheckout(), null);
+});
+
 test("a spent question is dropped and the rest of the record stays", () => {
   // The confirmation's call, once the backend has said the money moved. The
   // Money and the pay token stay, so a reload of the confirmation still works.

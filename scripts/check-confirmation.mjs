@@ -13,9 +13,14 @@
  * of the backend, that it corrects itself when the answer disagrees and stands
  * its ground when the answer is not an answer, that a second purchase in this
  * tab cannot show the first one's result, that landing with nothing recoverable
- * is honest rather than broken — and that **no state on this screen claims a
- * reading has been sent**, which is the one sentence the confirmation may never
- * contain and the easiest one to add by accident.
+ * is honest rather than broken — and that **exactly one state on this screen
+ * claims the reading is on its way**, which from 30 August 2026 is the received
+ * screen's job and is still the one sentence the other six may never contain.
+ *
+ * That rule inverted rather than relaxed. It was "no state may say it" until
+ * the client took the promise on herself — see #51 — so every run now declares
+ * which side of the line it belongs on, and a `received` screen that stopped
+ * making the promise fails exactly as loudly as a `unpaid` screen that started.
  *
  * The pay token assertion is the other reason. It is a credential, and the
  * check watches every URL the browser visits, not just the one we navigate to.
@@ -88,9 +93,15 @@ const WALLET_SECOND = {
   money: { currency: "EUR", amount: 7500 },
 };
 
-/** What Buy Now wrote before the browser left for Stripe. */
-function record({ sessionId, money }) {
-  return { payToken: PAY_TOKEN, money, sessionId, productKey: "month-ahead", question: "What next?" };
+/**
+ * What Buy Now wrote before the browser left for Stripe.
+ *
+ * `productKey` is not decoration here. Since #51 it is what the received screen
+ * names the reading from, which is why it is the second parameter: the run that
+ * proves the fallback passes a key this repo has no `ReadingPage` for.
+ */
+function record({ sessionId, money }, productKey = "month-ahead") {
+  return { payToken: PAY_TOKEN, money, sessionId, productKey, question: "What next?" };
 }
 
 /**
@@ -118,13 +129,24 @@ function walletQuery({ intentId, clientSecret }, redirectStatus) {
 }
 
 /**
- * Anything that would be a lie on a screen rendered from a payment.
+ * A promise about the reading itself, as opposed to about the money.
  *
  * Only the backend settles an order, on a verified webhook, and it may not have
- * happened yet. The receipt is allowed to be mentioned as something that will
- * arrive; a reading being on its way is not.
+ * happened by the time any of these screens paints. **On six of the seven that
+ * makes this sentence a lie**, and the run that expects it says so with
+ * `claimsTheReading`; everywhere else its presence is the failure.
  */
 const FULFILMENT_CLAIMS = /\breading is\b|\breading has\b|on its way to you|\bsent your reading\b|\byour reading\b/i;
+
+/**
+ * The received screen's heading, which since #51 is about the reading and no
+ * longer about the payment.
+ *
+ * Read as a heading rather than as a substring of the page: it is what tells
+ * `received` apart from the six states that must not say it, and the amount
+ * label below carries the payment half of the same screen.
+ */
+const RECEIVED = /reading is on its way/i;
 
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
@@ -290,12 +312,34 @@ const runs = [
   {
     state: "Back from Stripe having paid, which is the only way this address is reached",
     input: { stored: record(FIRST), query: { session_id: FIRST.sessionId } },
+    claimsTheReading: true,
     assert: ({ painted, shown }) => {
       // The whole of "no spinner": the words are already true before anything
       // has been asked of anybody.
-      expect("paid", "says the payment was received before the backend answers", /payment has been received/i.test(painted.heading), true);
+      expect("paid", "says the reading is on its way before the backend answers", RECEIVED.test(painted.heading), true);
       expect("paid", "and restates the amount from the record", /€49/.test(painted.text), true);
-      expect("paid", "and still does once it has", /payment has been received/i.test(shown.heading), true);
+      expect("paid", "under the label the client wrote", /Payment received:/.test(painted.text), true);
+      /*
+        Read off the record's product key, which has survived the redirect since
+        the record was written — the cancel-and-restore guard has needed it all
+        along. A screen that hardcoded the name would pass this and fail the
+        fallback run below.
+      */
+      expect("paid", "names the reading that was bought", /Month Ahead Reading/.test(painted.text), true);
+      expect("paid", "and gives the delivery time with it", /within 24 hours/.test(painted.text), true);
+      expect("paid", "and still says all of it once the backend has answered", RECEIVED.test(shown.heading), true);
+      /*
+        The account sentence is gone with the client's line, and the page must
+        not have kept half of it: a password mentioned on a screen that no
+        longer explains what the mail is for is worse than either version.
+      */
+      expect("paid", "points at the mail", /confirmation email is on its way/i.test(shown.text), true);
+      expect("paid", "and offers no password", /password/i.test(shown.text), false);
+      /*
+        Rendered text, so a `text-transform` that swallowed the client's
+        capitals would be caught here rather than in a screenshot.
+      */
+      expect("paid", "offers the way back in her capitals", /BACK TO READINGS/.test(shown.text), true);
     },
   },
   {
@@ -306,9 +350,9 @@ const runs = [
       answer: api({ status: "processing" }),
     },
     assert: ({ painted, shown }) => {
-      expect("processing", "paints received first, as every arrival does", /payment has been received/i.test(painted.heading), true);
+      expect("processing", "paints received first, as every arrival does", RECEIVED.test(painted.heading), true);
       expect("processing", "then corrects itself", /going through/i.test(shown.heading), true);
-      expect("processing", "and no longer claims receipt", /has been received/i.test(shown.heading), false);
+      expect("processing", "and takes the promise back with it", RECEIVED.test(shown.heading), false);
     },
   },
   {
@@ -318,9 +362,27 @@ const runs = [
       query: { session_id: FIRST.sessionId },
       answer: api({ status: "requires_payment_method" }),
     },
-    assert: ({ shown }) => {
+    assert: ({ painted, shown }) => {
+      /*
+        **The card road's optimism, measured at its most expensive.** Since #51
+        the first paint is a promise about the reading, so a customer whose
+        payment turns out to have collected nothing is told their reading is on
+        its way and then told it is not — where before #51 they were told the
+        same thing about their money.
+
+        It is recorded here rather than fixed, and the two halves of why are
+        both in `CheckoutComplete.tsx`: `success_url` is reached only after
+        Stripe has taken the payment, so this run is an anomaly rather than a
+        road anybody travels, and the alternative is a spinner in front of a
+        payment that has already happened for every customer who is fine. What
+        the fix would cost, and whether it is worth it, is the judgement on #51
+        rather than a detail — and the way that goes wrong is silently, which is
+        the one thing an assertion can prevent.
+      */
+      expect("unpaid", "promises the reading on the optimistic paint", FULFILMENT_CLAIMS.test(painted.text), true);
       expect("unpaid", "says no payment was taken", /no payment was taken/i.test(shown.heading), true);
       expect("unpaid", "says nothing has been charged", /nothing has been charged/i.test(shown.text), true);
+      expect("unpaid", "and has taken the promise back with it", FULFILMENT_CLAIMS.test(shown.text), false);
     },
   },
   {
@@ -330,6 +392,7 @@ const runs = [
       query: { session_id: FIRST.sessionId },
       answer: api({ message: "Stripe could not be reached." }, 503),
     },
+    claimsTheReading: true,
     assert: ({ shown }) => {
       /*
         A 503 says nothing whatsoever about the payment, and the payment is one
@@ -337,7 +400,7 @@ const runs = [
         `received` with a hedge on the strength of not knowing would be the
         worst of both.
       */
-      expect("503", "the optimistic paint stands", /payment has been received/i.test(shown.heading), true);
+      expect("503", "the optimistic paint stands", RECEIVED.test(shown.heading), true);
       expect("503", "and nothing hedges", /could not check|cannot show/i.test(shown.text), false);
     },
   },
@@ -348,8 +411,9 @@ const runs = [
       query: { session_id: FIRST.sessionId },
       answer: api({ status: "requires_something_stripe_adds_in_2027" }),
     },
+    claimsTheReading: true,
     assert: ({ shown }) => {
-      expect("unknown status", "the optimistic paint stands", /payment has been received/i.test(shown.heading), true);
+      expect("unknown status", "the optimistic paint stands", RECEIVED.test(shown.heading), true);
     },
   },
   {
@@ -377,6 +441,25 @@ const runs = [
       expect("two purchases", "and never its amount", /€75/.test(shown.text), false);
     },
   },
+  {
+    state: "A reading whose page does not exist yet, bought by product key alone",
+    /*
+      `in-depth` is in the backend's catalogue and has no `ReadingPage` here, so
+      there is no name to look up. That is the ordinary case for a product the
+      backend learns about before the site does, and the screen answers it with
+      the product-neutral sentence rather than with a blank, a key, or the last
+      name it happens to know.
+    */
+    input: { stored: record(FIRST, "in-depth"), query: { session_id: FIRST.sessionId } },
+    claimsTheReading: true,
+    assert: ({ shown }) => {
+      expect("unsold reading", "still says the reading is on its way", RECEIVED.test(shown.heading), true);
+      expect("unsold reading", "falls back to naming no product", /Your reading has been received/i.test(shown.text), true);
+      expect("unsold reading", "and never renders the key itself", /in-depth/i.test(shown.text), false);
+      // The one name this build does know, on a screen that was not sold it.
+      expect("unsold reading", "nor some other reading's name", /Month Ahead/i.test(shown.text), false);
+    },
+  },
   /*
     ## The wallet road
 
@@ -391,6 +474,7 @@ const runs = [
       query: walletQuery(WALLET_FIRST, "succeeded"),
       readWhileAsking: true,
     },
+    claimsTheReading: true,
     assert: ({ painted, shown, verifications }) => {
       /*
         The assertion this whole road exists for, and the inverse of the card
@@ -401,8 +485,16 @@ const runs = [
       */
       expect("wallet paid", "says nothing until the backend has answered", /^Checking/.test(painted.heading), true);
       expect("wallet paid", "and paints no receipt on the strength of the redirect", /has been received/i.test(painted.text), false);
+      /*
+        Since #51 the received screen promises the reading as well as the money,
+        which makes this road's silence the more valuable of the two: the
+        premature paint it must never make is now a promise about a reading, to
+        somebody a declined wallet card charged nothing.
+      */
+      expect("wallet paid", "nor any promise about the reading", FULFILMENT_CLAIMS.test(painted.text), false);
       expect("wallet paid", "nor the amount it is holding in the record", /€49/.test(painted.text), false);
-      expect("wallet paid", "then says the payment was received", /payment has been received/i.test(shown.heading), true);
+      expect("wallet paid", "then says the reading is on its way", RECEIVED.test(shown.heading), true);
+      expect("wallet paid", "and names it from the record it held across the redirect", /Month Ahead Reading/.test(shown.text), true);
       expect("wallet paid", "and restates the amount from the record", /€49/.test(shown.text), true);
       expect("wallet paid", "having asked exactly once", verifications, 1);
     },
@@ -414,6 +506,7 @@ const runs = [
       query: walletQuery(WALLET_FIRST, "failed"),
       readWhileAsking: true,
     },
+    claimsTheReading: true,
     assert: ({ shown }) => {
       /*
         `redirect_status` is Stripe telling the browser what it thinks happened.
@@ -422,7 +515,7 @@ const runs = [
         favour, in the direction that is easy to get wrong by reading the
         address because the address is right there.
       */
-      expect("wallet redirect", "believes the backend rather than the address", /payment has been received/i.test(shown.heading), true);
+      expect("wallet redirect", "believes the backend rather than the address", RECEIVED.test(shown.heading), true);
     },
   },
   {
@@ -438,6 +531,7 @@ const runs = [
       // shown a word suggesting otherwise, not even for the half second the
       // card road would have.
       expect("wallet declined", "showed no receipt on the way past", /has been received/i.test(painted.text), false);
+      expect("wallet declined", "and no promise about a reading either", FULFILMENT_CLAIMS.test(painted.text), false);
       expect("wallet declined", "says no payment was taken", /no payment was taken/i.test(shown.heading), true);
       expect("wallet declined", "and says nothing has been charged", /nothing has been charged/i.test(shown.text), true);
     },
@@ -538,7 +632,18 @@ for (const run of runs) {
   run.assert(result);
 
   expect(run.state, "says the same thing after a reload", result.reloaded, result.shown);
-  expect(run.state, "never claims a reading is on its way", FULFILMENT_CLAIMS.test(result.shown.text), false);
+  /*
+    The rule this file has always carried, now with a side. Six of the seven
+    states may not promise the reading — four of them say no money was taken —
+    and the seventh is required to, because the client took that promise on
+    herself. A run that stops declaring which it is fails on whichever half it
+    lands the wrong side of.
+  */
+  if (run.claimsTheReading) {
+    expect(run.state, "promises the reading, which only the received screen may", FULFILMENT_CLAIMS.test(result.shown.text), true);
+  } else {
+    expect(run.state, "never claims a reading is on its way", FULFILMENT_CLAIMS.test(result.shown.text), false);
+  }
   expect(
     run.state,
     "puts the pay token in no address the browser visits",
@@ -571,7 +676,7 @@ const patient = await drive("Three seconds later, having asked once", {
 });
 
 expect("no poll", "verifies exactly once and does not poll", patient.verifications, 1);
-expect("no poll", "and still says the payment was received", /payment has been received/i.test(patient.shown.heading), true);
+expect("no poll", "and still says the reading is on its way", RECEIVED.test(patient.shown.heading), true);
 
 await browser.close();
 server.close();

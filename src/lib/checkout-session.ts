@@ -73,6 +73,15 @@ export type CheckoutRecord = {
    */
   question?: string;
   /**
+   * Whether the `question` above is a **gift note this code composed** rather
+   * than a sentence the customer wrote.
+   *
+   * Absent on every self-purchase, which is what keeps a record written before
+   * 30 August 2026 readable. It exists for one reader — `questionFor` below,
+   * where what it prevents is argued.
+   */
+  gift?: boolean;
+  /**
    * The PaymentIntent's client secret. **Optional, and written on the wallet
    * road only** — a hosted Session leaves no secret on the client.
    *
@@ -230,7 +239,7 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
 
   if (typeof parsed !== "object" || parsed === null) return null;
 
-  const { payToken, money, sessionId, productKey, question, clientSecret } = parsed as Record<
+  const { payToken, money, sessionId, productKey, question, gift, clientSecret } = parsed as Record<
     string,
     unknown
   >;
@@ -245,9 +254,10 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
   if (typeof currency !== "string" || currency === "") return null;
   if (typeof amount !== "number" || !Number.isFinite(amount)) return null;
 
-  // The two optional fields are validated when present and dropped when absent,
-  // so a record that reads back is the same object that was written.
+  // The three optional fields are validated when present and dropped when
+  // absent, so a record that reads back is the same object that was written.
   if (question !== undefined && typeof question !== "string") return null;
+  if (gift !== undefined && typeof gift !== "boolean") return null;
   if (clientSecret !== undefined && typeof clientSecret !== "string") return null;
 
   return {
@@ -256,6 +266,7 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
     productKey,
     ...(sessionId === undefined ? {} : { sessionId }),
     ...(question === undefined ? {} : { question }),
+    ...(gift === undefined ? {} : { gift }),
     ...(clientSecret === undefined ? {} : { clientSecret }),
   };
 }
@@ -325,6 +336,18 @@ export function walletCheckoutFor(paymentIntentId: string | null): CheckoutRecor
  * compare the wrong ones. A question restored onto a different reading is a
  * sentence appearing in a box the visitor did not type it in.
  *
+ * **A gift's note is not a question and is never offered here.** In gift mode
+ * the line's `question` is composed rather than typed — "Gift — send this
+ * reading to …" — and putting that back in a textarea the customer writes their
+ * own sentence in is this guard's own fault arriving by a different door. The
+ * record keeps it; this refuses it.
+ *
+ * The cost is that a customer who cancels a gift checkout loses the recipient
+ * and the message they typed, which is a real loss and the smaller of the two.
+ * Giving it back means restoring the panel to gift mode with both fields
+ * refilled, and that is the gifting milestone's to build rather than something
+ * to infer from one composed string.
+ *
  * **A string, not a record**, so it can be a `useSyncExternalStore` snapshot
  * without the caller reaching past it into anything else.
  */
@@ -332,6 +355,7 @@ export function questionFor(productKey: string): string | undefined {
   const record = recallCheckout();
 
   if (record === null || record.productKey !== productKey) return undefined;
+  if (record.gift) return undefined;
 
   return record.question;
 }

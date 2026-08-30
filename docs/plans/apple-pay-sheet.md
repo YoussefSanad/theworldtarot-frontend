@@ -181,7 +181,9 @@ live          €70 · three client frames · the element mounts
               settled height === loading height — the collapsed row costs the column no gap
               one press: order placed, /pay told method "stripe", record written, browser leaves
 ahead         a /pay answer this build cannot read: nothing charged, button pressable again
-gifting       the row comes off, and the element it held is destroyed with it
+gifting       ~~the row comes off, and the element it held is destroyed with it~~
+              from 30 August 2026 the row stays, holding the same element across both toggles
+              one press: order placed, the line carrying "Gift — send this reading to …"
 withdrawn     no price · no controls · no question · anchor lands · no row, and no js.stripe.com
 unreachable   "$75" as copy · three client frames · no row · no js.stripe.com
 no wallet     the API offers none: the card button stands alone and still takes money
