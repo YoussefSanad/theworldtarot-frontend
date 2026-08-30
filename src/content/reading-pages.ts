@@ -9,9 +9,16 @@ import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "@/lib
  * takes an optional question and a payment, the client writes the reading
  * offline and emails a PDF — so spread, card count and price are copy, never
  * branching. See the workflow note in [`./README.md`](./README.md). Adding the
- * other two is a `ReadingPage` here and a five-line route beside
+ * other two is a `ReadingPage` here, **an entry in `readingPages` at the foot
+ * of this file**, and a five-line route beside
  * `src/app/(site)/readings/month-ahead/page.tsx`; there is nothing else to
  * build for them.
+ *
+ * The middle one is the one that fails quietly. A `ReadingPage` that is never
+ * registered still renders its own page perfectly and still sells, and the only
+ * thing that goes wrong is a confirmation screen that cannot name what was
+ * bought — a plainer sentence rather than a broken one, which is exactly the
+ * kind of wrong that ships. See `readingPageFor`.
  *
  * That split is what `readingPageChrome` is: everything the three pages say
  * identically lives there once, and a `ReadingPage` holds only what changes.
@@ -336,3 +343,37 @@ export const monthAhead: ReadingPage = {
   },
   closing: ["What is unfolding", "has already begun"],
 };
+
+/**
+ * Every reading with a page of its own, which is every reading that can be
+ * bought.
+ *
+ * One entry today. It is a list rather than the single export above because
+ * what wants it is a lookup by **product key** — the confirmation screen, which
+ * is handed a key by the record a checkout left in the tab and has to turn it
+ * into a name a customer recognises. Adding Three Card or In-Depth is still the
+ * `ReadingPage` and the five-line route described at the top of this file, plus
+ * its name here.
+ */
+export const readingPages: readonly ReadingPage[] = [monthAhead];
+
+/**
+ * The page that sells one product key, or `undefined` for a key nothing here
+ * sells.
+ *
+ * **The key, never the `id`.** They are the same three strings today and the
+ * two fields exist separately for the reason `productKey` gives above: `id`
+ * matches the readings index, which is a list of artwork, and a product key is
+ * the backend's. Reading a name off the index by treating one as the other is
+ * exactly the conflation that comment was written to prevent, and it would go
+ * wrong silently the first time the backend named a product something the
+ * artwork list spells differently.
+ *
+ * `undefined` is an ordinary answer rather than a fault. The backend's
+ * catalogue is not this repository's, so it can hold a product this build has
+ * never had a page for — and the caller wants a plainer sentence in that case,
+ * not an error and not a guess.
+ */
+export function readingPageFor(productKey: string): ReadingPage | undefined {
+  return readingPages.find((page) => page.productKey === productKey);
+}

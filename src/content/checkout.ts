@@ -3,21 +3,52 @@ import type { PaymentOutcome } from "@/lib/payment-outcome";
 /**
  * The words on the confirmation screen.
  *
- * **Every line here is about money and none of them is about a reading.** The
+ * **Six of these seven screens are about money and only `received` is about a
+ * reading.** That split replaced a flat rule on 30 August 2026 and the old rule
+ * is worth stating, because everything below still runs on the half of it that
+ * survived.
+ *
+ * ~~Every line here is about money and none of them is about a reading.~~ The
  * screen renders from a PaymentIntent; the reading is sent when the backend
  * **settles** the order on a verified webhook, which has not necessarily
- * happened by the time a customer reads this. "Your reading is on its way"
- * would be a promise made by the one part of the system that cannot know. The
- * receipt is the mail that says that, and the backend sends it.
+ * happened by the time a customer reads this. So "Your reading is on its way"
+ * is a promise made by the one part of the system that cannot know it.
  *
- * The account line is deliberately soft — "if you are new here, a mail is on
- * its way with a link to set a password" — because the claim link comes from
- * the same settlement we are refusing to claim has happened.
+ * **The client made it anyway, knowingly, and that is why it is here** — see
+ * #51, where the exposure was put to her in one line before this was built and
+ * her answer is recorded. It is bounded: settlement is a webhook that arrives
+ * in seconds, `ReconcileOrders` sweeps what does not, and a `succeeded`
+ * PaymentIntent that never becomes a paid order is a fault we would be handling
+ * regardless. She owns the promise to her customers; the code's job was to make
+ * sure it was hers to make rather than one this file made for her quietly.
+ *
+ * **The rule that did not move**: the other six may still say nothing about a
+ * reading. Four of them say no money was taken, and a screen that hedges about
+ * a payment while promising a reading is worse than either. `check:confirmation`
+ * holds both halves — one run per state, each declaring which side of the line
+ * it is on.
+ *
+ * ~~The account line is deliberately soft~~ — the account sentence is gone with
+ * it, replaced by the client's "A confirmation email is on its way." That mail
+ * is the **receipt** everywhere in this codebase and in `CONTEXT.md`; she calls
+ * it a confirmation email to her customers, and the customer's word is the one
+ * that belongs in the copy. The name in the code has not moved.
  */
 
 export type OutcomeCopy = {
   heading: string;
-  body: string;
+  /**
+   * The paragraph under the amount, written from the name of the reading that
+   * was bought.
+   *
+   * **A function on all four, spent by one.** Only `received` names the reading
+   * — the three that report unfinished money have nothing to name it about —
+   * but a `body` that were sometimes a string and sometimes a function would
+   * put the branch in the component that renders it, and that component would
+   * be choosing between two shapes of copy rather than rendering copy. This way
+   * the screen asks every outcome the same question.
+   */
+  body: (reading: string) => string;
   /** Introduces the amount, when there is an amount to restate. */
   amountLabel: string;
 };
@@ -37,23 +68,47 @@ export const checkoutCompleteCopy = {
   /** Above the amount, whatever the outcome. */
   outcomes: {
     received: {
-      heading: "Your payment has been received",
-      body: "Thank you. We have your payment and your order is with us. A receipt is on its way to the email address you gave, and if you are new here it carries a link to set a password.",
-      amountLabel: "Paid",
+      heading: "Your reading is on its way",
+      /*
+        `reading` is the noun phrase after "Your" — "Month Ahead Reading" where
+        the record names a product this build has a page for, and
+        `unnamedReading` below where it does not. Interpolated rather than
+        written in, because this one screen serves every reading the site sells
+        and the whole point of #51's second decision was that no product name
+        and no amount is a literal in this file.
+
+        **"within 24 hours" is a literal, and it is the one thing on this line
+        that can go stale without anybody touching this file.** It is what every
+        reading promises today and what the client's frame states as standard
+        — see `delivery` on `ReadingPage` — so it is restated here rather than
+        derived, which is what #51 asked for and no more. But `rushDelivery` in
+        `content/reading-pages.ts` is a switch the CMS owns: turned on, 24 hours
+        becomes the **paid** upgrade and standard delivery becomes something
+        else, and this sentence would be handing the upgrade away on the one
+        screen nobody re-reads. **Whoever flips that switch changes this line
+        too**, and the delivery figure moves to `readingPageFor` the same way
+        the name already has.
+      */
+      body: (reading) =>
+        `Thank you. Your ${reading} has been received and will be delivered within 24 hours. A confirmation email is on its way.`,
+      amountLabel: "Payment received:",
     },
     pending: {
       heading: "Your payment is going through",
-      body: "Your bank has it and has not finished with it yet, which some payment methods do. Nothing more is needed from you. We will email you as soon as it clears.",
+      body: () =>
+        "Your bank has it and has not finished with it yet, which some payment methods do. Nothing more is needed from you. We will email you as soon as it clears.",
       amountLabel: "Being paid",
     },
     unpaid: {
       heading: "No payment was taken",
-      body: "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again — a different card, or the same one a moment later.",
+      body: () =>
+        "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again — a different card, or the same one a moment later.",
       amountLabel: "Still to pay",
     },
     unfinished: {
       heading: "Your payment is not finished",
-      body: "It has not been completed and nothing has been charged yet. If you were in the middle of confirming with your bank, go back to the reading and start the payment again.",
+      body: () =>
+        "It has not been completed and nothing has been charged yet. If you were in the middle of confirming with your bank, go back to the reading and start the payment again.",
       amountLabel: "To pay",
     },
   } satisfies Record<PaymentOutcome, OutcomeCopy>,
@@ -80,6 +135,26 @@ export const checkoutCompleteCopy = {
   errorBody:
     "Something went wrong looking it up, which says nothing about whether you were charged. Your receipt will arrive by email if the payment went through. Reloading this page is safe.",
 
-  backLabel: "Back to the readings",
+  /**
+   * What `received.body` calls the thing that was bought when the record names
+   * a product with no page here.
+   *
+   * Lower case, because it is read as the tail of "Your ___" and the sentence
+   * is the same one either way: "Your reading has been received" beside "Your
+   * Month Ahead Reading has been received". A screen that could not name the
+   * product says less rather than something else.
+   */
+  unnamedReading: "reading",
+
+  /**
+   * ~~"Back to the readings"~~, and set in the client's capitals from 30 August
+   * 2026 — the same form as `closingAction` on the reading page, which is
+   * already the house treatment for this control.
+   *
+   * The `lowercase` class that used to sit on this button went with it. It was
+   * there to render the old sentence-cased label in lower case, and left in
+   * place it would have quietly swallowed every capital here.
+   */
+  backLabel: "BACK TO READINGS",
   backHref: "/readings",
 } as const;

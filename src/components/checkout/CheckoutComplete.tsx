@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { checkoutCompleteCopy } from "@/content/checkout";
-import { checkoutFor, forgetQuestion, walletCheckoutFor } from "@/lib/checkout-session";
+import { readingPageFor } from "@/content/reading-pages";
+import { checkoutFor, forgetQuestion, type CheckoutRecord, walletCheckoutFor } from "@/lib/checkout-session";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
@@ -25,13 +26,29 @@ import { formatPrice, type Money } from "@/lib/price";
  * **They do not paint the same way, and that is the whole of the difference.**
  * See below.
  *
- * ## It reports a payment, never a fulfilment
+ * ## It reports a payment, and on one screen of seven a fulfilment as well
  *
  * There is no endpoint that reads an **order** back, and this screen does not
  * want one. It says what Stripe says about the payment, by way of our own
  * backend. Only the backend **settles** an order, on a verified webhook, and
- * that has quite possibly not happened while this is on screen — so nothing
- * here claims a reading has been sent. See `CONTEXT.md`.
+ * that has quite possibly not happened while this is on screen.
+ *
+ * ~~So nothing here claims a reading has been sent.~~ **`received` does, from
+ * 30 August 2026**, because the client took that promise on herself — the
+ * reasoning is at the top of `content/checkout.ts` and the decision is on #51.
+ * The other six still may not, and four of them say no money was taken at all.
+ * Nothing else about this screen moved: it still reports what the backend says
+ * about the payment and still has no way to ask about an order. See
+ * `CONTEXT.md`.
+ *
+ * ## Naming the reading costs nothing across the redirect
+ *
+ * `received` names the product, and the name is not on the payment. It comes
+ * from the **product key** on the record in the tab — which has been there
+ * since the record was written, for the cancel-and-restore guard — resolved
+ * through `readingPageFor`. A key with no page here resolves to nothing and the
+ * sentence names no product, which is the right answer for a backend catalogue
+ * that can hold a reading this build has never drawn a page for.
  *
  * ## Why it no longer asks Stripe
  *
@@ -52,6 +69,18 @@ import { formatPrice, type Money } from "@/lib/price";
  * `received` with the Money at once and verifies in the background, correcting
  * only on disagreement. **There is no spinner in front of a payment that has
  * already happened.**
+ *
+ * **That optimism got more expensive on 30 August 2026 and did not change.**
+ * The first paint is now a promise about the reading rather than about the
+ * money, so an arrival that verifies to `unpaid` is told their reading is on
+ * its way and then told no payment was taken. The road it happens on is the one
+ * Stripe reaches only after taking the payment, so it is an anomaly rather than
+ * a path — and the alternative is a spinner in front of every customer whose
+ * payment was fine, which is the trade this whole section exists to refuse.
+ * `check:confirmation` asserts the sequence in both directions on the `unpaid`
+ * run, so it is measured rather than assumed; whether the promise should wait
+ * for the verification on this road is the open question, and it belongs to #51
+ * rather than to whoever next reads this file.
  *
  * ## The wallet road may not, and this is the one asymmetry on this screen
  *
@@ -160,7 +189,14 @@ type Result =
    * whatever happened, so it has nothing to stand on and says so instead.
    */
   | { state: "unreadable" }
-  | { state: "known"; outcome: PaymentOutcome; money: Money | null };
+  /**
+   * `reading` is the noun phrase `received` puts after "Your", carried on every
+   * outcome rather than on that one: the outcome is the backend's answer and
+   * can change under a screen already painted, and a field that appeared with
+   * it would be a second thing to remember to set at each of the two places
+   * this is built.
+   */
+  | { state: "known"; outcome: PaymentOutcome; money: Money | null; reading: string };
 
 export function CheckoutComplete() {
   const searchParams = useSearchParams();
@@ -218,7 +254,9 @@ export function CheckoutComplete() {
         whatever happened, so on the wallet road there is nothing yet that is
         safe to say.
       */
-      if (card) setResult({ state: "known", outcome: "received", money: card.money });
+      if (card) {
+        setResult({ state: "known", outcome: "received", money: card.money, reading: readingName(card) });
+      }
 
       try {
         const status = await fetchPaymentStatus(record.payToken);
@@ -261,7 +299,7 @@ export function CheckoutComplete() {
         // replace a rendered object with an identical one for nothing.
         if (outcome === "received" && card) return;
 
-        setResult({ state: "known", outcome, money: record.money });
+        setResult({ state: "known", outcome, money: record.money, reading: readingName(record) });
       } catch {
         if (!live) return;
 
@@ -324,16 +362,34 @@ export function CheckoutComplete() {
         </p>
       ) : null}
 
-      <p className="mt-4 text-note text-ash">{copy.body}</p>
+      <p className="mt-4 text-note text-ash">{copy.body(result.reading)}</p>
 
       <Back />
     </Panel>
   );
 }
 
+/**
+ * What the received screen calls the thing that was bought.
+ *
+ * The record's product key is the backend's name for it and no customer's, so
+ * it is never rendered — it is turned into a title or into nothing. The
+ * fallback is copy rather than a literal here, because it is a word a customer
+ * reads.
+ */
+function readingName(record: CheckoutRecord): string {
+  return readingPageFor(record.productKey)?.title ?? checkoutCompleteCopy.unnamedReading;
+}
+
 function Back() {
+  /*
+    No `lowercase` here. It was on this button to render "Back to the readings"
+    in lower case, and the label is set in the client's capitals from 30 August
+    2026 — left in place the class would swallow them and the copy change would
+    paint as though it had never landed.
+  */
   return (
-    <ButtonLink href={checkoutCompleteCopy.backHref} variant="ghost" size="md" className="mt-8 lowercase">
+    <ButtonLink href={checkoutCompleteCopy.backHref} variant="ghost" size="md" className="mt-8">
       {checkoutCompleteCopy.backLabel}
     </ButtonLink>
   );
