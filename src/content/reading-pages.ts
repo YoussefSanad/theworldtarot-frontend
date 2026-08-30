@@ -139,15 +139,37 @@ export const readingPageChrome = {
      */
     buying: "Taking you to checkout…",
     /**
-     * Under the button in gift mode, where the button is inert.
+     * Under the button in gift mode, where the button is inert — and from 30
+     * August 2026 **the panel's one answer for the wallet row as well**, which
+     * is absent in gift mode rather than inert.
+     *
+     * ~~"Gifting is not open yet. A reading for yourself can be bought now."~~
+     * **The clause about paying was added on 30 August 2026**, so that one
+     * sentence answers for both controls rather than for the button alone.
+     * Unlike the copy above it this wording is ours and not the client's — gift
+     * mode has no frame in her design — and it goes to her with the rest.
      *
      * `POST /orders` has no field for a recipient email or a gift message, so a
      * live button here would charge somebody for a gift delivered to
      * themselves. Gifting is the code model and a separate milestone: the buyer
      * names a recipient, the recipient redeems a code and writes their own
      * question.
+     *
+     * **"No way to pay for one" is what makes one note do for two controls.**
+     * Not proximity: the button stands between this sentence and the space the
+     * wallet row left, so the note is under the one control that remains rather
+     * than under the gap. What lets it answer for the gap anyway is that both
+     * controls are unavailable for the same reason — so the sentence gives the
+     * reason and names neither control.
+     *
+     * **It names no method either, and that is the constraint that wrote it.**
+     * This note is shown in gift mode on every device, and on one with no
+     * wallet the row was already collapsed to nothing — so copy naming Apple
+     * Pay or Google Pay would explain the loss of a button that customer never
+     * had. "No way to pay" is true on both.
      */
-    giftingComing: "Gifting is not open yet. A reading for yourself can be bought now.",
+    giftingComing:
+      "Gifting is not open yet, so there is no way to pay for one. A reading for yourself can be bought now.",
     /**
      * A refused order, a refused payment, or an instruction this build cannot
      * act on. **It says nothing has been charged**, because nothing has: an

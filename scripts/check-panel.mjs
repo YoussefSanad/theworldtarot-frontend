@@ -729,7 +729,27 @@ expect("gifting", "the recipient's fields replace the question", gifted.settled.
 expect("gifting", "and there is no question in the form at all", gifted.settled.question, 0);
 expect("gifting", "the frames still stand", gifted.settled.ghosts, 3);
 expect("gifting", "Buy Now says it is unavailable", gifted.settled.buyNowDisabled, "true");
-expect("gifting", "and says why", /gifting is not open yet/i.test(gifted.settled.panel), true);
+/*
+  Counted rather than merely found, because **once** is the fact worth holding:
+  a second note where the row was is the option this was built instead of, and
+  a presence test passes just as green with two of them.
+
+  **What it can and cannot prove.** It counts one sentence, so a second note in
+  different words goes by it untouched. Nothing here counts notes — they carry
+  no attribute of their own, and this note is not the only fine print gift mode
+  draws. What it catches is the regression that would actually happen, which is
+  this sentence growing a twin.
+*/
+expect("gifting", "and says why, once", (gifted.settled.panel.match(/gifting is not open yet/gi) ?? []).length, 1);
+/*
+  **And that the one sentence answers for the wallet row as well as the button
+  it sits under.** The row leaves no frame and no note behind it, so this clause
+  is the panel's only account of where it went. Asserted on the clause that does
+  the carrying rather than on the sentence whole, so the half about gifting
+  stays free to be reworded by the client without failing a check about the
+  wallet.
+*/
+expect("gifting", "in one sentence that covers the vanished wallet row too", /no way to pay for one/i.test(gifted.settled.panel), true);
 /*
   The assertion this state exists for. `POST /orders` has no field for a
   recipient email or a gift message, so one live button here charges somebody

@@ -176,6 +176,15 @@ export function GetMyReading({
           answers a fourth question — this device has no wallet — and it must
           stay the only reason the row is ever zero-height, or the check that
           tells a collapsed row from an absent one is measuring nothing.
+
+          **The gifting absence is the one a customer can watch happen, and
+          from 30 August 2026 it is spoken for.** The other two are states a
+          panel is found in; this one answers a button the customer just
+          pressed, on the only devices that had a row to lose. What speaks is
+          `checkout.giftingComing` under Buy Now, and why one note does for
+          both controls is argued there beside the copy rather than here.
+          Nothing is mounted in this branch to carry it: a frame here is a
+          frame in the one state the panel is sure it cannot take money in.
         */}
         {offer.status === "live" && walletOffered && !gifting ? (
           <ExpressCheckout productKey={reading.productKey} money={offer.money} />

@@ -215,9 +215,11 @@ Four things about it are worth knowing before changing any of it.
   on the card road, a **client secret** on the wallet road, from which the intent
   id is derived. Each road's guard refuses the other's record, so neither branch
   of the confirmation has to know the other exists
-- **It is inert in gift mode**, and says so. `POST /orders` has no field for a
-  recipient email or a gift message, so one live button there charges somebody
-  for a gift delivered to themselves
+- **It is inert in gift mode**, and says so — **for the wallet row as well from
+  30 August 2026**, which is absent there rather than inert and would otherwise
+  go without a word. `POST /orders` has no field for a recipient email or a gift
+  message, so one live button there charges somebody for a gift delivered to
+  themselves
 - **An instruction this build cannot read refuses the press** rather than
   crashing it. `nothing_to_pay` on a fresh order, a `client_secret` this page
   has no element for, or a `type` a later backend invents: the order exists, it
@@ -341,6 +343,17 @@ gift code` is a dud, and **Buy Now is inert while gift mode is on**: `POST
 /orders` has no field for a recipient, so a live button here would charge
 somebody for a gift delivered to themselves. Gifting is the code model and a
 separate milestone.
+
+**The wallet row goes rather than going inert, and one sentence answers for
+both.** A wallet takes the money the instant a face is recognised, with no
+second press in between, so there is no inert state worth leaving it in — it is
+unmounted instead. That made it the one control here that became unavailable
+without saying anything, and only on the devices that had it to lose, which is
+why it read as a bug rather than as "not yet". `checkout.giftingComing` has
+carried both controls since 30 August 2026 — "no way to pay for one", naming
+neither, because on a device with no wallet the row was already collapsed and
+nothing visibly went. There is no second note where the row was: two sentences
+saying one thing is not what this panel does.
 
 ### One of the three controls is a dud, on purpose
 
