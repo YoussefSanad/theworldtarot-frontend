@@ -56,9 +56,21 @@ export const readingPageChrome = {
   gift: {
     heading: "Recipient Details",
     body: ["Tell us where to send it, and", "what you would like it to say."],
-    /** Two states of one control; the second is how a visitor gets back. */
-    enter: "gift a reading",
-    leave: "a reading for myself",
+    /**
+     * Two states of one control; the second is how a visitor gets back.
+     *
+     * ~~Both lowercase.~~ **Title case from 30 August 2026.** They were stored
+     * lowercase because the frame was set in Cinzel, which has no lowercase and
+     * drew small capitals in their place; the panel is Gill Sans Light now and
+     * renders what is written here. See `.checkout-option` in `globals.css`.
+     *
+     * `leave` is not in the client's frame — the frame only shows the resting
+     * state — and is re-cased with the rest because it is the same button, and
+     * one lowercase label among three title-cased siblings is the worse of the
+     * two mistakes.
+     */
+    enter: "Gift a Reading",
+    leave: "A Reading for Myself",
     email: { label: "Recipient's email address", placeholder: "Their email address…" },
     message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
     /**
@@ -82,9 +94,11 @@ export const readingPageChrome = {
      * The one control on this panel that takes money, and the whole of what
      * three of the client's five frames became for the length of the interim.
      *
-     * It does not say "Pay with Card". The **hosted page** offers every method
-     * turned on in the Dashboard, and a button that names one of them would be
-     * wrong the first time somebody pays with anything else.
+     * It does not say "Pay with Card", and no label it has worn ever has. The
+     * **hosted page** offers every method turned on in the Dashboard, and a
+     * button that names one of them would be wrong the first time somebody pays
+     * with anything else. "Pay Another Way" keeps that and says what the frame
+     * is for besides: another way than the two wallet buttons above it.
      *
      * **It does not quote the price either.** ~~The amount was set beside it,
      * so the label could be a constant and the number the API's.~~ The panel
@@ -93,13 +107,21 @@ export const readingPageChrome = {
      * panel — wrap onto two lines and stand taller than the frames beside it.
      * Removed 29 August 2026 at the client's request; see `BuyNow`.
      *
-     * ~~"Buy Now".~~ **"Continue to Checkout" from 29 August 2026**, at the
-     * client's request, because the old label promised something the button
-     * does not do. Pressing it buys nothing: it places a `pending` order and
-     * sends the browser to Stripe, where the customer picks a method and pays.
-     * The money is collected on a page this one never sees. `buying` below has
-     * said "Taking you to checkout…" all along, so the resting label was
-     * disagreeing with its own pending state.
+     * ~~"Buy Now".~~ ~~"Continue to Checkout" from 29 August 2026.~~ **"Pay
+     * Another Way" from 30 August 2026**, both at the client's request.
+     *
+     * The first reversal was about a promise the button does not keep: pressing
+     * it buys nothing — it places a `pending` order and sends the browser to
+     * Stripe, where the customer picks a method and pays, and the money is
+     * collected on a page this one never sees. `buying` below has said "Taking
+     * you to checkout…" all along, so the resting label was disagreeing with
+     * its own pending state.
+     *
+     * The second is the client's wording and it does not take that back: this
+     * is still the road that leaves, and "Pay Another Way" is read against the
+     * wallet buttons directly above rather than on its own. It is also the
+     * shortest label the frame has worn, which is what finally settles the wrap
+     * `.checkout-option`'s padding was loosened for.
      *
      * **The card mark beside it is narrower than the road, and that is
      * accepted rather than missed.** `marks.card` is the client's own frame
@@ -109,7 +131,7 @@ export const readingPageChrome = {
      * customer reaches this frame, card is what is left. The *label* still
      * names no method, which is what keeps the paragraph above true.
      */
-    buy: "Continue to Checkout",
+    buy: "Pay Another Way",
     /**
      * Held across both round trips — the order, then the payment — because the
      * browser does not leave until the second one answers, and a button that
@@ -172,11 +194,15 @@ export const readingPageChrome = {
     pricePending: "Fetching the price",
     secure: "Secure checkout powered by Stripe",
     /**
-     * Set in Cinzel in the frame, which renders lowercase as small capitals —
-     * so this reads as REDEEM GIFT CODE on the page without the copy shouting
-     * here.
+     * ~~`redeem gift code`, set in Cinzel, which has no lowercase and drew
+     * small capitals in their place — so it read as REDEEM GIFT CODE on the
+     * page without the copy shouting here.~~
+     *
+     * **Title case from 30 August 2026**, because the trick died with the face:
+     * the panel is Gill Sans Light now and draws exactly what this string says.
+     * The capital A is the client's, from their frame.
      */
-    redeem: "redeem gift code",
+    redeem: "Redeem A Gift Code",
   },
 
   included: { heading: "Your Reading" },

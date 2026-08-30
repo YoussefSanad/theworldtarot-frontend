@@ -8,7 +8,7 @@ const { gift } = readingPageChrome;
 /**
  * What the page asks for instead of a question when the reading is a gift.
  *
- * Where it sits is the point. The client's design puts "gift a reading" at the
+ * Where it sits is the point. The client's design puts "Gift a Reading" at the
  * foot of the payment column, and the thing it changes is a section most of a
  * panel above it — so the button is only half of the interaction. The other
  * half is in `ReadingOrder`: entering gift mode moves focus into the email

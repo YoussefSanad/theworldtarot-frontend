@@ -28,14 +28,22 @@ const { checkout } = readingPageChrome;
  * in display type above these frames, so the number in the button was the
  * second place it was said and the only one that had to be read at nav size.
  *
- * What it cost was the column's shape. `.checkout-option` is the same box five
- * times over — the client stacks them as one set of equal frames — and a third
- * child pushed "Continue to Checkout" past the width it fits on one line: the
- * label wrapped, and the frame stood 82px against its siblings' 78px. Removing
- * the amount alone did not settle that (the label wants 12.46em and had 12.27em
- * of it), which is why `.checkout-option` gives back some of its inline padding
- * in the same change. `money` stays a prop: it is what the order is placed in,
- * not what the button says.
+ * What it cost was the column's shape. `.checkout-option` was the same box
+ * five times over — the client stacked them as one set of equal frames — and a
+ * third child pushed "Continue to Checkout" past the width it fits on one line:
+ * the label wrapped, and the frame stood 82px against its siblings' 78px.
+ * Removing the amount alone did not settle that (the label wanted 12.46em and
+ * had 12.27em of it), which is why `.checkout-option` gives back some of its
+ * inline padding in the same change. `money` stays a prop: it is what the order
+ * is placed in, not what the button says.
+ *
+ * **Both of those facts have since moved and the conclusion has not.** The
+ * label is "Pay Another Way" from 30 August 2026 and the face is Gill Sans
+ * rather than Cinzel, so this button has more room than the measurement above
+ * describes; the two frames under it were narrowed in the same change and now
+ * have less. The amount stays off the button for the reason it came off, which
+ * was never the width alone: the panel says the price once, above these frames,
+ * in display type.
  *
  * ## It takes Money, or nothing at all
  *
@@ -142,11 +150,14 @@ export function BuyNow({
         ) : (
           <>
             {/*
-              No face of its own. `.btn-ghost` sets the serif every other button
-              on the site is in, and this span carried the site's only
-              `font-sans` until 29 August 2026 — inherited from the five-frame
-              panel, where four siblings hid it, into a three-frame one where it
-              was the odd one out. See #49.
+              Still no face of its own, and the face it inherits has now changed
+              twice. ~~It carried the site's only `font-sans` until 29 August
+              2026 — inherited from the five-frame panel, where four siblings
+              hid it, into a three-frame one where it was the odd one out (#49)
+              — and then `.btn-ghost`'s serif with the rest of the panel.~~
+              From 30 August 2026 `.checkout-option` sets Gill Sans Light on
+              every frame here (#50), so this span is in the sans it started in
+              by inheritance, and there is no longer an odd one out to be.
             */}
             {/*
               `marks.card` is the client's own frame icon, drawn for the "Pay

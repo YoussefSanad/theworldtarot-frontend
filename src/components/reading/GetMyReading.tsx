@@ -81,14 +81,14 @@ const { checkout, gift } = readingPageChrome;
  * that has no amount. See those files for what a press does and what makes each
  * inert.
  *
- * **`redeem gift code` is a dud**, on purpose and for now: there is no
+ * **`Redeem A Gift Code` is a dud**, on purpose and for now: there is no
  * redemption flow, so it is `type="button"` with nothing behind it — inert
  * rather than submitting a form that would only reload the page with the
  * visitor's question in the URL. It is a real button rather than a disabled one
  * because the client rejected a disabled control elsewhere on the site: it
  * reads as a bug rather than as "not yet".
  *
- * The third, `gift a reading`, is live: it turns the whole order into a gift
+ * The third, `Gift a Reading`, is live: it turns the whole order into a gift
  * order in place. See `ReadingOrder` for what that means and why it is a mode
  * rather than a second page. **Buy Now is inert while it is on**, because
  * `POST /orders` has no field for a recipient.
@@ -138,6 +138,14 @@ export function GetMyReading({
 
       {/*
         498px of the 687px panel; 12px between buttons at the 30px they label.
+
+        **This is the column's width, and from 30 August 2026 it is no longer
+        every frame's.** The wallet row and Buy Now fill it, as they always did;
+        the two gift frames under the Stripe line set their own narrower width
+        over the top of `.checkout-option`'s — see `CheckoutOption` below. It
+        stays here rather than moving onto the children entirely because two
+        things in this column are still shares of it and not of a frame: the
+        secure line, and the divider, whose 448px is measured against this box.
 
         Absent entirely once the request has failed, and present-but-inert while
         it is still in flight — the block's own height is what reserves the
@@ -207,7 +215,15 @@ export function GetMyReading({
           {checkout.redeem}
         </CheckoutOption>
 
-        {/* Between the two gift controls, at the 448px every rule here is drawn at. */}
+        {/*
+          Between the two gift controls, at the 448px every rule here is drawn
+          at.
+
+          Unchanged by the narrowing, and deliberately: the client's frame keeps
+          this rule at its full width across two frames that no longer reach it.
+          448px is `--measure-flourish` capped by the 498px column above, which
+          is why the column keeps a width of its own.
+        */}
         <Divider variant="hero" className="my-[-0.3em]" />
 
         {/*
@@ -325,14 +341,27 @@ function DeliveryOption({
 }
 
 /**
- * One of the client's frames, drawn but not wired. `gift a reading` passes an
- * `onClick` and a pressed state; `redeem gift code` passes neither and is inert
- * — `type="button"`, so a press does nothing at all rather than submitting the
- * order form it sits in.
+ * One of the client's frames, drawn but not wired. `Gift a Reading` passes an
+ * `onClick` and a pressed state; `Redeem A Gift Code` passes neither and is
+ * inert — `type="button"`, so a press does nothing at all rather than
+ * submitting the order form it sits in.
  *
  * Buy Now is not one of these. It wears the same `.checkout-option` treatment
  * so the column reads as one set of frames, and owns its own state, which is
  * what a control that can be mid-purchase needs and these two never are.
+ *
+ * ## Narrower than the frames above them, from 30 August 2026
+ *
+ * The client's revision keeps the wallet row and Buy Now at the column's 498px
+ * and pulls these two in to **84% of it** — 418px of the 687px panel, which is
+ * the `60.89cqw` below. So this is the one thing these two do not share with
+ * Buy Now, and the reason the width is set per frame rather than once on the
+ * column they stand in.
+ *
+ * **The ratio is the measurement and the `cqw` is arithmetic off it.** 84% was
+ * read off the client's exported frame rather than out of their file, so it is
+ * the figure to confirm if the two ever look wrong beside each other; the
+ * number here follows from it and from the 72.49cqw above.
  *
  * The `label` prop went with the two frames that were a mark and no words. Both
  * that are left carry their own text, and an `aria-label` restating it would be
@@ -354,7 +383,12 @@ function CheckoutOption({
       size="fluid"
       aria-pressed={pressed}
       onClick={onClick}
-      className="checkout-option"
+      /*
+        `w-` is a utility and `.checkout-option`'s `inline-size: 100%` is a
+        component, so this wins on layer order rather than on specificity —
+        which is why it can be a plain class here and needs no `!`.
+      */
+      className="checkout-option w-[60.89cqw]"
     >
       {children}
     </Button>

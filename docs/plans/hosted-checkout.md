@@ -84,15 +84,15 @@ otherwise be found on staging rather than here.
 
 `GetMyReading` draws five frames. Three of them — Apple Pay, Google Pay, Pay
 with Card — become **one Buy Now button** for the length of the interim.
-`redeem gift code` stays a dud until gifting ships; `gift a reading` stays live.
+`Redeem A Gift Code` stays a dud until gifting ships; `Gift a Reading` stays live.
 
 | frame | before | after this ticket | after the wallet road |
 |---|---|---|---|
 | Apple Pay | `ExpressCheckout` on `live`, ghost otherwise | — | `ExpressCheckout`, wired |
 | Google Pay | dud (#36) | — | drawn by the same element |
 | Pay with Card | dud (#38) | **Buy Now**, real | **Buy Now**, unchanged |
-| redeem gift code | dud | dud, unchanged | dud, unchanged |
-| gift a reading | live | live, unchanged | live, unchanged |
+| Redeem A Gift Code | dud | dud, unchanged | dud, unchanged |
+| Gift a Reading | live | live, unchanged | live, unchanged |
 
 **The rule the panel turns on is unchanged**: where there is no live money there
 is nothing that can take a payment. `Buy Now` needs `offer.money`, so it renders

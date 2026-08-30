@@ -77,7 +77,7 @@ const GHOST = "#get-my-reading .checkout-option";
 /** The one control that can take money. Selected by its hook, not its words. */
 const BUY = "#get-my-reading [data-buy-now]";
 
-const GIFT = '#get-my-reading button:has-text("gift a reading")';
+const GIFT = '#get-my-reading button:has-text("Gift a Reading")';
 
 /**
  * Proof Stripe.js built an element. **Page-wide rather than inside the panel**:
@@ -353,6 +353,22 @@ async function drive(
     recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
+    /*
+      The client's 30 August revision: the two gift frames stand at 84% of the
+      payment frames' width, where all five used to share one. A **ratio**
+      rather than a pixel — the column is laid out in `cqw`, so every width in
+      it moves with the viewport and only their proportion is a constant.
+    */
+    giftFrameRatio: await page.evaluate(() => {
+      const buy = document.querySelector("#get-my-reading [data-buy-now]");
+      const narrow = [...document.querySelectorAll("#get-my-reading .checkout-option")].find(
+        (node) => node !== buy,
+      );
+
+      if (!buy || !narrow) return null;
+
+      return Math.round((narrow.getBoundingClientRect().width / buy.getBoundingClientRect().width) * 100);
+    }),
     // Whitespace-flattened: the label and the amount are two spans that the
     // column lays out one above the other, and where the line breaks is not
     // what this is asserting.
@@ -619,8 +635,15 @@ expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
   quotes the API — `sold.settled.price` above is — it is the assertion that it
   quotes nothing at all.
 */
-expect("live", "Buy Now is labelled, and quotes no amount", sold.settled.buyNow, "Continue to Checkout");
+expect("live", "Buy Now is labelled, and quotes no amount", sold.settled.buyNow, "Pay Another Way");
 expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
+/*
+  The frames are no longer one width. Buy Now and the wallet row above it keep
+  the column's 498px; the two under the Stripe line were pulled in to 84% of it
+  on 30 August 2026 at the client's request. This is the assertion that the
+  narrowing landed on those two and did not reach the road that takes money.
+*/
+expect("live", "the gift frames stand at 84% of the payment frames", sold.settled.giftFrameRatio, 84);
 
 if (live) {
   await browser.close();
@@ -686,7 +709,7 @@ expect("ahead", "the wallet row still stands beside the refused card road", ahea
 expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
 expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
 expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
-expect("ahead", "and the button is pressable again", ahead.afterwards, "Continue to Checkout");
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Pay Another Way");
 /* Nothing to paint a confirmation from, because nothing was confirmed. */
 expect("ahead", "nothing was remembered", ahead.record, null);
 
@@ -744,7 +767,7 @@ expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
   meet a hole where the checkout is. None of the three can take money.
 */
 expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
-expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Continue to Checkout");
+expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Pay Another Way");
 expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a

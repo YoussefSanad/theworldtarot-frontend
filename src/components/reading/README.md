@@ -282,7 +282,7 @@ page opens, quotes the order total and takes a test card is #47.
 
 ### Gift is a mode, not a page
 
-Clicking "gift a reading" turns the order into a gift order **in place**: the
+Clicking "Gift a Reading" turns the order into a gift order **in place**: the
 question section becomes recipient details, the payment stays where it was, and
 the price, the product and everything else the visitor was looking at holds
 still. A separate `/readings/gift` page would have to restate all of it and
@@ -296,7 +296,7 @@ design and not the requirement. The recipient asks their own question after
 they redeem.
 
 Two departures from the frame come with it, and both answer the same problem.
-The client puts "gift a reading" at the foot of the payment column, and what it
+The client puts "Gift a Reading" at the foot of the payment column, and what it
 changes is a section most of a panel above it — an action whose effect is off
 screen. Rather than move her button:
 
@@ -316,7 +316,7 @@ separate milestone.
 
 ### One of the three controls is a dud, on purpose
 
-There is no redemption flow, so `redeem gift code` is `type="button"` with
+There is no redemption flow, so `Redeem A Gift Code` is `type="button"` with
 nothing behind it. **Inert rather than submitting**: the form has no action, so
 a submit would reload the page with the visitor's question in the query string,
 which is a worse nothing than nothing. It is a real button rather than a
@@ -371,14 +371,21 @@ every keystroke to do it.
   `.btn-ghost`. Figma draws all five identically (498x78, 2px gold, 25px
   corner) and changes only the mark inside; Buy Now wears the same box, so the
   column still reads as one set of frames while it stands where three of them
-  did. Unlike `.readings-cta` they never hug their labels: the client stacks
-  them as one column of equal buttons, and that is also the only thing keeping
-  a mark and a five-word label the same size as each other. **The padding is
-  what makes "equal" true**, and both halves of it earn their number: the
-  inline padding is never seen on a full-width box with centred contents, so it
-  is only the width at which a label wraps, and the block padding is what lets
-  a label that wraps anyway still stand inside `2.6em` rather than growing the
-  frame. See the comment on `.checkout-option`.
+  did. Unlike `.readings-cta` they never hug their labels: each fills the width
+  it is given, and that is also the only thing keeping a mark and a five-word
+  label the same size as each other. **The padding is what makes their heights
+  equal**, and both halves of it earn their number: the inline padding is never
+  seen on a box that fills its width with centred contents, so it is only the
+  width at which a label wraps, and the block padding is what lets a label that
+  wraps anyway still stand inside `2.6em` rather than growing the frame.
+  **Two things moved on 30 August 2026**, both at the client's request. The box
+  sets Gill Sans Light rather than inheriting `.btn-ghost`'s serif — which is
+  why the labels were re-cased in `reading-pages.ts` in the same change, since
+  Cinzel's small capitals had been doing the shouting for two of them and Gill
+  Sans draws what the string says. And the two gift frames under the Stripe
+  line were pulled in to 84% of the payment frames' width, so the width is now
+  set per frame in `GetMyReading` rather than once here. See the comment on
+  `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty

@@ -1904,12 +1904,17 @@
     resting border is the same gold at 55%, which is the one value that would
     have drifted if this were a copy.
 
+    ~~One width for all five.~~ **The two gift frames were pulled in on 30
+    August 2026**, at the client's request, so the width stated here is the
+    payment frames' and the two below the Stripe line set a narrower one over
+    the top of it. Both numbers live in `GetMyReading`, which owns the column
+    they are shares of.
+
     The height is `em` off the label, as every other button on the site is, so
     the row keeps its proportion as the type scales rather than pinning to
-    78px. Unlike `.readings-cta` these never hug their labels — the client
-    stacks them as one column of equal buttons at every width, which is also
-    the only thing that keeps an Apple Pay mark and a five-word label the same
-    size as each other.
+    78px. Unlike `.readings-cta` these never hug their labels — each fills the
+    width it is given, which is also the only thing that keeps an Apple Pay
+    mark and a five-word label the same size as each other.
   */
   .checkout-option {
     background-color: transparent;
@@ -1924,6 +1929,27 @@
     border-style: solid;
     border-width: 2px;
     color: var(--color-snow);
+    /*
+      ~~`.btn-ghost`'s serif.~~ **Gill Sans Light from 30 August 2026**, at the
+      client's request. Set here rather than on `.btn-ghost` so it lands on this
+      panel's frames and on no other ghost button on the site.
+
+      **The case of the labels moved with it, and neither half is correct
+      alone.** Cinzel has no lowercase — it draws small capitals in their place
+      — which is what let two of these labels be stored lowercase and still read
+      as capitals on the page. Gill Sans draws what the string says, so the
+      labels were re-cased in `content/reading-pages.ts` in the same change.
+
+      The weight is stated because it is the face the client asked for: Light,
+      not the 400 the body would otherwise hand down.
+    */
+    font-family: var(--font-sans);
+    font-weight: 300;
+    /*
+      The payment frames' width, and the column's. The two gift frames override
+      it from `GetMyReading`; a `w-*` utility wins over this because Tailwind
+      orders `utilities` after `components`.
+    */
     inline-size: 100%;
     min-block-size: 2.6em; /* 78px at 30px */
     /*
@@ -1931,27 +1957,35 @@
       is decoration: they are the two things that decide whether this column is
       one set of equal frames or four heights.
 
-      These boxes are full-width and their contents are centred, so the inline
-      padding is never seen — it is only the width at which a label gives up and
-      wraps. `0.9em` left "Continue to Checkout" 12.27em to stand in and the
-      words want 12.46em, so the longest label on the panel wrapped and its frame
-      grew to 82px beside its siblings' 78px. `0.75em` hands back the 0.3em that
-      settles it, and the same ratio holds at every width above the type's floor
-      because both are `em` off the same size.
+      These boxes fill the width they are given and their contents are centred,
+      so the inline padding is never seen — it is only the width at which a
+      label gives up and wraps. `0.9em` left "Continue to Checkout" 12.27em to
+      stand in and the words wanted 12.46em, so the longest label on the panel
+      wrapped and its frame grew to 82px beside its siblings' 78px. `0.75em`
+      hands back the 0.3em that settled it, and the same ratio holds at every
+      width above the type's floor because both are `em` off the same size.
 
-      Under about 430px the words cannot fit on one line at any padding: the type
-      clamps at 15px while the panel keeps narrowing, so the label needs 12.46em
-      of a box that has 11em. The block padding is what keeps that from showing.
-      Two lines is 2em, and at `0.15em` a wrapped label still stands inside the
-      `2.6em` the frames are drawn at — so the box holds its height instead of
-      growing. It costs nothing where a label fits, since `min-block-size` is
-      what decides those.
+      **Both figures are history rather than the live measurement**, and are
+      kept because they are why the number is what it is. That label went on 30
+      August 2026 — the card button says "Pay Another Way", which is shorter,
+      and the face under it is Gill Sans rather than Cinzel. The padding is left
+      at the settled value rather than tightened back towards `0.9em`: at the old
+      number it was doing nothing but letting a label wrap, and the two frames
+      that were narrowed in the same change are now the ones with the least room
+      to spare.
+
+      The block padding answers the narrow end, where no inline padding saves a
+      label: the type clamps at 15px while the panel keeps narrowing, so a long
+      label needs more `em` than its box has. Two lines is 2em, and at `0.15em`
+      a wrapped label still stands inside the `2.6em` the frames are drawn at —
+      so the box holds its height instead of growing. It costs nothing where a
+      label fits, since `min-block-size` is what decides those.
     */
     padding: 0.15em 0.75em;
   }
 
   /*
-    The one of the five that holds a state: `gift a reading`, while the order
+    The one of the five that holds a state: `Gift a Reading`, while the order
     is a gift. It takes the same gold light every chosen thing on this site
     answers with rather than a second colour, and it keeps it whether or not a
     pointer is anywhere near it — which is the difference between a hover and a
