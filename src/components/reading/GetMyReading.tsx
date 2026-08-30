@@ -232,7 +232,21 @@ export function GetMyReading({
           rather than inferred from a section most of a panel above it.
         */}
         <CheckoutOption pressed={gifting} onClick={onGiftToggle}>
-          <Mark art={marks.gift} className="w-[7.71cqw]" />
+          {/*
+            The mark turns over with the label. A gift box above "A Reading for
+            Myself" said the opposite of the words under it — the one frame on
+            the panel whose two states are opposites is the one that cannot
+            keep a single icon across them.
+
+            Both marks are 54 tall, so only the width changes here: `53 ÷ 6.87`
+            for the box and `38 ÷ 6.87` for the card, which is the scale the
+            docblock on `Mark` derives every number in this column from.
+          */}
+          {gifting ? (
+            <Mark art={marks.selfReading} className="w-[5.53cqw]" />
+          ) : (
+            <Mark art={marks.gift} className="w-[7.71cqw]" />
+          )}
           {gifting ? gift.leave : gift.enter}
         </CheckoutOption>
       </div>

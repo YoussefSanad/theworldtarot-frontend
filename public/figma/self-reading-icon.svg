@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 54" width="38" height="54" fill="none">
+  <!--
+    "A Reading for Myself" — the mark the gift box hands over to while the
+    order is a reading for the buyer.
+
+    Drawn rather than exported: the client's set has no card, and the two marks
+    beside it in this column (redeem, lock) are thin gold line art, so this is
+    cut to their language rather than to the gift box's 3D render.
+
+    54 tall, which is the gift box's height, so the frame does not resize as
+    the label changes. 38 wide because a tarot card is portrait — `Mark` sizes
+    on width, so the width is what changes between the two states and the
+    height is what holds.
+  -->
+  <rect x="1.5" y="1.5" width="35" height="51" rx="4" stroke="#e4c46a" stroke-width="1.6"/>
+  <rect x="4.9" y="4.9" width="28.2" height="44.2" rx="2.2" stroke="#e4c46a" stroke-width=".7" stroke-opacity=".5"/>
+  <path d="M19 16c.5 7 1 10.5 8 11-7 .5-7.5 4-8 11-.5-7-1-10.5-8-11 7-.5 7.5-4 8-11Z" fill="#e4c46a"/>
+</svg>

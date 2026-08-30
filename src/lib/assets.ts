@@ -82,6 +82,19 @@ export const checkout = {
   lock: asset("/figma/lock-icon.webp", 19, 27),
   redeem: asset("/figma/redeem-icon.webp", 52, 52),
   gift: asset("/figma/gift-icon.webp", 53, 54),
+  /**
+   * What `gift` becomes while the order *is* a gift, beside the label that
+   * leaves gift mode. The client's set has no mark for it, so this one is
+   * drawn — an SVG rather than a `.webp`, which the export serves as-is
+   * because `images.unoptimized` is on and Next hands a local SVG straight to
+   * an `<img>`.
+   *
+   * **54 tall, like `gift`.** `Mark` sizes on width and the browser holds the
+   * ratio, so matching the height is what keeps the frame from resizing as the
+   * label changes; the width differs because a card is portrait and a box is
+   * square.
+   */
+  selfReading: asset("/figma/self-reading-icon.svg", 38, 54),
 } as const;
 
 export const icons = {

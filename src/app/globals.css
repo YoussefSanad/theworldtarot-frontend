@@ -930,6 +930,12 @@
   }
 
   /* Buttons ---------------------------------------------------------------- */
+  /*
+    `background-color` is in the list for one button: the checkout column's
+    gift frame, which fills while the order is a gift. Nothing else here
+    changes fill on a state — `.btn-gold` is a `background-image` and answers
+    with `filter` — so it costs the rest of them nothing.
+  */
   .btn {
     cursor: pointer;
     display: inline-flex;
@@ -938,6 +944,7 @@
     gap: 0.75em;
     text-align: center;
     transition:
+      background-color 300ms var(--ease-veil),
       box-shadow 300ms var(--ease-veil),
       filter 300ms var(--ease-veil),
       border-color 300ms var(--ease-veil),
@@ -2042,13 +2049,29 @@
 
   /*
     The one of the five that holds a state: `Gift a Reading`, while the order
-    is a gift. It takes the same gold light every chosen thing on this site
-    answers with rather than a second colour, and it keeps it whether or not a
-    pointer is anywhere near it — which is the difference between a hover and a
-    state, and the reason this is on `aria-pressed` rather than a class.
+    is a gift. It is on `aria-pressed` rather than a class because the state is
+    the button's own and a screen reader has to be told it too.
+
+    ~~The same `--glow-gold` every chosen thing on this site answers with.~~
+    **A gold wash from 31 August 2026.** The glow was character for character
+    what `.btn-ghost:hover` sets, so a pressed frame and a hovered one were the
+    same picture and gift mode read as a button that had caught its hover and
+    never let go. The distinction the old note drew — a state persists, a hover
+    does not — is only legible if the two look different, and here they did not.
+
+    So the glow goes back to meaning *a pointer is here*, and the state is a
+    fill instead: the frame that is on is the one that is filled. 0.14 rather
+    than the 0.08 `.menu-option` washes a hovered row with, because that is a
+    hover and this has to outweigh one. It sits under a full-strength border —
+    `--edge-gold` is the same gold at 55%, so the edge firms up as the fill
+    arrives instead of the two reading as one change.
+
+    Hover still lands on top: nothing here sets `box-shadow`, so a pressed
+    frame under a pointer is the wash *and* the glow — on, and being pointed at.
   */
   .checkout-option[aria-pressed="true"] {
-    box-shadow: var(--glow-gold);
+    background-color: rgba(228, 196, 106, 0.14);
+    border-color: var(--color-gold);
     color: var(--color-champagne);
   }
 
