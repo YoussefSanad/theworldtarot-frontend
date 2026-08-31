@@ -98,10 +98,19 @@ export const walletAppearance: Appearance = {
       frames now hold `clamp(40px, 2.6em, 55px)` so the wallet button can stand
       at their height, which means the button is no longer the short one — but
       the client asked for 12px against the frames' 25px, and a request for a
-      squarer wallet button is not answered by the frames getting shorter. The
-      frames' own radius is untouched by that clamp and is worth a look next to
-      it: `clamp(0.5rem, 1.302vw, 1.5625rem)` reaches 25px on a box that now
-      stops at 55px, where Figma drew it on 78px.
+      squarer wallet button is not answered by the frames getting shorter.
+
+      **The frames came to this number on 31 August 2026**, and the reason is
+      the one thing `appearance` cannot express: this is a flat pixel value at
+      every width, while the frames' radius was `clamp(0.5rem, 1.302vw,
+      1.5625rem)`. A clamp against a constant agrees at one viewport width and
+      nowhere else — 25px beside this 12px at 1920, ~8px beside it on a phone —
+      which the client read, correctly, as the corner changing between devices.
+      So `.checkout-option` states 12px flat and the two corners are one shape.
+
+      That makes this variable the source for both. Moving it moves the wallet
+      button here and leaves the frames behind in `globals.css`; the comment
+      there says the same thing from the other side.
     */
     borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost

@@ -478,8 +478,14 @@ so the
   Cinzel's small capitals had been doing the shouting for two of them and Gill
   Sans draws what the string says. And the two gift frames under the Stripe
   line were pulled in to 84% of the payment frames' width, so the width is now
-  set per frame in `GetMyReading` rather than once here. See the comment on
-  `.checkout-option`.
+  set per frame in `GetMyReading` rather than once here.
+  **The corner followed the height on 31 August 2026**, and to the same place:
+  the frames' radius was a clamp reaching Figma's 25px, the wallet button's is
+  a flat 12px because `appearance` takes nothing else, and a clamp beside a
+  constant matches at one viewport width and misses either side of it. Both are
+  12px now. It is one number in two files — `.checkout-option` in `globals.css`
+  and `walletAppearance` in `lib/stripe.ts` — so neither moves alone. See the
+  comment on `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty
@@ -634,6 +640,19 @@ Stacked, each panel takes `--measure-reading`, which below `lg` is the same
 load-bearing for the same reason it is on the index: a panel's horizontal
 measurements are `cqw` off its own box, so a panel 10% too wide renders
 everything in it 10% too large.
+
+**And on 31 August 2026 that sentence turned out to be the bug report.** A share
+of the viewport is only ever right while the type scales with it, and the type
+does not: `--text-nav` floors at 15px below about 960px while 81.33% goes on
+growing to 832px at 1023 — a panel not 10% but 140% too wide, rendering
+everything `cqw` in it 140% too large against type that had stopped. The moon
+drew 120px where the client draws 99. It showed on the checkout frames because
+they are the one thing here with a height in pixels and so the one thing with a
+ratio you can read: 498x78 drawn, 603x41.5 at 1023, and 6.4 again a pixel later
+where the second column returns. So the measure now caps at 440px and a tablet
+gets a centred column; see the comment on `--measure-reading`. The cap sits on
+the measure rather than on the panel grid, so the props and the closing saying
+narrow with the panels instead of overhanging them.
 
 They stack in source order — the reading and its payment first, then what
 arrives and who says so — which is the order the desktop frame reads in as

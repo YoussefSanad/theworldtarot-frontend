@@ -173,8 +173,32 @@
     screen at the same inset as every other panel on the site, which is what
     keeps a stacked panel's `cqw` type at the size she sets for a panel that
     wide. See components/reading/README.md.
+
+    **~~81.33%.~~ Capped at 440px from 31 August 2026**, and the cap is the only
+    thing on this page that answers a tablet.
+
+    A share of the viewport with nothing above it was right while the type went
+    on scaling with it, and the type stops: `--text-nav` floors at 15px below
+    about 960px while this measure keeps growing to 832px at 1023. Everything
+    inside a panel is `cqw` — the moon, the studs, the frames, their padding —
+    so all of it grew against type that had stopped, and the one element with a
+    height in pixels is where that showed. The checkout frames are drawn 498x78,
+    a ratio of 6.4; at 1023 they stood at 603x41.5, a ratio of 14.5, and one
+    pixel later the two-column layout put them back at 6.4. The client called
+    it squished, which is exactly what it was.
+
+    440px is a little over the 366px a panel holds at the `lg` boundary itself,
+    so the page narrows into the desktop layout rather than snapping into it,
+    and it is wide enough that a tablet is not handed a phone. Above the cap the
+    page is a centred column with air either side — the price, and the cheaper
+    of the two: air beside a panel drawn correctly, against a panel stretched to
+    fill it. Below about 541px nothing changes; the share is still the smaller
+    number there and the phone measure is untouched.
+
+    It lands on the whole page rather than on the panel grid alone so the props
+    and the closing saying keep their edges flush with the panels above them.
   */
-  --measure-reading: 81.33%;
+  --measure-reading: min(81.33%, 27.5rem); /* 440px */
   --measure-flourish: 448px;
   --measure-flourish-wide: 538px;
   --measure-hairline: min(12rem, 100%);
@@ -1944,7 +1968,26 @@
   .checkout-option {
     background-color: transparent;
     border-color: var(--color-gold);
-    border-radius: clamp(0.5rem, 1.302vw, 1.5625rem); /* 25px */
+    /*
+      ~~`clamp(0.5rem, 1.302vw, 1.5625rem)` — 25px, Figma's corner, scaled with
+      the panel.~~ **12px from 31 August 2026**, at the client's request, and
+      the number is Stripe's rather than ours: `walletAppearance.borderRadius`
+      in `lib/stripe.ts`. Those two are one value in two stylesheets — change
+      one and change the other.
+
+      A wallet button's radius is a flat pixel value at every width, because
+      that is the only shape `appearance` can hand Stripe. The frames' was a
+      clamp, so the two corners met at about one viewport width and disagreed
+      either side of it: 25px against Stripe's 12px at 1920, ~8px against the
+      same 12px on a phone. The client saw both ends of that and read it as the
+      radius changing between devices, which is what it was.
+
+      So the clamp goes. The frames give up scaling their corner with the type
+      to hold one shape beside the vendor's, the same trade `min-block-size`
+      made above for height — and for the same reason: nothing in this column
+      is allowed to be the odd one out.
+    */
+    border-radius: 12px;
     /*
       The frames' own line weight, at the frames' own colour. The style is
       restated even though `.btn-ghost` already sets it: this only ever widens
