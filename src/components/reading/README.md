@@ -516,28 +516,69 @@ so the
   is what does not fit there either way — and the phone now breaks after
   "original" instead of through the house name. `<HouseName>` is `nowrap` for
   the same reason: it is one proper noun.
-- **A feature prop turns on its side below `md`, and the row of three breaks
-  much later, at `xl`.** Two different widths on purpose. The compass stands
-  beside the words at `md` and up, which is what the frame draws, and over them
-  below it at the homepage's own size — a compass beside two lines of 22px type
-  has nowhere to go on a phone. Three *across*, though, needs 1384px of the
-  1431 the row is given, and it only keeps fitting while the type and the
-  column shrink together: `--text-caption` bottoms out at 13px around 1150px
-  while the column carries on narrowing, so below there no gap or compass size
-  saves the longest line. `xl` is the nearest step above that. Between the two
-  a prop is a full-width row of its own, which suits it.
+- **The three props go across at `md`; the compass turns on its side at
+  1152px.** Two different widths on purpose, and the second is the one that
+  makes the first affordable. The compass stands beside the words from 1152 up,
+  which is what the frame draws, and over them below that at the homepage's own
+  size — which is to say that from `md` to 1152 this row *is* the homepage's
+  value props, three columns with a compass over each, at the homepage's own
+  breakpoint.
+- **Which arrangement fits is a measurement, not a taste.** Her longest
+  description line is 301px at the frame's 22px, and beside the words it only
+  keeps fitting while the type and the column shrink together: `--text-caption`
+  bottoms out at 13px around 1134px while the column carries on narrowing, so
+  the line stops getting cheaper at 178px and by about 1090px no gap or compass
+  size leaves it that much. Over the words the same line has the whole column —
+  244px on a tablet against the 178 it needs. That is why the columns break at
+  `md` and the compass at 1152 rather than one rule doing both.
+- **And the row takes a measure of its own below `lg`, which is the third
+  break.** Three columns of 178px need 566px of row, and the page cap hands the
+  props 440 — held to it the row came to three columns of 136px, the
+  description wrapped inside itself onto a third line, and the rule and the
+  nowrap title spilled over the props either side. `readingProps` opens the row
+  alone out to 763px, which is what `--measure-reading` gives it at `lg`
+  itself, so a tablet gets full width and nothing steps backwards crossing the
+  breakpoint. The cost is the flush edge the cap exists for: between `md` and
+  `lg` this row stands about 160px proud of the panels on either side, which is
+  ours rather than the client's and is on the list to put to her. See the note
+  on `--measure-reading-props` in `globals.css`.
+- **The compass break is 72rem and not `xl`, and the 128px between them is the
+  whole reason.** A 1920 screen at 150% scaling — the common Windows laptop —
+  reports 1280 and then takes the classic scrollbar back out of it, so the
+  widest screen the beside-the-words arrangement was drawn for arrived a few
+  pixels *under* `xl` and stood its compasses up. 1152 is the round step that
+  clears the 1090px floor with the row's own margin intact, and it is an
+  arbitrary variant rather than a theme breakpoint because this row is the only
+  thing on the site that turns there.
 - **The gap between the three is 24px, not the page gutter's 60.** The client's
   own render leaves about 35px and 3px between props; at 60 a third of the row
   came to 293px against the 301px her longest description line measures, and
   that prop ran to three lines. The gaps were the only slack there was to give
-  back. It now clears by 5.3% at every width the row is three across — which is
-  the number to re-check if that copy ever gets longer.
+  back. It clears by 5.3% from `xl` up and 4.7% at 1152, which is the tightest
+  the row ever gets — the number to re-check if that copy ever gets longer.
+  Below 1152 the compass is out of the line and the clearance jumps to 37% on a
+  tablet and 29% at `md` itself.
 - **A feature prop has three widths and none of them is the column's.** The
   rule is 277px. The title never wraps — Figma sets it `nowrap` and lets it
   overhang the rule, which is the look: a name on one line over a line. And the
-  body has its own 408px, wider than the rule again, which is the measure her
-  two phrases were broken to; at the rule's width the first of them wrapped and
-  the prop ran to three lines. Each child states its own, the column takes
+  body has its own, wider than the rule again, which is the measure her two
+  phrases were broken to; at the rule's width the first of them wrapped and the
+  prop ran to three lines.
+- **That body measure is 15.15em, and it is a ceiling on the copy rather than
+  the frame's 408px.** Measured off `MagicallyRegular.otf` at 22px with the
+  0.01em tracking — which reproduces the 301px quoted above to the pixel — her
+  six phrases bracket it from both sides. The longest single phrase is 13.67em
+  ("Each reading unfolds through the"); the shortest whole description is
+  16.77em ("Insight that illuminates your next chapter"). Below 13.67 a phrase
+  wraps inside itself and that prop runs to three lines. At 16.77 or above,
+  Clarity in Motion closes up onto one line while its siblings take two, and
+  three across that reads as a broken row — which is what 408px (18.55em) was
+  doing. 15.15 is the middle of the window on a ratio, 10.8% clear at either
+  end, and it is the number to re-measure if any of the six phrases changes.
+- **The cap only ever binds below 1152.** From there up the column is the
+  narrower of the two at every width, which is why the frame's 408px never
+  showed itself as wrong — the one-line description only appeared once the
+  compass stepped out of the line and handed the column back. Each child states its own, the column takes
   whichever is widest, and `min-w-0` on the row keeps a long title overhanging
   its third of the page rather than growing the track.
 - **The question's standfirst is capped at 480px.** Her two phrases come to

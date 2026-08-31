@@ -199,6 +199,30 @@
     and the closing saying keep their edges flush with the panels above them.
   */
   --measure-reading: min(81.33%, 27.5rem); /* 440px */
+  /*
+    The three props under the panels are the one thing on this page that does
+    not take that cap, and it is the copy that forces it. Three props across
+    need 566px — 178px of measure each for the longest description line at the
+    13px `--text-caption` floors at, plus the two 24px gaps — and 440px does
+    not have it. Held to the cap the row came to three columns of 136px: the
+    line wrapped inside itself onto a third row, and the rule and the title,
+    which are wider than a column and do not wrap, overlapped the props either
+    side.
+
+    So this row alone opens out to the edge gutter, and stops at the 763px
+    `--measure-reading` hands it at `lg` itself — full tablet width, and no
+    step backwards when the page widens into the desktop layout, where the raw
+    gutter would have run to 959px at 1023 and snapped down one pixel later.
+    It buys 244px a column against the 178 the line needs.
+
+    The price is the flush edge the cap was written for: between `md` and `lg`
+    this row stands about 160px proud of the panels above it on either side.
+    That is a deliberate trade made on 31 August 2026 — ours, not the
+    client's, and worth putting to her — against the alternative of three props
+    that cannot go across on a tablet at all. Above `lg` it is the page measure
+    again and every edge lines up.
+  */
+  --measure-reading-props: 47.7rem; /* 763px */
   --measure-flourish: 448px;
   --measure-flourish-wide: 538px;
   --measure-hairline: min(12rem, 100%);
@@ -214,6 +238,8 @@
     --measure-readings: min(var(--container-readings), 78.229vw);
     --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
     --measure-reading: min(var(--container-reading), 74.531vw);
+    /* Flush with the panels again the moment there is width for it. */
+    --measure-reading-props: var(--measure-reading);
     --measure-flourish: min(448px, 23.333vw);
     --measure-flourish-wide: min(538px, 28.021vw);
     --measure-hairline: min(368px, 19.167vw);
@@ -413,6 +439,10 @@
 
   .shell--reading {
     --shell-width: var(--measure-reading);
+  }
+
+  .shell--reading-props {
+    --shell-width: var(--measure-reading-props);
   }
 
   /*
