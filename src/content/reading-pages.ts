@@ -62,7 +62,7 @@ export const readingPageChrome = {
    */
   gift: {
     heading: "Recipient Details",
-    body: ["Tell us where to send it, and", "what you would like it to say."],
+    body: ["Who should receive your gift?", "Add their email address and a personal message below."],
     /**
      * Two states of one control; the second is how a visitor gets back.
      *
@@ -78,8 +78,8 @@ export const readingPageChrome = {
      */
     enter: "Gift a Reading",
     leave: "A Reading for Myself",
-    email: { label: "Recipient's email address", placeholder: "Their email address…" },
-    message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
+    email: { label: "Recipient's email address", placeholder: "Recipient’s email address…" },
+    message: { label: "Personal message (optional)", placeholder: "Write a personal message…" },
     /**
      * Said once, under the fields, because the flow is not the obvious one:
      * nothing is asked of the reading until it reaches the person it is for.
@@ -358,8 +358,18 @@ export const monthAhead: ReadingPage = {
     ["A Month-Ahead Reading", "focused on your path forward"],
     ["Prepare for the weeks ahead", "with insight"],
     ["Thoughtful written interpretation"],
-    /* The house name is set in the brand's own face here; see `<HouseName>`. */
-    ["Presented on original World Tarot", "artwork"],
+    /*
+      The house name is set in the brand's own face here; see `<HouseName>`.
+
+      Three phrases for the two lines the frame draws, because at 1920 "artwork"
+      is what will not fit and the break falls after the name either way —
+      splitting a phrase only ever *adds* a place the line may break, it never
+      moves one. The extra place is the one a phone needs: the whole of
+      "Presented on original World Tarot" is wider than the measure a 375px
+      panel leaves, and without a break inside it the line wraps mid-name and
+      spills "artwork" onto a third row.
+    */
+    ["Presented on original", "World Tarot", "artwork"],
     ["Delivered by email within 24 hours"],
   ],
   testimonial: {

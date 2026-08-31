@@ -28,9 +28,12 @@ import { cn } from "@/lib/cn";
  * number here that is neither Figma's nor arithmetic: it was settled by eye
  * against the rendered page, so move it by eye too.
  *
- * The line count comes from the copy's own shape: `included` is a list of
- * phrases per line, broken where the client breaks them, so its length *is*
- * how many lines that entry sets at the width she drew the panel.
+ * The line count comes from the copy's own shape: `included` is a list of the
+ * places a line may break, chosen by the client, so a single phrase is a
+ * one-line entry and anything longer sets two at the width she drew the panel.
+ * One entry carries a third phrase it does not need there — see the note
+ * against it in `reading-pages.ts` — because a phone's measure is narrower than
+ * anything she drew, and a phrase that cannot fit wraps inside itself.
  */
 export function WhatYouGet({ reading }: { reading: ReadingPage }) {
   return (

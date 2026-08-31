@@ -116,6 +116,13 @@ the middle mark**, and that is the only difference:
   child of `.panel-marks`. It is `frame-ornament-trio-sm.webp`, the crop the
   readings cards already wear — 26x17 here against 26x16 there, the same art.
 
+The panels are also not level with one another. Figma starts the right one's
+top border 28px below the left one's, so the pair steps down rather than
+squaring off, and it is the border that moves — the offset is a margin on the
+grid item in `readings/month-ahead/page.tsx`, not extra padding in the body.
+It is desktop-only, since below `lg` there is no second column for it to be out
+of step with.
+
 `legendMark` is what tells the frame the legend is an ornament. Everything the
 open frame does above that prop is about a heading's *first line* — where the
 rule crosses the capitals, how far a bracket hangs to meet it — and a mark has
@@ -338,6 +345,14 @@ screen. Rather than move her button:
   pointer being near it, and a label that becomes the way back out, so gift
   mode is never somewhere a visitor is stuck.
 
+The recipient's email field also **suppresses browser autofill**
+(`CountedField`'s `suppressAutofill`). Chrome classifies a field by its `name`
+and `id` as much as by its `autocomplete`, so `recipientEmail` had it offering
+the purchaser their own saved address — the one address a gift must not go to.
+The field therefore submits under React's opaque `useId` string and carries its
+real name on `data-field`, which is where anything reading this form should
+look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
+
 The recipient's side of the flow — redeem, then ask — is not built. `redeem
 gift code` is a dud. **Both payment controls take money in gift mode**, from 30
 August 2026 and at the client's request.
@@ -466,8 +481,19 @@ keystroke to do it.
   and reads as sitting low, and so does a quarter. An eighth is the one number
   in that file that is neither Figma's nor arithmetic: it was settled by eye
   against the rendered page over three passes, so move it by eye too. The line
-  count is the copy's own shape: `included` is a list of phrases per line, so
-  its length *is* how many lines the entry sets at the width she drew.
+  count is the copy's own shape: `included` is a list of the places a line may
+  break, so one phrase is one line and more than one is two at the width she
+  drew.
+- **"Presented on original World Tarot artwork" is written as three phrases for
+  two lines.** A `Phrase` that will not fit the measure does not hold together —
+  it shrinks and wraps *inside* itself — and on a phone that one is wider than
+  the measure a panel at 81.33% leaves once the medallion, its gap and the two
+  `cqw` insets are out. It broke mid-name and spilled "artwork" onto a third
+  row. Splitting a phrase only ever adds a place the line may break and never
+  moves one, so the frame at 1920 still breaks where she breaks it — "artwork"
+  is what does not fit there either way — and the phone now breaks after
+  "original" instead of through the house name. `<HouseName>` is `nowrap` for
+  the same reason: it is one proper noun.
 - **A feature prop turns on its side below `md`, and the row of three breaks
   much later, at `xl`.** Two different widths on purpose. The compass stands
   beside the words at `md` and up, which is what the frame draws, and over them

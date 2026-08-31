@@ -27,14 +27,20 @@ export default function MonthAheadReadingPage() {
     height behind the footer and never be seen. See the note in
     `../page.tsx`; `isolate` keeps its `-z-10` inside this box.
 
-    No mobile offset here, unlike the index. That page hangs a night sky from
-    the top of this box and needs to clear a transparent masthead; this one
-    stands its room on the floor and opens on flat colour, so there is no edge
-    at the top to hide.
+    The mobile offset is the index's, and for the index's reason. Above `lg`
+    this page does open on flat colour — the observatory stands on the floor and
+    nothing reaches the top — but below it `.page-atmosphere-reading::before`
+    hangs the same night sky the index hangs, from this box's top edge. That
+    edge is `main`'s, which is the masthead's bottom, and the masthead is
+    transparent: left flush, the sky starts in a hard line under a strip of flat
+    colour, and the header reads as a solid block sitting on the page. 5rem
+    lifts the start of the picture above the header, the same clearance and the
+    same number as `../page.tsx` — it is tuned to the masthead's height, so it
+    moves when `SiteHeader`'s padding does.
   */
   return (
     <div className="relative isolate">
-      <PageAtmosphere variant="reading" />
+      <PageAtmosphere variant="reading" className="max-lg:-top-20" />
 
       {/*
         Figma sets the pair 144px under a frame that draws no masthead; ours
@@ -75,7 +81,19 @@ export default function MonthAheadReadingPage() {
               way: the left one holds weather, this one settles the room
               behind the half of the page that explains.
             */}
-            <ReadingPanel bodyClassName="bg-ink/50 px-[4.37cqw] pt-[17.93cqw] pb-[5.69cqw]">
+            <ReadingPanel
+              /*
+                The two panels do not start at the same height: Figma sets this
+                one's top border 28px below the other's, so the right column
+                reads a beat after the left rather than alongside it. It is the
+                panel that drops, not its contents — the border moves with it —
+                so it is a margin on the grid item and not more body padding.
+                Below `lg` there is no second column to be out of step with, so
+                the offset is desktop-only.
+              */
+              className="lg:mt-[min(1.458vw,1.75rem)]"
+              bodyClassName="bg-ink/50 px-[4.37cqw] pt-[17.93cqw] pb-[5.69cqw]"
+            >
               <WhatYouGet reading={monthAhead} />
               <BeyondTheGate />
               <ReadingTestimonial reading={monthAhead} />
