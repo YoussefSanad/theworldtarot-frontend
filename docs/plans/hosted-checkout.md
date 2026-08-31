@@ -5,6 +5,13 @@
 > that repo's `docs/adr/0002-the-redirect-case-comes-back.md`. This is what gets
 > built.
 >
+> **The control this plan calls "Buy Now" is `HostedCheckoutButton` from 31
+> August 2026**, and "the checkout button" in prose. The label it was named for
+> moved three times in three days, so the identifier was renamed after the road
+> it starts rather than the words on it; the argument is in that file and the
+> term is fixed in `CONTEXT.md`. **Every "Buy Now" below is left as written** —
+> this is a dated plan, and it is the name the control had when it was drafted.
+>
 > **This is one of two roads, and it is the one whose backend is already
 > shipped.** The wallet road — Apple Pay and Google Pay drawn by the express
 > checkout element on our own page — is decided in the backend's

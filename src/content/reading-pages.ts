@@ -120,7 +120,7 @@ export const readingPageChrome = {
      * already states the price once, above these frames and in display type, and
      * a second telling at nav size was what made this label — the longest on the
      * panel — wrap onto two lines and stand taller than the frames beside it.
-     * Removed 29 August 2026 at the client's request; see `BuyNow`.
+     * Removed 29 August 2026 at the client's request; see `HostedCheckoutButton`.
      *
      * ~~"Buy Now".~~ ~~"Continue to Checkout" from 29 August 2026.~~ **"Pay
      * Another Way" from 30 August 2026**, both at the client's request.
@@ -161,7 +161,8 @@ export const readingPageChrome = {
      * ~~"Gifting is not open yet, so there is no way to pay for one. A reading
      * for yourself can be bought now."~~ **Rewritten on 30 August 2026, later
      * the same day**, when the client asked for the wallet row to stay on the
-     * panel through the gift toggle and Buy Now was un-gated beside it. Both
+     * panel through the gift toggle and the checkout button was un-gated beside
+     * it. Both
      * superseded strings say gifting cannot be paid for, and the moment either
      * control charged a card that stopped being true — a note contradicting the
      * button above it is worse than no note at all. Unlike the copy around it

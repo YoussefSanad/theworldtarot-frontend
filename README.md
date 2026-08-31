@@ -124,7 +124,8 @@ links — including the remaining reading products and the gift panel — point 
 routes from the navigation document that do not exist yet.
 
 One form has markup and field names but no endpoint: the newsletter signup in
-the footer. A reading page's checkout is wired — Buy Now mints a hosted Stripe
+the footer. A reading page's checkout is wired — the checkout button mints a hosted
+Stripe
 Checkout Session and the wallet row confirms a PaymentIntent in the page. Its
 **gift mode** is live and needs no backend: it swaps the question for recipient
 details in place.

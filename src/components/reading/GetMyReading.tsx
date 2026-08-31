@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { PanelHeading } from "@/components/reading/PanelHeading";
-import { BuyNow } from "@/components/reading/BuyNow";
+import { HostedCheckoutButton } from "@/components/reading/HostedCheckoutButton";
 import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
@@ -31,8 +31,8 @@ const { checkout, gift } = readingPageChrome;
  * it was that a wallet sheet, whose height is unknowable at build time, cannot
  * be the control this panel is laid out around.
  *
- * They are two controls because they are two things. Buy Now sends the browser
- * to a hosted Checkout Session — an address; the wallet row mounts an express
+ * They are two controls because they are two things. The checkout button sends
+ * the browser to a hosted Checkout Session — an address; the wallet row mounts an express
  * checkout element and confirms a PaymentIntent in the page — an iframe. No
  * Stripe parameter reconciles those, which is why `/pay` answers two shapes.
  *
@@ -53,8 +53,8 @@ const { checkout, gift } = readingPageChrome;
  * the one control that quotes an amount is conditional on there being one.
  *
  * - **live** — the price, formatted from `Money` against the site's locale, and
- *   Buy Now handed `offer.money`, so the currency the order is placed in is the
- *   one the customer was quoted
+ *   the checkout button handed `offer.money`, so the currency the order is placed
+ *   in is the one the customer was quoted
  * - **loading** — a resting placeholder at the price line's own height, and the
  *   controls kept in the layout but `invisible` and `inert`. They reserve their
  *   height without being reachable by a pointer, a tab, a screen reader or a
@@ -76,8 +76,8 @@ const { checkout, gift } = readingPageChrome;
  *
  * ## The controls
  *
- * **Two of them take money once there is money**: the wallet row and Buy Now.
- * Both take `Money` rather than an offer, so neither can be built from a state
+ * **Two of them take money once there is money**: the wallet row and the checkout
+ * button. Both take `Money` rather than an offer, so neither can be built from a state
  * that has no amount. See those files for what a press does and what makes each
  * inert.
  *
@@ -148,7 +148,8 @@ export function GetMyReading({
         498px of the 687px panel; 12px between buttons at the 30px they label.
 
         **This is the column's width, and from 30 August 2026 it is no longer
-        every frame's.** The wallet row and Buy Now fill it, as they always did;
+        every frame's.** The wallet row and the checkout button fill it, as they
+        always did;
         the two gift frames under the Stripe line set their own narrower width
         over the top of `.checkout-option`'s — see `CheckoutOption` below. It
         stays here rather than moving onto the children entirely because two
@@ -168,7 +169,7 @@ export function GetMyReading({
         inert={offer.status === "loading"}
       >
         {/*
-          The wallet row, above Buy Now and nowhere else.
+          The wallet row, above the checkout button and nowhere else.
 
           **Two conditions, and each removes it for a different reason.**
           `live`, because `money` exists in no other state and a sheet quoting a
@@ -176,7 +177,8 @@ export function GetMyReading({
           And `walletOffered`, because an environment that configured no Stripe
           has no wallet to offer.
 
-          ~~And not `gifting`, for the reason Buy Now goes inert there: `POST
+          ~~And not `gifting`, for the reason the checkout button goes inert
+          there: `POST
           /orders` has no field for a recipient, so a live control in gift mode
           charges somebody for a gift delivered to themselves — and a wallet is
           the worse of the two to get wrong, since it takes the money the
@@ -211,7 +213,7 @@ export function GetMyReading({
           there is no branch in it that can place an order without a price the
           backend set.
         */}
-        <BuyNow
+        <HostedCheckoutButton
           productKey={reading.productKey}
           money={offer.status === "live" ? offer.money : null}
           gifting={gifting}
@@ -388,16 +390,18 @@ function DeliveryOption({
  * invitation to draw another dud, and the type now says what is true — a frame
  * on this panel does something when it is pressed.
  *
- * Buy Now is not one of these. It wears the same `.checkout-option` treatment
+ * The checkout button is not one of these. It wears the same `.checkout-option`
+ * treatment
  * so the column reads as one set of frames, and owns its own state, which is
  * what a control that can be mid-purchase needs and this one never is.
  *
  * ## Narrower than the frames above it, from 30 August 2026
  *
- * The client's revision keeps the wallet row and Buy Now at the column's 498px
- * and pulls the gift frame in to **84% of it** — 418px of the 687px panel,
+ * The client's revision keeps the wallet row and the checkout button at the
+ * column's 498px and pulls the gift frame in to **84% of it** — 418px of the 687px panel,
  * which is the `60.89cqw` below. So this is the one thing this frame does not
- * share with Buy Now, and the reason the width is set per frame rather than
+ * share with the checkout button, and the reason the width is set per frame
+ * rather than
  * once on the column they stand in.
  *
  * **The ratio is the measurement and the `cqw` is arithmetic off it.** 84% was

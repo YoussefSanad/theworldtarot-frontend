@@ -21,6 +21,29 @@ const { checkout } = readingPageChrome;
  * browser to Stripe's **hosted page**. Nothing is collected here, and this file
  * loads no Stripe.js. See `docs/adr/0002-checkout-happens-on-stripes-page.md`.
  *
+ * ## ~~`BuyNow`~~ `HostedCheckoutButton`, from 31 August 2026
+ *
+ * **Renamed because the old name was a label, and the label moved three times
+ * in three days**: "Buy Now", then "Continue to Checkout" on 29 August, then
+ * "Pay Another Way" on 30 August, all at the client's request. An identifier
+ * named after copy goes stale every time the copy does — and by the end this
+ * control was called one thing in the code, labelled another on the page, keyed
+ * `checkout.buy` in the content, and called "the card button" in `CONTEXT.md`.
+ * Four names for one control is the exact condition that file exists to
+ * prevent.
+ *
+ * **So the name is the road, not the words on it.** What this button *is* is
+ * the control that starts the hosted-page road, and that has been true since 29
+ * August through three labels. `CardButton` was the other candidate — it is
+ * what `CONTEXT.md` and both document titles already say — but the label's own
+ * docblock argues at length that this button names no payment method, and an
+ * identifier that names one puts that argument back on the table every time
+ * somebody reads it.
+ *
+ * In flowing prose it is **"the checkout button"**; `HostedCheckoutButton` is
+ * for the component itself. The hook `check-panel.mjs` presses is
+ * `data-hosted-checkout`.
+ *
  * ## It does not quote the price, and that is a layout fact
  *
  * ~~The amount set beside the label, in champagne.~~ **Gone from the button on
@@ -77,7 +100,7 @@ const { checkout } = readingPageChrome;
  * the wallet button reads through as well: it has to reach the order line
  * identically on both roads, and by the same rules.
  */
-export function BuyNow({
+export function HostedCheckoutButton({
   productKey,
   money,
   gifting,
@@ -121,9 +144,9 @@ export function BuyNow({
 
       /*
         The pending state is deliberately not cleared. The browser is leaving,
-        and clearing it would put "Buy Now" back under a thumb for the moment
-        the navigation takes — which is the same mis-tap the loading state
-        exists to prevent, arriving at the other end of the flow.
+        and clearing it would put the resting label back under a thumb for the
+        moment the navigation takes — which is the same mis-tap the loading
+        state exists to prevent, arriving at the other end of the flow.
       */
       location.assign(url);
     } catch (cause: unknown) {
@@ -145,7 +168,7 @@ export function BuyNow({
           which changes while a press is in flight and would stop matching
           exactly when the check most wants to see it.
         */
-        data-buy-now=""
+        data-hosted-checkout=""
         type="button"
         variant="ghost"
         size="fluid"

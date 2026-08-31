@@ -165,7 +165,7 @@ all of them: **where there is no live money there are no payment controls.**
 | State | Price line | Controls |
 | --- | --- | --- |
 | Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
-| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live — and the only place the price is said |
+| Live | `formatPrice(money)`, site locale, never the browser's | The checkout button, live — and the only place the price is said |
 | Unreachable | The bundled `reading.price`, as plain copy | The frames, none of which can pay |
 | Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
 
@@ -187,17 +187,18 @@ Three things about that table are decisions rather than mechanics:
 
 `npm run check:panel` drives every state against the real export with the whole
 checkout intercepted — the catalogue, `/orders` and `/pay` — which is what lets
-it **press** Buy Now rather than only look at it. `-- --live` runs the live case
+it **press** the checkout button rather than only look at it. `-- --live` runs the live case
 against the API in `.env.local` instead and presses nothing, from port 3000
 because that is the origin staging's CORS list carries. See
 `docs/plans/reading-page-live-price.md` and `docs/plans/hosted-checkout.md`.
 
-### Buy Now is a redirect, and the wallet is not
+### The checkout button is a redirect, and the wallet is not
 
-`BuyNow` is ~~the only control on the panel that takes money~~ — from 29 August
+`HostedCheckoutButton` is ~~the only control on the panel that takes money~~ —
+from 29 August
 2026 the wallet row above it takes money too, and the two do it in different
-places, which is the whole of the difference between them. Pressing Buy Now
-places an order, starts its payment and sends the browser to Stripe's **hosted
+places, which is the whole of the difference between them. Pressing it places an
+order, starts its payment and sends the browser to Stripe's **hosted
 page**: nothing is collected on this page and, on this road, no Stripe.js is
 loaded on it. The wallet stays here and confirms in an iframe on our own origin.
 See `docs/adr/0002-checkout-happens-on-stripes-page.md`,
@@ -232,7 +233,7 @@ Four things about it are worth knowing before changing any of it.
   has no element for, or a `type` a later backend invents: the order exists, it
   is `pending`, nothing has been charged, and the panel says exactly that
 
-### The wallet row, above Buy Now
+### The wallet row, above the checkout button
 
 `ExpressCheckout.tsx` **renders again** from 29 August 2026, which is #48.
 ~~Unrendered rather than removed~~ — it was a dud while `/pay` had no
@@ -273,7 +274,8 @@ at 30px type becomes 55px above about 1354px.
 
 And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
 so once the frame stopped growing the marks did not: at 1920 the two gift frames
-stood at 65px and 66.9px beside a 55px Buy Now. `.checkout-option img` caps a
+stood at 65px and 66.9px beside a 55px checkout button. `.checkout-option img`
+caps a
 mark at the proportion Figma draws — a 52px mark in a 78px frame — which the
 card mark, drawn shorter, never reaches. **The same rule closes the 600px to
 1023px unevenness `085774b` left open** as a decision rather than a tidy-up.
@@ -386,7 +388,8 @@ face is recognised and there is no inert state worth leaving that in. That made
 it the one control here that became unavailable without saying anything, and
 only on the devices that had it to lose — which is why it read as a bug rather
 than as "not yet", and why it is what the client noticed. `checkout.giftingComing`
-still stands under Buy Now and still names neither control and no payment
+still stands under the checkout button and still names neither control and no
+payment
 method, but it no longer refuses the payment: what is unfinished is the delivery
 behind it, and the note says a person will arrange that by email. There is no
 second note anywhere: two sentences saying one thing is not what this panel
@@ -410,7 +413,8 @@ one for somebody else.
 **What survives the removal is the argument's other half.** A real button
 rather than a disabled one, because the client rejected a disabled control
 elsewhere on the site — it reads as a bug rather than as "not yet". That is
-still why the one state in which Buy Now cannot be pressed — no live price — is
+still why the one state in which the checkout button cannot be pressed — no live
+price — is
 `aria-disabled` rather than `disabled`.
 
 The form itself stays, with its fields named.
@@ -457,7 +461,8 @@ keystroke to do it.
   how to do.
 - **The checkout controls** are one box, `.checkout-option`, a modifier on
   `.btn-ghost`. Figma draws all five identically (498x78, 2px gold, 25px
-  corner) and changes only the mark inside; Buy Now wears the same box, so the
+  corner) and changes only the mark inside; the checkout button wears the same box,
+so the
   column still reads as one set of frames while it stands where three of them
   did. Unlike `.readings-cta` they never hug their labels: each fills the width
   it is given, and that is also the only thing keeping a mark and a five-word

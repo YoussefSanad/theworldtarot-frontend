@@ -1,6 +1,6 @@
 /**
  * Drives the reading page's payment panel through every state it can be in, and
- * presses Buy Now in each of them.
+ * presses the checkout button in each of them.
  *
  * `npm run build && npm run check:panel` — serves `out/` and loads the real
  * exported bundle once per state, answering the product endpoint 200, 404 and
@@ -74,11 +74,11 @@ const PANEL = ".reading-panel-sky";
 const PRICE = "#get-my-reading p.font-display";
 const RESTING = '[role="status"][aria-label="Fetching the price"]';
 
-/** The client's frames. Buy Now wears the same treatment and is one of them. */
+/** The client's frames. The checkout button wears the same treatment and is one of them. */
 const GHOST = "#get-my-reading .checkout-option";
 
 /** The one control that can take money. Selected by its hook, not its words. */
-const BUY = "#get-my-reading [data-buy-now]";
+const HOSTED = "#get-my-reading [data-hosted-checkout]";
 
 const GIFT = '#get-my-reading button:has-text("Gift a Reading")';
 
@@ -327,7 +327,7 @@ async function drive(
     visibleControls: await page.locator("#get-my-reading button:visible").count(),
     // Present in the layout, holding its height, while being none of those
     // things — which is what `invisible` and `inert` together buy.
-    buyNow: await page.locator(BUY).count(),
+    hosted: await page.locator(HOSTED).count(),
     // A control inside an `inert` subtree is not reachable by a pointer, a tab,
     // a screen reader or `element.click()`, which is the whole claim.
     reachableControls: await page
@@ -396,11 +396,11 @@ async function drive(
 
       It was two frames at that width until #62 took the redeem one off the
       panel on 31 August 2026. The probe below reads *the first frame that is
-      not Buy Now*, which was redeem and is now the gift — the same number
+      not the checkout button*, which was redeem and is now the gift — the same number
       either way, since the two shared it.
     */
     giftFrameRatio: await page.evaluate(() => {
-      const buy = document.querySelector("#get-my-reading [data-buy-now]");
+      const buy = document.querySelector("#get-my-reading [data-hosted-checkout]");
       const narrow = [...document.querySelectorAll("#get-my-reading .checkout-option")].find(
         (node) => node !== buy,
       );
@@ -412,9 +412,9 @@ async function drive(
     // Whitespace-flattened: the label and the amount are two spans that the
     // column lays out one above the other, and where the line breaks is not
     // what this is asserting.
-    buyNow: (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " "),
+    hosted: (await page.locator(HOSTED).first().innerText().catch(() => "")).trim().replace(/\s+/g, " "),
     /* Announced as unavailable is how the two inert cases say so out loud. */
-    buyNowDisabled: await page.locator(BUY).first().getAttribute("aria-disabled").catch(() => null),
+    hostedDisabled: await page.locator(HOSTED).first().getAttribute("aria-disabled").catch(() => null),
     panel: (await page.locator("#get-my-reading").innerText().catch(() => "")).trim(),
     stripeFrames: await page.locator(STRIPE_FRAME).count(),
     /*
@@ -524,7 +524,7 @@ async function drive(
   const pressing = [];
 
   const label = async () =>
-    (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " ");
+    (await page.locator(HOSTED).first().innerText().catch(() => "")).trim().replace(/\s+/g, " ");
 
   if (press) {
     /*
@@ -534,7 +534,7 @@ async function drive(
       pointer really does land on it and really does press it. Playwright's
       actionability check would refuse to reproduce the only case this proves.
     */
-    await page.locator(BUY).first().click({ force: true });
+    await page.locator(HOSTED).first().click({ force: true });
 
     /*
       Two round trips happen before the browser leaves, and the button holds a
@@ -545,7 +545,7 @@ async function drive(
     if (holdWrites) {
       await page
         .waitForFunction(
-          () => document.querySelector("[data-buy-now]")?.getAttribute("aria-busy") === "true",
+          () => document.querySelector("[data-hosted-checkout]")?.getAttribute("aria-busy") === "true",
           null,
           { timeout: 5000 },
         )
@@ -705,7 +705,7 @@ assertStripeIsQuiet("live", sold);
   in Wallet, or Chrome signed into Google Pay, on a registered payment method
   domain — and this fails all three.
 */
-expect("live", "the wallet row is drawn above Buy Now", sold.settled.walletRow, 1);
+expect("live", "the wallet row is drawn above the checkout button", sold.settled.walletRow, 1);
 expect("live", "the express checkout element mounts", sold.settled.stripeFrames > 0, true);
 expect("live", "and quotes the API's money, not the bundled copy", sold.settled.walletLabel, "Pay €70 with a saved wallet");
 /*
@@ -728,7 +728,7 @@ expect("live", "the wallet row reads the same question off the same form", sold.
   recipientEmail: null,
   giftMessage: null,
 });
-expect("live", "Buy Now is in the layout while loading", sold.resting.buyNow, 1);
+expect("live", "the checkout button is in the layout while loading", sold.resting.hosted, 1);
 expect("live", "no control is reachable while loading", sold.resting.reachableControls, 0);
 expect("live", "and none is visible either", sold.resting.visibleControls, 0);
 /*
@@ -746,7 +746,7 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 */
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
-expect("live", "two frames: Buy Now, gift", sold.settled.ghosts, 2);
+expect("live", "two frames: checkout, gift", sold.settled.ghosts, 2);
 /*
   The label alone, and the same string in every state the button is drawn in.
   The amount left this button on 29 August 2026: the panel says the price once,
@@ -755,11 +755,11 @@ expect("live", "two frames: Buy Now, gift", sold.settled.ghosts, 2);
   quotes the API — `sold.settled.price` above is — it is the assertion that it
   quotes nothing at all.
 */
-expect("live", "Buy Now is labelled, and quotes no amount", sold.settled.buyNow, "Pay Another Way");
-expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
+expect("live", "the checkout button is labelled, and quotes no amount", sold.settled.hosted, "Pay Another Way");
+expect("live", "and is offered rather than announced as unavailable", sold.settled.hostedDisabled, "false");
 /*
-  The frames are no longer one width. Buy Now and the wallet row above it keep
-  the column's 498px; the two under the Stripe line were pulled in to 84% of it
+  The frames are no longer one width. The checkout button and the wallet row
+  above it keep the column's 498px; the two under the Stripe line were pulled in to 84% of it
   on 30 August 2026 at the client's request. This is the assertion that the
   narrowing landed on those two and did not reach the road that takes money.
 */
@@ -854,15 +854,15 @@ expect("gifting", "the frames still stand", gifted.settled.ghosts, 2);
   down. The row is as much of that button as a headless browser can see, and its
   absence was the whole of the bug.
 */
-expect("gifting", "the wallet row is still drawn above Buy Now", gifted.settled.walletRow, 1);
+expect("gifting", "the wallet row is still drawn above the checkout button", gifted.settled.walletRow, 1);
 expect("gifting", "still holding the element it mounted", gifted.settled.panelStripeFrames > 0, true);
 expect("gifting", "and still quoting the API's money", gifted.settled.walletLabel, "Pay €70 with a saved wallet");
 /*
-  Buy Now came off the same gate in the same change. One live control beside one
+  The checkout button came off the same gate in the same change. One live control beside one
   inert one is the odder panel of the two, and the note underneath answers for
   neither of them any more.
 */
-expect("gifting", "Buy Now is buyable here too", gifted.settled.buyNowDisabled, "false");
+expect("gifting", "the checkout button is buyable here too", gifted.settled.hostedDisabled, "false");
 /*
   Counted rather than merely found, because **once** is the fact worth holding:
   a second note is the option this was built instead of, and a presence test
@@ -998,8 +998,8 @@ expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
   meet a hole where the checkout is. Neither of the two can take money.
 */
 expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 2);
-expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Pay Another Way");
-expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
+expect("unreachable", "the checkout button is the same label it is everywhere", dead.settled.hosted, "Pay Another Way");
+expect("unreachable", "and says it is unavailable", dead.settled.hostedDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a
   reading the catalogue prices at EUR 7000: no currency, and a number nobody has
@@ -1022,7 +1022,7 @@ const unoffered = await drive("no wallet offered — an environment with no Stri
 */
 assertNoWallet("no wallet offered", unoffered);
 expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 2);
-expect("no wallet offered", "and still takes money", unoffered.settled.buyNowDisabled, "false");
+expect("no wallet offered", "and still takes money", unoffered.settled.hostedDisabled, "false");
 
 /**
  * A record for a checkout that was cancelled at Stripe. Everything the page
@@ -1049,7 +1049,7 @@ assertStripeIsQuiet("cancelled", back);
 */
 expect("cancelled", "the question is back in the box", back.settled.restored, QUESTION);
 expect("cancelled", "and the counter agrees with it", back.settled.counter, `${QUESTION.length}/500`);
-expect("cancelled", "the panel is offering the reading again", back.settled.buyNowDisabled, "false");
+expect("cancelled", "the panel is offering the reading again", back.settled.hostedDisabled, "false");
 
 const elsewhere = await drive("cancelled elsewhere — a record from another reading", PRICED, priced, {
   cancelled: cancelledCheckout("three-card"),

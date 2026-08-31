@@ -73,7 +73,8 @@ import { useProduct } from "@/lib/product";
  * that has none, so the build snapshot is `null` and the client's is the record.
  * Reading it during render instead would hydrate a page whose first paint
  * disagrees with its second. Nothing subscribes, because nothing changes the
- * record while this page is open — the one thing that writes it is Buy Now,
+ * record while this page is open — the one thing that writes it is the checkout
+ * button,
  * immediately before the browser leaves.
  *
  * The section is **remounted** rather than re-rendered when a question arrives,

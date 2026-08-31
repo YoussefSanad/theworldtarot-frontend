@@ -13,8 +13,9 @@ import { cn } from "@/lib/cn";
  * exceeded, and in the counter, so the visitor sees it coming — and both take
  * the same number from `questionLimit`.
  *
- * Uncontrolled apart from the count. Buy Now reads the question off the form
- * at the moment it is pressed (see `BuyNow`), and holding a controlled value
+ * Uncontrolled apart from the count. The checkout button reads the question off
+ * the form at the moment it is pressed (see `HostedCheckoutButton`), and holding
+ * a controlled value
  * here would re-render the whole order form on every keystroke to save it the
  * trouble.
  *

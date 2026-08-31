@@ -26,8 +26,8 @@ export type PlaceOrderInput = {
    * **Optional for a guest since 29 August 2026**, and ignored for a signed-in
    * customer, who always gets their own account.
    *
-   * Optional is what lets Buy Now place an order from a page that collects
-   * neither: Stripe's **hosted page** collects the buyer's email *after* the
+   * Optional is what lets the checkout button place an order from a page that
+   * collects neither: Stripe's **hosted page** collects the buyer's email *after* the
    * order exists, and the webhook fills identity from the Session's
    * `customer_details`. An order that carries them behaves exactly as it always
    * has, so the probe and anything else already collecting them keeps sending

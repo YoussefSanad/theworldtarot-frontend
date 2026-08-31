@@ -61,8 +61,22 @@ is answered by `GET /payment-methods`, and an environment that offers no wallet
 draws no wallet row. Gift code redemption will be a third.
 _Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe_wallet`, not a method)
 
+**Checkout button**:
+The control on the reading panel that starts the hosted-page road: a press
+places an **order**, starts its payment and sends the browser to Stripe. It is
+`HostedCheckoutButton` in the code and `data-hosted-checkout` in the DOM. **It
+names no payment method**, in its label or its identifier — the **hosted page**
+offers whatever the Dashboard has turned on, so a button naming one would be
+wrong the first time somebody pays with anything else.
+~~`BuyNow`~~ — renamed **31 August 2026**, after the label moved three times in
+three days ("Buy Now", "Continue to Checkout", "Pay Another Way") and left the
+identifier naming copy that no longer existed. ~~"the card button", used twice
+in this file~~: corrected in the same change, for the reason the label already
+avoided the word.
+_Avoid_: Buy Now, Pay Another Way (labels it has worn, not what it is), card button, pay button. **Two document titles still say "card button"** — `docs/adr/0002-*` and `docs/plans/hosted-checkout.md` — and stay that way: they are dated records, each noting the rename.
+
 **Hosted page**:
-The Stripe Checkout Session the card button sends the browser to, at
+The Stripe Checkout Session the **checkout button** sends the browser to, at
 `checkout.stripe.com`. Stripe collects the buyer's email and their payment
 details there, and returns them to `/checkout/complete/` carrying an opaque
 Session id. **It is styled from the Stripe Dashboard's branding screen and from
@@ -86,7 +100,7 @@ The Stripe element we mount in the payment panel, which draws the wallet
 buttons. It is ours: its theme, type, height and border radius are ours to set,
 within the range Stripe and the wallet vendor allow. It draws buttons; it
 authorizes nothing. ~~It is off the reading page during the interim~~ — it is
-**on the reading page from 29 August 2026**, above the card button, and the
+**on the reading page from 29 August 2026**, above the **checkout button**, and the
 interim it was waiting out has ended. It draws **nothing at all** on a device
 with no wallet, and the row it sits in collapses to no height and no gap when it
 does, so its absence costs the panel nothing.

@@ -115,7 +115,8 @@ const { checkout } = readingPageChrome;
 const BUTTON_HEIGHT = { min: 40, max: 55 } as const;
 
 /*
-  The class `GetMyReading` puts on every frame in the payment column, Buy Now
+  The class `GetMyReading` puts on every frame in the payment column, the checkout
+  button
   included. Reached through the row's parent because the frames belong to that
   component and not to this one; what the two share is the column.
 */
@@ -234,7 +235,8 @@ function useFrameHeight(row: RefObject<HTMLDivElement | null>) {
     const frame = row.current?.parentElement?.querySelector(FRAME);
 
     /*
-      A column with no frame in it is not a state this panel has — Buy Now is
+      A column with no frame in it is not a state this panel has — the checkout
+      button is
       always one of them — but if it ever became one, the state already holds
       Stripe's ceiling, so the wallet draws at the size it drew at yesterday
       rather than not drawing at all. Nothing to set, and nothing to observe.

@@ -165,7 +165,7 @@ export function paymentIntentFrom(clientSecret: string): string | null {
  * from the *newer* purchase cannot be shown against an older purchase's URL
  * either.
  *
- * Its caller is the panel's Buy Now button, which writes this immediately
+ * Its caller is the panel's checkout button, which writes this immediately
  * before it sends the browser to Stripe — **before**, because after the
  * navigation there is no code of ours left running to write anything.
  */

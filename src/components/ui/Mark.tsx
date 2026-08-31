@@ -27,9 +27,11 @@ import { cn } from "@/lib/cn";
  * `alt=""`: every caller puts the label beside it, so the mark is decoration
  * and announcing it would read the same thing twice.
  *
- * Lifted out of `GetMyReading` on 29 August 2026, when Buy Now grew a card mark
+ * Lifted out of `GetMyReading` on 29 August 2026, when the checkout button grew a
+ * card mark
  * and became the third caller. It could not import the private copy that lived
- * there — `GetMyReading` imports `BuyNow`, so the arrow only points one way.
+ * there — `GetMyReading` imports `HostedCheckoutButton`, so the arrow only
+ * points one way.
  */
 export function Mark({ art, className }: { art: ImageAsset; className: string }) {
   return (

@@ -94,7 +94,7 @@ const WALLET_SECOND = {
 };
 
 /**
- * What Buy Now wrote before the browser left for Stripe.
+ * What the checkout button wrote before the browser left for Stripe.
  *
  * `productKey` is not decoration here. Since #51 it is what the received screen
  * names the reading from, which is why it is the second parameter: the run that
@@ -207,7 +207,7 @@ const settledHeading = () => {
  * Opens a page with a seeded tab, holds the backend's answer until the screen
  * has been read, then reads it again.
  *
- * `stored` is what Buy Now would have written before the browser left; `query`
+ * `stored` is what the checkout button would have written before the browser left; `query`
  * is what Stripe puts in the address on the way back. Either can be absent,
  * which is how the arrival with nothing at all is told apart from the rest.
  */

@@ -2034,7 +2034,8 @@
     above it the type and the marks go on growing while the box stops at 55px,
     below it the type floors at 15px while the panel keeps narrowing — and it
     was the marks, not the labels, that pushed the two gift frames to 65px and
-    66.9px beside a 55px Buy Now at 1920, and to 63.9px and 66px beside a 45.8px
+    66.9px beside a 55px checkout button at 1920, and to 63.9px and 66px beside a
+    45.8px
     one at 900.
 
     `0.667` is the proportion Figma draws: a 52px mark in a 78px frame. So this
