@@ -2015,9 +2015,12 @@
       minimum is 55px, while two lines of 30px type plus this padding is 69px —
       so a label that wrapped *there* would grow its frame, which the old 78px
       minimum would have absorbed. Nothing on the panel comes close: the longest
-      is "Redeem A Gift Code", in the narrower of the two frame widths, and it
-      stands on one line with room to spare. Measure rather than assume the next
-      time a label here gets longer.
+      is "A Reading for Myself", in the narrower of the two frame widths, and it
+      stands on one line with room to spare. (This note named "Redeem A Gift
+      Code" until #62 took that frame off the panel on 31 August 2026 — a claim
+      about rendered width, never re-measured, which is exactly what the next
+      line is about.) Measure rather than assume the next time a label here gets
+      longer.
     */
     padding: 0.15em 0.75em;
   }

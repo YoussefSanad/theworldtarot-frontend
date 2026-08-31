@@ -389,10 +389,15 @@ async function drive(
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
     /*
-      The client's 30 August revision: the two gift frames stand at 84% of the
+      The client's 30 August revision: the gift frame stands at 84% of the
       payment frames' width, where all five used to share one. A **ratio**
       rather than a pixel — the column is laid out in `cqw`, so every width in
       it moves with the viewport and only their proportion is a constant.
+
+      It was two frames at that width until #62 took the redeem one off the
+      panel on 31 August 2026. The probe below reads *the first frame that is
+      not Buy Now*, which was redeem and is now the gift — the same number
+      either way, since the two shared it.
     */
     giftFrameRatio: await page.evaluate(() => {
       const buy = document.querySelector("#get-my-reading [data-buy-now]");
@@ -741,7 +746,7 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 */
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
-expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
+expect("live", "two frames: Buy Now, gift", sold.settled.ghosts, 2);
 /*
   The label alone, and the same string in every state the button is drawn in.
   The amount left this button on 29 August 2026: the panel says the price once,
@@ -842,7 +847,7 @@ const gifted = await drive("gifting — the wallet stays, and the order says who
 assertStripeIsQuiet("gifting", gifted);
 expect("gifting", "the recipient's fields replace the question", gifted.settled.recipient, 1);
 expect("gifting", "and there is no question in the form at all", gifted.settled.question, 0);
-expect("gifting", "the frames still stand", gifted.settled.ghosts, 3);
+expect("gifting", "the frames still stand", gifted.settled.ghosts, 2);
 /*
   **The fault the client reported, and the reason the gate came off.** The
   wallet button vanished from under a thumb the instant the gift toggle went
@@ -990,9 +995,9 @@ assertNoWallet("unreachable", dead);
 expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
 /*
   The frame stays whole — a visitor arriving while the API is down should not
-  meet a hole where the checkout is. None of the three can take money.
+  meet a hole where the checkout is. Neither of the two can take money.
 */
-expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
+expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 2);
 expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Pay Another Way");
 expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
 /*
@@ -1016,7 +1021,7 @@ const unoffered = await drive("no wallet offered — an environment with no Stri
   that says so; the wallet does not.
 */
 assertNoWallet("no wallet offered", unoffered);
-expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 3);
+expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 2);
 expect("no wallet offered", "and still takes money", unoffered.settled.buyNowDisabled, "false");
 
 /**

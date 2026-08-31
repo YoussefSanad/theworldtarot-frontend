@@ -250,16 +250,6 @@ export const readingPageChrome = {
      */
     pricePending: "Fetching the price",
     secure: "Secure checkout powered by Stripe",
-    /**
-     * ~~`redeem gift code`, set in Cinzel, which has no lowercase and drew
-     * small capitals in their place — so it read as REDEEM GIFT CODE on the
-     * page without the copy shouting here.~~
-     *
-     * **Title case from 30 August 2026**, because the trick died with the face:
-     * the panel is Gill Sans Light now and draws exactly what this string says.
-     * The capital A is the client's, from their frame.
-     */
-    redeem: "Redeem A Gift Code",
   },
 
   included: { heading: "Your Reading" },

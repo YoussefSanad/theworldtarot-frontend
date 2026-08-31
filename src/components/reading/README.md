@@ -40,9 +40,9 @@ on the left and 18.8% in on the right. None of that is a design decision.
 **Everything centres.** Don't restore the offsets.
 
 The overlaps are the same story — a 150px quote glyph whose box runs through
-the words under it, a redeem button whose box runs into the rule below it.
-Those are text boxes sized with leading, not overlapping elements; the flow
-layout resolves them.
+the words under it, a redeem button whose box ran into the rule below it (that
+button went in #62; the frame still draws it). Those are text boxes sized with
+leading, not overlapping elements; the flow layout resolves them.
 
 ## The backdrop is one photograph, not nine layers
 
@@ -353,9 +353,11 @@ The field therefore submits under React's opaque `useId` string and carries its
 real name on `data-field`, which is where anything reading this form should
 look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
 
-The recipient's side of the flow — redeem, then ask — is not built. `redeem
-gift code` is a dud. **Both payment controls take money in gift mode**, from 30
-August 2026 and at the client's request.
+The recipient's side of the flow — redeem, then ask — is not built, and since
+31 August 2026 this panel does not advertise it either: the `Redeem A Gift
+Code` frame went in #62, redemption being a page of its own rather than a
+control on the page that sells the reading. **Both payment controls take money
+in gift mode**, from 30 August 2026 and at the client's request.
 
 They did not until then, and the reason they did not was sound as far as it
 went: `POST /orders` has no field for a recipient, so an order placed in gift
@@ -390,19 +392,28 @@ behind it, and the note says a person will arrange that by email. There is no
 second note anywhere: two sentences saying one thing is not what this panel
 does.
 
-### One of the three controls is a dud, on purpose
+### ~~One of the three controls is a dud, on purpose~~ Every control here does something
 
-There is no redemption flow, so `Redeem A Gift Code` is `type="button"` with
-nothing behind it. **Inert rather than submitting**: the form has no action, so
-a submit would reload the page with the visitor's question in the query string,
-which is a worse nothing than nothing. It is a real button rather than a
-disabled one because the client rejected a disabled control elsewhere on the
-site — it reads as a bug rather than as "not yet", and that is why the one
-state in which Buy Now cannot be pressed — no live price — is `aria-disabled`
-rather than `disabled` too.
+Until 31 August 2026 one did not. There was no redemption flow, so `Redeem A
+Gift Code` was `type="button"` with nothing behind it — inert rather than
+submitting, because the form has no action and a submit would reload the page
+with the visitor's question in the query string, which is a worse nothing than
+nothing.
 
-The form itself stays, with its fields named. That is what makes wiring the
-checkout a matter of adding an endpoint rather than restructuring the panel.
+**#62 removed it rather than wiring it**, because redemption is becoming a page
+of its own: an entry point on the page that *sells* a reading points at a flow
+that does not live there, and the frame had spent its whole life inert. Nothing
+replaced it in the column — the rule that used to sit between it and `Gift a
+Reading` stayed, now drawing the line between paying for a reading and buying
+one for somebody else.
+
+**What survives the removal is the argument's other half.** A real button
+rather than a disabled one, because the client rejected a disabled control
+elsewhere on the site — it reads as a bug rather than as "not yet". That is
+still why the one state in which Buy Now cannot be pressed — no live price — is
+`aria-disabled` rather than `disabled`.
+
+The form itself stays, with its fields named.
 
 ### Delivery is a CMS switch
 

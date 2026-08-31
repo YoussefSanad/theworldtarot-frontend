@@ -86,12 +86,17 @@ otherwise be found on staging rather than here.
 with Card — become **one Buy Now button** for the length of the interim.
 `Redeem A Gift Code` stays a dud until gifting ships; `Gift a Reading` stays live.
 
+> **Superseded on 31 August 2026 (#62).** The redeem frame was not kept until
+> gifting shipped — it was removed from the panel, redemption having become a
+> page of its own. The row for it below is history; nothing else in this table
+> changed.
+
 | frame | before | after this ticket | after the wallet road |
 |---|---|---|---|
 | Apple Pay | `ExpressCheckout` on `live`, ghost otherwise | — | `ExpressCheckout`, wired |
 | Google Pay | dud (#36) | — | drawn by the same element |
 | Pay with Card | dud (#38) | **Buy Now**, real | **Buy Now**, unchanged |
-| Redeem A Gift Code | dud | dud, unchanged | dud, unchanged |
+| Redeem A Gift Code | dud | dud, unchanged | ~~dud, unchanged~~ removed, #62 |
 | Gift a Reading | live | live, unchanged | live, unchanged |
 
 **The rule the panel turns on is unchanged**: where there is no live money there

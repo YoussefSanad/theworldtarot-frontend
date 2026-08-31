@@ -123,12 +123,15 @@ Homepage, the reveal, the Readings index, and one reading's own page. Navigation
 links — including the remaining reading products and the gift panel — point at
 routes from the navigation document that do not exist yet.
 
-Two forms have markup and field names but no endpoint: the newsletter signup in
-the footer, and the checkout on a reading page. Both are waiting on a backend
-contract rather than on frontend work — a reading page's payment controls and
-its redeem-gift-code button are deliberately inert until one exists. Its **gift
-mode** is live and needs no backend: it swaps the question for recipient
-details in place, so nothing is sent either way.
+One form has markup and field names but no endpoint: the newsletter signup in
+the footer. A reading page's checkout is wired — Buy Now mints a hosted Stripe
+Checkout Session and the wallet row confirms a PaymentIntent in the page. Its
+**gift mode** is live and needs no backend: it swaps the question for recipient
+details in place.
+
+**Redemption is not on a reading page.** The inert `Redeem A Gift Code` frame
+that stood in the payment column went in #62 on 31 August 2026; a code is
+redeemed on a page of its own, which is a separate ticket and not yet built.
 
 A reading's delivery upgrade (`24-Hour Rush`) ships switched **off**, behind a
 flag the CMS will own. Off, the page states its one delivery exactly as the

@@ -80,7 +80,6 @@ export const checkout = {
   googlePay: asset("/figma/google-pay-logo.webp", 128, 51),
   card: asset("/figma/card-icon.webp", 49, 35),
   lock: asset("/figma/lock-icon.webp", 19, 27),
-  redeem: asset("/figma/redeem-icon.webp", 52, 52),
   gift: asset("/figma/gift-icon.webp", 53, 54),
   /**
    * What `gift` becomes while the order *is* a gift, beside the label that

@@ -9,9 +9,11 @@ import { cn } from "@/lib/cn";
  * **Width in `cqw`, height `auto`.** The marks are drawn at Figma's own pixel
  * sizes and the frames they sit in are `em` off the label, so a mark pinned to
  * pixels would drift out of proportion at every width but one. The scale the
- * three checkout frames share is `px ÷ 6.87 = cqw` — redeem is 52 and asks for
- * `7.57cqw`, gift is 53 and asks for `7.71cqw`, card is 49 and asks for
- * `7.13cqw`. A new mark derives its number the same way rather than guessing.
+ * checkout frames share is `px ÷ 6.87 = cqw` — gift is 53 and asks for
+ * `7.71cqw`, the self-reading mark it turns into is 38 and asks for `5.53cqw`,
+ * card is 49 and asks for `7.13cqw`. A new mark derives its number the same way
+ * rather than guessing. (Redeem was a fourth — 52, `7.57cqw` — until #62 took
+ * its frame off the panel on 31 August 2026.)
  *
  * **A ceiling arrived on 30 August 2026, and it is not stated here.** The
  * checkout frames became bounded in pixels that day — they hold Stripe's 40-55

@@ -26,8 +26,10 @@ import { useProduct } from "@/lib/product";
  * satisfied the design and not the requirement.
  *
  * The recipient's own question is asked after they redeem, which is a flow
- * this page does not build yet: `Redeem A Gift Code` is a dud, as the payment
- * controls are. See `GetMyReading`.
+ * this page does not build and, from 31 August 2026, no longer advertises: the
+ * `Redeem A Gift Code` frame that stood inert in the payment column went in
+ * #62, redemption being a page of its own rather than a control on this one.
+ * See `GetMyReading`.
  *
  * ## What is for sale, and whether anything is
  *
