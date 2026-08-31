@@ -274,11 +274,20 @@ at 30px type becomes 55px above about 1354px.
 
 And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
 so once the frame stopped growing the marks did not: at 1920 the two gift frames
-stood at 65px and 66.9px beside a 55px checkout button. `.checkout-option img`
-caps a
-mark at the proportion Figma draws — a 52px mark in a 78px frame — which the
-card mark, drawn shorter, never reaches. **The same rule closes the 600px to
-1023px unevenness `085774b` left open** as a decision rather than a tidy-up.
+stood at 65px and 66.9px beside a 55px checkout button. So `.checkout-option`
+declares `--mark-cap`, the proportion Figma draws — a 52px mark in a 78px frame
+— which the card mark, drawn shorter, never reaches. **The same rule closes the
+600px to 1023px unevenness `085774b` left open** as a decision rather than a
+tidy-up.
+
+**The ceiling is spent as a width, and was not always.** Until 31 August 2026 it
+was `max-block-size` on the image, which is the one way to cap a mark that
+cannot work: a replaced element given an explicit width and a capped height
+takes both and squashes. The gift box did that across the tablet band, where the
+panel is wide enough to ask for a mark taller than the frame will have. `.mark`
+now sets width alone — `min()` of what the panel asks for and what the ceiling
+allows, the second converted through the picture's own ratio — and lets the
+browser derive the height, which is the only arrangement that cannot distort.
 
 Measured against the built export at seventeen widths from 320 to 1920: the
 three frames are the same height at every one of them, and the wallet button is

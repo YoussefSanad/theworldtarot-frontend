@@ -2096,32 +2096,63 @@
       longer.
     */
     padding: 0.15em 0.75em;
+    /*
+      **Nothing inside a frame outgrows the frame**, and from 30 August 2026 that
+      needs saying because the two are sized against different things: `Mark` is a
+      share of the panel in `cqw` and the box around it is now bounded in pixels
+      by Stripe's range. Between about 1024px and 1500px of viewport the two scale
+      together and this changes nothing. Outside that band they come apart —
+      above it the type and the marks go on growing while the box stops at 55px,
+      below it the type floors at 15px while the panel keeps narrowing — and it
+      was the marks, not the labels, that pushed the two gift frames to 65px and
+      66.9px beside a 55px checkout button at 1920, and to 63.9px and 66px beside a
+      45.8px
+      one at 900.
+
+      `0.667` is the proportion Figma draws: a 52px mark in a 78px frame. So this
+      is the drawing's own ratio, applied as a ceiling rather than as a size —
+      which is why the card mark, drawn shorter, is never reached by it and the
+      two square ones are, exactly where they would otherwise burst the box.
+
+      The same rule closes the 600px-to-1023px unevenness that `085774b` left open
+      as a decision rather than a tidy-up. This is that decision: **a mark is a
+      share of the panel until that would make it a share too big for the frame.**
+
+      A height, declared here and spent as a width by `.mark`: the frame owns
+      the number because the number is about the frame, and `.mark` owns the
+      arithmetic because only it knows the picture's ratio.
+    */
+    --mark-cap: calc(clamp(40px, 2.6em, 55px) * 0.667);
   }
 
   /*
-    **Nothing inside a frame outgrows the frame**, and from 30 August 2026 that
-    needs saying because the two are sized against different things: `Mark` is a
-    share of the panel in `cqw` and the box around it is now bounded in pixels
-    by Stripe's range. Between about 1024px and 1500px of viewport the two scale
-    together and this changes nothing. Outside that band they come apart —
-    above it the type and the marks go on growing while the box stops at 55px,
-    below it the type floors at 15px while the panel keeps narrowing — and it
-    was the marks, not the labels, that pushed the two gift frames to 65px and
-    66.9px beside a 55px checkout button at 1920, and to 63.9px and 66px beside a
-    45.8px
-    one at 900.
+    A mark inside a frame, at the smaller of what the panel asks for and what
+    the frame allows.
 
-    `0.667` is the proportion Figma draws: a 52px mark in a 78px frame. So this
-    is the drawing's own ratio, applied as a ceiling rather than as a size —
-    which is why the card mark, drawn shorter, is never reached by it and the
-    two square ones are, exactly where they would otherwise burst the box.
+    **Width is the only thing set, and that is the point.** ~~`max-block-size`
+    on the image.~~ **Rewritten as a width ceiling on 31 August 2026**: a
+    replaced element handed an explicit width and a capped height keeps neither
+    its ratio nor its promise — it takes the width it was told and the height it
+    is allowed, and the picture squashes. The gift box did exactly that right
+    across the tablet band, where the panel is wide enough to ask for a mark
+    taller than the frame will have.
 
-    The same rule closes the 600px-to-1023px unevenness that `085774b` left open
-    as a decision rather than a tidy-up. This is that decision: **a mark is a
-    share of the panel until that would make it a share too big for the frame.**
+    `--mark-ratio` converts the frame's height ceiling into the width that
+    produces it, so both constraints meet in one `min()` on one axis and the
+    browser derives the height itself — the one arrangement that cannot
+    distort. See the docblock on `Mark`, which owns the other half of this.
+
+    `--mark-cap` is the frame's to declare. A mark standing outside a frame that
+    sets one is simply the width it asked for: `100vw` is a ceiling nothing
+    reaches rather than a real limit, and it is stated at all because an
+    undefined `var()` inside `calc()` invalidates the whole declaration and
+    would drop the mark to its intrinsic pixel size.
   */
-  .checkout-option img {
-    max-block-size: calc(clamp(40px, 2.6em, 55px) * 0.667);
+  .mark {
+    block-size: auto;
+    flex-shrink: 0;
+    inline-size: min(var(--mark-width), calc(var(--mark-cap, 100vw) * var(--mark-ratio)));
+    max-inline-size: none;
   }
 
   /*
