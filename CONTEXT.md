@@ -41,8 +41,13 @@ wire. It is the customer's **question** on a self-purchase and a composed
 recipient's address and the buyer's message, because `POST /orders` has no
 field for either. The wire name is the backend's and does not describe the
 contents; `lib/order-note.ts` is where the two are told apart, by which section
-the form has mounted. A stopgap: the gifting milestone gives the recipient a
-column of their own.
+the form has mounted. **A stopgap whose end is now designed rather than hoped
+for**, decided 1 September 2026 (#54), and still what ships today. What replaces
+it: the recipient, the message and the **gift signature** become columns on a
+**gift**, so nothing is composed into a field that was never for it, and a gift
+order's line carries **no** `question` at all until the **querent** asks one.
+`giftNote` and the `gift` flag in the checkout record are then deleted rather
+than rewired — there is nothing left for either to tell apart.
 _Avoid_: "the question" for the gift case (it is not one), comment, note field, message
 
 **Payment method**:
@@ -58,7 +63,12 @@ would publish it. **Both methods are now named** in the `/pay` call: the card
 road sends `method: "stripe"` rather than leaving it to a default, so neither
 road is the one the backend has to assume. Which methods an environment offers
 is answered by `GET /payment-methods`, and an environment that offers no wallet
-draws no wallet row. Gift code redemption will be a third.
+draws no wallet row. ~~Gift code redemption will be a third.~~ **Withdrawn 1 September 2026,
+before it ever had a caller.** Redeeming collects nothing because the order was
+paid at purchase, and there is no second order for a third method to settle —
+so `gift_code` names a payment that does not happen. It is struck from
+`API_CONTRACT.md` too; `GET /payment-methods` keeps the two it has. See the
+backend's `docs/adr/0004-a-reading-is-a-row-of-its-own.md`.
 _Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe_wallet`, not a method)
 
 **Checkout button**:
@@ -121,6 +131,119 @@ Wallet, or in Chrome signed into Google Pay, on a registered payment method
 domain — so `check:panel` proves the row and the collapse, and a real device is
 what proves the sheet.
 _Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout element (that is the button, this is the dialog)
+
+### The reading itself
+
+**Reading**:
+A question somebody asked and the answer owed for it. **Becomes a row of its
+own**, rather than a property of an order line — decided 1 September 2026 and
+not yet built; the argument is the backend's
+`docs/adr/0004-a-reading-is-a-row-of-its-own.md`. It exists from the moment
+somebody **asks**, which is settlement on a self-purchase and **redemption** on
+a gift, and it is the only thing in this system that is ever waiting to be
+written.
+
+**An order is not one.** An order is what somebody bought and what it cost; a
+reading is what they asked. Those were the same event until a gift could be
+bought in September and asked in December, and one row holding both cannot say
+that a paid reading has no question yet.
+_Avoid_: order, order line, fulfillment, delivery (the last two are what happens
+to a reading, not what it is)
+
+**Ask**:
+The one moment a reading starts existing, and the only moment Jennifer is told
+one is waiting. It was the clock the 24-hour rush would have run from — **the
+rush is gone from the design, dropped 25 August 2026, and is not returning** —
+but the reasoning survives it for any delivery promise counted from a purchase:
+"within 24 hours" of a gift bought three months earlier is a promise about
+nothing.
+_Avoid_: submit, request, order, place (an order is placed; a reading is asked
+for)
+
+**Querent**:
+The person a reading is for, whose question it answers and whose address it is
+sent to. **The tarot's own word, taken because the three this vocabulary
+already has are each wrong for it**: a **Customer** need not exist, since
+nothing here makes the recipient of a gift sign up; a **Guest** is a *buyer*
+with no session; and a **Recipient** is who a gift was addressed to rather than
+who redeemed it.
+
+On a self-purchase the querent is the buyer. On a gift they are whoever spent
+the code, **which is usually and not always the recipient** — a forwarded email
+is enough to part them, and the reading goes to the querent because that is the
+person who asked.
+_Avoid_: recipient, reader, customer, end user
+
+### Gifting
+
+Nothing in this section is built yet. It is the vocabulary settled while planning
+#54 on 1 September 2026, written down before the tickets are cut so that six
+of them do not each invent a word. The decisions behind it are
+`docs/adr/0003-redemption-is-a-page-of-its-own.md` here and ADRs 0004 and 0005
+in the backend.
+
+**Gift**:
+One purchase, addressed to somebody else. **A mode of an order rather than a
+product or a second order**: the money, the currency and the line are exactly
+what a self-purchase places, and what makes it a gift is a row beside it holding
+the address the buyer typed.
+
+**A gift is not a reading**, and the gap between them is the whole feature. It
+becomes one when it is **redeemed**, and until then nobody has asked anything
+and there is nothing anyone could write.
+_Avoid_: gift card, voucher, credit (all three name an amount; a gift names one
+reading and is worth the right price in every currency), gift reading
+
+**Gift code**:
+The string carrying the authority to redeem one gift, in a link the recipient
+clicks and in the same characters printed underneath for them to type.
+
+**A bearer credential like a pay token, with the opposite handling rule.** A pay
+token may never reach an address bar; this one is built to. The two forms are
+one authority, so **a link is never safer than the code inside it** and the
+entropy has to be in the code — which is why it is **not derived from anything
+about the gift**. `3CARD10021`, the client's example, names its own value and
+can be counted to; `Order::mintPayToken` already argues that point for the
+token beside it.
+_Avoid_: voucher code, coupon, promo code, discount code (nothing here is
+discounted), gift certificate, redemption token
+
+**Redeem**:
+The one moment a gift becomes a reading, and **the third word of that shape in
+this vocabulary** — it is not **settle**, because no money moves and the order
+was paid at purchase, and it is not **claim**, which finishes an account.
+Single-use and atomic: what it spends is the code, and what it makes is the
+reading.
+_Avoid_: activate, use, cash in, **apply** (a code is *applied* to a basket;
+this one meets no basket and reduces no total)
+
+**Redemption page**:
+`/redeem/`, one page for every reading rather than one per reading, and the only
+place a code is entered. It is a static export, so the code arrives as a query
+parameter and never as a path segment.
+
+**It is a reading page with the commerce taken out, not a bare question box.**
+The querent is the one person who never chose the reading they are holding, so
+the name, the artwork and what arrives are exactly what they most need. What
+goes is everything that sells: no price, no wallet row, no checkout button, no
+Gift a Reading.
+_Avoid_: redemption form, gift page, claim page, unlock page
+
+**Recipient**:
+Who a gift was addressed to when it was bought — an email typed by somebody
+else, unverified and unaccounted-for. **Not yet a querent** and possibly never
+one: the gift may be forwarded, or never opened at all.
+_Avoid_: giftee, receiver, querent (before redemption there is nobody to be one)
+
+**Gift signature**:
+The name the recipient is told the gift is from, and the only reason the buyer
+is asked for one. It is **not the buyer's name**: an order may legitimately have
+none since #52, a wallet supplies an address rather than a billing contact, and
+"Mum" is a truer answer here than whatever is on the card.
+
+**Not "sender".** `App\Enums\Sender` is already the identity a mail leaves
+from, in the repository that would send this one.
+_Avoid_: sender, sender name, purchaser name, from name, buyer name
 
 ### After the money
 
