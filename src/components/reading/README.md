@@ -274,11 +274,20 @@ at 30px type becomes 55px above about 1354px.
 
 And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
 so once the frame stopped growing the marks did not: at 1920 the two gift frames
-stood at 65px and 66.9px beside a 55px checkout button. `.checkout-option img`
-caps a
-mark at the proportion Figma draws — a 52px mark in a 78px frame — which the
-card mark, drawn shorter, never reaches. **The same rule closes the 600px to
-1023px unevenness `085774b` left open** as a decision rather than a tidy-up.
+stood at 65px and 66.9px beside a 55px checkout button. So `.checkout-option`
+declares `--mark-cap`, the proportion Figma draws — a 52px mark in a 78px frame
+— which the card mark, drawn shorter, never reaches. **The same rule closes the
+600px to 1023px unevenness `085774b` left open** as a decision rather than a
+tidy-up.
+
+**The ceiling is spent as a width, and was not always.** Until 31 August 2026 it
+was `max-block-size` on the image, which is the one way to cap a mark that
+cannot work: a replaced element given an explicit width and a capped height
+takes both and squashes. The gift box did that across the tablet band, where the
+panel is wide enough to ask for a mark taller than the frame will have. `.mark`
+now sets width alone — `min()` of what the panel asks for and what the ceiling
+allows, the second converted through the picture's own ratio — and lets the
+browser derive the height, which is the only arrangement that cannot distort.
 
 Measured against the built export at seventeen widths from 320 to 1920: the
 three frames are the same height at every one of them, and the wallet button is
@@ -478,8 +487,14 @@ so the
   Cinzel's small capitals had been doing the shouting for two of them and Gill
   Sans draws what the string says. And the two gift frames under the Stripe
   line were pulled in to 84% of the payment frames' width, so the width is now
-  set per frame in `GetMyReading` rather than once here. See the comment on
-  `.checkout-option`.
+  set per frame in `GetMyReading` rather than once here.
+  **The corner followed the height on 31 August 2026**, and to the same place:
+  the frames' radius was a clamp reaching Figma's 25px, the wallet button's is
+  a flat 12px because `appearance` takes nothing else, and a clamp beside a
+  constant matches at one viewport width and misses either side of it. Both are
+  12px now. It is one number in two files — `.checkout-option` in `globals.css`
+  and `walletAppearance` in `lib/stripe.ts` — so neither moves alone. See the
+  comment on `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty
@@ -510,28 +525,69 @@ so the
   is what does not fit there either way — and the phone now breaks after
   "original" instead of through the house name. `<HouseName>` is `nowrap` for
   the same reason: it is one proper noun.
-- **A feature prop turns on its side below `md`, and the row of three breaks
-  much later, at `xl`.** Two different widths on purpose. The compass stands
-  beside the words at `md` and up, which is what the frame draws, and over them
-  below it at the homepage's own size — a compass beside two lines of 22px type
-  has nowhere to go on a phone. Three *across*, though, needs 1384px of the
-  1431 the row is given, and it only keeps fitting while the type and the
-  column shrink together: `--text-caption` bottoms out at 13px around 1150px
-  while the column carries on narrowing, so below there no gap or compass size
-  saves the longest line. `xl` is the nearest step above that. Between the two
-  a prop is a full-width row of its own, which suits it.
+- **The three props go across at `md`; the compass turns on its side at
+  1152px.** Two different widths on purpose, and the second is the one that
+  makes the first affordable. The compass stands beside the words from 1152 up,
+  which is what the frame draws, and over them below that at the homepage's own
+  size — which is to say that from `md` to 1152 this row *is* the homepage's
+  value props, three columns with a compass over each, at the homepage's own
+  breakpoint.
+- **Which arrangement fits is a measurement, not a taste.** Her longest
+  description line is 301px at the frame's 22px, and beside the words it only
+  keeps fitting while the type and the column shrink together: `--text-caption`
+  bottoms out at 13px around 1134px while the column carries on narrowing, so
+  the line stops getting cheaper at 178px and by about 1090px no gap or compass
+  size leaves it that much. Over the words the same line has the whole column —
+  244px on a tablet against the 178 it needs. That is why the columns break at
+  `md` and the compass at 1152 rather than one rule doing both.
+- **And the row takes a measure of its own below `lg`, which is the third
+  break.** Three columns of 178px need 566px of row, and the page cap hands the
+  props 440 — held to it the row came to three columns of 136px, the
+  description wrapped inside itself onto a third line, and the rule and the
+  nowrap title spilled over the props either side. `readingProps` opens the row
+  alone out to 763px, which is what `--measure-reading` gives it at `lg`
+  itself, so a tablet gets full width and nothing steps backwards crossing the
+  breakpoint. The cost is the flush edge the cap exists for: between `md` and
+  `lg` this row stands about 160px proud of the panels on either side, which is
+  ours rather than the client's and is on the list to put to her. See the note
+  on `--measure-reading-props` in `globals.css`.
+- **The compass break is 72rem and not `xl`, and the 128px between them is the
+  whole reason.** A 1920 screen at 150% scaling — the common Windows laptop —
+  reports 1280 and then takes the classic scrollbar back out of it, so the
+  widest screen the beside-the-words arrangement was drawn for arrived a few
+  pixels *under* `xl` and stood its compasses up. 1152 is the round step that
+  clears the 1090px floor with the row's own margin intact, and it is an
+  arbitrary variant rather than a theme breakpoint because this row is the only
+  thing on the site that turns there.
 - **The gap between the three is 24px, not the page gutter's 60.** The client's
   own render leaves about 35px and 3px between props; at 60 a third of the row
   came to 293px against the 301px her longest description line measures, and
   that prop ran to three lines. The gaps were the only slack there was to give
-  back. It now clears by 5.3% at every width the row is three across — which is
-  the number to re-check if that copy ever gets longer.
+  back. It clears by 5.3% from `xl` up and 4.7% at 1152, which is the tightest
+  the row ever gets — the number to re-check if that copy ever gets longer.
+  Below 1152 the compass is out of the line and the clearance jumps to 37% on a
+  tablet and 29% at `md` itself.
 - **A feature prop has three widths and none of them is the column's.** The
   rule is 277px. The title never wraps — Figma sets it `nowrap` and lets it
   overhang the rule, which is the look: a name on one line over a line. And the
-  body has its own 408px, wider than the rule again, which is the measure her
-  two phrases were broken to; at the rule's width the first of them wrapped and
-  the prop ran to three lines. Each child states its own, the column takes
+  body has its own, wider than the rule again, which is the measure her two
+  phrases were broken to; at the rule's width the first of them wrapped and the
+  prop ran to three lines.
+- **That body measure is 15.15em, and it is a ceiling on the copy rather than
+  the frame's 408px.** Measured off `MagicallyRegular.otf` at 22px with the
+  0.01em tracking — which reproduces the 301px quoted above to the pixel — her
+  six phrases bracket it from both sides. The longest single phrase is 13.67em
+  ("Each reading unfolds through the"); the shortest whole description is
+  16.77em ("Insight that illuminates your next chapter"). Below 13.67 a phrase
+  wraps inside itself and that prop runs to three lines. At 16.77 or above,
+  Clarity in Motion closes up onto one line while its siblings take two, and
+  three across that reads as a broken row — which is what 408px (18.55em) was
+  doing. 15.15 is the middle of the window on a ratio, 10.8% clear at either
+  end, and it is the number to re-measure if any of the six phrases changes.
+- **The cap only ever binds below 1152.** From there up the column is the
+  narrower of the two at every width, which is why the frame's 408px never
+  showed itself as wrong — the one-line description only appeared once the
+  compass stepped out of the line and handed the column back. Each child states its own, the column takes
   whichever is widest, and `min-w-0` on the row keeps a long title overhanging
   its third of the page rather than growing the track.
 - **The question's standfirst is capped at 480px.** Her two phrases come to
@@ -634,6 +690,19 @@ Stacked, each panel takes `--measure-reading`, which below `lg` is the same
 load-bearing for the same reason it is on the index: a panel's horizontal
 measurements are `cqw` off its own box, so a panel 10% too wide renders
 everything in it 10% too large.
+
+**And on 31 August 2026 that sentence turned out to be the bug report.** A share
+of the viewport is only ever right while the type scales with it, and the type
+does not: `--text-nav` floors at 15px below about 960px while 81.33% goes on
+growing to 832px at 1023 — a panel not 10% but 140% too wide, rendering
+everything `cqw` in it 140% too large against type that had stopped. The moon
+drew 120px where the client draws 99. It showed on the checkout frames because
+they are the one thing here with a height in pixels and so the one thing with a
+ratio you can read: 498x78 drawn, 603x41.5 at 1023, and 6.4 again a pixel later
+where the second column returns. So the measure now caps at 440px and a tablet
+gets a centred column; see the comment on `--measure-reading`. The cap sits on
+the measure rather than on the panel grid, so the props and the closing saying
+narrow with the panels instead of overhanging them.
 
 They stack in source order — the reading and its payment first, then what
 arrives and who says so — which is the order the desktop frame reads in as

@@ -268,9 +268,9 @@ export function GetMyReading({
             docblock on `Mark` derives every number in this column from.
           */}
           {gifting ? (
-            <Mark art={marks.selfReading} className="w-[5.53cqw]" />
+            <Mark art={marks.selfReading} width="5.53cqw" />
           ) : (
-            <Mark art={marks.gift} className="w-[7.71cqw]" />
+            <Mark art={marks.gift} width="7.71cqw" />
           )}
           {gifting ? gift.leave : gift.enter}
         </CheckoutOption>

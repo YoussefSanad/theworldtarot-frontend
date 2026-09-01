@@ -217,7 +217,7 @@ export function HostedCheckoutButton({
               their own buttons above this one, so card is what is left by the
               time a customer is reading this frame.
             */}
-            <Mark art={marks.card} className="w-[7.13cqw]" />
+            <Mark art={marks.card} width="7.13cqw" />
             <span>{checkout.buy}</span>
           </>
         )}
