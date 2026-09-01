@@ -58,6 +58,18 @@ const CUSTOMER = {
   has_viewing_room_access: false,
 };
 
+/*
+  A buyer who claimed the account checkout made for them, which is the ordinary
+  paying customer rather than an edge case: nothing on the hosted page road asks
+  a name, so `YoussefSanad/TheWorldTarot#52` made the backend answer `null`
+  instead of inventing one from the address.
+
+  `node --test` proves what `customerLabel` answers. What it cannot reach is
+  this: that the masthead draws the answer rather than an empty span beside a
+  link, which is how the backend's defect was reported in the first place.
+*/
+const NAMELESS = { ...CUSTOMER, id: 31, name: null, email: "jennifer@example.com" };
+
 /** `src/content/login.ts`, verbatim. */
 const REFUSED =
   "Those details do not sign you in. If you bought a reading and have not chosen a password yet, ask for a link below and choose one now.";
@@ -220,6 +232,39 @@ console.log("\na claimed account signs in, and the masthead says so");
   signedIn = false;
   await page.reload({ waitUntil: "networkidle" });
   expect("signing out", "which survives a reload", await masthead(page), { signIn: 1, name: "", signOut: 0 });
+  await page.close();
+}
+
+console.log("\na buyer with no name is still somebody, and the masthead says who");
+{
+  let signedIn = false;
+  const { page } = await open({
+    login: api(NAMELESS),
+    me: () => (signedIn ? api(NAMELESS) : api({ message: "Unauthenticated." }, 401)),
+  });
+  await page.goto(LOGIN, { waitUntil: "networkidle" });
+
+  await signIn(page, { email: "jennifer@example.com" });
+  await page.waitForURL(`http://localhost:${PORT}/readings/`);
+  signedIn = true;
+  await page.waitForSelector(SIGN_OUT);
+
+  expect("no name", "the masthead falls back to the address", await masthead(page), {
+    signIn: 0, name: "jennifer@example.com", signOut: 1,
+  });
+
+  /*
+    Both halves matter. The slot must not be blank, and it must not read
+    "null" — the wire says `null` and a component that interpolated it would
+    put that word in the header of every claimed customer on the site.
+  */
+  const title = await page.getAttribute(SIGNED_IN_NAME, "title");
+  expect("no name", "and its title is the same string rather than empty", title, "jennifer@example.com");
+  expect("no name", "the word null is nowhere in the masthead", (await page.textContent("header")).includes("null"), false);
+
+  await page.click(SIGN_OUT);
+  await page.waitForSelector(SIGN_IN_ICON);
+  expect("no name", "and they can still leave", await masthead(page), { signIn: 1, name: "", signOut: 0 });
   await page.close();
 }
 

@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { headerActions } from "@/content/site";
-import { signOut } from "@/lib/session";
+import { customerLabel, signOut } from "@/lib/session";
 
 /**
  * The masthead's account control, in whichever of its two states applies.
@@ -16,6 +16,11 @@ import { signOut } from "@/lib/session";
  * is what makes signing in legible at all today**: there is no member area to
  * land in, so the header is the only place on the site that shows the session
  * exists.
+ *
+ * **What it draws when there is no name is `customerLabel`'s and not this
+ * component's**, because a buyer who claimed the account checkout made for them
+ * has none and that is the ordinary case. Rendering the name straight through
+ * left an empty span beside the sign out link, and an empty `title` with it.
  *
  * Rendered twice by `SiteHeader` — once on the desktop row and once in the
  * mobile drawer — which is why the answer it draws comes from a shared store
@@ -77,10 +82,14 @@ export function AccountControl({ onNavigate }: { onNavigate?: () => void }) {
     );
   }
 
+  /* Their address when they have no name, so the slot is never blank. It is
+     longer than a name, which is what the truncation and the title are for. */
+  const label = customerLabel(customer);
+
   return (
     <span className="flex items-center gap-[0.6em]">
-      <span className="max-w-[10em] truncate text-mist-dim" title={customer.name}>
-        {customer.name}
+      <span className="max-w-[10em] truncate text-mist-dim" title={label}>
+        {label}
       </span>
       <button
         type="button"
