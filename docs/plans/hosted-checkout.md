@@ -5,6 +5,13 @@
 > that repo's `docs/adr/0002-the-redirect-case-comes-back.md`. This is what gets
 > built.
 >
+> **The control this plan calls "Buy Now" is `HostedCheckoutButton` from 31
+> August 2026**, and "the checkout button" in prose. The label it was named for
+> moved three times in three days, so the identifier was renamed after the road
+> it starts rather than the words on it; the argument is in that file and the
+> term is fixed in `CONTEXT.md`. **Every "Buy Now" below is left as written** —
+> this is a dated plan, and it is the name the control had when it was drafted.
+>
 > **This is one of two roads, and it is the one whose backend is already
 > shipped.** The wallet road — Apple Pay and Google Pay drawn by the express
 > checkout element on our own page — is decided in the backend's
@@ -84,15 +91,20 @@ otherwise be found on staging rather than here.
 
 `GetMyReading` draws five frames. Three of them — Apple Pay, Google Pay, Pay
 with Card — become **one Buy Now button** for the length of the interim.
-`redeem gift code` stays a dud until gifting ships; `gift a reading` stays live.
+`Redeem A Gift Code` stays a dud until gifting ships; `Gift a Reading` stays live.
+
+> **Superseded on 31 August 2026 (#62).** The redeem frame was not kept until
+> gifting shipped — it was removed from the panel, redemption having become a
+> page of its own. The row for it below is history; nothing else in this table
+> changed.
 
 | frame | before | after this ticket | after the wallet road |
 |---|---|---|---|
 | Apple Pay | `ExpressCheckout` on `live`, ghost otherwise | — | `ExpressCheckout`, wired |
 | Google Pay | dud (#36) | — | drawn by the same element |
 | Pay with Card | dud (#38) | **Buy Now**, real | **Buy Now**, unchanged |
-| redeem gift code | dud | dud, unchanged | dud, unchanged |
-| gift a reading | live | live, unchanged | live, unchanged |
+| Redeem A Gift Code | dud | dud, unchanged | ~~dud, unchanged~~ removed, #62 |
+| Gift a Reading | live | live, unchanged | live, unchanged |
 
 **The rule the panel turns on is unchanged**: where there is no live money there
 is nothing that can take a payment. `Buy Now` needs `offer.money`, so it renders
@@ -107,18 +119,50 @@ than discovering later: the wallet row returns above Buy Now when the wallet
 road ships, and it collapses to nothing on any device without a wallet, which is
 every device she is likely to be shown it on.
 
-### Buy Now is inert in gift mode
+### ~~Buy Now is inert in gift mode~~ Both controls take money in gift mode
 
-`ReadingOrder` swaps `AskQuestion` for `RecipientDetails` when gifting, and
+> **Superseded on 30 August 2026**, at the client's request. The section below
+> is what shipped first and the reasoning it rests on; what replaced it follows.
+
+~~`ReadingOrder` swaps `AskQuestion` for `RecipientDetails` when gifting, and
 **`POST /orders` has no field for a recipient email or a gift message**. Today
 that is harmless because every button in gift mode is a dud. One live button
-makes it a bug that charges somebody for a gift delivered to themselves.
+makes it a bug that charges somebody for a gift delivered to themselves.~~
 
-So Buy Now is inert while `gifting` is true, with a line saying gifting is
-coming. Gifting is the **code model** — the buyer names a recipient, the
-recipient redeems a code and writes their own question, which is what the
+~~So Buy Now is inert while `gifting` is true, with a line saying gifting is
+coming.~~
+
+The endpoint still has no such field, and the wallet row was removed on the same
+grounds — a wallet takes the money the instant a face is recognised. What that
+reasoning missed is that **fulfilment here has never been automatic**: the
+backend's `MarkOrderFulfilled` writes a timestamp and Jennifer emails every
+reading by hand, so no machine was ever going to deliver a gift to its buyer.
+The risk was that a *person* would, for want of anything on the order saying it
+was a gift.
+
+So the recipient rides on the order line instead. `orderNoteIn`
+(`lib/order-note.ts`) reads whichever section the form has mounted and composes
+the gift's two fields into the line's `question` — the field the admin orders
+table already prints — and both payment controls read through it. Its one
+invariant is that a gift order is never indistinguishable from a self-purchase,
+however little the buyer typed.
+
+Two things follow and are worth stating rather than discovering:
+
+- **The record is flagged.** A cancelled gift checkout must not refill the
+  question textarea with a note this code composed, so `CheckoutRecord.gift`
+  marks it and `questionFor` refuses it. The cost is that the recipient and the
+  message are lost on a cancelled gift checkout — the smaller of the two losses,
+  and the milestone's to fix properly.
+- **The copy changed with it.** `checkout.giftingComing` said there was no way
+  to pay for a gift; it now says a person will arrange delivery by email. A note
+  refusing the payment under a button that charges is worse than no note.
+
+Gifting is still the **code model** — the buyer names a recipient, the recipient
+redeems a code and writes their own question, which is what the
 mutually-exclusive fields already imply and what the backend has reserved
-`method: 'gift_code'` and `nothing_to_pay` for. **It is a separate milestone.**
+`method: 'gift_code'` and `nothing_to_pay` for. **It is still a separate
+milestone**, and what is above is a stopgap with that as its end date.
 
 ## The confirmation screen
 
@@ -330,7 +374,7 @@ that catches a half-finished wallet ticket shipping by accident.
 live         €70 · three frames · Buy Now enabled, labelled with the price
 loading      Buy Now present, invisible and inert
 unreachable  "$75" as copy · three frames · Buy Now inert · no request possible
-gifting      Buy Now inert · recipient fields shown · no order can be placed
+gifting      recipient fields shown · both controls live · the line names the recipient
 ```
 
 The `unreachable` case keeps the assertion that matters most: **no request is

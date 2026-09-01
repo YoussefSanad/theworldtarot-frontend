@@ -8,7 +8,16 @@ import { cn } from "@/lib/cn";
  * section's artwork run edge to edge while its content stays on the grid.
  */
 
-export type ContainerWidth = "page" | "hero" | "measure" | "copy" | "readings" | "readingsGift" | "reading";
+export type ContainerWidth =
+  | "page"
+  | "hero"
+  | "measure"
+  | "copy"
+  | "readings"
+  | "readingsGift"
+  | "reading"
+  /** The props row on a reading page, which is wider than the rest of it below `lg`. */
+  | "readingProps";
 
 const WIDTH_CLASS: Record<ContainerWidth, string> = {
   page: "shell--page",
@@ -18,6 +27,7 @@ const WIDTH_CLASS: Record<ContainerWidth, string> = {
   readings: "shell--readings",
   readingsGift: "shell--readings-gift",
   reading: "shell--reading",
+  readingProps: "shell--reading-props",
 };
 
 export function Container({

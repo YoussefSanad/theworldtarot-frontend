@@ -8,7 +8,7 @@ const { gift } = readingPageChrome;
 /**
  * What the page asks for instead of a question when the reading is a gift.
  *
- * Where it sits is the point. The client's design puts "gift a reading" at the
+ * Where it sits is the point. The client's design puts "Gift a Reading" at the
  * foot of the payment column, and the thing it changes is a section most of a
  * panel above it — so the button is only half of the interaction. The other
  * half is in `ReadingOrder`: entering gift mode moves focus into the email
@@ -42,6 +42,13 @@ export function RecipientDetails() {
           limit={254}
           required
           autoFocusOnMount
+          /*
+            The address wanted here is the recipient's. Left alone, Chrome
+            offers the purchaser their own — the one they have typed into every
+            other email field on the web — which is a quiet way to send
+            somebody a gift addressed to themselves.
+          */
+          suppressAutofill
         />
       </div>
 

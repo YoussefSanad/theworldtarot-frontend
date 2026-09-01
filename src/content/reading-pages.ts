@@ -9,9 +9,16 @@ import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "@/lib
  * takes an optional question and a payment, the client writes the reading
  * offline and emails a PDF — so spread, card count and price are copy, never
  * branching. See the workflow note in [`./README.md`](./README.md). Adding the
- * other two is a `ReadingPage` here and a five-line route beside
+ * other two is a `ReadingPage` here, **an entry in `readingPages` at the foot
+ * of this file**, and a five-line route beside
  * `src/app/(site)/readings/month-ahead/page.tsx`; there is nothing else to
  * build for them.
+ *
+ * The middle one is the one that fails quietly. A `ReadingPage` that is never
+ * registered still renders its own page perfectly and still sells, and the only
+ * thing that goes wrong is a confirmation screen that cannot name what was
+ * bought — a plainer sentence rather than a broken one, which is exactly the
+ * kind of wrong that ships. See `readingPageFor`.
  *
  * That split is what `readingPageChrome` is: everything the three pages say
  * identically lives there once, and a `ReadingPage` holds only what changes.
@@ -55,17 +62,37 @@ export const readingPageChrome = {
    */
   gift: {
     heading: "Recipient Details",
-    body: ["Tell us where to send it, and", "what you would like it to say."],
-    /** Two states of one control; the second is how a visitor gets back. */
-    enter: "gift a reading",
-    leave: "a reading for myself",
-    email: { label: "Recipient's email address", placeholder: "Their email address…" },
-    message: { label: "Personal message (optional)", placeholder: "Add a message to your gift…" },
+    body: ["Who should receive your gift?", "Add their email address and a personal message below."],
+    /**
+     * Two states of one control; the second is how a visitor gets back.
+     *
+     * ~~Both lowercase.~~ **Title case from 30 August 2026.** They were stored
+     * lowercase because the frame was set in Cinzel, which has no lowercase and
+     * drew small capitals in their place; the panel is Gill Sans Light now and
+     * renders what is written here. See `.checkout-option` in `globals.css`.
+     *
+     * `leave` is not in the client's frame — the frame only shows the resting
+     * state — and is re-cased with the rest because it is the same button, and
+     * one lowercase label among three title-cased siblings is the worse of the
+     * two mistakes.
+     */
+    enter: "Gift a Reading",
+    leave: "A Reading for Myself",
+    email: { label: "Recipient's email address", placeholder: "Recipient’s email address…" },
+    message: { label: "Personal message (optional)", placeholder: "Write a personal message…" },
     /**
      * Said once, under the fields, because the flow is not the obvious one:
-     * nothing is asked of the reading until the recipient redeems it.
+     * nothing is asked of the reading until it reaches the person it is for.
+     *
+     * ~~"They will choose their own question when they redeem it."~~
+     * **Reworded on 30 August 2026**, in the change that made this panel take
+     * money in gift mode. "Redeem" describes the code model, which is a
+     * milestone nobody has started — and a mechanic named to a buyer who is
+     * about to pay is a promise about how their gift arrives. What is true is
+     * the part that survives either model: the recipient is asked, not the
+     * buyer, which is why there is no question field on this section.
      */
-    note: "They will choose their own question when they redeem it.",
+    note: "They will choose their own question when the reading reaches them.",
   },
 
   checkout: {
@@ -82,24 +109,34 @@ export const readingPageChrome = {
      * The one control on this panel that takes money, and the whole of what
      * three of the client's five frames became for the length of the interim.
      *
-     * It does not say "Pay with Card". The **hosted page** offers every method
-     * turned on in the Dashboard, and a button that names one of them would be
-     * wrong the first time somebody pays with anything else.
+     * It does not say "Pay with Card", and no label it has worn ever has. The
+     * **hosted page** offers every method turned on in the Dashboard, and a
+     * button that names one of them would be wrong the first time somebody pays
+     * with anything else. "Pay Another Way" keeps that and says what the frame
+     * is for besides: another way than the two wallet buttons above it.
      *
      * **It does not quote the price either.** ~~The amount was set beside it,
      * so the label could be a constant and the number the API's.~~ The panel
      * already states the price once, above these frames and in display type, and
      * a second telling at nav size was what made this label — the longest on the
      * panel — wrap onto two lines and stand taller than the frames beside it.
-     * Removed 29 August 2026 at the client's request; see `BuyNow`.
+     * Removed 29 August 2026 at the client's request; see `HostedCheckoutButton`.
      *
-     * ~~"Buy Now".~~ **"Continue to Checkout" from 29 August 2026**, at the
-     * client's request, because the old label promised something the button
-     * does not do. Pressing it buys nothing: it places a `pending` order and
-     * sends the browser to Stripe, where the customer picks a method and pays.
-     * The money is collected on a page this one never sees. `buying` below has
-     * said "Taking you to checkout…" all along, so the resting label was
-     * disagreeing with its own pending state.
+     * ~~"Buy Now".~~ ~~"Continue to Checkout" from 29 August 2026.~~ **"Pay
+     * Another Way" from 30 August 2026**, both at the client's request.
+     *
+     * The first reversal was about a promise the button does not keep: pressing
+     * it buys nothing — it places a `pending` order and sends the browser to
+     * Stripe, where the customer picks a method and pays, and the money is
+     * collected on a page this one never sees. `buying` below has said "Taking
+     * you to checkout…" all along, so the resting label was disagreeing with
+     * its own pending state.
+     *
+     * The second is the client's wording and it does not take that back: this
+     * is still the road that leaves, and "Pay Another Way" is read against the
+     * wallet buttons directly above rather than on its own. It is also the
+     * shortest label the frame has worn, which is what finally settles the wrap
+     * `.checkout-option`'s padding was loosened for.
      *
      * **The card mark beside it is narrower than the road, and that is
      * accepted rather than missed.** `marks.card` is the client's own frame
@@ -109,7 +146,7 @@ export const readingPageChrome = {
      * customer reaches this frame, card is what is left. The *label* still
      * names no method, which is what keeps the paragraph above true.
      */
-    buy: "Continue to Checkout",
+    buy: "Pay Another Way",
     /**
      * Held across both round trips — the order, then the payment — because the
      * browser does not leave until the second one answers, and a button that
@@ -117,15 +154,42 @@ export const readingPageChrome = {
      */
     buying: "Taking you to checkout…",
     /**
-     * Under the button in gift mode, where the button is inert.
+     * Under the button in gift mode, where **both controls now take money** and
+     * what is not yet built is the delivery behind them.
      *
-     * `POST /orders` has no field for a recipient email or a gift message, so a
-     * live button here would charge somebody for a gift delivered to
-     * themselves. Gifting is the code model and a separate milestone: the buyer
-     * names a recipient, the recipient redeems a code and writes their own
-     * question.
+     * ~~"Gifting is not open yet. A reading for yourself can be bought now."~~
+     * ~~"Gifting is not open yet, so there is no way to pay for one. A reading
+     * for yourself can be bought now."~~ **Rewritten on 30 August 2026, later
+     * the same day**, when the client asked for the wallet row to stay on the
+     * panel through the gift toggle and the checkout button was un-gated beside
+     * it. Both
+     * superseded strings say gifting cannot be paid for, and the moment either
+     * control charged a card that stopped being true — a note contradicting the
+     * button above it is worse than no note at all. Unlike the copy around it
+     * this wording is ours and not the client's — gift mode has no frame in her
+     * design — and it goes to her with the rest.
+     *
+     * **What it now has to say is that a person is in the loop.** `POST
+     * /orders` still has no field for a recipient, so the two gift fields ride
+     * to the backend on the order line as prose and a human reads them there;
+     * see `lib/order-note.ts`. That is a real difference from buying for
+     * yourself and the buyer is owed it before they pay, because the reading
+     * does not simply arrive at the address they typed.
+     *
+     * **It promises email rather than a timeframe.** Fulfilment is manual on
+     * every order here, gift or not, so no sentence on this panel can honestly
+     * quote a delay — and one that did would be a promise the panel has no way
+     * of keeping.
+     *
+     * **It names no payment method, and that is the constraint that wrote it.**
+     * This note is shown in gift mode on every device, including one with no
+     * wallet where the row is collapsed to nothing — so copy naming Apple Pay
+     * or Google Pay would describe a button that customer has never seen.
+     * Naming neither is true on both, and it is what lets one note stand for
+     * whichever controls are drawn.
      */
-    giftingComing: "Gifting is not open yet. A reading for yourself can be bought now.",
+    giftingComing:
+      "Gifting is still being set up, so we will arrange delivery with you by email once you have paid.",
     /**
      * A refused order, a refused payment, or an instruction this build cannot
      * act on. **It says nothing has been charged**, because nothing has: an
@@ -145,6 +209,22 @@ export const readingPageChrome = {
      * nothing.
      */
     walletFailed: "We could not take this payment. Nothing has been charged.",
+    /**
+     * Written into the wallet sheet when the gift has no recipient on it.
+     *
+     * **A separate sentence from `walletFailed`, because the customer can act
+     * on this one.** "We could not take this payment" is true of both, and on
+     * its own it would send somebody to try a second time at a form that will
+     * refuse them identically. This names the field.
+     *
+     * It reaches the sheet rather than the page because the sheet is where the
+     * customer is: the check runs before `elements.submit()`, so no payment has
+     * been submitted and `paymentFailed()` is still ours to call. The field is
+     * marked and focused underneath by `orderFormAccepts`, for when Stripe
+     * closes the sheet over it.
+     */
+    walletNeedsRecipient:
+      "Please add the recipient's email address before paying for a gift. Nothing has been charged.",
     /**
      * Under the wallet row, after `stripe.confirmPayment` has already been
      * called and has come back wrong.
@@ -171,12 +251,6 @@ export const readingPageChrome = {
      */
     pricePending: "Fetching the price",
     secure: "Secure checkout powered by Stripe",
-    /**
-     * Set in Cinzel in the frame, which renders lowercase as small capitals —
-     * so this reads as REDEEM GIFT CODE on the page without the copy shouting
-     * here.
-     */
-    redeem: "redeem gift code",
   },
 
   included: { heading: "Your Reading" },
@@ -275,8 +349,18 @@ export const monthAhead: ReadingPage = {
     ["A Month-Ahead Reading", "focused on your path forward"],
     ["Prepare for the weeks ahead", "with insight"],
     ["Thoughtful written interpretation"],
-    /* The house name is set in the brand's own face here; see `<HouseName>`. */
-    ["Presented on original World Tarot", "artwork"],
+    /*
+      The house name is set in the brand's own face here; see `<HouseName>`.
+
+      Three phrases for the two lines the frame draws, because at 1920 "artwork"
+      is what will not fit and the break falls after the name either way —
+      splitting a phrase only ever *adds* a place the line may break, it never
+      moves one. The extra place is the one a phone needs: the whole of
+      "Presented on original World Tarot" is wider than the measure a 375px
+      panel leaves, and without a break inside it the line wraps mid-name and
+      spills "artwork" onto a third row.
+    */
+    ["Presented on original", "World Tarot", "artwork"],
     ["Delivered by email within 24 hours"],
   ],
   testimonial: {
@@ -288,3 +372,37 @@ export const monthAhead: ReadingPage = {
   },
   closing: ["What is unfolding", "has already begun"],
 };
+
+/**
+ * Every reading with a page of its own, which is every reading that can be
+ * bought.
+ *
+ * One entry today. It is a list rather than the single export above because
+ * what wants it is a lookup by **product key** — the confirmation screen, which
+ * is handed a key by the record a checkout left in the tab and has to turn it
+ * into a name a customer recognises. Adding Three Card or In-Depth is still the
+ * `ReadingPage` and the five-line route described at the top of this file, plus
+ * its name here.
+ */
+export const readingPages: readonly ReadingPage[] = [monthAhead];
+
+/**
+ * The page that sells one product key, or `undefined` for a key nothing here
+ * sells.
+ *
+ * **The key, never the `id`.** They are the same three strings today and the
+ * two fields exist separately for the reason `productKey` gives above: `id`
+ * matches the readings index, which is a list of artwork, and a product key is
+ * the backend's. Reading a name off the index by treating one as the other is
+ * exactly the conflation that comment was written to prevent, and it would go
+ * wrong silently the first time the backend named a product something the
+ * artwork list spells differently.
+ *
+ * `undefined` is an ordinary answer rather than a fault. The backend's
+ * catalogue is not this repository's, so it can hold a product this build has
+ * never had a page for — and the caller wants a plainer sentence in that case,
+ * not an error and not a guess.
+ */
+export function readingPageFor(productKey: string): ReadingPage | undefined {
+  return readingPages.find((page) => page.productKey === productKey);
+}

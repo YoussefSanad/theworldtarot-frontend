@@ -40,8 +40,9 @@ export function offers(methods: readonly string[], method: PaymentMethodName): b
  * loading state on this panel reserves space for the control it is waiting for;
  * this one must not. The wallet row's whole contract is that it **collapses to
  * nothing** where there is no wallet, so a row held open while a request is in
- * flight would put a gap above Buy Now on exactly the devices — every Windows
- * and Android visitor — that are never going to see a button in it.
+ * flight would put a gap above the checkout button on exactly the devices —
+ * every Windows and Android visitor — that are never going to see a button in
+ * it.
  *
  * It also means Stripe.js is not fetched on a page that turns out to have no
  * wallet button to draw, which is the rule `getStripe` exists to keep.

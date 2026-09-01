@@ -14,13 +14,17 @@ import { Fragment } from "react";
  *
  * The match is on the name without its article, because that is how she writes
  * it mid-sentence — "original World Tarot artwork", not "the The World Tarot".
+ *
+ * The name is `nowrap` wherever it lands: it is one proper noun and a phone is
+ * narrow enough to break it in half, which reads as two words rather than a
+ * house.
  */
 const HOUSE_NAME = "World Tarot";
 
 export function HouseName({ children }: { children: string }) {
   return children.split(HOUSE_NAME).map((part, index) => (
     <Fragment key={index}>
-      {index > 0 ? <span className="font-serif">{HOUSE_NAME}</span> : null}
+      {index > 0 ? <span className="font-serif whitespace-nowrap">{HOUSE_NAME}</span> : null}
       {part}
     </Fragment>
   ));

@@ -86,13 +86,31 @@ export const walletAppearance: Appearance = {
       August 2026**, at the client's request.
 
       Matching the frames' number is what made the two shapes disagree.
-      `.checkout-option` is `min-block-size: 2.6em` — 78px at the panel's type
+      `.checkout-option` was `min-block-size: 2.6em` — 78px at the panel's type
       — and 25px on that is a corner. Stripe caps `buttonHeight` at 55, and the
       same 25px on a button that short is 91% of its half-height, which is a
       pill sitting at the top of a column of rounded rectangles. The proportion
-      the frames actually hold is about a third of their height; this is
+      the frames actually held was about a third of their height; this is
       deliberately under it, because the ask was squarer than the column rather
       than the same as it.
+
+      **The two numbers met on 30 August 2026 and this one did not move.** The
+      frames now hold `clamp(40px, 2.6em, 55px)` so the wallet button can stand
+      at their height, which means the button is no longer the short one — but
+      the client asked for 12px against the frames' 25px, and a request for a
+      squarer wallet button is not answered by the frames getting shorter.
+
+      **The frames came to this number on 31 August 2026**, and the reason is
+      the one thing `appearance` cannot express: this is a flat pixel value at
+      every width, while the frames' radius was `clamp(0.5rem, 1.302vw,
+      1.5625rem)`. A clamp against a constant agrees at one viewport width and
+      nowhere else — 25px beside this 12px at 1920, ~8px beside it on a phone —
+      which the client read, correctly, as the corner changing between devices.
+      So `.checkout-option` states 12px flat and the two corners are one shape.
+
+      That makes this variable the source for both. Moving it moves the wallet
+      button here and leaves the frames behind in `globals.css`; the comment
+      there says the same thing from the other side.
     */
     borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost

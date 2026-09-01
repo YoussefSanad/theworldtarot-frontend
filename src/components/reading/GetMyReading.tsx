@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { PanelHeading } from "@/components/reading/PanelHeading";
-import { BuyNow } from "@/components/reading/BuyNow";
+import { HostedCheckoutButton } from "@/components/reading/HostedCheckoutButton";
 import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
@@ -31,8 +31,8 @@ const { checkout, gift } = readingPageChrome;
  * it was that a wallet sheet, whose height is unknowable at build time, cannot
  * be the control this panel is laid out around.
  *
- * They are two controls because they are two things. Buy Now sends the browser
- * to a hosted Checkout Session — an address; the wallet row mounts an express
+ * They are two controls because they are two things. The checkout button sends
+ * the browser to a hosted Checkout Session — an address; the wallet row mounts an express
  * checkout element and confirms a PaymentIntent in the page — an iframe. No
  * Stripe parameter reconciles those, which is why `/pay` answers two shapes.
  *
@@ -53,8 +53,8 @@ const { checkout, gift } = readingPageChrome;
  * the one control that quotes an amount is conditional on there being one.
  *
  * - **live** — the price, formatted from `Money` against the site's locale, and
- *   Buy Now handed `offer.money`, so the currency the order is placed in is the
- *   one the customer was quoted
+ *   the checkout button handed `offer.money`, so the currency the order is placed
+ *   in is the one the customer was quoted
  * - **loading** — a resting placeholder at the price line's own height, and the
  *   controls kept in the layout but `invisible` and `inert`. They reserve their
  *   height without being reachable by a pointer, a tab, a screen reader or a
@@ -76,22 +76,30 @@ const { checkout, gift } = readingPageChrome;
  *
  * ## The controls
  *
- * **Two of them take money once there is money**: the wallet row and Buy Now.
- * Both take `Money` rather than an offer, so neither can be built from a state
+ * **Two of them take money once there is money**: the wallet row and the checkout
+ * button. Both take `Money` rather than an offer, so neither can be built from a state
  * that has no amount. See those files for what a press does and what makes each
  * inert.
  *
- * **`redeem gift code` is a dud**, on purpose and for now: there is no
+ * ~~`Redeem A Gift Code` is a dud, on purpose and for now: there is no
  * redemption flow, so it is `type="button"` with nothing behind it — inert
  * rather than submitting a form that would only reload the page with the
- * visitor's question in the URL. It is a real button rather than a disabled one
- * because the client rejected a disabled control elsewhere on the site: it
- * reads as a bug rather than as "not yet".
+ * visitor's question in the URL.~~ **Gone on 31 August 2026** (#62).
+ * Redemption is becoming a page of its own, so a frame here would point off
+ * this panel at a flow that does not live on it.
  *
- * The third, `gift a reading`, is live: it turns the whole order into a gift
+ * **It is a removal rather than a rewiring because there was never anything
+ * behind it to rewire.** The old argument — a real button rather than a
+ * disabled one, because a disabled control reads as a bug rather than as "not
+ * yet" — only ever settled the *shape* of the frame, never whether the panel
+ * should carry one. Nothing takes its place in this column: this is the
+ * checkout, and the way into a code is the new page.
+ *
+ * The third, `Gift a Reading`, is live: it turns the whole order into a gift
  * order in place. See `ReadingOrder` for what that means and why it is a mode
- * rather than a second page. **Buy Now is inert while it is on**, because
- * `POST /orders` has no field for a recipient.
+ * rather than a second page. **Both money controls survive the toggle**, since
+ * 30 August 2026 — the recipient rides to the backend on the order line
+ * instead; see `lib/order-note.ts`.
  *
  * ## Delivery
  *
@@ -139,6 +147,15 @@ export function GetMyReading({
       {/*
         498px of the 687px panel; 12px between buttons at the 30px they label.
 
+        **This is the column's width, and from 30 August 2026 it is no longer
+        every frame's.** The wallet row and the checkout button fill it, as they
+        always did;
+        the two gift frames under the Stripe line set their own narrower width
+        over the top of `.checkout-option`'s — see `CheckoutOption` below. It
+        stays here rather than moving onto the children entirely because two
+        things in this column are still shares of it and not of a frame: the
+        secure line, and the divider, whose 448px is measured against this box.
+
         Absent entirely once the request has failed, and present-but-inert while
         it is still in flight — the block's own height is what reserves the
         space, rather than a `min-height` that would be a second number to keep
@@ -152,24 +169,40 @@ export function GetMyReading({
         inert={offer.status === "loading"}
       >
         {/*
-          The wallet row, above Buy Now and nowhere else.
+          The wallet row, above the checkout button and nowhere else.
 
-          **Three conditions, and each removes it for a different reason.**
+          **Two conditions, and each removes it for a different reason.**
           `live`, because `money` exists in no other state and a sheet quoting a
           price no server agreed to is the one thing this panel may never open.
-          `walletOffered`, because an environment that configured no Stripe has
-          no wallet to offer. And not `gifting`, for the reason Buy Now goes
-          inert there: `POST /orders` has no field for a recipient, so a live
-          control in gift mode charges somebody for a gift delivered to
-          themselves — and a wallet is the worse of the two to get wrong, since
-          it takes the money the instant a face is recognised.
+          And `walletOffered`, because an environment that configured no Stripe
+          has no wallet to offer.
 
-          Absent rather than collapsed in all three. The row's own collapse
-          answers a fourth question — this device has no wallet — and it must
-          stay the only reason the row is ever zero-height, or the check that
-          tells a collapsed row from an absent one is measuring nothing.
+          ~~And not `gifting`, for the reason the checkout button goes inert
+          there: `POST
+          /orders` has no field for a recipient, so a live control in gift mode
+          charges somebody for a gift delivered to themselves — and a wallet is
+          the worse of the two to get wrong, since it takes the money the
+          instant a face is recognised.~~ **Gone on 30 August 2026, at the
+          client's request**, and with it the one absence on this panel a
+          customer could watch happen. The row now survives the toggle, which is
+          what was actually asked for: a wallet button disappearing under a
+          thumb is a worse fault than a gift order that needs a human to send
+          it, and a human sends every reading here anyway.
+
+          What made the old gate right was never the charge — `MarkOrderFulfilled`
+          is a timestamp and Jennifer emails each reading by hand, so nothing
+          was going to auto-deliver a gift to its buyer. It was that the order
+          arrived carrying no evidence it was a gift. `orderNoteIn` closes that
+          on the line itself, and both controls read through it; see
+          `lib/order-note.ts`.
+
+          Absent rather than collapsed in both conditions that remain. The row's
+          own collapse answers a third question — this device has no wallet —
+          and it must stay the only reason the row is ever zero-height, or the
+          check that tells a collapsed row from an absent one is measuring
+          nothing.
         */}
-        {offer.status === "live" && walletOffered && !gifting ? (
+        {offer.status === "live" && walletOffered ? (
           <ExpressCheckout productKey={reading.productKey} money={offer.money} />
         ) : null}
 
@@ -180,7 +213,7 @@ export function GetMyReading({
           there is no branch in it that can place an order without a price the
           backend set.
         */}
-        <BuyNow
+        <HostedCheckoutButton
           productKey={reading.productKey}
           money={offer.status === "live" ? offer.money : null}
           gifting={gifting}
@@ -202,12 +235,20 @@ export function GetMyReading({
           {checkout.secure}
         </p>
 
-        <CheckoutOption>
-          <Mark art={marks.redeem} className="w-[7.57cqw]" />
-          {checkout.redeem}
-        </CheckoutOption>
+        {/*
+          ~~Between the two gift controls~~ **between the payment and the gift,
+          from 31 August 2026** (#62), at the 448px every rule here is drawn at.
 
-        {/* Between the two gift controls, at the 448px every rule here is drawn at. */}
+          What stands either side of it changed when the redeem frame went; the
+          rule did not, and it is kept rather than removed with it because it
+          was never that button's — it is the line between paying for a reading
+          and buying one for somebody else, and both of those are still here.
+
+          Unchanged by the narrowing, and deliberately: the client's frame keeps
+          this rule at its full width across a frame that no longer reaches it.
+          448px is `--measure-flourish` capped by the 498px column above, which
+          is why the column keeps a width of its own.
+        */}
         <Divider variant="hero" className="my-[-0.3em]" />
 
         {/*
@@ -216,7 +257,21 @@ export function GetMyReading({
           rather than inferred from a section most of a panel above it.
         */}
         <CheckoutOption pressed={gifting} onClick={onGiftToggle}>
-          <Mark art={marks.gift} className="w-[7.71cqw]" />
+          {/*
+            The mark turns over with the label. A gift box above "A Reading for
+            Myself" said the opposite of the words under it — the one frame on
+            the panel whose two states are opposites is the one that cannot
+            keep a single icon across them.
+
+            Both marks are 54 tall, so only the width changes here: `53 ÷ 6.87`
+            for the box and `38 ÷ 6.87` for the card, which is the scale the
+            docblock on `Mark` derives every number in this column from.
+          */}
+          {gifting ? (
+            <Mark art={marks.selfReading} width="5.53cqw" />
+          ) : (
+            <Mark art={marks.gift} width="7.71cqw" />
+          )}
           {gifting ? gift.leave : gift.enter}
         </CheckoutOption>
       </div>
@@ -325,26 +380,46 @@ function DeliveryOption({
 }
 
 /**
- * One of the client's frames, drawn but not wired. `gift a reading` passes an
- * `onClick` and a pressed state; `redeem gift code` passes neither and is inert
- * — `type="button"`, so a press does nothing at all rather than submitting the
- * order form it sits in.
+ * The client's gift frame, drawn and wired. `type="button"`, so a press toggles
+ * gift mode rather than submitting the order form it sits in.
  *
- * Buy Now is not one of these. It wears the same `.checkout-option` treatment
+ * ~~One of the client's frames, drawn but not wired.~~ **One caller from 31
+ * August 2026** (#62), and `pressed` and `onClick` are required with it. They
+ * were optional so that `Redeem A Gift Code` could pass neither and stand
+ * there inert; with that frame gone, optionality is nothing but an open
+ * invitation to draw another dud, and the type now says what is true — a frame
+ * on this panel does something when it is pressed.
+ *
+ * The checkout button is not one of these. It wears the same `.checkout-option`
+ * treatment
  * so the column reads as one set of frames, and owns its own state, which is
- * what a control that can be mid-purchase needs and these two never are.
+ * what a control that can be mid-purchase needs and this one never is.
  *
- * The `label` prop went with the two frames that were a mark and no words. Both
- * that are left carry their own text, and an `aria-label` restating it would be
- * the accessible name disagreeing with the visible one.
+ * ## Narrower than the frames above it, from 30 August 2026
+ *
+ * The client's revision keeps the wallet row and the checkout button at the
+ * column's 498px and pulls the gift frame in to **84% of it** — 418px of the 687px panel,
+ * which is the `60.89cqw` below. So this is the one thing this frame does not
+ * share with the checkout button, and the reason the width is set per frame
+ * rather than
+ * once on the column they stand in.
+ *
+ * **The ratio is the measurement and the `cqw` is arithmetic off it.** 84% was
+ * read off the client's exported frame rather than out of their file, so it is
+ * the figure to confirm if the two ever look wrong beside each other; the
+ * number here follows from it and from the 72.49cqw above.
+ *
+ * The `label` prop went with the two frames that were a mark and no words. The
+ * one that is left carries its own text, and an `aria-label` restating it would
+ * be the accessible name disagreeing with the visible one.
  */
 function CheckoutOption({
   pressed,
   onClick,
   children,
 }: {
-  pressed?: boolean;
-  onClick?: () => void;
+  pressed: boolean;
+  onClick: () => void;
   children: ReactNode;
 }) {
   return (
@@ -354,7 +429,12 @@ function CheckoutOption({
       size="fluid"
       aria-pressed={pressed}
       onClick={onClick}
-      className="checkout-option"
+      /*
+        `w-` is a utility and `.checkout-option`'s `inline-size: 100%` is a
+        component, so this wins on layer order rather than on specificity —
+        which is why it can be a plain class here and needs no `!`.
+      */
+      className="checkout-option w-[60.89cqw]"
     >
       {children}
     </Button>

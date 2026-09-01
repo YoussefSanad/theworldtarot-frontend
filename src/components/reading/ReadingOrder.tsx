@@ -12,7 +12,7 @@ import { useProduct } from "@/lib/product";
 /**
  * The left panel's form, and the one piece of state on this page.
  *
- * **Gift is a mode, not a page.** Clicking "gift a reading" turns this form
+ * **Gift is a mode, not a page.** Clicking "Gift a Reading" turns this form
  * into a gift order in place: the question section becomes recipient details,
  * the payment stays exactly where it was, and the price, the product and
  * everything else the visitor was looking at holds still. A separate
@@ -26,8 +26,10 @@ import { useProduct } from "@/lib/product";
  * satisfied the design and not the requirement.
  *
  * The recipient's own question is asked after they redeem, which is a flow
- * this page does not build yet: `redeem gift code` is a dud, as the payment
- * controls are. See `GetMyReading`.
+ * this page does not build and, from 31 August 2026, no longer advertises: the
+ * `Redeem A Gift Code` frame that stood inert in the payment column went in
+ * #62, redemption being a page of its own rather than a control on this one.
+ * See `GetMyReading`.
  *
  * ## What is for sale, and whether anything is
  *
@@ -61,12 +63,18 @@ import { useProduct } from "@/lib/product";
  * comparison is `questionFor`, beside the guard the confirmation uses, rather
  * than a pair of fields compared here.
  *
+ * **And never a gift**, from 30 August 2026, which `questionFor` decides and
+ * argues. What it means here is that a cancelled gift checkout comes back to an
+ * empty panel in self mode: this reads one string for one textarea, and gift
+ * mode is two fields and a toggle it has no way to restore.
+ *
  * `useSyncExternalStore` rather than an effect that sets state. Storage is an
  * external store, and this is a static export: the HTML is built on a machine
  * that has none, so the build snapshot is `null` and the client's is the record.
  * Reading it during render instead would hydrate a page whose first paint
  * disagrees with its second. Nothing subscribes, because nothing changes the
- * record while this page is open — the one thing that writes it is Buy Now,
+ * record while this page is open — the one thing that writes it is the checkout
+ * button,
  * immediately before the browser leaves.
  *
  * The section is **remounted** rather than re-rendered when a question arrives,
@@ -84,7 +92,7 @@ import { useProduct } from "@/lib/product";
  *
  * ## One thing here is a deliberate departure
  *
- * The client's frame puts "gift a reading" at the foot of the payment column,
+ * The client's frame puts "Gift a Reading" at the foot of the payment column,
  * and what it changes is most of a panel above it — an action whose effect is
  * off screen. Rather than move her button, `CountedField`'s `autoFocusOnMount`
  * brings the visitor to the fields that replaced the question. The control

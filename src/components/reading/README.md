@@ -40,9 +40,9 @@ on the left and 18.8% in on the right. None of that is a design decision.
 **Everything centres.** Don't restore the offsets.
 
 The overlaps are the same story — a 150px quote glyph whose box runs through
-the words under it, a redeem button whose box runs into the rule below it.
-Those are text boxes sized with leading, not overlapping elements; the flow
-layout resolves them.
+the words under it, a redeem button whose box ran into the rule below it (that
+button went in #62; the frame still draws it). Those are text boxes sized with
+leading, not overlapping elements; the flow layout resolves them.
 
 ## The backdrop is one photograph, not nine layers
 
@@ -116,6 +116,13 @@ the middle mark**, and that is the only difference:
   child of `.panel-marks`. It is `frame-ornament-trio-sm.webp`, the crop the
   readings cards already wear — 26x17 here against 26x16 there, the same art.
 
+The panels are also not level with one another. Figma starts the right one's
+top border 28px below the left one's, so the pair steps down rather than
+squaring off, and it is the border that moves — the offset is a margin on the
+grid item in `readings/month-ahead/page.tsx`, not extra padding in the body.
+It is desktop-only, since below `lg` there is no second column for it to be out
+of step with.
+
 `legendMark` is what tells the frame the legend is an ornament. Everything the
 open frame does above that prop is about a heading's *first line* — where the
 rule crosses the capitals, how far a bracket hangs to meet it — and a mark has
@@ -158,7 +165,7 @@ all of them: **where there is no live money there are no payment controls.**
 | State | Price line | Controls |
 | --- | --- | --- |
 | Loading | A resting placeholder, at the line's own height | None, and their height is reserved |
-| Live | `formatPrice(money)`, site locale, never the browser's | Buy Now, live — and the only place the price is said |
+| Live | `formatPrice(money)`, site locale, never the browser's | The checkout button, live — and the only place the price is said |
 | Unreachable | The bundled `reading.price`, as plain copy | The frames, none of which can pay |
 | Withdrawn (404) | — | — (`ReadingOrder` renders no form at all) |
 
@@ -180,17 +187,18 @@ Three things about that table are decisions rather than mechanics:
 
 `npm run check:panel` drives every state against the real export with the whole
 checkout intercepted — the catalogue, `/orders` and `/pay` — which is what lets
-it **press** Buy Now rather than only look at it. `-- --live` runs the live case
+it **press** the checkout button rather than only look at it. `-- --live` runs the live case
 against the API in `.env.local` instead and presses nothing, from port 3000
 because that is the origin staging's CORS list carries. See
 `docs/plans/reading-page-live-price.md` and `docs/plans/hosted-checkout.md`.
 
-### Buy Now is a redirect, and the wallet is not
+### The checkout button is a redirect, and the wallet is not
 
-`BuyNow` is ~~the only control on the panel that takes money~~ — from 29 August
+`HostedCheckoutButton` is ~~the only control on the panel that takes money~~ —
+from 29 August
 2026 the wallet row above it takes money too, and the two do it in different
-places, which is the whole of the difference between them. Pressing Buy Now
-places an order, starts its payment and sends the browser to Stripe's **hosted
+places, which is the whole of the difference between them. Pressing it places an
+order, starts its payment and sends the browser to Stripe's **hosted
 page**: nothing is collected on this page and, on this road, no Stripe.js is
 loaded on it. The wallet stays here and confirms in an iframe on our own origin.
 See `docs/adr/0002-checkout-happens-on-stripes-page.md`,
@@ -215,15 +223,17 @@ Four things about it are worth knowing before changing any of it.
   on the card road, a **client secret** on the wallet road, from which the intent
   id is derived. Each road's guard refuses the other's record, so neither branch
   of the confirmation has to know the other exists
-- **It is inert in gift mode**, and says so. `POST /orders` has no field for a
-  recipient email or a gift message, so one live button there charges somebody
-  for a gift delivered to themselves
+- **It is inert in gift mode**, and says so — **for the wallet row as well from
+  30 August 2026**, which is absent there rather than inert and would otherwise
+  go without a word. `POST /orders` has no field for a recipient email or a gift
+  message, so one live button there charges somebody for a gift delivered to
+  themselves
 - **An instruction this build cannot read refuses the press** rather than
   crashing it. `nothing_to_pay` on a fresh order, a `client_secret` this page
   has no element for, or a `type` a later backend invents: the order exists, it
   is `pending`, nothing has been charged, and the panel says exactly that
 
-### The wallet row, above Buy Now
+### The wallet row, above the checkout button
 
 `ExpressCheckout.tsx` **renders again** from 29 August 2026, which is #48.
 ~~Unrendered rather than removed~~ — it was a dud while `/pay` had no
@@ -244,8 +254,46 @@ row is a flex box, so the div react-stripe-js mounts the element into was sized
 by its content — and Stripe's content asks for 300px, which drew a 292px wallet
 button in a 498px column of 498px frames. `w-full` on the element is the whole
 fix; the iframe reads 8px wider than the column because Stripe insets what it
-draws by the 4px it bleeds. **Height cannot follow**: Stripe caps `buttonHeight`
-at 55 against frames that stand at 2.6em, so the row holds the difference.
+draws by the 4px it bleeds.
+
+**Height followed on 30 August 2026**, and the frames came to meet it. Three
+changes in one, all at the client's request, and none of them stands alone.
+
+`buttonHeight` is a number of pixels while the frames are an `em` off a `clamp`
+on the viewport, so no unit passes between them — but `useFrameHeight` measures
+a frame with a `ResizeObserver` and hands Stripe the pixel, which is legal after
+mount because `buttonHeight` is a member of the element's update options. Before
+that it was the constant 55, right at one width of the page and wrong either
+side: below about 1330px the wallet button stood **taller than every frame
+beneath it**, by 3px at 1280 and 16px at 430.
+
+That alone left the two ends open, because Stripe will not take a height outside
+40px to 55px. So `.checkout-option` holds `clamp(40px, 2.6em, 55px)` — the
+frames stop where the button stops. **The cost is the client's drawing**: 78px
+at 30px type becomes 55px above about 1354px.
+
+And capping the box exposed the marks. `Mark` is a share of the panel in `cqw`,
+so once the frame stopped growing the marks did not: at 1920 the two gift frames
+stood at 65px and 66.9px beside a 55px checkout button. So `.checkout-option`
+declares `--mark-cap`, the proportion Figma draws — a 52px mark in a 78px frame
+— which the card mark, drawn shorter, never reaches. **The same rule closes the
+600px to 1023px unevenness `085774b` left open** as a decision rather than a
+tidy-up.
+
+**The ceiling is spent as a width, and was not always.** Until 31 August 2026 it
+was `max-block-size` on the image, which is the one way to cap a mark that
+cannot work: a replaced element given an explicit width and a capped height
+takes both and squashes. The gift box did that across the tablet band, where the
+panel is wide enough to ask for a mark taller than the frame will have. `.mark`
+now sets width alone — `min()` of what the panel asks for and what the ceiling
+allows, the second converted through the picture's own ratio — and lets the
+browser derive the height, which is the only arrangement that cannot distort.
+
+Measured against the built export at seventeen widths from 320 to 1920: the
+three frames are the same height at every one of them, and the wallet button is
+never taller than the frame it stands in — level at eleven widths and at most
+0.7px short at the rest, where the frame is fractional and `buttonHeight` is an
+integer.
 
 **The row collapses to nothing where the browser has no wallet**, which is every
 browser this repo's checks run in. Two facts, not one: zero height, and no gap.
@@ -282,7 +330,7 @@ page opens, quotes the order total and takes a test card is #47.
 
 ### Gift is a mode, not a page
 
-Clicking "gift a reading" turns the order into a gift order **in place**: the
+Clicking "Gift a Reading" turns the order into a gift order **in place**: the
 question section becomes recipient details, the payment stays where it was, and
 the price, the product and everything else the visitor was looking at holds
 still. A separate `/readings/gift` page would have to restate all of it and
@@ -296,7 +344,7 @@ design and not the requirement. The recipient asks their own question after
 they redeem.
 
 Two departures from the frame come with it, and both answer the same problem.
-The client puts "gift a reading" at the foot of the payment column, and what it
+The client puts "Gift a Reading" at the foot of the payment column, and what it
 changes is a section most of a panel above it — an action whose effect is off
 screen. Rather than move her button:
 
@@ -308,25 +356,77 @@ screen. Rather than move her button:
   pointer being near it, and a label that becomes the way back out, so gift
   mode is never somewhere a visitor is stuck.
 
-The recipient's side of the flow — redeem, then ask — is not built. `redeem
-gift code` is a dud, and **Buy Now is inert while gift mode is on**: `POST
-/orders` has no field for a recipient, so a live button here would charge
-somebody for a gift delivered to themselves. Gifting is the code model and a
-separate milestone.
+The recipient's email field also **suppresses browser autofill**
+(`CountedField`'s `suppressAutofill`). Chrome classifies a field by its `name`
+and `id` as much as by its `autocomplete`, so `recipientEmail` had it offering
+the purchaser their own saved address — the one address a gift must not go to.
+The field therefore submits under React's opaque `useId` string and carries its
+real name on `data-field`, which is where anything reading this form should
+look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
 
-### One of the three controls is a dud, on purpose
+The recipient's side of the flow — redeem, then ask — is not built, and since
+31 August 2026 this panel does not advertise it either: the `Redeem A Gift
+Code` frame went in #62, redemption being a page of its own rather than a
+control on the page that sells the reading. **Both payment controls take money
+in gift mode**, from 30 August 2026 and at the client's request.
 
-There is no redemption flow, so `redeem gift code` is `type="button"` with
-nothing behind it. **Inert rather than submitting**: the form has no action, so
-a submit would reload the page with the visitor's question in the query string,
-which is a worse nothing than nothing. It is a real button rather than a
-disabled one because the client rejected a disabled control elsewhere on the
-site — it reads as a bug rather than as "not yet", and that is why the two
-states in which Buy Now cannot be pressed are `aria-disabled` rather than
-`disabled` too.
+They did not until then, and the reason they did not was sound as far as it
+went: `POST /orders` has no field for a recipient, so an order placed in gift
+mode arrived carrying no evidence that it was one. Why that stopped being a
+reason to refuse the money is argued in `GetMyReading`, beside the gate it
+removed.
 
-The form itself stays, with its fields named. That is what makes wiring the
-checkout a matter of adding an endpoint rather than restructuring the panel.
+So the recipient rides to the backend on the order line instead. `orderNoteIn`
+reads whichever of the two sections is mounted and composes the gift's two
+fields into the line's `question`, which is the field the admin orders table
+already prints; see `lib/order-note.ts`. Two things fall out of that and are
+worth knowing before reading either file:
+
+- **A gift order is never indistinguishable from a self-purchase**, however
+  little the buyer typed — which is also why `orderFormAccepts` exists. Nothing
+  submits this form, so the `required` on the recipient's address was decoration
+  until the panel could take money; both controls now ask for it before they
+  place anything.
+- **The record is flagged and the restore refuses it.** A cancelled gift
+  checkout must not refill the question textarea with a note this code composed,
+  so `CheckoutRecord.gift` marks it and `questionFor` turns it down.
+
+**What the wallet row taught, and why it came back first.** The row was
+unmounted rather than made inert, because a wallet takes the money the instant a
+face is recognised and there is no inert state worth leaving that in. That made
+it the one control here that became unavailable without saying anything, and
+only on the devices that had it to lose — which is why it read as a bug rather
+than as "not yet", and why it is what the client noticed. `checkout.giftingComing`
+still stands under the checkout button and still names neither control and no
+payment
+method, but it no longer refuses the payment: what is unfinished is the delivery
+behind it, and the note says a person will arrange that by email. There is no
+second note anywhere: two sentences saying one thing is not what this panel
+does.
+
+### ~~One of the three controls is a dud, on purpose~~ Every control here does something
+
+Until 31 August 2026 one did not. There was no redemption flow, so `Redeem A
+Gift Code` was `type="button"` with nothing behind it — inert rather than
+submitting, because the form has no action and a submit would reload the page
+with the visitor's question in the query string, which is a worse nothing than
+nothing.
+
+**#62 removed it rather than wiring it**, because redemption is becoming a page
+of its own: an entry point on the page that *sells* a reading points at a flow
+that does not live there, and the frame had spent its whole life inert. Nothing
+replaced it in the column — the rule that used to sit between it and `Gift a
+Reading` stayed, now drawing the line between paying for a reading and buying
+one for somebody else.
+
+**What survives the removal is the argument's other half.** A real button
+rather than a disabled one, because the client rejected a disabled control
+elsewhere on the site — it reads as a bug rather than as "not yet". That is
+still why the one state in which the checkout button cannot be pressed — no live
+price — is
+`aria-disabled` rather than `disabled`.
+
+The form itself stays, with its fields named.
 
 ### Delivery is a CMS switch
 
@@ -348,9 +448,10 @@ so it cannot be exceeded, and `0/500` under it, so the visitor sees it coming.
 A `maxlength` alone stops somebody typing and never says why, which reads as
 the keyboard breaking. Both numbers come from `questionLimit`.
 
-It is uncontrolled apart from the count — nothing reads the text yet, and
-holding a controlled value in `ReadingOrder` would re-render the whole panel on
-every keystroke to do it.
+It is uncontrolled apart from the count. What is typed is read off the form at
+the moment of a press, by `orderNoteIn`, rather than held in React — a
+controlled value in `ReadingOrder` would re-render the whole panel on every
+keystroke to do it.
 
 ## The rest of the furniture
 
@@ -369,16 +470,31 @@ every keystroke to do it.
   how to do.
 - **The checkout controls** are one box, `.checkout-option`, a modifier on
   `.btn-ghost`. Figma draws all five identically (498x78, 2px gold, 25px
-  corner) and changes only the mark inside; Buy Now wears the same box, so the
+  corner) and changes only the mark inside; the checkout button wears the same box,
+so the
   column still reads as one set of frames while it stands where three of them
-  did. Unlike `.readings-cta` they never hug their labels: the client stacks
-  them as one column of equal buttons, and that is also the only thing keeping
-  a mark and a five-word label the same size as each other. **The padding is
-  what makes "equal" true**, and both halves of it earn their number: the
-  inline padding is never seen on a full-width box with centred contents, so it
-  is only the width at which a label wraps, and the block padding is what lets
-  a label that wraps anyway still stand inside `2.6em` rather than growing the
-  frame. See the comment on `.checkout-option`.
+  did. Unlike `.readings-cta` they never hug their labels: each fills the width
+  it is given, and that is also the only thing keeping a mark and a five-word
+  label the same size as each other. **The padding is what makes their heights
+  equal**, and both halves of it earn their number: the inline padding is never
+  seen on a box that fills its width with centred contents, so it is only the
+  width at which a label wraps, and the block padding is what lets a label that
+  wraps anyway still stand inside the frame's own minimum rather than growing
+  it.
+  **Two things moved on 30 August 2026**, both at the client's request. The box
+  sets Gill Sans Light rather than inheriting `.btn-ghost`'s serif — which is
+  why the labels were re-cased in `reading-pages.ts` in the same change, since
+  Cinzel's small capitals had been doing the shouting for two of them and Gill
+  Sans draws what the string says. And the two gift frames under the Stripe
+  line were pulled in to 84% of the payment frames' width, so the width is now
+  set per frame in `GetMyReading` rather than once here.
+  **The corner followed the height on 31 August 2026**, and to the same place:
+  the frames' radius was a clamp reaching Figma's 25px, the wallet button's is
+  a flat 12px because `appearance` takes nothing else, and a clamp beside a
+  constant matches at one viewport width and misses either side of it. Both are
+  12px now. It is one number in two files — `.checkout-option` in `globals.css`
+  and `walletAppearance` in `lib/stripe.ts` — so neither moves alone. See the
+  comment on `.checkout-option`.
 - **The testimonial's opening mark states its own height.** A `“` is ink near
   the cap line and nothing else, so at 150px its line box is 150px tall with
   about 40px of that inked — left alone it hangs most of a paragraph of empty
@@ -396,30 +512,82 @@ every keystroke to do it.
   and reads as sitting low, and so does a quarter. An eighth is the one number
   in that file that is neither Figma's nor arithmetic: it was settled by eye
   against the rendered page over three passes, so move it by eye too. The line
-  count is the copy's own shape: `included` is a list of phrases per line, so
-  its length *is* how many lines the entry sets at the width she drew.
-- **A feature prop turns on its side below `md`, and the row of three breaks
-  much later, at `xl`.** Two different widths on purpose. The compass stands
-  beside the words at `md` and up, which is what the frame draws, and over them
-  below it at the homepage's own size — a compass beside two lines of 22px type
-  has nowhere to go on a phone. Three *across*, though, needs 1384px of the
-  1431 the row is given, and it only keeps fitting while the type and the
-  column shrink together: `--text-caption` bottoms out at 13px around 1150px
-  while the column carries on narrowing, so below there no gap or compass size
-  saves the longest line. `xl` is the nearest step above that. Between the two
-  a prop is a full-width row of its own, which suits it.
+  count is the copy's own shape: `included` is a list of the places a line may
+  break, so one phrase is one line and more than one is two at the width she
+  drew.
+- **"Presented on original World Tarot artwork" is written as three phrases for
+  two lines.** A `Phrase` that will not fit the measure does not hold together —
+  it shrinks and wraps *inside* itself — and on a phone that one is wider than
+  the measure a panel at 81.33% leaves once the medallion, its gap and the two
+  `cqw` insets are out. It broke mid-name and spilled "artwork" onto a third
+  row. Splitting a phrase only ever adds a place the line may break and never
+  moves one, so the frame at 1920 still breaks where she breaks it — "artwork"
+  is what does not fit there either way — and the phone now breaks after
+  "original" instead of through the house name. `<HouseName>` is `nowrap` for
+  the same reason: it is one proper noun.
+- **The three props go across at `md`; the compass turns on its side at
+  1152px.** Two different widths on purpose, and the second is the one that
+  makes the first affordable. The compass stands beside the words from 1152 up,
+  which is what the frame draws, and over them below that at the homepage's own
+  size — which is to say that from `md` to 1152 this row *is* the homepage's
+  value props, three columns with a compass over each, at the homepage's own
+  breakpoint.
+- **Which arrangement fits is a measurement, not a taste.** Her longest
+  description line is 301px at the frame's 22px, and beside the words it only
+  keeps fitting while the type and the column shrink together: `--text-caption`
+  bottoms out at 13px around 1134px while the column carries on narrowing, so
+  the line stops getting cheaper at 178px and by about 1090px no gap or compass
+  size leaves it that much. Over the words the same line has the whole column —
+  244px on a tablet against the 178 it needs. That is why the columns break at
+  `md` and the compass at 1152 rather than one rule doing both.
+- **And the row takes a measure of its own below `lg`, which is the third
+  break.** Three columns of 178px need 566px of row, and the page cap hands the
+  props 440 — held to it the row came to three columns of 136px, the
+  description wrapped inside itself onto a third line, and the rule and the
+  nowrap title spilled over the props either side. `readingProps` opens the row
+  alone out to 763px, which is what `--measure-reading` gives it at `lg`
+  itself, so a tablet gets full width and nothing steps backwards crossing the
+  breakpoint. The cost is the flush edge the cap exists for: between `md` and
+  `lg` this row stands about 160px proud of the panels on either side, which is
+  ours rather than the client's and is on the list to put to her. See the note
+  on `--measure-reading-props` in `globals.css`.
+- **The compass break is 72rem and not `xl`, and the 128px between them is the
+  whole reason.** A 1920 screen at 150% scaling — the common Windows laptop —
+  reports 1280 and then takes the classic scrollbar back out of it, so the
+  widest screen the beside-the-words arrangement was drawn for arrived a few
+  pixels *under* `xl` and stood its compasses up. 1152 is the round step that
+  clears the 1090px floor with the row's own margin intact, and it is an
+  arbitrary variant rather than a theme breakpoint because this row is the only
+  thing on the site that turns there.
 - **The gap between the three is 24px, not the page gutter's 60.** The client's
   own render leaves about 35px and 3px between props; at 60 a third of the row
   came to 293px against the 301px her longest description line measures, and
   that prop ran to three lines. The gaps were the only slack there was to give
-  back. It now clears by 5.3% at every width the row is three across — which is
-  the number to re-check if that copy ever gets longer.
+  back. It clears by 5.3% from `xl` up and 4.7% at 1152, which is the tightest
+  the row ever gets — the number to re-check if that copy ever gets longer.
+  Below 1152 the compass is out of the line and the clearance jumps to 37% on a
+  tablet and 29% at `md` itself.
 - **A feature prop has three widths and none of them is the column's.** The
   rule is 277px. The title never wraps — Figma sets it `nowrap` and lets it
   overhang the rule, which is the look: a name on one line over a line. And the
-  body has its own 408px, wider than the rule again, which is the measure her
-  two phrases were broken to; at the rule's width the first of them wrapped and
-  the prop ran to three lines. Each child states its own, the column takes
+  body has its own, wider than the rule again, which is the measure her two
+  phrases were broken to; at the rule's width the first of them wrapped and the
+  prop ran to three lines.
+- **That body measure is 15.15em, and it is a ceiling on the copy rather than
+  the frame's 408px.** Measured off `MagicallyRegular.otf` at 22px with the
+  0.01em tracking — which reproduces the 301px quoted above to the pixel — her
+  six phrases bracket it from both sides. The longest single phrase is 13.67em
+  ("Each reading unfolds through the"); the shortest whole description is
+  16.77em ("Insight that illuminates your next chapter"). Below 13.67 a phrase
+  wraps inside itself and that prop runs to three lines. At 16.77 or above,
+  Clarity in Motion closes up onto one line while its siblings take two, and
+  three across that reads as a broken row — which is what 408px (18.55em) was
+  doing. 15.15 is the middle of the window on a ratio, 10.8% clear at either
+  end, and it is the number to re-measure if any of the six phrases changes.
+- **The cap only ever binds below 1152.** From there up the column is the
+  narrower of the two at every width, which is why the frame's 408px never
+  showed itself as wrong — the one-line description only appeared once the
+  compass stepped out of the line and handed the column back. Each child states its own, the column takes
   whichever is widest, and `min-w-0` on the row keeps a long title overhanging
   its third of the page rather than growing the track.
 - **The question's standfirst is capped at 480px.** Her two phrases come to
@@ -522,6 +690,19 @@ Stacked, each panel takes `--measure-reading`, which below `lg` is the same
 load-bearing for the same reason it is on the index: a panel's horizontal
 measurements are `cqw` off its own box, so a panel 10% too wide renders
 everything in it 10% too large.
+
+**And on 31 August 2026 that sentence turned out to be the bug report.** A share
+of the viewport is only ever right while the type scales with it, and the type
+does not: `--text-nav` floors at 15px below about 960px while 81.33% goes on
+growing to 832px at 1023 — a panel not 10% but 140% too wide, rendering
+everything `cqw` in it 140% too large against type that had stopped. The moon
+drew 120px where the client draws 99. It showed on the checkout frames because
+they are the one thing here with a height in pixels and so the one thing with a
+ratio you can read: 498x78 drawn, 603x41.5 at 1023, and 6.4 again a pixel later
+where the second column returns. So the measure now caps at 440px and a tablet
+gets a centred column; see the comment on `--measure-reading`. The cap sits on
+the measure rather than on the panel grid, so the props and the closing saying
+narrow with the panels instead of overhanging them.
 
 They stack in source order — the reading and its payment first, then what
 arrives and who says so — which is the order the desktop frame reads in as

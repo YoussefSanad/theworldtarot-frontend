@@ -1,6 +1,6 @@
 /**
  * Drives the reading page's payment panel through every state it can be in, and
- * presses Buy Now in each of them.
+ * presses the checkout button in each of them.
  *
  * `npm run build && npm run check:panel` — serves `out/` and loads the real
  * exported bundle once per state, answering the product endpoint 200, 404 and
@@ -32,13 +32,16 @@
  * fails all three. So what is asserted is everything around the button: that
  * the element **mounts** on `live`, that the row quotes the API's money, that
  * it **collapses to nothing** — no height and no gap — where the browser has no
- * wallet, and that **no other state mounts one** — gifting having mounted one
- * first, at which point the toggle has to take it away again.
+ * wallet, and that **no unpriced state mounts one**.
  *
- * That last one is the negative #45 left behind, kept and narrowed. A Stripe
- * iframe on a withdrawn product, on an unreachable API or in gift mode is what
- * a half-finished wallet ticket shipping by accident looks like, and it is
- * still worth catching.
+ * That last one is the negative #45 left behind, kept and narrowed twice. A
+ * Stripe iframe on a withdrawn product or on an unreachable API is what a
+ * half-finished wallet ticket shipping by accident looks like, and it is still
+ * worth catching. ~~In gift mode as well.~~ **Gift mode came off that list on
+ * 30 August 2026**, at the client's request: the row stays through the toggle,
+ * and what is asserted there is the opposite of what used to be — that the
+ * element survives both presses without being torn down and rebuilt, and that
+ * an order placed in that mode says on its line who the gift is for.
  *
  * **The collapse is measured rather than inferred.** The row is a child of a
  * flex column with a `gap`, and a gap applies to a zero-height child as much as
@@ -71,13 +74,20 @@ const PANEL = ".reading-panel-sky";
 const PRICE = "#get-my-reading p.font-display";
 const RESTING = '[role="status"][aria-label="Fetching the price"]';
 
-/** The client's frames. Buy Now wears the same treatment and is one of them. */
+/** The client's frames. The checkout button wears the same treatment and is one of them. */
 const GHOST = "#get-my-reading .checkout-option";
 
 /** The one control that can take money. Selected by its hook, not its words. */
-const BUY = "#get-my-reading [data-buy-now]";
+const HOSTED = "#get-my-reading [data-hosted-checkout]";
 
-const GIFT = '#get-my-reading button:has-text("gift a reading")';
+const GIFT = '#get-my-reading button:has-text("Gift a Reading")';
+
+/**
+ * The same button on the way back. Its label is the way out rather than a state
+ * to infer — `gift.leave` — which is exactly why `GIFT` cannot select it: in
+ * gift mode the words that one matches are not on the page.
+ */
+const LEAVE = '#get-my-reading button:has-text("A Reading for Myself")';
 
 /**
  * Proof Stripe.js built an element. **Page-wide rather than inside the panel**:
@@ -96,6 +106,22 @@ const WALLET = "#get-my-reading [data-express-checkout]";
 
 /** What the customer types, and what has to survive as far as the order line. */
 const QUESTION = "What should I focus on this month?";
+
+/**
+ * Gift mode's two fields, and the single string they have to arrive as.
+ *
+ * `POST /orders` has no field for either, so `orderNoteIn` composes them into
+ * the line's `question` — the field the admin orders table already prints. The
+ * composition is unit-tested in `lib/order-note.test.ts`; what only a browser
+ * can settle is that the composition runs against **this** form, reached from
+ * the payment controls' own nodes, which is what the press below proves.
+ *
+ * Restated here as a literal rather than imported. An assertion that computed
+ * its expectation the way the code does would pass whatever the code did.
+ */
+const RECIPIENT = "alice@example.com";
+const GIFT_MESSAGE = "Happy birthday — thought this one was you.";
+const GIFT_NOTE = `Gift — send this reading to ${RECIPIENT}\n\nThe buyer's message: ${GIFT_MESSAGE}`;
 
 /**
  * Where the browser is sent instead of Stripe. It carries a `cs_...` in its
@@ -196,7 +222,16 @@ async function drive(
   state,
   response,
   settled,
-  { gift = false, press = false, cancelled, payAnswer, holdWrites = false, wallet = true } = {},
+  {
+    gift = false,
+    giftBack = false,
+    press = false,
+    blank = false,
+    cancelled,
+    payAnswer,
+    holdWrites = false,
+    wallet = true,
+  } = {},
 ) {
   console.log(`\n${state}`);
 
@@ -292,7 +327,7 @@ async function drive(
     visibleControls: await page.locator("#get-my-reading button:visible").count(),
     // Present in the layout, holding its height, while being none of those
     // things — which is what `invisible` and `inert` together buy.
-    buyNow: await page.locator(BUY).count(),
+    hosted: await page.locator(HOSTED).count(),
     // A control inside an `inert` subtree is not reachable by a pointer, a tab,
     // a screen reader or `element.click()`, which is the whole claim.
     reachableControls: await page
@@ -325,9 +360,9 @@ async function drive(
     .catch(() => {});
 
   /*
-    After the wait, so gifting is a row that mounted an element and then took it
-    off again — which is the fact worth proving — rather than one the click beat
-    to the DOM.
+    After the wait, so gifting is a row whose element had already mounted when
+    the toggle went down — which is what makes "it is still the same element"
+    a fact worth reading — rather than one the click beat to the DOM.
   */
   if (gift) await page.locator(GIFT).click();
 
@@ -353,12 +388,33 @@ async function drive(
     recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
+    /*
+      The client's 30 August revision: the gift frame stands at 84% of the
+      payment frames' width, where all five used to share one. A **ratio**
+      rather than a pixel — the column is laid out in `cqw`, so every width in
+      it moves with the viewport and only their proportion is a constant.
+
+      It was two frames at that width until #62 took the redeem one off the
+      panel on 31 August 2026. The probe below reads *the first frame that is
+      not the checkout button*, which was redeem and is now the gift — the same number
+      either way, since the two shared it.
+    */
+    giftFrameRatio: await page.evaluate(() => {
+      const buy = document.querySelector("#get-my-reading [data-hosted-checkout]");
+      const narrow = [...document.querySelectorAll("#get-my-reading .checkout-option")].find(
+        (node) => node !== buy,
+      );
+
+      if (!buy || !narrow) return null;
+
+      return Math.round((narrow.getBoundingClientRect().width / buy.getBoundingClientRect().width) * 100);
+    }),
     // Whitespace-flattened: the label and the amount are two spans that the
     // column lays out one above the other, and where the line breaks is not
     // what this is asserting.
-    buyNow: (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " "),
+    hosted: (await page.locator(HOSTED).first().innerText().catch(() => "")).trim().replace(/\s+/g, " "),
     /* Announced as unavailable is how the two inert cases say so out loud. */
-    buyNowDisabled: await page.locator(BUY).first().getAttribute("aria-disabled").catch(() => null),
+    hostedDisabled: await page.locator(HOSTED).first().getAttribute("aria-disabled").catch(() => null),
     panel: (await page.locator("#get-my-reading").innerText().catch(() => "")).trim(),
     stripeFrames: await page.locator(STRIPE_FRAME).count(),
     /*
@@ -371,6 +427,17 @@ async function drive(
       been, this is the one that can tell a mounted element from a loaded script.
     */
     panelStripeFrames: await page.locator(`#get-my-reading ${STRIPE_FRAME}`).count(),
+    /*
+      The **identity** of those frames, which is the one thing their count
+      cannot give. Stripe names each frame it mounts `__privateStripeFrame` plus
+      a number it does not reuse, so the same names on both sides of a toggle is
+      one element that was never unmounted — where a count of 1 reads identically
+      whether the element survived or was destroyed and rebuilt. Sorted, so DOM
+      order is not part of the claim.
+    */
+    walletFrames: (
+      await page.locator(`#get-my-reading ${STRIPE_FRAME}`).evaluateAll((nodes) => nodes.map((node) => node.name))
+    ).sort(),
     /* Present in the layout at all — the row, not the button inside it. */
     walletRow: await page.locator(WALLET).count(),
     /*
@@ -396,22 +463,37 @@ async function drive(
   if (question > 0 && press) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
 
   /*
-    What a wallet press would put on the order line, read the way `questionIn`
+    Gift mode's two, filled the same way and read by the same press. They are
+    what the order line is composed from there, and an order placed from a form
+    nobody typed into would prove the plumbing and none of the composition.
+  */
+  if (answered.recipient > 0 && press && !blank) {
+    await page.locator("#get-my-reading input[name=recipientEmail]").fill(RECIPIENT);
+    await page.locator("#get-my-reading textarea[name=giftMessage]").fill(GIFT_MESSAGE);
+  }
+
+  /*
+    What a wallet press would put on the order line, read the way `orderNoteIn`
     reads it: from the row's own node, up to the form, and out of the form's
     data.
 
     **The wallet button cannot be pressed here** — no headless browser draws one
-    — so this is the only place the wallet road's question can be proved at all,
-    and it is not a detail. A wallet payment that dropped the question would
-    deliver a reading nobody asked a question of, and the customer would have no
-    way of knowing until it arrived.
+    — so this is the only place the wallet road's own reading can be proved at
+    all, and it is not a detail. A wallet payment that dropped what was typed
+    would deliver a reading nobody asked a question of, or a gift naming nobody,
+    and the customer would have no way of knowing until it arrived.
 
     What it actually guards is the row staying **inside** the order form. The
     form is `ReadingOrder`'s and the row is several components down from it; a
     later refactor that lifted the row out by one level would break every wallet
-    question silently, and nothing else here would notice.
+    payment's question silently, and nothing else here would notice.
+
+    **All three fields, raw.** `orderNoteIn` picks between them by which section
+    is mounted, and composing here as well would be this script keeping its own
+    copy of the rule — so what is read is what the form holds, and the composing
+    is proved by the order the press actually places.
   */
-  const walletWouldSend = await page
+  const walletFormReads = await page
     .locator(WALLET)
     .first()
     .evaluate((node) => {
@@ -419,9 +501,20 @@ async function drive(
 
       if (!form) return null;
 
-      const typed = new FormData(form).get("question");
+      const fields = new FormData(form);
+      // `null` for a field that is not in this section at all, which is the
+      // distinction the row's own reader turns on.
+      const read = (name) => {
+        const value = fields.get(name);
 
-      return typeof typed === "string" ? typed : null;
+        return typeof value === "string" ? value : null;
+      };
+
+      return {
+        question: read("question"),
+        recipientEmail: read("recipientEmail"),
+        giftMessage: read("giftMessage"),
+      };
     })
     .catch(() => null);
 
@@ -431,7 +524,7 @@ async function drive(
   const pressing = [];
 
   const label = async () =>
-    (await page.locator(BUY).first().innerText().catch(() => "")).trim().replace(/\s+/g, " ");
+    (await page.locator(HOSTED).first().innerText().catch(() => "")).trim().replace(/\s+/g, " ");
 
   if (press) {
     /*
@@ -441,7 +534,7 @@ async function drive(
       pointer really does land on it and really does press it. Playwright's
       actionability check would refuse to reproduce the only case this proves.
     */
-    await page.locator(BUY).first().click({ force: true });
+    await page.locator(HOSTED).first().click({ force: true });
 
     /*
       Two round trips happen before the browser leaves, and the button holds a
@@ -452,7 +545,7 @@ async function drive(
     if (holdWrites) {
       await page
         .waitForFunction(
-          () => document.querySelector("[data-buy-now]")?.getAttribute("aria-busy") === "true",
+          () => document.querySelector("[data-hosted-checkout]")?.getAttribute("aria-busy") === "true",
           null,
           { timeout: 5000 },
         )
@@ -491,12 +584,49 @@ async function drive(
       ? (await page.locator("#get-my-reading").innerText().catch(() => "")).trim()
       : "";
 
+  /*
+    **The way back, taken last.** Every other fact has been read by this point,
+    so a click this late cannot move a measurement above it — which is the only
+    reason a second press belongs in the same page as the first.
+
+    ~~It proves the half of the gate that removal cannot: `!gifting` takes the
+    row away, and a row that left and stayed gone would satisfy every assertion
+    before this one.~~ **There is no gate left to prove half of.** What the
+    return leg answers now is the question the forward leg cannot: the row is
+    present in gift mode, but is it the *same* row — one mounted element that
+    was never disturbed — or one React destroyed and Stripe rebuilt behind the
+    toggle? A rebuild is a second `js.stripe.com` element and a second mount for
+    the customer to watch flicker, so the element's own frame is counted here
+    beside the row.
+
+    The row is React's to re-render rather than Stripe's to re-fetch, so what is
+    waited for is the row attaching and not an iframe arriving inside it — and
+    the wait's expiry is a legitimate answer, left to the counts below rather
+    than thrown from here.
+  */
+  let returned = null;
+
+  if (gift && giftBack) {
+    await page.locator(LEAVE).click();
+    await page.locator(WALLET).waitFor({ state: "attached", timeout: 5000 }).catch(() => {});
+
+    returned = {
+      walletRow: await page.locator(WALLET).count(),
+      walletFrames: (
+        await page.locator(`#get-my-reading ${STRIPE_FRAME}`).evaluateAll((nodes) => nodes.map((node) => node.name))
+      ).sort(),
+      question: await page.locator("#get-my-reading textarea[name=question]").count(),
+      recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
+    };
+  }
+
   await page.close();
 
   return {
+    returned,
     afterPanel,
     resting,
-    walletWouldSend,
+    walletFormReads,
     settled: answered,
     thrown,
     placed,
@@ -575,7 +705,7 @@ assertStripeIsQuiet("live", sold);
   in Wallet, or Chrome signed into Google Pay, on a registered payment method
   domain — and this fails all three.
 */
-expect("live", "the wallet row is drawn above Buy Now", sold.settled.walletRow, 1);
+expect("live", "the wallet row is drawn above the checkout button", sold.settled.walletRow, 1);
 expect("live", "the express checkout element mounts", sold.settled.stripeFrames > 0, true);
 expect("live", "and quotes the API's money, not the bundled copy", sold.settled.walletLabel, "Pay €70 with a saved wallet");
 /*
@@ -587,12 +717,18 @@ expect("live", "with no wallet here, the row collapses to nothing", sold.settled
 expect("live", "and nothing in it is reachable", sold.settled.walletReachable, 0);
 /*
   The wallet road's question, proved where it can be: not by pressing a button
-  that will never be drawn here, but by walking the path `questionIn` walks from
-  the node it is actually handed. Both roads have to reach the order line with
-  the same sentence.
+  that will never be drawn here, but by walking the path `orderNoteIn` walks
+  from the node it is actually handed. Both roads have to reach the order line
+  with the same sentence.
 */
-expect("live", "a wallet press would read the same question off the same form", sold.walletWouldSend, QUESTION);
-expect("live", "Buy Now is in the layout while loading", sold.resting.buyNow, 1);
+expect("live", "the wallet row reads the same question off the same form", sold.walletFormReads, {
+  question: QUESTION,
+  // Absent rather than empty, and that is the discriminator: the two sections
+  // are mutually exclusive, so a form holding a question holds no recipient.
+  recipientEmail: null,
+  giftMessage: null,
+});
+expect("live", "the checkout button is in the layout while loading", sold.resting.hosted, 1);
 expect("live", "no control is reachable while loading", sold.resting.reachableControls, 0);
 expect("live", "and none is visible either", sold.resting.visibleControls, 0);
 /*
@@ -610,7 +746,7 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 */
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
-expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
+expect("live", "two frames: checkout, gift", sold.settled.ghosts, 2);
 /*
   The label alone, and the same string in every state the button is drawn in.
   The amount left this button on 29 August 2026: the panel says the price once,
@@ -619,8 +755,15 @@ expect("live", "three frames: Buy Now, redeem, gift", sold.settled.ghosts, 3);
   quotes the API — `sold.settled.price` above is — it is the assertion that it
   quotes nothing at all.
 */
-expect("live", "Buy Now is labelled, and quotes no amount", sold.settled.buyNow, "Continue to Checkout");
-expect("live", "and is offered rather than announced as unavailable", sold.settled.buyNowDisabled, "false");
+expect("live", "the checkout button is labelled, and quotes no amount", sold.settled.hosted, "Pay Another Way");
+expect("live", "and is offered rather than announced as unavailable", sold.settled.hostedDisabled, "false");
+/*
+  The frames are no longer one width. The checkout button and the wallet row
+  above it keep the column's 498px; the two under the Stripe line were pulled in to 84% of it
+  on 30 August 2026 at the client's request. This is the assertion that the
+  narrowing landed on those two and did not reach the road that takes money.
+*/
+expect("live", "the gift frames stand at 84% of the payment frames", sold.settled.giftFrameRatio, 84);
 
 if (live) {
   await browser.close();
@@ -686,46 +829,157 @@ expect("ahead", "the wallet row still stands beside the refused card road", ahea
 expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
 expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
 expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
-expect("ahead", "and the button is pressable again", ahead.afterwards, "Continue to Checkout");
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Pay Another Way");
 /* Nothing to paint a confirmation from, because nothing was confirmed. */
 expect("ahead", "nothing was remembered", ahead.record, null);
 
-const gifted = await drive("gifting — a recipient rather than a question", PRICED, priced, {
+const gifted = await drive("gifting — the wallet stays, and the order says who it is for", PRICED, priced, {
   gift: true,
   press: true,
 });
 
 /*
-  Not `assertNoWallet`. This state **is** the live state until the gift toggle is
-  pressed, so the row mounted an element and Stripe.js was fetched, both of them
-  correctly. What has to be true here is that pressing the toggle takes the
-  element away again — asserted below, beside Buy Now going the same way.
+  Not `assertNoWallet`, and from 30 August 2026 not even close to it. This state
+  **is** the live state with a different section above the buttons: the row
+  mounted an element before the toggle went down and is still holding it after,
+  which is precisely what this state used to exist to forbid.
 */
 assertStripeIsQuiet("gifting", gifted);
 expect("gifting", "the recipient's fields replace the question", gifted.settled.recipient, 1);
 expect("gifting", "and there is no question in the form at all", gifted.settled.question, 0);
-expect("gifting", "the frames still stand", gifted.settled.ghosts, 3);
-expect("gifting", "Buy Now says it is unavailable", gifted.settled.buyNowDisabled, "true");
-expect("gifting", "and says why", /gifting is not open yet/i.test(gifted.settled.panel), true);
+expect("gifting", "the frames still stand", gifted.settled.ghosts, 2);
 /*
-  The assertion this state exists for. `POST /orders` has no field for a
-  recipient email or a gift message, so one live button here charges somebody
-  for a gift delivered to themselves.
+  **The fault the client reported, and the reason the gate came off.** The
+  wallet button vanished from under a thumb the instant the gift toggle went
+  down. The row is as much of that button as a headless browser can see, and its
+  absence was the whole of the bug.
 */
-expect("gifting", "and no order can be placed", gifted.orderCalls, []);
+expect("gifting", "the wallet row is still drawn above the checkout button", gifted.settled.walletRow, 1);
+expect("gifting", "still holding the element it mounted", gifted.settled.panelStripeFrames > 0, true);
+expect("gifting", "and still quoting the API's money", gifted.settled.walletLabel, "Pay €70 with a saved wallet");
 /*
-  The wallet goes with Buy Now here, and is the worse of the two to leave live:
-  it takes the money the instant a face is recognised, with no second press
-  between the customer and a gift delivered to themselves.
+  The checkout button came off the same gate in the same change. One live control beside one
+  inert one is the odder panel of the two, and the note underneath answers for
+  neither of them any more.
 */
-expect("gifting", "and there is no wallet to press either", gifted.settled.walletRow, 0);
+expect("gifting", "the checkout button is buyable here too", gifted.settled.hostedDisabled, "false");
 /*
-  The row leaving the DOM and the element being destroyed are two facts, and
-  only the second one is about Stripe. An element left mounted under a removed
-  row is still an element listening for a confirmation.
+  Counted rather than merely found, because **once** is the fact worth holding:
+  a second note is the option this was built instead of, and a presence test
+  passes just as green with two of them.
+
+  **What it can and cannot prove.** It counts one sentence, so a second note in
+  different words goes by it untouched. What it catches is the regression that
+  would actually happen, which is this sentence growing a twin.
 */
-expect("gifting", "and the element it held was destroyed with it", gifted.settled.panelStripeFrames, 0);
-expect("gifting", "so the browser stays where it is", gifted.landed, PAGE);
+expect("gifting", "and the note says what is different, once", (gifted.settled.panel.match(/still being set up/gi) ?? []).length, 1);
+expect("gifting", "promising a person rather than a delay", /arrange delivery with you by email/i.test(gifted.settled.panel), true);
+/*
+  **The negative that keeps the copy honest.** Both superseded wordings told the
+  customer there was no way to pay for a gift, and the panel now takes their
+  money — so the sentence that used to be the point of this state is the one
+  thing it may never say again. A revision that reinstated it would leave a
+  refusal standing under a button that charges.
+*/
+expect("gifting", "and never that gifting cannot be paid for", /no way to pay/i.test(gifted.settled.panel), false);
+/*
+  The wallet road's own read, from the row's node up to the form — the only
+  proof there is that a wallet press in gift mode would carry the recipient,
+  since no headless browser draws a button to press. Raw, because composing here
+  would be this script keeping a second copy of `orderNoteIn`'s rule.
+*/
+expect("gifting", "the wallet row reads the recipient off the same form", gifted.walletFormReads, {
+  // Absent, not empty: the two sections are mutually exclusive, and it is this
+  // field's absence that tells `orderNoteIn` which one it is looking at.
+  question: null,
+  recipientEmail: RECIPIENT,
+  giftMessage: GIFT_MESSAGE,
+});
+/*
+  **The assertion this state now exists for.** `POST /orders` has no field for a
+  recipient or a message, so an order placed here carries them or carries
+  nothing — and an order carrying nothing is indistinguishable from somebody
+  buying a reading for themselves, which is the reading Jennifer would act on.
+*/
+expect("gifting", "the press places one order", gifted.placed.length, 1);
+expect("gifting", "carrying the recipient and the message as the line's one string", gifted.placed[0]?.lines?.[0]?.question, GIFT_NOTE);
+expect("gifting", "then pays it by the same road a self-purchase takes", gifted.paid[0]?.body, {
+  return_to: "month-ahead",
+  method: "stripe",
+});
+expect("gifting", "and the browser goes where Stripe said", gifted.landed, SESSION_URL);
+/*
+  Written before the navigation, as on every other road, and **flagged**. The
+  note is kept — support and the confirmation both want to know what was bought
+  and for whom — but `questionFor` refuses to hand it back to the question
+  textarea after a cancelled checkout, and this flag is the only thing that
+  tells it a composed note from a typed sentence. See `lib/checkout-session.ts`.
+*/
+expect("gifting", "with the gift remembered before it went, and marked as one", gifted.record, {
+  payToken: PAY_TOKEN,
+  money: { currency: "EUR", amount: 7000 },
+  sessionId: SESSION_ID,
+  productKey: "month-ahead",
+  question: GIFT_NOTE,
+  gift: true,
+});
+
+const unaddressed = await drive("gifting — a gift addressed to nobody cannot be paid for", PRICED, priced, {
+  gift: true,
+  press: true,
+  blank: true,
+});
+
+/*
+  **The state the guard exists for**, and the one that was reachable until 30
+  August 2026 in the same change that made gift mode buyable. Nothing submits
+  this form, so the `required` on the recipient's address is enforced by nobody
+  unless something asks — and without asking, a buyer toggles to gift, presses,
+  and is charged for a gift addressed to no one. `giftNote` would have recorded
+  the absence rather than prevented it.
+
+  Pressed with the fields left as the toggle produced them, which is the whole
+  point: this is not a malformed address, it is a buyer who never typed one.
+*/
+assertStripeIsQuiet("unaddressed", unaddressed);
+expect("unaddressed", "the recipient's field is there and empty", unaddressed.settled.recipient, 1);
+expect("unaddressed", "no order is placed", unaddressed.orderCalls, []);
+expect("unaddressed", "nothing is paid for", unaddressed.paid, []);
+expect("unaddressed", "the browser stays where it is", unaddressed.landed, PAGE);
+/*
+  And the button is not left holding a pending state for a press it refused —
+  which would read as a checkout in flight that never arrives.
+*/
+expect("unaddressed", "and the button is pressable again", unaddressed.afterwards, "Pay Another Way");
+
+/*
+  **A page of its own, and it has to be.** The press above leaves for Stripe,
+  so there is no panel on the other side of it to toggle back — which is exactly
+  why the old single state could assert both: nothing it pressed ever went
+  anywhere.
+*/
+const toggled = await drive("gifting — the row survives the toggle, both ways", PRICED, priced, {
+  gift: true,
+  giftBack: true,
+});
+
+assertStripeIsQuiet("toggling", toggled);
+expect("toggling", "the row is there with the gift toggle down", toggled.settled.walletRow, 1);
+expect("toggling", "and still there on the way back out", toggled.returned.walletRow, 1);
+/*
+  **The half no count can settle**, and the reason the frames are read by name.
+  A row rebuilt behind each toggle counts 1 exactly as a row left alone does,
+  and the difference is a second Stripe mount the customer watches flicker every
+  time they change their mind.
+
+  Two assertions rather than one, because equality alone passes just as green on
+  a panel with no frames in it at all: the first says there was something to
+  survive, and the second that it did.
+*/
+expect("toggling", "the element has frames of its own with the toggle down", toggled.settled.walletFrames.length > 0, true);
+expect("toggling", "and they are the same frames on the way back, never rebuilt", toggled.returned.walletFrames, toggled.settled.walletFrames);
+expect("toggling", "with the question field the recipient's replaced", toggled.returned.question, 1);
+expect("toggling", "and the recipient's fields gone with it", toggled.returned.recipient, 0);
 
 const gone = await drive("withdrawn — a 404", WITHDRAWN, unsold);
 
@@ -741,11 +995,11 @@ assertNoWallet("unreachable", dead);
 expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
 /*
   The frame stays whole — a visitor arriving while the API is down should not
-  meet a hole where the checkout is. None of the three can take money.
+  meet a hole where the checkout is. Neither of the two can take money.
 */
-expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 3);
-expect("unreachable", "Buy Now is the same label it is everywhere", dead.settled.buyNow, "Continue to Checkout");
-expect("unreachable", "and says it is unavailable", dead.settled.buyNowDisabled, "true");
+expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 2);
+expect("unreachable", "the checkout button is the same label it is everywhere", dead.settled.hosted, "Pay Another Way");
+expect("unreachable", "and says it is unavailable", dead.settled.hostedDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a
   reading the catalogue prices at EUR 7000: no currency, and a number nobody has
@@ -767,8 +1021,8 @@ const unoffered = await drive("no wallet offered — an environment with no Stri
   that says so; the wallet does not.
 */
 assertNoWallet("no wallet offered", unoffered);
-expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 3);
-expect("no wallet offered", "and still takes money", unoffered.settled.buyNowDisabled, "false");
+expect("no wallet offered", "the card button stands alone", unoffered.settled.ghosts, 2);
+expect("no wallet offered", "and still takes money", unoffered.settled.hostedDisabled, "false");
 
 /**
  * A record for a checkout that was cancelled at Stripe. Everything the page
@@ -795,7 +1049,7 @@ assertStripeIsQuiet("cancelled", back);
 */
 expect("cancelled", "the question is back in the box", back.settled.restored, QUESTION);
 expect("cancelled", "and the counter agrees with it", back.settled.counter, `${QUESTION.length}/500`);
-expect("cancelled", "the panel is offering the reading again", back.settled.buyNowDisabled, "false");
+expect("cancelled", "the panel is offering the reading again", back.settled.hostedDisabled, "false");
 
 const elsewhere = await drive("cancelled elsewhere — a record from another reading", PRICED, priced, {
   cancelled: cancelledCheckout("three-card"),

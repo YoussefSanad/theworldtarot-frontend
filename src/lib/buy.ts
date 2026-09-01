@@ -77,8 +77,35 @@ type Bought = {
   /** The reading being bought, and the page a cancelled checkout returns to. */
   productKey: string;
   money: Money;
-  /** What the customer typed, if anything. Optional on every product. */
+  /**
+   * What the customer typed, if anything. Optional on every product.
+   *
+   * **The wire field is `question` and what reaches it is not always one.** In
+   * gift mode the panel composes the recipient and the message into this same
+   * string, because `POST /orders` has no field of its own for either and the
+   * line's `question` is what the admin orders table prints. Nothing here
+   * inspects it — it is one string to trim and forward on both roads — but the
+   * name is the backend's rather than a description of the contents. See
+   * `lib/order-note.ts`.
+   */
   question?: string;
+  /**
+   * Whether `question` above is a composed gift note rather than a typed
+   * question. **It reaches the record and never the order** — `POST /orders`
+   * has no field for it and would not know what to do with one; see
+   * `questionFor` in `checkout-session.ts` for what the record does with it.
+   *
+   * It is here rather than worked out from the string because the panel already
+   * knows: `orderNoteIn` answers it as it composes, and a `startsWith("Gift")`
+   * anywhere downstream would be this flag inferred badly.
+   *
+   * **Flat beside `question` rather than the `OrderNote` the panel reads**, and
+   * this is where the pair legitimately parts: one of them is a field on the
+   * order and the other is a field on the record, and the two round trips this
+   * module makes send them to different places. A caller passes what it read;
+   * what it is *for* is decided here.
+   */
+  gift?: boolean;
 };
 
 /**
@@ -126,6 +153,7 @@ export async function startCheckout({
   productKey,
   money,
   question,
+  gift,
 }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
@@ -172,6 +200,12 @@ export async function startCheckout({
     productKey,
     ...(sessionId === null ? {} : { sessionId }),
     ...(asked === undefined ? {} : { question: asked }),
+    // Absent on a self-purchase rather than `false`, so a record carries the
+    // same keys it always has unless there is something new to say. Written the
+    // same way on the wallet road below; the two records are built separately
+    // and a flag added to one and forgotten on the other is a gift note in a
+    // question box on whichever road the customer happened to take.
+    ...(gift ? { gift: true } : {}),
   });
 
   return instruction.redirectUrl;
@@ -211,6 +245,7 @@ export async function startWalletPayment({
   productKey,
   money,
   question,
+  gift,
 }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
@@ -230,6 +265,7 @@ export async function startWalletPayment({
     productKey,
     clientSecret: instruction.clientSecret,
     ...(asked === undefined ? {} : { question: asked }),
+    ...(gift ? { gift: true } : {}),
   });
 
   return instruction.clientSecret;

@@ -6,6 +6,12 @@
 > and `StripeCheckout`, and in `lib/orders.ts` here. **All of them say a hosted
 > page cannot deliver the design. That was true of the design as it stood.**
 >
+> **Naming, 31 August 2026.** This file's "card button" and "Buy Now" are both
+> superseded as names: the control is `HostedCheckoutButton` in the code and
+> "the checkout button" in prose, fixed in `CONTEXT.md`. The title stands as
+> written — the decision it records is the card road going to a hosted page, and
+> that is unaffected by what the control is called.
+>
 > **Amended the same day, before either half shipped.** An earlier draft of this
 > file was titled "…and the wallet leaves the reading page" and struck the
 > express checkout element from `CONTEXT.md`. **The client asked for the wallet

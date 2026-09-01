@@ -19,7 +19,24 @@ export type ImageAsset = {
 const asset = (src: string, width: number, height: number): ImageAsset => ({ src, width, height });
 
 export const brand = {
-  logo: asset("/figma/logo.webp", 401, 209),
+  /**
+   * The one mark in here that is not a Figma export: the client's own vector
+   * wordmark, cropped to the letters.
+   *
+   * `logo.webp` drew the same words inside a pale starfield swirl, and 401x209
+   * was mostly that swirl — the cream measured 400x74 of it, flush to both
+   * side edges. So the box changes shape (1.92:1 to 5.52:1) while the words do
+   * not: every caller sizes this by width, and at the width each already sets
+   * the wordmark lands the size it always was. What goes is the halo, and with
+   * it the height the halo needed — see `SiteHeader`, whose masthead is no
+   * longer the tallest thing on a phone.
+   *
+   * SVG, and the only one on the site. `images.unoptimized` is on for the
+   * static export, so `next/image` writes a plain `<img>` and none of the
+   * optimizer's SVG handling — `dangerouslyAllowSVG` and the CSP that should
+   * come with it — is in play.
+   */
+  logo: asset("/wt-logo.svg", 426, 77),
   livingTarotBadge: asset("/figma/living-tarot-badge.webp", 271, 33),
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),
@@ -63,8 +80,20 @@ export const checkout = {
   googlePay: asset("/figma/google-pay-logo.webp", 128, 51),
   card: asset("/figma/card-icon.webp", 49, 35),
   lock: asset("/figma/lock-icon.webp", 19, 27),
-  redeem: asset("/figma/redeem-icon.webp", 52, 52),
   gift: asset("/figma/gift-icon.webp", 53, 54),
+  /**
+   * What `gift` becomes while the order *is* a gift, beside the label that
+   * leaves gift mode. The client's set has no mark for it, so this one is
+   * drawn — an SVG rather than a `.webp`, which the export serves as-is
+   * because `images.unoptimized` is on and Next hands a local SVG straight to
+   * an `<img>`.
+   *
+   * **54 tall, like `gift`.** `Mark` sizes on width and the browser holds the
+   * ratio, so matching the height is what keeps the frame from resizing as the
+   * label changes; the width differs because a card is portrait and a box is
+   * square.
+   */
+  selfReading: asset("/figma/self-reading-icon.svg", 38, 54),
 } as const;
 
 export const icons = {

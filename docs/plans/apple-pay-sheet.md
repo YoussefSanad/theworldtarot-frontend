@@ -65,7 +65,7 @@ that stops the client's own Apple Pay artwork from shipping stops us restyling S
 |---|---|---|
 | theme | element options | `white-outline` — the only one of Apple's three that reads as belonging beside a gold-outlined frame on a dark panel |
 | type | element options | `buy` — one reading bought outright, not a basket checked out |
-| height | element options | `55`, Stripe's ceiling, and still short of the frames' 78px |
+| height | element options | measured off a frame and clamped into Stripe's 40-55 range — see `useFrameHeight`. ~~`55`, Stripe's ceiling, and still short of the frames' 78px.~~ The frames were clamped into the same range on 30 August 2026, so the two now agree at every width |
 | border radius | `appearance.variables` | `25px`, the site's resting radius |
 | the gold | nowhere | — |
 
@@ -181,7 +181,9 @@ live          €70 · three client frames · the element mounts
               settled height === loading height — the collapsed row costs the column no gap
               one press: order placed, /pay told method "stripe", record written, browser leaves
 ahead         a /pay answer this build cannot read: nothing charged, button pressable again
-gifting       the row comes off, and the element it held is destroyed with it
+gifting       ~~the row comes off, and the element it held is destroyed with it~~
+              from 30 August 2026 the row stays, holding the same element across both toggles
+              one press: order placed, the line carrying "Gift — send this reading to …"
 withdrawn     no price · no controls · no question · anchor lands · no row, and no js.stripe.com
 unreachable   "$75" as copy · three client frames · no row · no js.stripe.com
 no wallet     the API offers none: the card button stands alone and still takes money

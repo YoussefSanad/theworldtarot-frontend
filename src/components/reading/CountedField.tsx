@@ -13,8 +13,9 @@ import { cn } from "@/lib/cn";
  * exceeded, and in the counter, so the visitor sees it coming — and both take
  * the same number from `questionLimit`.
  *
- * Uncontrolled apart from the count. Buy Now reads the question off the form
- * at the moment it is pressed (see `BuyNow`), and holding a controlled value
+ * Uncontrolled apart from the count. The checkout button reads the question off
+ * the form at the moment it is pressed (see `HostedCheckoutButton`), and holding
+ * a controlled value
  * here would re-render the whole order form on every keystroke to save it the
  * trouble.
  *
@@ -30,6 +31,7 @@ export function CountedField({
   required = false,
   rows,
   autoFocusOnMount = false,
+  suppressAutofill = false,
   defaultValue,
   className,
 }: {
@@ -42,6 +44,14 @@ export function CountedField({
   rows?: number;
   /** Takes focus when it mounts, so a section that swaps under the visitor lands them in it. */
   autoFocusOnMount?: boolean;
+  /**
+   * Keeps the browser from offering the visitor's own saved details here.
+   *
+   * For the gift field, where the address wanted is somebody else's and the
+   * one Chrome has on file is exactly the wrong answer. See the note by
+   * `opaqueName`.
+   */
+  suppressAutofill?: boolean;
   /**
    * What the field starts with. Uncontrolled still: this is the mounting
    * value, applied once, and the visitor owns it from then on.
@@ -69,9 +79,31 @@ export function CountedField({
     className,
   );
 
+  /*
+    Chrome does not take `autocomplete="off"` at its word on a box it has
+    already decided is an email field: it classifies by name and id as well,
+    and `recipientEmail` is all the excuse it needs to prompt the purchaser
+    with their own address — the one address this field does not want.
+
+    So the field goes to the browser effectively nameless. What it submits is
+    React's opaque id, which carries no hint of what the box is for, and the
+    name the app knows the field by moves to `data-field`, where anything
+    reading this form can still find it. `useId` renders the same string on
+    the server and the client, so this costs no hydration.
+
+    The rest is the same suppression said in the other dialects the visitor
+    might have installed: `data-1p-ignore` for 1Password, `data-lpignore` for
+    LastPass, `data-form-type` for Dashlane and Bitwarden.
+  */
+  const opaqueName = `f${id.replace(/[^a-zA-Z0-9]/g, "")}`;
+
   const shared = {
     id,
-    name,
+    name: suppressAutofill ? opaqueName : name,
+    "data-field": name,
+    ...(suppressAutofill
+      ? { "data-1p-ignore": true, "data-lpignore": "true", "data-form-type": "other" }
+      : null),
     placeholder,
     required,
     defaultValue,
@@ -93,7 +125,7 @@ export function CountedField({
       </label>
 
       {rows === undefined ? (
-        <input type="email" autoComplete="email" {...shared} />
+        <input type="email" autoComplete={suppressAutofill ? "off" : "email"} {...shared} />
       ) : (
         <textarea rows={rows} {...shared} className={cn(field, "resize-y")} />
       )}
