@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { products as bundledProducts, type Product } from "@/content/home";
 
-import { fetchProducts, type ApiProduct } from "./api";
-import { currentLocale } from "./locale";
+import type { ApiProduct } from "./api";
+import { useCatalogue } from "./catalogue";
 import { formatPrice } from "./price";
 
 /**
@@ -97,37 +97,17 @@ export function resolveProducts(live: ApiProduct[] | null): Product[] {
 /**
  * The tiles to render, live once the backend has answered.
  *
- * **Never fetched at build time**, which is not optional: prices are resolved
- * per visitor from their country, so a baked response ships one country's
- * currency to everybody. See the rule at the top of `lib/api.ts`.
+ * The fetch itself lives in `lib/catalogue.ts`, which holds one answer for
+ * every surface that prices something and re-asks it when the visitor chooses a
+ * different currency. What is left here is the join, which is this file's own
+ * question: which tiles exist, and what they say.
  *
- * Returns the bundled tiles on the first render, which is also what the
- * exported HTML contains, so there is no hydration mismatch and the section is
+ * Returns the bundled tiles before the first answer, which is also what the
+ * exported HTML contains — so there is no hydration mismatch and the section is
  * never empty.
  */
 export function useProducts(): Product[] {
-  const [live, setLive] = useState<ApiProduct[] | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    // Asked for explicitly rather than left to `fetchProducts`'s default, so
-    // the copy and the prices are read in the same language: `formatPrice`
-    // already formats against `currentLocale()`, and a second language added
-    // there but not here would write Spanish prices under English copy.
-    fetchProducts({ locale: currentLocale(), signal: controller.signal })
-      .then(setLive)
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-
-        // Loud here and invisible to the visitor: the bundled tiles stay on
-        // screen, so a broken API looks like a working homepage. Without this
-        // line it would look like one to us too.
-        console.error("Could not reach the API for products, showing the bundled tiles.", error);
-      });
-
-    return () => controller.abort();
-  }, []);
+  const live = useCatalogue();
 
   return useMemo(() => resolveProducts(live), [live]);
 }
