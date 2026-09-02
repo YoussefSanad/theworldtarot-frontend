@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 import { fetchProducts, type ApiProduct } from "./api.ts";
-import { rememberResolvedCurrency, useCurrency } from "./currency.ts";
+import { currencySelection, rememberResolvedCurrency, useCurrency } from "./currency.ts";
 import { currentLocale } from "./locale.ts";
 
 /**
@@ -135,13 +135,36 @@ export async function askCatalogue(currency: string | null): Promise<void> {
  * **Never fetched at build time**, which is not optional: prices resolve per
  * visitor, so a baked response ships one country's currency to everybody. See
  * the rule at the top of `lib/api.ts`.
+ *
+ * ## The effect asks the store, not the render it was scheduled from
+ *
+ * `chosen` is the dependency and **`currencySelection()` is the value**, which
+ * looks like a redundancy and is the opposite of one.
+ *
+ * The hydration render is required to report "nothing chosen": the export was
+ * built that way, so `currencySelectionOnServer` is what the first client paint
+ * must adopt or it disagrees with the HTML underneath it. An effect closing over
+ * *that* render's `chosen` therefore asks cold for every visitor, including one
+ * who chose GBP yesterday — and then asks a second time when the store reads
+ * storage and the dependency changes.
+ *
+ * Two calls on every reload, and the first of them a request for a currency the
+ * visitor did not want, whose answer paints detected prices for a beat before
+ * the second corrects them. Fact 1 of the plan's "What proves it" says a chosen
+ * currency rides on **every** product request; that first one carried none.
+ *
+ * **Found by driving it, not by reading it** — step 11, against staging, and
+ * `check:currency`'s "returning" state is where it now lives. Reading the store
+ * inside the effect costs nothing and closes both: by the time an effect runs,
+ * `localStorage` is readable, so the first ask is the right one and the
+ * dependency change that follows is absorbed by `askCatalogue`'s own guard.
  */
 export function useCatalogue(): ApiProduct[] | null {
   const { chosen } = useCurrency();
   const live = useSyncExternalStore(subscribe, catalogue, catalogueOnServer);
 
   useEffect(() => {
-    void askCatalogue(chosen);
+    void askCatalogue(currencySelection().chosen);
   }, [chosen]);
 
   return live;

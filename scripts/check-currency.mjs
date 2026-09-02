@@ -363,6 +363,30 @@ console.log("\nreadings — both surfaces move from one call");
   await page.close();
 }
 
+/* ── returning ───────────────────────────────────────────────────────────── */
+
+console.log("\nreturning — a visitor who chose on a previous page load");
+{
+  // Not a press: this is what a reload looks like to the bundle, and it is the
+  // state the browser pass of step 11 found a second request hiding in.
+  const { page, asked } = await open("/", { seed: { "currency.chosen": "GBP", "currency.resolved": "GBP" } });
+
+  await repricedTo(page, "article a[aria-label]", "£");
+  await page.waitForTimeout(600);
+
+  /*
+    **One call, carrying the choice.** The hydration render has to report
+    "nothing chosen" — the export was built that way and the first client paint
+    must agree with it — so an effect that closes over that render's value asks
+    cold, and asks again when the store loads. Fact 1 says *every* product
+    request carries a chosen currency, and the first of those two carried none.
+  */
+  expect("returning", "the reload cost one catalogue call", asked.length, 1);
+  expect("returning", "and it carried the choice", sent(asked), ["GBP"]);
+
+  await page.close();
+}
+
 /* ── resolved ────────────────────────────────────────────────────────────── */
 
 console.log("\nresolved — remembered, highlighted, and never sent");
