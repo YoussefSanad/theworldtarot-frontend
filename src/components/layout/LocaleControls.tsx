@@ -5,9 +5,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { cn } from "@/lib/cn";
-import type { ApiCurrency } from "@/lib/api";
+import type { ApiCurrency, ApiLanguage } from "@/lib/api";
 import { highlightedCurrency, useCurrency } from "@/lib/currency";
 import { useCurrencyOptions } from "@/lib/currencies";
+import { useLanguageOptions } from "@/lib/languages";
 import { currentLocale } from "@/lib/locale";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
@@ -58,23 +59,25 @@ export type SelectOption = {
 };
 
 /**
- * Placeholder options.
+ * One language as a row in either control.
  *
- * **The site is English-only today.** The three besides English are here so the
- * control can be shown working, and are the one thing in this file that is
- * knowingly untrue — the real list is whatever `/api/v1/languages` answers, and
- * the control renders nothing at all while that list holds a single entry.
+ * **`native_name` over `label`.** A language switcher is one of the few
+ * controls read by people who cannot read the language it is currently in,
+ * which is exactly when "Español" works and "Spanish" does not. The backend
+ * does not send the field yet — `YoussefSanad/TheWorldTarot#66` asks for it —
+ * so this reads the English name until the day it ships, and then stops.
  *
  * No flags, on purpose. A flag names a country and these name languages, which
- * are not the same set; and a colour bitmap would be the only saturated thing in
- * a header drawn entirely in gold on night.
+ * are not the same set; and a colour bitmap would be the only saturated thing
+ * in a header drawn entirely in gold on night.
  */
-export const LANGUAGE_OPTIONS: SelectOption[] = [
-  { value: "en", label: "English", short: "EN" },
-  { value: "es", label: "Español", short: "ES" },
-  { value: "fr", label: "Français", short: "FR" },
-  { value: "de", label: "Deutsch", short: "DE" },
-];
+function languageRows(languages: readonly ApiLanguage[]): SelectOption[] {
+  return languages.map(({ code, label, native_name }) => ({
+    value: code,
+    label: native_name ?? label,
+    short: code.toUpperCase(),
+  }));
+}
 
 /**
  * One currency as a row in either control.
@@ -138,10 +141,14 @@ export function useLocaleSelection(): LocaleSelection {
 export function LocaleControls({ selection, className }: { selection: LocaleSelection; className?: string }) {
   const { language, currency, setLanguage, setCurrency } = selection;
   const currencies = useCurrencyOptions();
+  const languages = useLanguageOptions();
 
   return (
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
-      <SegmentRow label="Language" options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
+      {/* Empty until there are two languages to choose between — see `lib/languages.ts`. */}
+      {languages.length > 0 ? (
+        <SegmentRow label="Language" options={languageRows(languages)} value={language} onChange={setLanguage} />
+      ) : null}
       <SegmentRow label="Currency" options={currencyRows(currencies)} value={currency} onChange={setCurrency} />
     </div>
   );
@@ -167,6 +174,8 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
 export function LocaleMenu({ selection, className }: { selection: LocaleSelection; className?: string }) {
   const { language, currency, setLanguage, setCurrency } = selection;
   const currencies = useCurrencyOptions();
+  const languages = useLanguageOptions();
+  const hasLanguages = languages.length > 0;
   const [open, setOpen] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -247,15 +256,32 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: EASE_VEIL }}
           >
+            {/*
+              Both the group and the hairline under it go when there is nothing
+              to choose between — a divider above the only group in the panel
+              would be a rule under a heading that is not there. The globe
+              itself stays either way: its panel then holds Currency alone,
+              which is a smaller control and not a missing one.
+            */}
+            {hasLanguages ? (
+              <>
+                <LocaleGroup
+                  label="Language"
+                  options={languageRows(languages)}
+                  value={language}
+                  onChange={setLanguage}
+                  autoFocus={open}
+                />
+                <div className="my-[0.3em] border-t border-(--edge-gold)" />
+              </>
+            ) : null}
             <LocaleGroup
-              label="Language"
-              options={LANGUAGE_OPTIONS}
-              value={language}
-              onChange={setLanguage}
-              autoFocus={open}
+              label="Currency"
+              options={currencyRows(currencies)}
+              value={currency}
+              onChange={setCurrency}
+              autoFocus={open && !hasLanguages}
             />
-            <div className="my-[0.3em] border-t border-(--edge-gold)" />
-            <LocaleGroup label="Currency" options={currencyRows(currencies)} value={currency} onChange={setCurrency} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -275,7 +301,11 @@ function LocaleGroup({
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
-  /** Focuses the current choice the moment the panel opens. Only the first group takes this. */
+  /**
+   * Focuses the current choice the moment the panel opens. Only whichever group
+   * is drawn first takes it, which is Language where there is one and Currency
+   * where there is not.
+   */
   autoFocus?: boolean;
 }) {
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);

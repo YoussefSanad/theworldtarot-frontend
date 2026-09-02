@@ -28,6 +28,26 @@ export const DEFAULT_LOCALE = "en";
 export type Locale = string;
 
 /**
+ * The locales this export actually contains.
+ *
+ * **One half of the switcher's intersection**, and the half that only a deploy
+ * can change. `docs/adr/0004-language-is-a-path-segment.md` argues the whole
+ * rule: a static export cannot grow a route from a fetch, so a language must be
+ * in here *and* in the live `GET /api/v1/languages` answer before it may be
+ * offered. Taking Spanish down at the backend then removes it from every
+ * switcher on the next request with no deploy of ours, which is the property
+ * `API_CONTRACT.md` says it cannot enforce for us; what the intersection cannot
+ * do is make a language appear without one, and that costs nothing, because a
+ * language we have not built has no copy to show.
+ *
+ * English alone today, which is why the switcher is invisible however many
+ * languages the backend answers. #69 grows this list alongside the `[locale]`
+ * segment and the copy, and it is deliberately the same edit — a locale in here
+ * with no route behind it is a link to a 404.
+ */
+export const BUILT_LOCALES: readonly Locale[] = [DEFAULT_LOCALE];
+
+/**
  * The locale to read the site in.
  *
  * A function rather than a constant because the thing it returns is about to
