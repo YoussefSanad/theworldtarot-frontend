@@ -153,6 +153,40 @@ export function rememberResolvedCurrency(code: string): void {
 }
 
 /**
+ * What a visitor is priced in before anything at all is known about them.
+ *
+ * Only ever a highlight, never a request: a **cold** visitor still sends no
+ * `?currency=`, and the backend answers them from `CF-IPCountry`. This is the
+ * label the control wears for the one paint between hydration and the first
+ * response, and on a page that fetches no product and has nothing remembered.
+ *
+ * USD because that is what the bundled strings in `content/home.ts` and
+ * `content/readings.ts` are written in, so the highlight agrees with the prices
+ * beside it while both are still bundled copy.
+ */
+export const FALLBACK_CURRENCY = "USD";
+
+/**
+ * Which row the control draws as chosen.
+ *
+ * **resolved first, and that ordering is the rule.** It is what the visitor is
+ * actually being charged in — the backend honours a **chosen** currency it
+ * sells in and falls back to its own where it does not, so highlighting the
+ * request rather than the answer would tell somebody who asked for JPY that
+ * they are paying in JPY when they are paying in USD.
+ *
+ * **chosen** covers the gap before any answer, so the row a visitor just
+ * pressed highlights on the press instead of a round trip later. The constant
+ * covers the visitor who has neither — see `FALLBACK_CURRENCY`.
+ *
+ * Pure, and exported apart from the hook so the rule can be exercised without
+ * mounting a header.
+ */
+export function highlightedCurrency({ chosen, resolved }: CurrencySelection): string {
+  return resolved ?? chosen ?? FALLBACK_CURRENCY;
+}
+
+/**
  * Drops the in-memory copy so the next read comes from storage again.
  *
  * What a page load does implicitly, and the seam a test needs to simulate one —

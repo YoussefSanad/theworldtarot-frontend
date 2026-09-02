@@ -5,27 +5,31 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { cn } from "@/lib/cn";
+import { highlightedCurrency, useCurrency } from "@/lib/currency";
+import { currentLocale } from "@/lib/locale";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
 /**
- * The language and currency selectors, as chrome only.
+ * The language and currency selectors.
  *
- * **Nothing here is wired to anything yet, and that is the whole scope.**
- * Choosing changes what the control says and nothing else — no request carries
- * the choice, no price re-renders, no route changes, and nothing is remembered
- * between page loads. This exists so the controls can be seen, laid out and
- * approved before the plumbing behind them is built.
+ * **Currency is wired and language is not.** That is the shape of the pair
+ * rather than an unfinished edge — they were always going to be two different
+ * mechanisms, and only one of them is a thing this app can do on its own:
  *
- * What each one becomes is already decided and they are not the same thing:
- *
+ * - **Currency is a preference**, sent as `?currency=` on the product fetch and
+ *   kept in `localStorage`. Choosing one re-prices the homepage tiles and both
+ *   readings-index surfaces from a single call, and survives a reload. The site
+ *   never converts a price itself; the backend holds a real price per currency.
+ *   `lib/currency.ts` holds the choice and `lib/catalogue.ts` re-asks on it
  * - **Language is a route**, so its options become `Link`s to a locale segment
  *   and the list comes from `GET /api/v1/languages`. A client-side toggle would
  *   leave `html lang` reading `en` over Spanish copy and would be invisible to
- *   crawlers, which is why it is not one. See `lib/locale.ts`
- * - **Currency is a preference**, sent as `?currency=` on the product fetch and
- *   kept in `localStorage`. The site never converts a price itself; the backend
- *   holds a real price per currency. See `docs/plans/products-api-wiring.md`
+ *   crawlers, which is why it is not one. The segment itself is deferred to
+ *   #69, so `setLanguage` does nothing today. See `lib/locale.ts` and
+ *   `docs/adr/0004-language-is-a-path-segment.md`
+ *
+ * See `docs/plans/language-and-currency-selector.md` for the whole route.
  *
  * The selection is held by whoever renders this rather than inside it, because
  * the header shows these twice — as one icon and its panel on desktop and as
@@ -89,18 +93,42 @@ export type LocaleSelection = {
 };
 
 /**
- * Where the choice lives, for now.
+ * Language does not move yet, so this is where that is written down rather than
+ * a `setLanguage` that silently does nothing.
  *
- * Plain state, so a refresh forgets it. The body of this hook is what gets
- * replaced when the choice becomes real — a route segment for the language and a
- * stored preference for the currency — and every call site reading it as a hook
- * today is a call site that needs no edit then.
+ * Unreachable in practice: the language group is drawn only at two entries or
+ * more, and `/languages` answers one. It exists because `LocaleSelection` is
+ * one shape for both halves, and because the day #69 lands this is the line
+ * that becomes a navigation.
+ */
+const LANGUAGE_DOES_NOT_MOVE_YET = (): void => {};
+
+/**
+ * Where the choice lives.
+ *
+ * **This hook was always the seam**, and replacing its body is the whole of the
+ * wiring — both call sites in `SiteHeader` needed no edit, which is what the
+ * plain state it used to hold was standing in for.
+ *
+ * The two halves come from different places and neither is component state:
+ *
+ * - **Currency** reads `lib/currency.ts`, a module-scoped store, because the
+ *   header renders this twice and the things that act on the choice are `lib/`
+ *   modules that are not the header's descendants. `highlightedCurrency` is the
+ *   rule for which row is drawn as chosen, and it prefers what the backend
+ *   resolved over what was asked for
+ * - **Language** reads `currentLocale()`, which is `"en"` until #69 puts a
+ *   segment in the path
  */
 export function useLocaleSelection(): LocaleSelection {
-  const [language, setLanguage] = useState("en");
-  const [currency, setCurrency] = useState("USD");
+  const { chosen, resolved, choose } = useCurrency();
 
-  return { language, currency, setLanguage, setCurrency };
+  return {
+    language: currentLocale(),
+    currency: highlightedCurrency({ chosen, resolved }),
+    setLanguage: LANGUAGE_DOES_NOT_MOVE_YET,
+    setCurrency: choose,
+  };
 }
 
 /** The mobile drawer's shape: both groups flat, every option one tap away. */

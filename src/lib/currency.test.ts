@@ -6,6 +6,7 @@ import {
   currencySelection,
   currencySelectionOnServer,
   forgetCurrency,
+  highlightedCurrency,
   rememberResolvedCurrency,
   subscribeToCurrency,
 } from "./currency.ts";
@@ -147,4 +148,31 @@ test("a browser that refuses storage still takes a choice for this page load", (
   // The write is lost on reload, which is a worse experience and not a broken
   // one. What must not happen is the switch throwing into the header.
   assert.equal(currencySelection().chosen, "GBP");
+});
+
+test("the control highlights what the backend resolved, which is what the visitor is being charged", () => {
+  assert.equal(highlightedCurrency({ chosen: "GBP", resolved: "GBP" }), "GBP");
+});
+
+test("a choice highlights immediately, before any request has answered it", () => {
+  // The press has to land on screen now. Waiting for the round trip would leave
+  // the row the visitor just clicked unhighlighted for its length.
+  assert.equal(highlightedCurrency({ chosen: "GBP", resolved: null }), "GBP");
+});
+
+test("resolved wins over chosen, so a currency the backend refused does not sit highlighted", () => {
+  // The backend honours a chosen currency it sells in and falls back where it
+  // does not. Highlighting the request rather than the answer would say the
+  // visitor is being charged in something they are not.
+  assert.equal(highlightedCurrency({ chosen: "JPY", resolved: "USD" }), "USD");
+});
+
+test("a page that fetches no product still highlights, from what was remembered", () => {
+  // `/login/`, `/set-password/` and `/checkout/complete/`. This is the whole
+  // reason resolved is persisted.
+  assert.equal(highlightedCurrency({ chosen: null, resolved: "EUR" }), "EUR");
+});
+
+test("a cold visitor highlights the default, so the control is never drawn with nothing selected", () => {
+  assert.equal(highlightedCurrency({ chosen: null, resolved: null }), "USD");
 });
