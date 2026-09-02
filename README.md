@@ -134,9 +134,14 @@ details in place.
 that stood in the payment column went in #62 on 31 August 2026; a code is
 redeemed on a page of its own, which is a separate ticket and not yet built.
 
-A reading's delivery upgrade (`24-Hour Rush`) ships switched **off**, behind a
-flag the CMS will own. Off, the page states its one delivery exactly as the
-frame draws it.
+**The `24-Hour Rush` delivery upgrade is gone from the design.** The client
+dropped it on 25 August 2026 and confirmed it on 1 September; it is not behind a
+flag anyone is waiting to throw, and it is not coming back. A reading has one
+delivery and the page states it, exactly as the frame draws it.
+
+`rushDelivery` in `src/content/reading-pages.ts` still exists and still ships
+`enabled: false`, so nothing renders it today. Treat the radios behind it as dead
+code pending removal: **do not build against it, and do not turn it on.**
 
 Each page owns its own backdrop: `<PageAtmosphere>` renders as the page's first
 element and fills the layout column behind the header, main and footer. The site

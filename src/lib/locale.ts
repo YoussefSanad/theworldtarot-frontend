@@ -11,10 +11,12 @@
  * (`/api/v1/en/products`, `/api/v1/es/products`), so the URL shape does not
  * change when that day comes. Only what fills the segment does.
  *
- * When it does come, `currentLocale` learns to read the route segment, and the
- * list of what is available comes from `GET /api/v1/languages` — which
- * deliberately sits outside the language segment, being the thing that says
- * which languages there are.
+ * **What that day looks like is decided and not built**, as of 1 September 2026
+ * (#63): a `[locale]` segment, English keeping `/`, and a switcher rendering the
+ * intersection of what was built and what `GET /api/v1/languages` answers. The
+ * argument — including why `/en/` was declined and what the deferral costs — is
+ * `docs/adr/0004-language-is-a-path-segment.md`, and it is not repeated here. A
+ * decision recorded in two places drifts.
  */
 
 export const DEFAULT_LOCALE = "en";
@@ -24,6 +26,25 @@ export const DEFAULT_LOCALE = "en";
  * `Intl.NumberFormat` want.
  */
 export type Locale = string;
+
+/**
+ * The locales this export actually contains.
+ *
+ * **One half of the switcher's intersection**, and the half that only a deploy
+ * can change. The rule and its whole argument are
+ * `docs/adr/0004-language-is-a-path-segment.md`, and are **not restated here**.
+ *
+ * They were, until the Standards review of 2 September 2026 pointed out that
+ * the paragraph doing it was a near-verbatim copy of the ADR's own, sitting
+ * under a docblock that says a decision recorded in two places drifts.
+ * `resolveLanguages` in `lib/languages.ts` is where the intersection is applied.
+ *
+ * English alone today, which is why the switcher is invisible however many
+ * languages the backend answers. #69 grows this list alongside the `[locale]`
+ * segment and the copy, and it is deliberately the same edit — a locale in here
+ * with no route behind it is a link to a 404.
+ */
+export const BUILT_LOCALES: readonly Locale[] = [DEFAULT_LOCALE];
 
 /**
  * The locale to read the site in.

@@ -434,18 +434,26 @@ price — is
 
 The form itself stays, with its fields named.
 
-### Delivery is a CMS switch
+### Delivery is not a choice
 
-`rushDelivery.enabled` is the client's, not the code's. **Off** — the state
-that ships — a reading offers one delivery and states it, as the frame draws
-it. **On**, that line becomes two radios with standard still `defaultChecked`,
-so throwing the switch never changes what a visitor gets by doing nothing.
+**The 24-Hour Rush is gone from the design.** The client dropped it on 25 August
+2026 and confirmed it on 1 September. A reading offers one delivery and states
+it, as the frame draws it, and that is the finished state rather than the
+off-state of a switch.
 
-The standard option is labelled "Standard Delivery" rather than the product's
-own delivery line. "Delivery Time: within 24 hours" is right when it is the
-only thing on offer and reads as a contradiction beside an upgrade called
-24-Hour Rush. **Worth raising with the client**: as written, the rush buys
-nothing this product does not already promise.
+The point that killed it is the one this section used to raise as a question.
+"Delivery Time: within 24 hours" is the product's own line, so an upgrade called
+24-Hour Rush sold nothing the reading did not already promise, and set beside the
+standard option it read as a contradiction rather than an offer. The client
+agreed and removed it.
+
+**What is left behind, and what to do with it.** `rushDelivery` in
+`src/content/reading-pages.ts` still exists with `enabled: false`, and
+`GetMyReading` still carries the two-radio branch behind it. Nothing renders
+today, so the shipped page is correct — but this is dead code awaiting removal,
+not a feature flag. **Do not build against it and do not turn it on.** Removing
+it takes the flag, the branch, the `DeliveryOption` radios and the
+`"Standard Delivery"` label with it.
 
 ### The counter
 

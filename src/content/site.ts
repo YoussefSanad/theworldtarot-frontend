@@ -77,11 +77,51 @@ export const socialLinks: { label: string; href: string; icon: SocialIconName }[
   { label: "YouTube", href: "https://youtube.com", icon: "youtube" },
 ];
 
+/**
+ * The footer's STAY CONNECTED form, in every state it has.
+ *
+ * **`success` must not say anybody is on the list**, and the wording is
+ * constrained rather than chosen. `POST /api/v1/newsletter` answers 202: the
+ * address has been handed to a queue and accepted, and whether Mailchimp keeps
+ * it is settled later and invisible from here. The backend's `API_CONTRACT.md`
+ * puts it as an instruction — "please do not word your confirmation as a
+ * promise that they are now on the list" — and **a promise of future post is
+ * that same promise in other words**, since it is exactly what an address the
+ * list quietly refuses will never produce. ~~"Occasional reflections will find
+ * their way to you."~~ said it and is gone. What is left is the one sentence
+ * that is true whatever Mailchimp does next. See `lib/newsletter.ts`.
+ *
+ * `errors` is keyed by `NewsletterFailure["kind"]` so the form can index it with
+ * what it was handed. There is deliberately no "you are already subscribed"
+ * line: the endpoint answers a new address and one already on the list
+ * identically, so that arm cannot be reached and must not be written.
+ */
 export const newsletter = {
   heading: "STAY CONNECTED:",
   blurb: ["Receive occasional reflections and", "readings from sacred places around the world."],
   consent: "I agree to receive emails from The World Tarot and understand I can unsubscribe any time.",
   submitLabel: "stay connected",
+  /*
+   * The button's two other labels. Sending renames it because there is no
+   * loader beside it — unlike the coming-soon form, which keeps its name and
+   * spins — so the label is the only thing here that can say a press landed.
+   */
+  sendingLabel: "sending…",
+  sentLabel: "thank you",
+  /*
+   * Takes the blurb's place once the request lands. One line where the blurb is
+   * two, which costs nothing: the slot reserves the blurb's full height in
+   * every state, so a shorter message moves nothing.
+   */
+  success: ["Thank you — we have your address."],
+  errors: {
+    address: "That address was not accepted. Please check it and try again.",
+    /* The window really is a minute, and the limit counts presses from one
+       browser rather than attempts on one address. Neither the sentence nor the
+       failure it belongs to may say otherwise. */
+    "rate-limited": "That was a few tries in quick succession. Please give it a minute.",
+    unknown: "We could not reach the list just now. Please try again.",
+  },
 };
 
 export const siteName = "The World Tarot";

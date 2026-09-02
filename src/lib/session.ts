@@ -27,7 +27,19 @@ import { type PasswordFailure, readPasswordFailure } from "./passwords.ts";
  */
 export type Customer = {
   id: number;
-  name: string;
+  /**
+   * **Absent for a buyer who claimed the account checkout made for them**, which
+   * is the ordinary case rather than an edge one: since the backend's ADR 0002
+   * moved checkout to the hosted page, nothing on the road a customer takes asks
+   * them their name, and `POST /register` is the only form that requires one.
+   *
+   * Until 31 August 2026 the backend filled a missing name with everything
+   * before the `@`, so this seam always received a string and a real customer
+   * read "Hello jennifer," in their receipt. `YoussefSanad/TheWorldTarot#52`
+   * stopped that: a name is real or it is absent. Use `customerLabel` rather
+   * than rendering this, which draws nothing at all when it is null.
+   */
+  name: string | null;
   email: string;
   /**
    * Whether they hold a pass into the Viewing Room. **A hint for the UI and
@@ -44,11 +56,33 @@ export type Customer = {
 /** The wire shape, which is snake_case and carries a field we do not keep. */
 type ApiCustomer = {
   id: number;
-  name: string;
+  name: string | null;
   email: string;
   created_at: string;
   has_viewing_room_access: boolean;
 };
+
+/**
+ * What to call a customer on screen.
+ *
+ * Their name when they have one, and **their address when they do not**. Not a
+ * component's decision because it is not one component's: the masthead asks
+ * today and anything that greets a member later asks the same question, and two
+ * answers to it is how one page starts calling somebody something the next page
+ * does not.
+ *
+ * The address is what stands in because it is the one field that cannot be
+ * absent, and it is the identity they bought with, so they recognise it. The
+ * caller is expected to truncate: an address is longer than a name.
+ *
+ * **A blank name is absent too.** The backend's migration turned its empty
+ * strings into nulls so this should not arrive, but the failure it would cause
+ * is exactly the empty slot this function exists to prevent, and nothing
+ * downstream can tell "" from a name.
+ */
+export function customerLabel(customer: Customer): string {
+  return customer.name?.trim() || customer.email;
+}
 
 function toCustomer(customer: ApiCustomer): Customer {
   return {

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { products as bundledProducts, type Product } from "@/content/home";
+import type { Product } from "@/content/home";
 
-import { fetchProducts, type ApiProduct } from "./api";
-import { currentLocale } from "./locale";
-import { formatPrice } from "./price";
+import type { ApiProduct } from "./api.ts";
+import { useCatalogue } from "./catalogue.ts";
+import { formatPrice } from "./price.ts";
 
 /**
  * The Choose Your Journey tiles, with live copy and live prices merged over the
@@ -56,16 +56,16 @@ const HIDE_WITHDRAWN = true;
  * leave the section as a heading over blank space, which is exactly the
  * "homepage looks broken" outcome the bundled copy exists to prevent.
  */
-export function resolveProducts(live: ApiProduct[] | null): Product[] {
-  if (!live || live.length === 0) return bundledProducts;
+export function resolveProducts(live: ApiProduct[] | null, bundled: Product[]): Product[] {
+  if (!live || live.length === 0) return bundled;
 
   const byKey = new Map(live.map((product) => [product.key, product]));
 
   // Driven by the bundled list, not the response, because artwork and links
   // only exist here. An API product with no tile — `in-depth` today — is
   // ignored rather than rendered without a picture.
-  return bundledProducts.flatMap((bundled) => {
-    const match = byKey.get(bundled.key);
+  return bundled.flatMap((tile) => {
+    const match = byKey.get(tile.key);
 
     if (!match) {
       // A tile vanishing from a live homepage is worth a line in the console,
@@ -75,19 +75,19 @@ export function resolveProducts(live: ApiProduct[] | null): Product[] {
       // price emptied for one currency in the admin panel, which drops the
       // product for every country at once. Both look identical on the page:
       // three tiles where there were four, and nothing else.
-      console.warn(`No API product matched the bundled tile "${bundled.key}".`);
+      console.warn(`No API product matched the bundled tile "${tile.key}".`);
 
-      return HIDE_WITHDRAWN ? [] : [bundled];
+      return HIDE_WITHDRAWN ? [] : [tile];
     }
 
     return [
       {
-        ...bundled,
+        ...tile,
         title: match.name,
         // Empty copy should be impossible — the backend's completeness gate
         // keeps a product with no description out of the response entirely —
         // so this is a belt-and-braces guard, not an expected path.
-        subtitle: match.short_description.trim() || bundled.subtitle,
+        subtitle: match.short_description.trim() || tile.subtitle,
         price: formatPrice(match.price),
       },
     ];
@@ -97,37 +97,17 @@ export function resolveProducts(live: ApiProduct[] | null): Product[] {
 /**
  * The tiles to render, live once the backend has answered.
  *
- * **Never fetched at build time**, which is not optional: prices are resolved
- * per visitor from their country, so a baked response ships one country's
- * currency to everybody. See the rule at the top of `lib/api.ts`.
+ * The fetch itself lives in `lib/catalogue.ts`, which holds one answer for
+ * every surface that prices something and re-asks it when the visitor chooses a
+ * different currency. What is left here is the join, which is this file's own
+ * question: which tiles exist, and what they say.
  *
- * Returns the bundled tiles on the first render, which is also what the
- * exported HTML contains, so there is no hydration mismatch and the section is
+ * Returns the bundled tiles before the first answer, which is also what the
+ * exported HTML contains — so there is no hydration mismatch and the section is
  * never empty.
  */
-export function useProducts(): Product[] {
-  const [live, setLive] = useState<ApiProduct[] | null>(null);
+export function useProducts(bundled: Product[]): Product[] {
+  const live = useCatalogue();
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    // Asked for explicitly rather than left to `fetchProducts`'s default, so
-    // the copy and the prices are read in the same language: `formatPrice`
-    // already formats against `currentLocale()`, and a second language added
-    // there but not here would write Spanish prices under English copy.
-    fetchProducts({ locale: currentLocale(), signal: controller.signal })
-      .then(setLive)
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-
-        // Loud here and invisible to the visitor: the bundled tiles stay on
-        // screen, so a broken API looks like a working homepage. Without this
-        // line it would look like one to us too.
-        console.error("Could not reach the API for products, showing the bundled tiles.", error);
-      });
-
-    return () => controller.abort();
-  }, []);
-
-  return useMemo(() => resolveProducts(live), [live]);
+  return useMemo(() => resolveProducts(live, bundled), [live, bundled]);
 }
