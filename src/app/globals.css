@@ -1187,6 +1187,45 @@
     color: var(--color-gold);
   }
 
+  /*
+    Frozen while a payment is **in flight** — see `lib/payment-in-flight.ts` for
+    what that is protecting. Both row styles need it, because both are drawn
+    with the same two controls behind them.
+
+    **The hover and focus responses go with the colour.** Dimming a row that
+    still lights up under a pointer is the worst of both readings: it says "not
+    now" and "press me" in the same frame. `aria-disabled` rather than
+    `disabled` throughout, so the rows keep their place in the tab order and can
+    still be read while they cannot be used, which is the ruling
+    `HostedCheckoutButton` and `NewsletterForm` are both written against.
+
+    The chosen row keeps its mark. What the visitor is being charged in is still
+    true while the control is refusing to change it.
+  */
+  .menu-option[aria-disabled="true"],
+  .segment[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.45;
+  }
+
+  .menu-option[aria-disabled="true"]:hover,
+  .menu-option[aria-disabled="true"]:focus-visible {
+    background-color: transparent;
+    color: var(--color-mist-dim);
+  }
+
+  .segment[aria-disabled="true"]:hover,
+  .segment[aria-disabled="true"]:focus-visible {
+    border-color: var(--edge-gold);
+    color: var(--color-mist-dim);
+  }
+
+  .segment[aria-disabled="true"][aria-pressed="true"]:hover,
+  .segment[aria-disabled="true"][aria-pressed="true"]:focus-visible {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+
   /* Framed panels ---------------------------------------------------------- */
   /*
     The Readings page sets its content inside bordered panels: a 2px gold

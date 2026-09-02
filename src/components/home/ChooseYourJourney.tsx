@@ -2,7 +2,7 @@
 
 import { Container, Section } from "@/components/layout/Section";
 import { CarouselSlide } from "@/components/ui/Carousel";
-import { journey, PRODUCTS_SECTION_ID } from "@/content/home";
+import { journey, products as bundledProducts, PRODUCTS_SECTION_ID } from "@/content/home";
 import { useProducts } from "@/lib/products";
 
 import { ProductCard } from "./ProductCard";
@@ -26,7 +26,7 @@ import { ProductCarousel } from "./ProductCarousel";
  * which is the half that was always the real point.
  */
 export function ChooseYourJourney() {
-  const products = useProducts();
+  const products = useProducts(bundledProducts);
 
   return (
     <Section id={PRODUCTS_SECTION_ID} padding="tight" className="scroll-mt-8">

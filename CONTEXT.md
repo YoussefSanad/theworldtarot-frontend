@@ -100,6 +100,38 @@ A currency and an integer count of its minor units, always together. Never a
 float and never a bare number. Formatting is ours; the value is the backend's.
 _Avoid_: price (as a number), amount on its own, cents
 
+**Chosen currency**:
+The currency a visitor explicitly picked from the header control. It is the only
+currency value that ever travels: it rides on every product request as
+`?currency=`, and the backend honours it exactly and stops detecting. Absent
+until somebody presses a row, and absent is meaningful — see **cold**.
+_Avoid_: selected currency, preferred currency, user currency, currency (bare — the bare word hides which of the three this is)
+
+**Resolved currency**:
+The currency the backend answered in, read off `price.currency` on the product
+response. It is what the visitor is actually being charged in, and it is
+display-only: it is remembered so the control has something to highlight on
+`/login/`, `/set-password/` and `/checkout/complete/`, which fetch no product,
+and it is **never sent back**. Sending it would turn a detected visitor into an
+explicitly-choosing one on their second page load, and the border they crossed
+since would never be noticed.
+
+**A chosen currency and a resolved one disagree whenever the backend does not
+sell in what was asked for**, and the control highlights the resolved one — so
+somebody who asked for JPY and is being charged in USD is not shown as paying in
+JPY. Choosing drops the resolution, or on the three pages above the highlight
+would outlive the choice that produced it.
+_Avoid_: detected currency (that is the backend's own resolution, on the `/currencies` response, which we never read — see `fetchCurrencies`), active currency, current currency
+
+**Cold**:
+A visitor who has chosen nothing. A cold request carries no `?currency=` at all
+and is answered from the backend's `CF-IPCountry` detection, which is what makes
+crossing a border re-price somebody. The static export is built cold, so it is
+also the state every hydration render must report whatever storage holds — and
+an effect that reads its currency from that render rather than from the store
+asks cold for everybody, which is a mistake this codebase has made twice.
+_Avoid_: default currency, fallback currency, anonymous (that is about identity, not pricing), first-time visitor (a cold visitor may have been here many times)
+
 **Guest**:
 A buyer with no session. Guests are the normal case at checkout: they supply a
 name and an email, and an account with no password is created for them.

@@ -18,6 +18,7 @@ import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
 import { orderFormAccepts, orderNoteIn } from "@/lib/order-note";
+import { paymentStopped } from "@/lib/payment-in-flight";
 import { formatPrice, type Money } from "@/lib/price";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
@@ -646,6 +647,14 @@ function Wallet({
     const refused = (why: string, cause?: unknown) => {
       log(why, cause);
 
+      /*
+        **The two arms `buy.ts` cannot settle for itself.** Everything above the
+        confirmation throws out of `startWalletPayment`, and `whileInFlight`
+        lowers the flag on the way past. This one and `unresolved` below run
+        *after* that call returned, so the currency control is still frozen and
+        this is the only place left that knows the sheet has closed.
+      */
+      paymentStopped();
       onFailure(checkout.walletFailed);
     };
 
@@ -666,6 +675,13 @@ function Wallet({
     const unresolved = (why: string, cause?: unknown) => {
       log(why, cause);
 
+      /*
+        Unfrozen even though what happened to the money is not known: the
+        customer is back on our page with a sentence pointing at the receipt,
+        and a currency control they cannot press is not what protects them from
+        a charge that may already exist.
+      */
+      paymentStopped();
       onFailure(checkout.walletUnresolved);
     };
 

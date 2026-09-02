@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchProduct, type ApiProductDetail } from "./api.ts";
+import { currencySelection, rememberResolvedCurrency, useCurrency } from "./currency.ts";
 import { currentLocale } from "./locale.ts";
 import type { Money } from "./price.ts";
 
@@ -80,8 +81,16 @@ export function resolveOffer(
  * contains — so there is no hydration mismatch, and the state the static file
  * ships is the one that reserves the panel's height rather than one that
  * advertises a price.
+ *
+ * **A currency switch does not return the page to `loading`.** The previous
+ * answer is left in place while the new one is in flight, so the panel keeps
+ * quoting the old price for the length of a round trip rather than collapsing
+ * under a customer's thumb. It is the same rule `lib/catalogue.ts` follows, and
+ * the same reason: the price that is about to change is better company than a
+ * gap.
  */
 export function useProduct(key: string): ProductOffer {
+  const { chosen } = useCurrency();
   const [answer, setAnswer] = useState<ApiProductDetail | null | undefined>(undefined);
   const [failed, setFailed] = useState(false);
 
@@ -92,16 +101,36 @@ export function useProduct(key: string): ProductOffer {
     // `useProducts` gives: `formatPrice` formats against `currentLocale()`, and
     // a second language added there but not here would price Spanish copy off
     // an English response.
-    fetchProduct(key, { locale: currentLocale(), signal: controller.signal })
+    //
+    // The currency is sent only when the visitor has chosen one. A cold request
+    // carries none and is answered by the backend's detection — see
+    // `withCurrency` in `lib/api.ts`.
+    //
+    // **Read from the store, not from the render that scheduled this**, for the
+    // reason `useCatalogue` sets out at length: the hydration render is required
+    // to report "nothing chosen", so closing over its `chosen` asks cold for
+    // everybody and then asks again. It costs more here than it does there. The
+    // cold answer's currency is written to `resolved` on the way past, so a
+    // returning visitor's stored resolution was being replaced by a detected one
+    // — on the page that holds the checkout button, with the offer beside it
+    // quoting the wrong currency until the second answer landed.
+    fetchProduct(key, {
+      locale: currentLocale(),
+      currency: currencySelection().chosen ?? undefined,
+      signal: controller.signal,
+    })
       .then((product) => {
         if (product === null) {
           // Rare and deliberate, and invisible on the page by design — the
           // reading simply stops being for sale. Worth a line, because from the
           // outside that looks identical to a checkout that broke.
           console.warn(`The API has no product for "${key}", so it is not offered for sale.`);
+        } else {
+          rememberResolvedCurrency(product.price.currency);
         }
 
         setAnswer(product);
+        setFailed(false);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -115,7 +144,7 @@ export function useProduct(key: string): ProductOffer {
       });
 
     return () => controller.abort();
-  }, [key]);
+  }, [key, chosen]);
 
   return resolveOffer(answer, failed);
 }
