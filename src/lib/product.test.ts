@@ -66,11 +66,24 @@ test("a priced product is live, and carries the money the API sent", () => {
   assert.deepEqual(offer.status === "live" && offer.money, { currency: "EUR", amount: 7000 });
 });
 
-test("a failed request is unreachable, and carries no money to pay with", () => {
-  // Both arguments together: a failure can arrive after the fetch resolved on a
-  // previous key, and the failure has to win.
-  assert.deepEqual(resolveOffer(monthAhead, true), { status: "unreachable" });
+test("a failed first request is unreachable, and carries no money to pay with", () => {
+  // Only when there is nothing to keep. A failure used to outrank the answer
+  // whatever it held, which took the offer down on a currency switch the API
+  // could not answer — the test above is the rule that replaced it.
   assert.deepEqual(resolveOffer(undefined, true), { status: "unreachable" });
+});
+
+test("a failed refetch leaves the price that was on screen", () => {
+  // The rule `lib/catalogue.ts` follows, on the page that takes money: a
+  // currency switch the API cannot answer keeps quoting the old price for the
+  // length of a round trip rather than taking the offer down under the
+  // visitor's thumb. The answer being for a *different* key is not this
+  // function's problem — `useProduct` scopes what it keeps to the key it is
+  // about, so a stale product never reaches here under a new one.
+  const offer = resolveOffer(monthAhead, true);
+
+  assert.equal(offer.status, "live");
+  assert.deepEqual(offer.status === "live" && offer.money, { currency: "EUR", amount: 7000 });
 });
 
 test("a 404 is withdrawn rather than loading, so the page stops offering it", () => {

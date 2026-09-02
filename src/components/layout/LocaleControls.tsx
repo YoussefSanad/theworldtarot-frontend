@@ -92,11 +92,23 @@ function currencyRows(currencies: readonly ApiCurrency[]): SelectOption[] {
   return currencies.map(({ code, symbol }) => ({ value: code, label: code, symbol }));
 }
 
+/**
+ * What the two controls draw and what pressing a row does.
+ *
+ * **`highlighted`, not `currency`.** The bare word is in `CONTEXT.md`'s _Avoid_
+ * list for exactly the collision this type used to contain: the value read here
+ * is the **resolved** currency where there is one, while the setter writes a
+ * **chosen** one — two of the three concepts under a single name, which is the
+ * failure the glossary entry predicts. `choose` is the store's own word for the
+ * write; see `lib/currency.ts`.
+ */
 export type LocaleSelection = {
   language: string;
-  currency: string;
   setLanguage: (value: string) => void;
-  setCurrency: (value: string) => void;
+  /** The currency row drawn as current — `highlightedCurrency`'s answer. */
+  highlighted: string;
+  /** Records an explicitly chosen currency, which is what starts travelling. */
+  choose: (code: string) => void;
 };
 
 /**
@@ -132,15 +144,15 @@ export function useLocaleSelection(): LocaleSelection {
 
   return {
     language: currentLocale(),
-    currency: highlightedCurrency({ chosen, resolved }),
     setLanguage: LANGUAGE_DOES_NOT_MOVE_YET,
-    setCurrency: choose,
+    highlighted: highlightedCurrency({ chosen, resolved }),
+    choose,
   };
 }
 
 /** The mobile drawer's shape: both groups flat, every option one tap away. */
 export function LocaleControls({ selection, className }: { selection: LocaleSelection; className?: string }) {
-  const { language, currency, setLanguage, setCurrency } = selection;
+  const { language, setLanguage, highlighted, choose } = selection;
   const currencies = useCurrencyOptions();
   const languages = useLanguageOptions();
 
@@ -159,8 +171,8 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
       <SegmentRow
         label="Currency"
         options={currencyRows(currencies)}
-        value={currency}
-        onChange={setCurrency}
+        value={highlighted}
+        onChange={choose}
         frozen={frozen}
       />
     </div>
@@ -185,7 +197,7 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
  * first currency.
  */
 export function LocaleMenu({ selection, className }: { selection: LocaleSelection; className?: string }) {
-  const { language, currency, setLanguage, setCurrency } = selection;
+  const { language, setLanguage, highlighted, choose } = selection;
   const currencies = useCurrencyOptions();
   const languages = useLanguageOptions();
   const hasLanguages = languages.length > 0;
@@ -300,8 +312,8 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
             <LocaleGroup
               label="Currency"
               options={currencyRows(currencies)}
-              value={currency}
-              onChange={setCurrency}
+              value={highlighted}
+              onChange={choose}
               autoFocus={open && !hasLanguages}
               frozen={frozen}
             />

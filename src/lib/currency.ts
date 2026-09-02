@@ -187,8 +187,13 @@ export function rememberResolvedCurrency(code: string): void {
  * USD because that is what the bundled strings in `content/home.ts` and
  * `content/readings.ts` are written in, so the highlight agrees with the prices
  * beside it while both are still bundled copy.
+ *
+ * **Cold, not a fallback.** This was `FALLBACK_CURRENCY` until the Standards
+ * review of 2 September 2026: the word is in the _Avoid_ list of the very
+ * glossary entry the paragraph above is a restatement of, and a name that
+ * argues with the definition under it teaches the wrong one.
  */
-export const FALLBACK_CURRENCY = "USD";
+export const COLD_CURRENCY = "USD";
 
 /**
  * Which row the control draws as chosen.
@@ -201,13 +206,13 @@ export const FALLBACK_CURRENCY = "USD";
  *
  * **chosen** covers the gap before any answer, so the row a visitor just
  * pressed highlights on the press instead of a round trip later. The constant
- * covers the visitor who has neither — see `FALLBACK_CURRENCY`.
+ * covers the visitor who has neither — see `COLD_CURRENCY`.
  *
  * Pure, and exported apart from the hook so the rule can be exercised without
  * mounting a header.
  */
 export function highlightedCurrency({ chosen, resolved }: CurrencySelection): string {
-  return resolved ?? chosen ?? FALLBACK_CURRENCY;
+  return resolved ?? chosen ?? COLD_CURRENCY;
 }
 
 /**

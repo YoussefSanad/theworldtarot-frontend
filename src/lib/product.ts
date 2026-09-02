@@ -49,6 +49,16 @@ export type ProductOffer =
   | { status: "withdrawn" };
 
 /**
+ * The last thing the backend said, and which product it said it about.
+ *
+ * **The key travels with the answer** so a stale one cannot outlive the product
+ * it was about. `useProduct` keeps what it holds through a failure — that is the
+ * rule below — and without the key the thing it kept could be a different
+ * reading's price, on a hook whose argument is free to change.
+ */
+type Answered = { key: string; product: ApiProductDetail | null };
+
+/**
  * The state a response — or the lack of one — puts the page in.
  *
  * Pure, and exported apart from the hook so the table in the plan can be
@@ -58,13 +68,19 @@ export type ProductOffer =
  * they are two values rather than one nullable: collapsing them would make the
  * first paint of every page indistinguishable from a withdrawn product, and
  * those states are opposites.
+ *
+ * **A failure only decides anything when there is nothing to keep.** An answer
+ * already in hand outranks it, so a currency switch the API cannot answer goes
+ * on quoting the price that was on screen instead of withdrawing the offer
+ * under the visitor's thumb — `lib/catalogue.ts` states the same rule for the
+ * catalogue, and this is the page that takes money. The caller passes only what
+ * is about the key it is asking for; see `Answered`.
  */
 export function resolveOffer(
   answer: ApiProductDetail | null | undefined,
   failed: boolean,
 ): ProductOffer {
-  if (failed) return { status: "unreachable" };
-  if (answer === undefined) return { status: "loading" };
+  if (answer === undefined) return { status: failed ? "unreachable" : "loading" };
   if (answer === null) return { status: "withdrawn" };
 
   return { status: "live", money: answer.price, product: answer };
@@ -82,17 +98,24 @@ export function resolveOffer(
  * ships is the one that reserves the panel's height rather than one that
  * advertises a price.
  *
- * **A currency switch does not return the page to `loading`.** The previous
- * answer is left in place while the new one is in flight, so the panel keeps
- * quoting the old price for the length of a round trip rather than collapsing
- * under a customer's thumb. It is the same rule `lib/catalogue.ts` follows, and
- * the same reason: the price that is about to change is better company than a
- * gap.
+ * **A currency switch does not return the page to `loading`, and does not take
+ * the offer down when the refetch fails either.** The previous answer is left in
+ * place while the new one is in flight and left there if it never lands, so the
+ * panel keeps quoting the old price rather than collapsing under a customer's
+ * thumb. It is the same rule `lib/catalogue.ts` follows, and the same reason:
+ * the price that is about to change is better company than a gap.
+ *
+ * **Both pieces of state are held against the key they are about**, which is
+ * what keeps that rule from leaking one reading's price onto another. `key` is
+ * an argument and arguments change; a kept answer that did not remember which
+ * product it priced would be kept under the next one too. The precedence used
+ * to carry this — a failure outranked every answer — and paid for it on the
+ * case above.
  */
 export function useProduct(key: string): ProductOffer {
   const { chosen } = useCurrency();
-  const [answer, setAnswer] = useState<ApiProductDetail | null | undefined>(undefined);
-  const [failed, setFailed] = useState(false);
+  const [answered, setAnswered] = useState<Answered | undefined>(undefined);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -129,8 +152,8 @@ export function useProduct(key: string): ProductOffer {
           rememberResolvedCurrency(product.price.currency);
         }
 
-        setAnswer(product);
-        setFailed(false);
+        setAnswered({ key, product });
+        setFailedKey(null);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -140,11 +163,11 @@ export function useProduct(key: string): ProductOffer {
         // would look like one to us too.
         console.error(`Could not reach the API for product "${key}".`, error);
 
-        setFailed(true);
+        setFailedKey(key);
       });
 
     return () => controller.abort();
   }, [key, chosen]);
 
-  return resolveOffer(answer, failed);
+  return resolveOffer(answered?.key === key ? answered.product : undefined, failedKey === key);
 }
