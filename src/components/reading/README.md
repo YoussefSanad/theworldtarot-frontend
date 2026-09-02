@@ -1,9 +1,10 @@
 # A reading's own page
 
-Built from one Figma frame, `329:496` (`month-ahead-reading-page`, 1920x3191),
+Built from the Figma frame `329:496` (`month-ahead-reading-page`, 1920x3191),
 plus a handful of things the frame does not draw at all — see [Beyond the
-frame](#beyond-the-frame). Route:
-`src/app/(site)/readings/month-ahead/page.tsx`. Copy lives in
+frame](#beyond-the-frame). Three routes render it:
+`src/app/(site)/readings/three-card/`, `.../month-ahead/` and `.../in-depth/`,
+which differ only in which constant they import. Copy lives in
 [`src/content/reading-pages.ts`](../../content/reading-pages.ts).
 
 Read [`src/app/README.md`](../../app/README.md) first — the token system, the
@@ -22,12 +23,17 @@ price and testimonial are copy — they never reach logic.
 
 So `reading-pages.ts` splits in two. `readingPageChrome` is everything the
 three say identically and is written once; a `ReadingPage` is the handful of
-things that differ. Adding the other two is a `ReadingPage` and a route that
-imports it, and **nothing else** — don't build per-product delivery UI for
-them. The hero film is chrome rather than product copy for the same reason: one
-loop of the deck serves all three.
+things that differ. A fourth would be a `ReadingPage` and a route that imports
+it, and **nothing else** — don't build per-product delivery UI for them. The
+hero film is chrome rather than product copy for the same reason: one loop of
+the deck serves all three.
 
-Only Month Ahead is wired up, because it is the only one the client has drawn.
+All three are wired up. Month Ahead came first, being the frame this page was
+built from; the client drew Three Card and In-Depth on 2 September 2026 from
+that same template and they went in the next day as copy alone — no component
+here changed for them. Where those two frames contradict copy that predates
+them — Three Card's price, In-Depth's card count — the entry in
+`reading-pages.ts` reproduces the frame and says so against itself.
 
 ## What the frame is, and what it isn't
 

@@ -97,16 +97,16 @@ so the merge ignores it. Giving it one is a frontend change, not a backend one.
 
 The workflows:
 
-- **Three Card** and **Month Ahead** (plus a future "In-Depth" reading, not
-  yet in this list) share one page template and one fulfillment path: the
-  site collects the visitor's question and sends an order notification: the
-  client prepares the reading offline and emails a PDF. Spread, card count and
-  reading format only affect page copy/pricing, never frontend logic — don't
-  build per-product reading-delivery UI for these beyond the shared template.
-  **That template is built**, from the Month Ahead frame: the page lives at
-  `src/app/(site)/readings/month-ahead/page.tsx` and its copy at
-  `reading-pages.ts`. Adding Three Card or In-Depth is a `ReadingPage` entry
-  and a route that imports it — see
+- **Three Card**, **Month Ahead** and **In-Depth** share one page template and
+  one fulfillment path: the site collects the visitor's question and sends an
+  order notification: the client prepares the reading offline and emails a PDF.
+  Spread, card count and reading format only affect page copy/pricing, never
+  frontend logic — don't build per-product reading-delivery UI for these beyond
+  the shared template. **All three are built**, from the Month Ahead frame plus
+  the two the client drew from it on 2 September 2026: the pages live at
+  `src/app/(site)/readings/{three-card,month-ahead,in-depth}/` and their copy at
+  `reading-pages.ts`, where each is a `ReadingPage` entry and the routes differ
+  only in which one they import — see
   [`src/components/reading/README.md`](../components/reading/README.md).
 - **One Card** is the interactive online AI experience — genuinely different
   functionality, not just different copy.

@@ -4,21 +4,29 @@ import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "@/lib
  * A written reading's own page — the template behind `/readings/month-ahead`,
  * built from the client's frame `329:496` (`month-ahead-reading-page`, 1920x3191).
  *
- * **Three products share this one page.** Three Card, Month Ahead and a future
- * In-Depth reading are the same purchase and the same fulfilment — the site
- * takes an optional question and a payment, the client writes the reading
+ * **Three products share this one page**, and all three are built: Three Card,
+ * Month Ahead and In-Depth are the same purchase and the same fulfilment — the
+ * site takes an optional question and a payment, the client writes the reading
  * offline and emails a PDF — so spread, card count and price are copy, never
- * branching. See the workflow note in [`./README.md`](./README.md). Adding the
- * other two is a `ReadingPage` here, **an entry in `readingPages` at the foot
- * of this file**, and a five-line route beside
- * `src/app/(site)/readings/month-ahead/page.tsx`; there is nothing else to
- * build for them.
+ * branching. See the workflow note in [`./README.md`](./README.md). A fourth
+ * would be a `ReadingPage` here, **an entry in `readingPages` at the foot of
+ * this file**, and a route beside
+ * `src/app/(site)/readings/month-ahead/page.tsx` that differs from it only in
+ * which constant it imports; there would be nothing else to build for it.
  *
  * The middle one is the one that fails quietly. A `ReadingPage` that is never
  * registered still renders its own page perfectly and still sells, and the only
  * thing that goes wrong is a confirmation screen that cannot name what was
  * bought — a plainer sentence rather than a broken one, which is exactly the
  * kind of wrong that ships. See `readingPageFor`.
+ *
+ * **The three frames are three PSDs, not one with the copy swapped.** Month
+ * Ahead came first (`329:496`); Three Card and In-Depth arrived on 2 September
+ * 2026 drawn from it. Nothing structural moved between them — same panels, same
+ * ornament, same controls in the same order — so they are the same route three
+ * times over. Where a later frame contradicts copy that predates it, the
+ * contradiction is noted against the entry and reproduced rather than
+ * reconciled; see `threeCard`.
  *
  * That split is what `readingPageChrome` is: everything the three pages say
  * identically lives there once, and a `ReadingPage` holds only what changes.
@@ -337,6 +345,58 @@ export type ReadingPage = {
 /** Kept exported for the artwork type; the hero is chrome, the rest is copy. */
 export type { ImageAsset };
 
+/**
+ * The frame the client delivered on 2 September 2026 alongside the In-Depth
+ * one, drawn from the same 1920x3191 template as `month-ahead` and changing
+ * nothing but the fields below.
+ *
+ * **Two things in it disagree with the readings index, and both are left
+ * alone here.**
+ *
+ * The price is the loud one: the index and the homepage tile sell this at $52
+ * and the new frame sets $75, which is also Month Ahead's price — the frame
+ * looks copied from that one and not fully re-priced. It does not decide
+ * anything, because `price` is the string shown only when the catalogue cannot
+ * be reached; the money is the backend's, keyed on `productKey`. It is written
+ * as drawn rather than reconciled, so the fallback quotes the client's own
+ * latest frame and the two lists that predate it are hers to settle.
+ *
+ * The other is `included[1]`, which is Month Ahead's second bullet verbatim —
+ * "the weeks ahead" is a forecast's promise rather than a past/present/future
+ * spread's. Reproduced as drawn for the same reason.
+ */
+export const threeCard: ReadingPage = {
+  id: "three-card",
+  productKey: "three-card",
+  title: "3 Card Reading",
+  tagline: ["One Question. Three Cards.", "Your Path Illuminated."],
+  price: "$75",
+  delivery: "Delivery Time: within 24 hours",
+  included: [
+    ["A Three Card Reading", "focused on your path forward"],
+    ["Prepare for the weeks ahead", "with insight"],
+    ["Thoughtful written interpretation"],
+    /* Three phrases for two drawn lines; see the note on `monthAhead`. */
+    ["Presented on original", "World Tarot", "artwork"],
+    ["Delivered by email within 24 hours"],
+  ],
+  testimonial: {
+    /*
+      Split at a sentence, not at the frame's rag. `ReadingTestimonial` sets
+      each entry as its own block and balances it, so an entry is a chunk that
+      wraps rather than a finished line — her three short rows stored literally
+      would set three hard lines far inside a measure that holds more, and the
+      quote would rag down the frame. Month Ahead's is broken the same way.
+    */
+    quote: [
+      "“The past was remarkably accurate. The present offered clarity.",
+      "Now I’m watching the future unfold with fresh eyes.”",
+    ],
+    attribution: ["NIKKI M.", "BURLINGTON, VT"],
+  },
+  closing: ["Every question has a story", "waiting to be told"],
+};
+
 export const monthAhead: ReadingPage = {
   id: "month-ahead",
   productKey: "month-ahead",
@@ -374,17 +434,57 @@ export const monthAhead: ReadingPage = {
 };
 
 /**
+ * The second of the two frames delivered on 2 September 2026, and the only one
+ * of the three written readings that is not a 24-hour delivery — 48 hours is
+ * said twice on the panel, once as the delivery line under the price and once
+ * as the last thing `included` lists, exactly as the client draws it.
+ *
+ * **Twelve cards here, where the readings index says Celtic Cross.** The index
+ * sells this as "the complete picture through the Celtic Cross", which is a
+ * ten-card spread; this frame's tagline and first bullet both say twelve. The
+ * newer frame is reproduced as drawn and the index is left as it is — the card
+ * count is copy either way and neither number reaches an order — but the two
+ * are hers to settle.
+ */
+export const inDepth: ReadingPage = {
+  id: "in-depth",
+  productKey: "in-depth",
+  title: "In-Depth Reading",
+  tagline: ["One Question. Twelve Cards.", "A Deeper Story Revealed."],
+  price: "$125",
+  delivery: "Delivery Time: within 48 hours",
+  included: [
+    ["A twelve-card reading exploring your", "question in depth"],
+    ["Insight into deeper patterns and themes", "shaping your story"],
+    ["Clear guidance that brings perspective", "to complex situations"],
+    ["Presented on original", "World Tarot", "artwork"],
+    ["Delivered by email within 48 hours"],
+  ],
+  testimonial: {
+    /* Chunked at the sentence, as on the other two; see `threeCard`. */
+    quote: [
+      "“This went so much deeper than I expected.",
+      "It connected things I hadn’t seen before and gave me real clarity about how I got here—and where to go next.”",
+    ],
+    attribution: ["RACHEL T.", "SEDONA, AZ"],
+  },
+  closing: ["The deeper the journey,", "the richer the story"],
+};
+
+/**
  * Every reading with a page of its own, which is every reading that can be
  * bought.
  *
- * One entry today. It is a list rather than the single export above because
- * what wants it is a lookup by **product key** — the confirmation screen, which
- * is handed a key by the record a checkout left in the tab and has to turn it
- * into a name a customer recognises. Adding Three Card or In-Depth is still the
- * `ReadingPage` and the five-line route described at the top of this file, plus
- * its name here.
+ * All three, from 3 September 2026. It is a list rather than the three exports
+ * above because what wants it is a lookup by **product key** — the confirmation
+ * screen, which is handed a key by the record a checkout left in the tab and has
+ * to turn it into a name a customer recognises.
+ *
+ * Ordered as the readings index orders them, which is the order a visitor meets
+ * them in. Nothing reads position — `readingPageFor` searches by key — so the
+ * order is for whoever opens this file next.
  */
-export const readingPages: readonly ReadingPage[] = [monthAhead];
+export const readingPages: readonly ReadingPage[] = [threeCard, monthAhead, inDepth];
 
 /**
  * The page that sells one product key, or `undefined` for a key nothing here
