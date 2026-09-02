@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchProduct, type ApiProductDetail } from "./api.ts";
-import { rememberResolvedCurrency, useCurrency } from "./currency.ts";
+import { currencySelection, rememberResolvedCurrency, useCurrency } from "./currency.ts";
 import { currentLocale } from "./locale.ts";
 import type { Money } from "./price.ts";
 
@@ -105,9 +105,18 @@ export function useProduct(key: string): ProductOffer {
     // The currency is sent only when the visitor has chosen one. A cold request
     // carries none and is answered by the backend's detection — see
     // `withCurrency` in `lib/api.ts`.
+    //
+    // **Read from the store, not from the render that scheduled this**, for the
+    // reason `useCatalogue` sets out at length: the hydration render is required
+    // to report "nothing chosen", so closing over its `chosen` asks cold for
+    // everybody and then asks again. It costs more here than it does there. The
+    // cold answer's currency is written to `resolved` on the way past, so a
+    // returning visitor's stored resolution was being replaced by a detected one
+    // — on the page that holds the checkout button, with the offer beside it
+    // quoting the wrong currency until the second answer landed.
     fetchProduct(key, {
       locale: currentLocale(),
-      currency: chosen ?? undefined,
+      currency: currencySelection().chosen ?? undefined,
       signal: controller.signal,
     })
       .then((product) => {

@@ -40,7 +40,7 @@
 
 import { rememberCheckout, sessionIdFrom } from "./checkout-session.ts";
 import { payOrder, placeOrder } from "./orders.ts";
-import { paymentSettled, paymentStarted } from "./payment-in-flight.ts";
+import { paymentStarted, paymentStopped } from "./payment-in-flight.ts";
 import type { Money } from "./price.ts";
 
 /**
@@ -162,7 +162,7 @@ async function whileInFlight<T>(road: () => Promise<T>): Promise<T> {
   } catch (refusal: unknown) {
     // Nothing was charged on any arm that throws — `startCheckout` and
     // `startWalletPayment` both say so — so there is nothing left to protect.
-    paymentSettled();
+    paymentStopped();
     throw refusal;
   }
 }

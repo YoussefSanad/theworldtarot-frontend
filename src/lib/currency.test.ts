@@ -176,3 +176,24 @@ test("a page that fetches no product still highlights, from what was remembered"
 test("a cold visitor highlights the default, so the control is never drawn with nothing selected", () => {
   assert.equal(highlightedCurrency({ chosen: null, resolved: null }), "USD");
 });
+
+test("choosing forgets the last resolution, or the press does nothing on a page that fetches no product", () => {
+  // `/login/`, `/set-password/` and `/checkout/complete/` never refetch, so a
+  // resolution left standing would outrank the choice for ever and the row the
+  // visitor pressed would never light up. Found by the Spec review, 2 September
+  // 2026.
+  rememberResolvedCurrency("JPY");
+  chooseCurrency("USD");
+
+  assert.equal(highlightedCurrency(currencySelection()), "USD");
+});
+
+test("and the next answer takes the highlight straight back", () => {
+  // Which is what keeps step 5's rule: the backend refuses a currency it does
+  // not sell in, and the control must show what is actually being charged.
+  rememberResolvedCurrency("JPY");
+  chooseCurrency("USD");
+  rememberResolvedCurrency("EUR");
+
+  assert.equal(highlightedCurrency(currencySelection()), "EUR");
+});

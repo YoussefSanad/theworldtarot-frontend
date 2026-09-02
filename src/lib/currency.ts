@@ -93,6 +93,15 @@ function read(key: string): string | null {
   }
 }
 
+function forget(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Same locked-down browser as `read` and `write`. The in-memory value is
+    // the authority, and it has already been cleared by the caller.
+  }
+}
+
 function write(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
@@ -131,13 +140,28 @@ export function currencySelectionOnServer(): CurrencySelection {
   return NOTHING_CHOSEN;
 }
 
-/** The visitor picked one. This is what starts travelling as `?currency=`. */
+/**
+ * The visitor picked one. This is what starts travelling as `?currency=`.
+ *
+ * **The last resolution is dropped with the press**, and without that the
+ * control is broken on exactly the pages `resolved` was persisted for. Nothing
+ * on `/login/`, `/set-password/` or `/checkout/complete/` refetches, so a
+ * resolution left standing outranks the new choice for ever — see
+ * `highlightedCurrency`, which prefers it — and the row the visitor just pressed
+ * never lights up. The press looks broken because, on those pages, it is.
+ *
+ * Dropping it costs nothing where a page *does* fetch: the answer lands a round
+ * trip later and writes `resolved` again, which is the gap `highlightedCurrency`
+ * already documents `chosen` as covering. Found by the Spec review, 2 September
+ * 2026.
+ */
 export function chooseCurrency(code: string): void {
   load();
   if (snapshot.chosen === code) return;
 
   write(CHOSEN_KEY, code);
-  publish({ ...snapshot, chosen: code });
+  forget(RESOLVED_KEY);
+  publish({ chosen: code, resolved: null });
 }
 
 /**

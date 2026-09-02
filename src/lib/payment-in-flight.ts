@@ -108,10 +108,18 @@ export function paymentStarted(): void {
 }
 
 /**
- * The write came back, and it came back refused — see the module note above for
- * why there is no success to report.
+ * The write is no longer out. Only failure reaches here — see the module note
+ * above for why there is no success to report.
+ *
+ * **Not `paymentSettled`, which is what this was called until the Standards
+ * review of 2 September 2026.** `CONTEXT.md` gives **settle** a precise meaning:
+ * "what makes an order paid. Only the backend settles an order." This function
+ * runs on a refusal, and on `ExpressCheckout`'s `unresolved` arm it runs when
+ * what happened to the money is explicitly not known — so the old name had
+ * client code announcing a settlement over payments that were refused or
+ * unknown. `stopped` claims nothing about money; it says the flight ended.
  */
-export function paymentSettled(): void {
+export function paymentStopped(): void {
   publish(false);
 }
 

@@ -387,6 +387,40 @@ console.log("\nreturning — a visitor who chose on a previous page load");
   await page.close();
 }
 
+console.log("\nreturning — on the reading page, which is the one that takes money");
+{
+  const { page, asked } = await open("/readings/month-ahead/", {
+    seed: { "currency.chosen": "GBP", "currency.resolved": "GBP" },
+  });
+
+  await page.waitForSelector(HOSTED, { timeout: 8000 });
+  await page.waitForTimeout(1200);
+
+  /*
+    `useProduct` is `useCatalogue`'s sibling and had the same hydration bug for
+    the same reason. It matters more here: the cold answer's currency is written
+    to `resolved` on the way past, so a returning visitor's stored resolution was
+    being overwritten with a detected one — on the page holding the checkout
+    button, while the offer beside it quoted the wrong currency for a beat.
+  */
+  /*
+    **Fact 1 is the assertion, not a call count.** `useProduct` re-runs its
+    effect once when the store loads and the dependency changes, and its cleanup
+    aborts the first request — so a reload costs one wasted round trip for the
+    same URL. That is a cost, not a defect: nothing wrong is fetched, written or
+    painted.
+
+    Removing it needs a module-scoped guard like `askCatalogue`'s, and
+    `catalogue.ts` records why a per-mount one cannot be used — React's
+    development double-mount would let the second mount skip a request the
+    first's cleanup had already aborted, and the page would load forever. Not
+    worth that to save an aborted request. The close-out says so.
+  */
+  expect("returning/reading", "every product request carries the choice", sent(asked), asked.map(() => "GBP"));
+
+  await page.close();
+}
+
 /* ── resolved ────────────────────────────────────────────────────────────── */
 
 console.log("\nresolved — remembered, highlighted, and never sent");

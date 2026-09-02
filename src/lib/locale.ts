@@ -31,14 +31,13 @@ export type Locale = string;
  * The locales this export actually contains.
  *
  * **One half of the switcher's intersection**, and the half that only a deploy
- * can change. `docs/adr/0004-language-is-a-path-segment.md` argues the whole
- * rule: a static export cannot grow a route from a fetch, so a language must be
- * in here *and* in the live `GET /api/v1/languages` answer before it may be
- * offered. Taking Spanish down at the backend then removes it from every
- * switcher on the next request with no deploy of ours, which is the property
- * `API_CONTRACT.md` says it cannot enforce for us; what the intersection cannot
- * do is make a language appear without one, and that costs nothing, because a
- * language we have not built has no copy to show.
+ * can change. The rule and its whole argument are
+ * `docs/adr/0004-language-is-a-path-segment.md`, and are **not restated here**.
+ *
+ * They were, until the Standards review of 2 September 2026 pointed out that
+ * the paragraph doing it was a near-verbatim copy of the ADR's own, sitting
+ * under a docblock that says a decision recorded in two places drifts.
+ * `resolveLanguages` in `lib/languages.ts` is where the intersection is applied.
  *
  * English alone today, which is why the switcher is invisible however many
  * languages the backend answers. #69 grows this list alongside the `[locale]`

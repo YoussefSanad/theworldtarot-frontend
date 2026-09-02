@@ -18,7 +18,7 @@ import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
 import { orderFormAccepts, orderNoteIn } from "@/lib/order-note";
-import { paymentSettled } from "@/lib/payment-in-flight";
+import { paymentStopped } from "@/lib/payment-in-flight";
 import { formatPrice, type Money } from "@/lib/price";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
@@ -654,7 +654,7 @@ function Wallet({
         *after* that call returned, so the currency control is still frozen and
         this is the only place left that knows the sheet has closed.
       */
-      paymentSettled();
+      paymentStopped();
       onFailure(checkout.walletFailed);
     };
 
@@ -681,7 +681,7 @@ function Wallet({
         and a currency control they cannot press is not what protects them from
         a charge that may already exist.
       */
-      paymentSettled();
+      paymentStopped();
       onFailure(checkout.walletUnresolved);
     };
 

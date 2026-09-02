@@ -5,7 +5,7 @@ import {
   forgetPayment,
   paymentInFlight,
   paymentInFlightOnServer,
-  paymentSettled,
+  paymentStopped,
   paymentStarted,
   subscribeToPayment,
 } from "./payment-in-flight.ts";
@@ -26,7 +26,7 @@ test("a write that has started is in flight, which is what the currency rows rea
 
 test("a refused write settles, and the control is live again", () => {
   paymentStarted();
-  paymentSettled();
+  paymentStopped();
 
   assert.equal(paymentInFlight(), false);
 });
@@ -36,7 +36,7 @@ test("a start notifies subscribers, because the header is not the payment panel'
   const unsubscribe = subscribeToPayment(() => (told += 1));
 
   paymentStarted();
-  paymentSettled();
+  paymentStopped();
 
   unsubscribe();
   assert.equal(told, 2);
@@ -47,12 +47,12 @@ test("a settle that changes nothing tells nobody, so a failure arm cannot re-ren
   // into one of them, so a settle arriving on top of a settle is the ordinary
   // case rather than a strange one.
   paymentStarted();
-  paymentSettled();
+  paymentStopped();
 
   let told = 0;
   const unsubscribe = subscribeToPayment(() => (told += 1));
 
-  paymentSettled();
+  paymentStopped();
 
   unsubscribe();
   assert.equal(told, 0);
