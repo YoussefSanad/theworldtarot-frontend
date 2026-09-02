@@ -40,6 +40,7 @@
 
 import { rememberCheckout, sessionIdFrom } from "./checkout-session.ts";
 import { payOrder, placeOrder } from "./orders.ts";
+import { paymentSettled, paymentStarted } from "./payment-in-flight.ts";
 import type { Money } from "./price.ts";
 
 /**
@@ -135,6 +136,38 @@ async function placeOneReading({ productKey, money, question }: Bought) {
 }
 
 /**
+ * Runs one road, with the currency control frozen for its length.
+ *
+ * **The rule is here rather than on each road**, so that a third road cannot be
+ * added that forgets it, and so that the one asymmetry in it is stated once.
+ *
+ * That asymmetry: **only a refusal lowers the flag.** A `finally` here would be
+ * the obvious shape and it would be wrong — both roads succeed by handing the
+ * caller something that takes the browser away, and clearing the flag in the gap
+ * between the return and the navigation puts a live currency row back under a
+ * thumb for exactly the moment the freeze exists to cover. A page that is
+ * leaving stays frozen until it unloads. `HostedCheckoutButton` holds its own
+ * `pending` state through the same gap, for the same reason and in the same
+ * words.
+ *
+ * The raise is synchronous with the call, before the first byte leaves: the
+ * write is what is being protected, so waiting for the write to start would be
+ * waiting for the thing being guarded against.
+ */
+async function whileInFlight<T>(road: () => Promise<T>): Promise<T> {
+  paymentStarted();
+
+  try {
+    return await road();
+  } catch (refusal: unknown) {
+    // Nothing was charged on any arm that throws — `startCheckout` and
+    // `startWalletPayment` both say so — so there is nothing left to protect.
+    paymentSettled();
+    throw refusal;
+  }
+}
+
+/**
  * Places an order for one reading, starts its payment, remembers the checkout,
  * and answers the **hosted page** to send the browser to.
  *
@@ -149,12 +182,11 @@ async function placeOneReading({ productKey, money, question }: Bought) {
  * whatever `api-write.ts` throws on a refused write — a 422 on the line, a 429,
  * a network failure. In every one of those cases nothing has been charged.
  */
-export async function startCheckout({
-  productKey,
-  money,
-  question,
-  gift,
-}: Bought): Promise<string> {
+export function startCheckout(bought: Bought): Promise<string> {
+  return whileInFlight(() => hostedRoad(bought));
+}
+
+async function hostedRoad({ productKey, money, question, gift }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
   /*
@@ -241,12 +273,11 @@ export async function startCheckout({
  * quietly follow — and whatever `api-write.ts` throws on a refused write. In
  * every one of those cases nothing has been charged.
  */
-export async function startWalletPayment({
-  productKey,
-  money,
-  question,
-  gift,
-}: Bought): Promise<string> {
+export function startWalletPayment(bought: Bought): Promise<string> {
+  return whileInFlight(() => walletRoad(bought));
+}
+
+async function walletRoad({ productKey, money, question, gift }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
   const instruction = await payOrder(order.payToken, { method: "stripe_wallet" });

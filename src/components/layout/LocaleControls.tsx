@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import type { ApiCurrency, ApiLanguage } from "@/lib/api";
 import { highlightedCurrency, useCurrency } from "@/lib/currency";
 import { useCurrencyOptions } from "@/lib/currencies";
+import { usePaymentInFlight } from "@/lib/payment-in-flight";
 import { useLanguageOptions } from "@/lib/languages";
 import { currentLocale } from "@/lib/locale";
 
@@ -143,13 +144,25 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
   const currencies = useCurrencyOptions();
   const languages = useLanguageOptions();
 
+  /*
+    Currency only. Language prices nothing, so freezing it would be freezing a
+    control for a reason that is not its own.
+  */
+  const frozen = usePaymentInFlight();
+
   return (
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
       {/* Empty until there are two languages to choose between — see `lib/languages.ts`. */}
       {languages.length > 0 ? (
         <SegmentRow label="Language" options={languageRows(languages)} value={language} onChange={setLanguage} />
       ) : null}
-      <SegmentRow label="Currency" options={currencyRows(currencies)} value={currency} onChange={setCurrency} />
+      <SegmentRow
+        label="Currency"
+        options={currencyRows(currencies)}
+        value={currency}
+        onChange={setCurrency}
+        frozen={frozen}
+      />
     </div>
   );
 }
@@ -177,6 +190,9 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
   const languages = useLanguageOptions();
   const hasLanguages = languages.length > 0;
   const [open, setOpen] = useState(false);
+
+  // Currency only, for the reason `LocaleControls` above gives.
+  const frozen = usePaymentInFlight();
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -281,6 +297,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
               value={currency}
               onChange={setCurrency}
               autoFocus={open && !hasLanguages}
+              frozen={frozen}
             />
           </motion.div>
         ) : null}
@@ -296,11 +313,14 @@ function LocaleGroup({
   value,
   onChange,
   autoFocus,
+  frozen = false,
 }: {
   label: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
+  /** A payment is in flight, so this group announces itself and refuses presses. */
+  frozen?: boolean;
   /**
    * Focuses the current choice the moment the panel opens. Only whichever group
    * is drawn first takes it, which is Language where there is one and Currency
@@ -359,9 +379,13 @@ function LocaleGroup({
           type="button"
           role="option"
           aria-selected={option.value === value}
+          aria-disabled={frozen}
           tabIndex={index === activeIndex ? 0 : -1}
           onFocus={() => setActiveIndex(index)}
-          onClick={() => onChange(option.value)}
+          onClick={() => {
+            if (frozen) return;
+            onChange(option.value);
+          }}
           onKeyDown={(event) => onOptionKeyDown(event, index)}
           className="menu-option flex w-full items-center gap-[0.6em] px-[1.1em] py-[0.42em]"
         >
@@ -426,11 +450,14 @@ function SegmentRow({
   options,
   value,
   onChange,
+  frozen = false,
 }: {
   label: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
+  /** A payment is in flight, so this row announces itself and refuses presses. */
+  frozen?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -442,7 +469,11 @@ function SegmentRow({
             key={option.value}
             type="button"
             aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
+            aria-disabled={frozen}
+            onClick={() => {
+              if (frozen) return;
+              onChange(option.value);
+            }}
             className="segment flex min-h-[1.9em] items-center gap-[0.3em] px-[0.7em] py-[0.15em]"
           >
             {option.symbol ? <span aria-hidden>{option.symbol}</span> : null}

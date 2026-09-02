@@ -3,6 +3,7 @@ import { after, beforeEach, test } from "node:test";
 
 import { CheckoutUnavailable, startCheckout, startWalletPayment } from "./buy.ts";
 import { recallCheckout } from "./checkout-session.ts";
+import { forgetPayment, paymentInFlight } from "./payment-in-flight.ts";
 
 type Call = { url: string; init: RequestInit };
 
@@ -12,8 +13,21 @@ const realStorage = Reflect.get(globalThis, "sessionStorage");
 
 let calls: Call[] = [];
 
+type Deferred = { promise: Promise<Response>; settle: (response: Response) => void };
+
+/**
+ * A response held open, so the state *during* a write can be measured rather
+ * than raced for. `catalogue.test.ts` holds one the same way.
+ */
+function deferred(): Deferred {
+  let settle!: (response: Response) => void;
+  const promise = new Promise<Response>((resolve) => (settle = resolve));
+
+  return { promise, settle };
+}
+
 /** Stubbed at the network, so what is asserted is the request that leaves. */
-function stubFetch(...responses: Response[]): void {
+function stubFetch(...responses: (Response | Deferred)[]): void {
   const queue = [...responses];
 
   globalThis.fetch = (async (input: RequestInfo | URL, init: RequestInit = {}) => {
@@ -22,7 +36,7 @@ function stubFetch(...responses: Response[]): void {
     const next = queue.shift();
     if (!next) throw new Error(`Unexpected fetch to ${String(input)}.`);
 
-    return next;
+    return next instanceof Response ? next : next.promise;
   }) as typeof fetch;
 }
 
@@ -74,6 +88,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "https://staging-api.theworldtarot.com";
   globalThis.document = { cookie: "XSRF-TOKEN=token" } as Document;
   Object.defineProperty(globalThis, "sessionStorage", { value: memoryStorage(), configurable: true });
+  forgetPayment();
 });
 
 after(() => {
@@ -429,4 +444,58 @@ test("a refused order never reaches the wallet payment call", async () => {
 
   assert.equal(bodies().length, 1);
   assert.equal(recallCheckout(), null);
+});
+
+test("the currency control freezes the moment a card write starts, before a byte has left", async () => {
+  // Synchronous on purpose: the freeze cannot wait for a round trip, because the
+  // round trip is the thing it is protecting.
+  const held = deferred();
+  stubFetch(new Response(null, { status: 204 }), held, new Response(null, { status: 204 }), json({ type: "redirect", redirect_url: SESSION_URL }));
+
+  const buying = startCheckout({ productKey: "month-ahead", money: offer });
+
+  assert.equal(paymentInFlight(), true);
+
+  held.settle(placed());
+  await buying;
+});
+
+test("a refused card write settles, and the currency control is live again", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ message: "That is not something you can buy right now.", errors: { "lines.0.product": ["No."] } }, 422),
+  );
+
+  await assert.rejects(() => startCheckout({ productKey: "month-ahead", money: offer }), { status: 422 });
+
+  // Nothing was charged and nothing is leaving, so there is no reason left to
+  // refuse a press.
+  assert.equal(paymentInFlight(), false);
+});
+
+test("the wallet road freezes it too, and a sheet is the reason the freeze exists", async () => {
+  const held = deferred();
+  stubFetch(new Response(null, { status: 204 }), held, new Response(null, { status: 204 }), json({ type: "client_secret", client_secret: SECRET }));
+
+  const buying = startWalletPayment({ productKey: "month-ahead", money: offer });
+
+  assert.equal(paymentInFlight(), true);
+
+  held.settle(placed());
+  await buying;
+
+  // Still frozen after the secret comes back: the caller is about to confirm it
+  // with Stripe, and the sheet is open the whole time.
+  assert.equal(paymentInFlight(), true);
+});
+
+test("a refused wallet write settles, so a cancelled attempt does not leave the control stuck", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ message: "That is not something you can buy right now.", errors: { "lines.0.product": ["No."] } }, 422),
+  );
+
+  await assert.rejects(() => startWalletPayment({ productKey: "month-ahead", money: offer }), { status: 422 });
+
+  assert.equal(paymentInFlight(), false);
 });
