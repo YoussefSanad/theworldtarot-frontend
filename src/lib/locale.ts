@@ -11,10 +11,12 @@
  * (`/api/v1/en/products`, `/api/v1/es/products`), so the URL shape does not
  * change when that day comes. Only what fills the segment does.
  *
- * When it does come, `currentLocale` learns to read the route segment, and the
- * list of what is available comes from `GET /api/v1/languages` — which
- * deliberately sits outside the language segment, being the thing that says
- * which languages there are.
+ * **What that day looks like is decided and not built**, as of 1 September 2026
+ * (#63): a `[locale]` segment, English keeping `/`, and a switcher rendering the
+ * intersection of what was built and what `GET /api/v1/languages` answers. The
+ * argument — including why `/en/` was declined and what the deferral costs — is
+ * `docs/adr/0004-language-is-a-path-segment.md`, and it is not repeated here. A
+ * decision recorded in two places drifts.
  */
 
 export const DEFAULT_LOCALE = "en";
