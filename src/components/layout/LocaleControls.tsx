@@ -246,6 +246,12 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
       <button
         ref={triggerRef}
         type="button"
+        // `check:currency` opens this panel before it can assert on a row —
+        // both controls live behind `open` inside `AnimatePresence`, so neither
+        // is in the export. A hook rather than the label, as
+        // `data-hosted-checkout` is on the checkout button and for the same
+        // reason: the words are copy and copy changes.
+        data-locale-menu
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="true"
         aria-expanded={open}
