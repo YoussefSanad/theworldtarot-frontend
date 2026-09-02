@@ -5,7 +5,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { cn } from "@/lib/cn";
+import type { ApiCurrency } from "@/lib/api";
 import { highlightedCurrency, useCurrency } from "@/lib/currency";
+import { useCurrencyOptions } from "@/lib/currencies";
 import { currentLocale } from "@/lib/locale";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
@@ -75,15 +77,16 @@ export const LANGUAGE_OPTIONS: SelectOption[] = [
 ];
 
 /**
- * The three the backend actually sells in, per `products-api-wiring.md`. Real,
- * unlike the languages above — but still a constant here rather than a fetch,
- * because there is no endpoint that lists them yet.
+ * One currency as a row in either control.
+ *
+ * The code is both the value and the label — "USD" is what the row reads, and
+ * the symbol is a glyph printed ahead of it. No names ("US Dollar"): three
+ * codes in a 13em panel are read faster than three names, and the symbol
+ * already says which is which to anybody who does not know the codes.
  */
-export const CURRENCY_OPTIONS: SelectOption[] = [
-  { value: "USD", label: "USD", symbol: "$" },
-  { value: "EUR", label: "EUR", symbol: "€" },
-  { value: "GBP", label: "GBP", symbol: "£" },
-];
+function currencyRows(currencies: readonly ApiCurrency[]): SelectOption[] {
+  return currencies.map(({ code, symbol }) => ({ value: code, label: code, symbol }));
+}
 
 export type LocaleSelection = {
   language: string;
@@ -134,11 +137,12 @@ export function useLocaleSelection(): LocaleSelection {
 /** The mobile drawer's shape: both groups flat, every option one tap away. */
 export function LocaleControls({ selection, className }: { selection: LocaleSelection; className?: string }) {
   const { language, currency, setLanguage, setCurrency } = selection;
+  const currencies = useCurrencyOptions();
 
   return (
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
       <SegmentRow label="Language" options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
-      <SegmentRow label="Currency" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
+      <SegmentRow label="Currency" options={currencyRows(currencies)} value={currency} onChange={setCurrency} />
     </div>
   );
 }
@@ -162,6 +166,7 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
  */
 export function LocaleMenu({ selection, className }: { selection: LocaleSelection; className?: string }) {
   const { language, currency, setLanguage, setCurrency } = selection;
+  const currencies = useCurrencyOptions();
   const [open, setOpen] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -250,7 +255,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
               autoFocus={open}
             />
             <div className="my-[0.3em] border-t border-(--edge-gold)" />
-            <LocaleGroup label="Currency" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
+            <LocaleGroup label="Currency" options={currencyRows(currencies)} value={currency} onChange={setCurrency} />
           </motion.div>
         ) : null}
       </AnimatePresence>
