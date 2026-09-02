@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -5,6 +7,7 @@ import { Divider } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";
 import { readingAction, type Reading } from "@/content/readings";
 import { ornaments } from "@/lib/assets";
+import { useReadingPrice } from "@/lib/reading-prices";
 
 /**
  * One of the three traditional readings, in either of the two forms the client
@@ -35,9 +38,15 @@ import { ornaments } from "@/lib/assets";
  *
  * All of it is `.panel-hover`, defined once in globals.css and shared with the
  * signature panel and the gift band, so the five of them cannot drift apart.
+ *
+ * **A client component, for the reason `ChooseYourJourney` is one**: the price
+ * is resolved per visitor and can only be read in the browser. Three of these
+ * render together and the signature panel above them prices the same way — all
+ * four read one catalogue answer, not four.
  */
 export function ReadingCard({ reading }: { reading: Reading }) {
-  const label = `${reading.price} ${readingAction}`;
+  const price = useReadingPrice(reading.productKey, reading.price);
+  const label = `${price} ${readingAction}`;
   const fullTitle = `${reading.title}${reading.titleTail ?? ""}`;
 
   return (

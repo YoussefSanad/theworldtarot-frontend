@@ -1,4 +1,4 @@
-import { currentLocale } from "./locale";
+import { currentLocale } from "./locale.ts";
 
 /**
  * Money, exactly as the API sends it: integer minor units and the currency they
