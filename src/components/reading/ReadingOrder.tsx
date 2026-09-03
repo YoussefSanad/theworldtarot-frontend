@@ -95,9 +95,11 @@ import { useProduct } from "@/lib/product";
  * The client's frame puts "Gift a Reading" at the foot of the payment column,
  * and what it changes is most of a panel above it — an action whose effect is
  * off screen. Rather than move her button, `CountedField`'s `autoFocusOnMount`
- * brings the visitor to the fields that replaced the question. The control
- * also states what it is: it carries `aria-pressed`, and its label becomes the
- * way back out, so gift mode can never be somewhere a visitor is stuck.
+ * brings the visitor to the first of the fields that replaced the question —
+ * the **gift signature** from 3 September 2026, the recipient's address before
+ * it. The control also states what it is: it carries `aria-pressed`, and its
+ * label becomes the way back out, so gift mode can never be somewhere a visitor
+ * is stuck.
  */
 export function ReadingOrder({ reading }: { reading: ReadingPage }) {
   const [gifting, setGifting] = useState(false);

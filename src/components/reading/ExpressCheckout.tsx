@@ -689,10 +689,18 @@ function Wallet({
 
     /*
       **Before the group is submitted and before an order exists.** Nothing
-      submits this form, so the `required` on the recipient's address is
-      enforced by nobody unless something asks — and without asking, a customer
-      reaches this line having authorised with their face for a gift addressed
-      to no one. `giftNote` would record the absence rather than prevent it.
+      submits this form, so gift mode's three required fields and the
+      disagreement written on the address confirmation are enforced by nobody
+      unless something asks —
+      and without asking, a customer reaches this line having authorised with
+      their face for a gift addressed to no one, or to an address they mistyped
+      and cannot be told about. `giftNote` would record the absence rather than
+      prevent it, and nothing at all would record the typo.
+
+      **This is the only place either is refused**, which is why the check is a
+      call and not a branch: `orderFormAccepts` asks the form, the form has the
+      mismatch on it already, and a second test out here would be a rule kept in
+      two places on the one road no automated check in this repo can press.
 
       Safe to `paymentFailed` here for the reason every arm above the
       confirmation is: there is no secret yet, so nothing can have been charged.
@@ -700,7 +708,7 @@ function Wallet({
       time, for when Stripe closes the sheet over it.
     */
     if (!orderFormAccepts(anchor.current)) {
-      return fail("The gift has no recipient on it.", undefined, checkout.walletNeedsRecipient);
+      return fail("The gift section refused the press.", undefined, checkout.walletNeedsGiftDetails);
     }
 
     let clientSecret: string;

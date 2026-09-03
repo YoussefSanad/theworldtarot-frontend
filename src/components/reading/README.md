@@ -383,21 +383,39 @@ The client puts "Gift a Reading" at the foot of the payment column, and what it
 changes is a section most of a panel above it — an action whose effect is off
 screen. Rather than move her button:
 
-- entering gift mode **moves focus into the recipient's email field**
+- entering gift mode **moves focus into the section's first field**
   (`CountedField`'s `autoFocusOnMount`), which brings the visitor to the part
-  of the page that just became different;
+  of the page that just became different. That was the recipient's address
+  until 3 September 2026 and is the **gift signature** from #71, which is now
+  what stands first;
 - the button **says what it is** — `aria-pressed`, a gold
   `.checkout-option[aria-pressed="true"]` state that does not depend on a
   pointer being near it, and a label that becomes the way back out, so gift
   mode is never somewhere a visitor is stuck.
 
-The recipient's email field also **suppresses browser autofill**
-(`CountedField`'s `suppressAutofill`). Chrome classifies a field by its `name`
-and `id` as much as by its `autocomplete`, so `recipientEmail` had it offering
-the purchaser their own saved address — the one address a gift must not go to.
-The field therefore submits under React's opaque `useId` string and carries its
-real name on `data-field`, which is where anything reading this form should
-look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
+**Both address fields suppress browser autofill** (`CountedField`'s
+`suppressAutofill`). Chrome classifies a field by its `name` and `id` as much as
+by its `autocomplete`, so `recipientEmail` had it offering the purchaser their
+own saved address — the one address a gift must not go to — and a confirmation
+the browser filled in has confirmed nothing anyway. The fields therefore submit
+under React's opaque `useId` string and carry their real names on `data-field`,
+which is where anything reading this form should look for them;
+`autocomplete="off"` and the password-manager opt-outs ride along.
+
+**That rule was broken for the four days nothing enforced it.** Suppression
+landed on 29 August 2026 and `lib/order-note.ts` shipped on 30 August reading
+`new FormData(form)` keyed by `name` — which answered `null` for a field sitting
+in the form under another name, so every gift order composed no note and was
+flagged as a self-purchase. `check:panel` read it the same wrong way and stayed
+green. Both were corrected to `data-field` on 3 September 2026 in #71, and
+`order-note.test.ts` now drives that path from a node to an order note rather
+than leaving it to a browser nobody runs on every commit.
+
+**The signature is the one single-line field that is not an address**, so
+`CountedField` takes a `type` and it is the only caller that passes `"text"`.
+It keeps its autofill: the browser's guess there is the buyer's own name, which
+unlike their own address is a reasonable first offer for a gift that may well be
+from them under it.
 
 The recipient's side of the flow — redeem, then ask — is not built, and since
 31 August 2026 this panel does not advertise it either: the `Redeem A Gift
@@ -412,10 +430,10 @@ reason to refuse the money is argued in `GetMyReading`, beside the gate it
 removed.
 
 So the recipient rides to the backend on the order line instead. `orderNoteIn`
-reads whichever of the two sections is mounted and composes the gift's two
-fields into the line's `question`, which is the field the admin orders table
-already prints; see `lib/order-note.ts`. Two things fall out of that and are
-worth knowing before reading either file:
+reads whichever of the two sections is mounted and composes the gift's
+signature, address and message into the line's `question`, which is the field
+the admin orders table already prints; see `lib/order-note.ts`. Two things fall
+out of that and are worth knowing before reading either file:
 
 - **A gift order is never indistinguishable from a self-purchase**, however
   little the buyer typed — which is also why `orderFormAccepts` exists. Nothing
@@ -425,6 +443,40 @@ worth knowing before reading either file:
 - **The record is flagged and the restore refuses it.** A cancelled gift
   checkout must not refill the question textarea with a note this code composed,
   so `CheckoutRecord.gift` marks it and `questionFor` turns it down.
+
+**The address is taken twice, and the disagreement has exactly one way out.**
+The buyer never receives the code, so a typo sends a paid, non-expiring bearer
+credential to a stranger with nothing in the buyer's hands to resend. The
+comparison is `markGiftAddresses`, called by `orderFormAccepts` on its way to
+`reportValidity()`, and what it does is `setCustomValidity` on the **address
+confirmation** and nothing else — so the refusal comes out of the same single
+call the `required`s do. **Recomputed at every press rather than kept current as
+the buyer types**, which is what makes editing the address after confirming it
+as safe as editing the confirmation; a listener would be one more thing that has
+to have run. **And no payment control tests for it.** A parallel branch is how a
+buyer authorises with their face for a gift the form had already rejected, and
+the wallet road is the one road no headless browser here can press.
+
+The sentence it writes lives in `content/reading-pages.ts` like the rest of the
+copy, and reaches `src/lib` — which can import nothing from `@/content`, since
+`node --test` resolves no `@/` — on the confirmation's own wrapper as
+`data-mismatch`. An argument on `orderFormAccepts` was the alternative and is
+the forgettable one: a third caller omitting it would turn the check off
+silently.
+
+**The section holds four fields where it held two, and the panel shifts.** It
+was meant to match the question field's 607px box in both directions; it still
+matches the width, which is what stops the panel changing shape as well as size
+on the toggle, and it no longer matches the height. Measured against the export
+at 1920px: the question section stands 431px, and this one stood 557px before
+#71 and stands 760px after. The message textarea pays part of it back — three
+rows to two, its `min-h` down from the 146px box to the 100px one — because it
+is the only optional field on either section and a shorter optional box is the
+cheaper of the two costs. It pays 38px of 242px, and nothing else on a section
+of four required boxes has height to give. `check:panel` asserts the width and
+the row count and **reports** the height the toggle costs rather than asserting
+it, there being no number to hold it to that would not be today's copy written
+down twice.
 
 **What the wallet row taught, and why it came back first.** The row was
 unmounted rather than made inert, because a wallet takes the money the instant a

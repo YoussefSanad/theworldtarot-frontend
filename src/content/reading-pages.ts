@@ -86,7 +86,49 @@ export const readingPageChrome = {
      */
     enter: "Gift a Reading",
     leave: "A Reading for Myself",
+    /**
+     * The **gift signature** — the name the recipient is told the gift is from,
+     * and the first field on the section from 3 September 2026 (#71).
+     *
+     * **It is labelled as who the gift is *from*, never "Your Name".** An order
+     * may legitimately carry no name at all since #52; the card road collects
+     * the buyer's identity on Stripe's page, after the order already exists;
+     * and a wallet supplies a billing address rather than a contact. So the
+     * name on the payment is neither reliably present nor the right answer:
+     * "Mum" is a truer signature than whatever is on the card.
+     *
+     * **Required, which is a trust decision rather than a completeness one.**
+     * An unsolicited mail carrying a code, from a brand the recipient may never
+     * have heard of, is phishing-shaped. A name they recognise is the one
+     * signal that separates it from one, which is why this field cannot be
+     * optional even though the message below it is. See `CONTEXT.md`.
+     */
+    signature: { label: "Who the gift is from", placeholder: "Who the gift is from…" },
     email: { label: "Recipient's email address", placeholder: "Recipient’s email address…" },
+    /**
+     * The address a second time, because **the buyer never receives the code**.
+     *
+     * That is the whole argument and it is not a general preference for
+     * confirm-fields. On an ordinary purchase a mistyped address costs the
+     * buyer their receipt, which they can ask for again from an order they can
+     * still see. Here the one mail that carries the gift code goes to an
+     * address only the buyer knows, and a typo sends a paid, non-expiring
+     * bearer credential to a stranger or to nobody — with no expiry to reclaim
+     * it and nothing in the buyer's hands to resend. See the backend's
+     * `docs/adr/0005-gift-codes-do-not-expire.md`.
+     *
+     * `mismatch` is written onto the field itself with `setCustomValidity` and
+     * surfaces through the form's one `reportValidity()` call; nothing here
+     * raises an error of its own. It reaches `src/lib`, which can import no
+     * copy, on the field's own wrapper as `data-mismatch` — see
+     * `markGiftAddresses` in `lib/order-note.ts` for why that is load-bearing
+     * on the wallet road.
+     */
+    confirm: {
+      label: "Confirm the recipient's email address",
+      placeholder: "Confirm the recipient’s email address…",
+      mismatch: "These two email addresses do not match.",
+    },
     message: { label: "Personal message (optional)", placeholder: "Write a personal message…" },
     /**
      * Said once, under the fields, because the flow is not the obvious one:
@@ -178,11 +220,12 @@ export const readingPageChrome = {
      * design — and it goes to her with the rest.
      *
      * **What it now has to say is that a person is in the loop.** `POST
-     * /orders` still has no field for a recipient, so the two gift fields ride
-     * to the backend on the order line as prose and a human reads them there;
-     * see `lib/order-note.ts`. That is a real difference from buying for
-     * yourself and the buyer is owed it before they pay, because the reading
-     * does not simply arrive at the address they typed.
+     * /orders` still has no field for a recipient, so the gift's signature,
+     * address and message ride to the backend on the order line as prose and a
+     * human reads them there; see `lib/order-note.ts`. That is a real
+     * difference from buying for yourself and the buyer is owed it before they
+     * pay, because the reading does not simply arrive at the address they
+     * typed.
      *
      * **It promises email rather than a timeframe.** Fulfilment is manual on
      * every order here, gift or not, so no sentence on this panel can honestly
@@ -218,12 +261,22 @@ export const readingPageChrome = {
      */
     walletFailed: "We could not take this payment. Nothing has been charged.",
     /**
-     * Written into the wallet sheet when the gift has no recipient on it.
+     * Written into the wallet sheet when the gift section refuses the press.
      *
      * **A separate sentence from `walletFailed`, because the customer can act
      * on this one.** "We could not take this payment" is true of both, and on
      * its own it would send somebody to try a second time at a form that will
-     * refuse them identically. This names the field.
+     * refuse them identically. This says where to look.
+     *
+     * ~~"Please add the recipient's email address before paying for a gift."~~
+     * **Widened on 3 September 2026** (#71), when the section grew a **gift
+     * signature** and a confirm-address beside the one field it used to have.
+     * Three different faults now reach this sentence — a missing signature, a
+     * missing address, and two addresses that disagree — and copy naming only
+     * the address would be wrong on two of them. It no longer names a field
+     * because it can no longer know which one; `orderFormAccepts` marks and
+     * focuses the offending field itself, and the browser's own message on it
+     * is what says which.
      *
      * It reaches the sheet rather than the page because the sheet is where the
      * customer is: the check runs before `elements.submit()`, so no payment has
@@ -231,8 +284,8 @@ export const readingPageChrome = {
      * marked and focused underneath by `orderFormAccepts`, for when Stripe
      * closes the sheet over it.
      */
-    walletNeedsRecipient:
-      "Please add the recipient's email address before paying for a gift. Nothing has been charged.",
+    walletNeedsGiftDetails:
+      "Please check the gift's details before paying. Nothing has been charged.",
     /**
      * Under the wallet row, after `stripe.confirmPayment` has already been
      * called and has come back wrong.

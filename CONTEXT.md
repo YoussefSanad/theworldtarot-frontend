@@ -37,9 +37,11 @@ _Avoid_: product id, SKU, slug, product name
 **Order note**:
 The one free-text string an order line carries, as `lines[].question` on the
 wire. It is the customer's **question** on a self-purchase and a composed
-**gift note** in gift mode — "Gift — send this reading to …", built from the
-recipient's address and the buyer's message, because `POST /orders` has no
-field for either. The wire name is the backend's and does not describe the
+**gift note** in gift mode — "Gift from … — send this reading to …", built from
+the **gift signature**, the recipient's address and the buyer's message,
+because `POST /orders` has no field for any of them. The confirm-address is not
+in it: that field is a check on what the buyer typed rather than a third thing
+they told us. The wire name is the backend's and does not describe the
 contents; `lib/order-note.ts` is where the two are told apart, by which section
 the form has mounted. **A stopgap whose end is now designed rather than hoped
 for**, decided 1 September 2026 (#54), and still what ships today. What replaces
@@ -297,6 +299,24 @@ message beside it is.
 **Not "sender".** `App\Enums\Sender` is already the identity a mail leaves
 from, in the repository that would send this one.
 _Avoid_: sender, sender name, purchaser name, from name, buyer name
+
+**Address confirmation**:
+The second address box on the gift panel, and the only field in this system
+whose value is never kept. Its whole job is that the **recipient**'s address was
+typed twice by the person who knows it: it is compared with the first, trimmed
+and case-folded, and then thrown away.
+
+**Not a third thing the buyer told us.** It is a check on what they typed, so it
+is not in the **order note**, it will not be a column on a **gift**, and an
+order line quoting the same address twice would be Jennifer reading a form's
+validation out of a table cell.
+
+**It exists because the buyer never receives the code.** A mistyped address on
+an ordinary purchase costs somebody a receipt they can ask for again; here it
+sends a paid, non-expiring bearer credential to a stranger, with no expiry to
+reclaim it and nothing in the buyer's hands to resend.
+_Avoid_: confirm email, email confirmation (that is a mail asking somebody to
+verify an address, which this is not), verification, second email, retype
 
 ### After the money
 

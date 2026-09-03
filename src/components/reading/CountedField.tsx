@@ -28,6 +28,7 @@ export function CountedField({
   label,
   placeholder,
   limit,
+  type = "email",
   required = false,
   rows,
   autoFocusOnMount = false,
@@ -39,6 +40,17 @@ export function CountedField({
   label: string;
   placeholder: string;
   limit: number;
+  /**
+   * What a single-line field holds. Ignored where `rows` is given, a
+   * `<textarea>` having no type.
+   *
+   * `email` is the default because it is what every single-line field on this
+   * panel was until the **gift signature** arrived on 3 September 2026, and a
+   * default of `text` would have quietly dropped the browser's own address
+   * validation off the two that still want it. The signature is the only
+   * `text` one: it is a name, and `type="email"` on it would refuse "Mum".
+   */
+  type?: "email" | "text";
   required?: boolean;
   /** Given, a `<textarea>`; otherwise a single-line field. */
   rows?: number;
@@ -47,9 +59,17 @@ export function CountedField({
   /**
    * Keeps the browser from offering the visitor's own saved details here.
    *
-   * For the gift field, where the address wanted is somebody else's and the
-   * one Chrome has on file is exactly the wrong answer. See the note by
-   * `opaqueName`.
+   * ~~For the gift field~~ — **for both of the gift's address fields from 3
+   * September 2026** (#71), which have two different reasons for it. The
+   * recipient's is where the address wanted is somebody else's and the one
+   * Chrome has on file is exactly the wrong answer; the **address
+   * confirmation** beside it is where a value the browser filled in has
+   * confirmed nothing at all, the whole point of the second box being that the
+   * address is typed twice by the person who knows it.
+   *
+   * Not the **gift signature**, which keeps its autofill: the browser's guess
+   * there is the buyer's own name, and unlike their own address that is a
+   * reasonable first offer. See the note by `opaqueName`.
    */
   suppressAutofill?: boolean;
   /**
@@ -82,14 +102,22 @@ export function CountedField({
   /*
     Chrome does not take `autocomplete="off"` at its word on a box it has
     already decided is an email field: it classifies by name and id as well,
-    and `recipientEmail` is all the excuse it needs to prompt the purchaser
-    with their own address — the one address this field does not want.
+    and `recipientEmail` — or `confirmEmail` — is all the excuse it needs to
+    prompt the purchaser with their own address, the one address neither of
+    those fields wants.
 
     So the field goes to the browser effectively nameless. What it submits is
     React's opaque id, which carries no hint of what the box is for, and the
     name the app knows the field by moves to `data-field`, where anything
     reading this form can still find it. `useId` renders the same string on
     the server and the client, so this costs no hydration.
+
+    **`data-field` is a contract, not a debugging aid.** `lib/order-note.ts`
+    read this form by `name` for the four days after suppression landed and
+    found nothing, so every gift order composed no note and was flagged a
+    self-purchase; `check:panel` read it the same way and stayed green. Both
+    were corrected on 3 September 2026. Anything that reads this form reads
+    `data-field`.
 
     The rest is the same suppression said in the other dialects the visitor
     might have installed: `data-1p-ignore` for 1Password, `data-lpignore` for
@@ -125,7 +153,18 @@ export function CountedField({
       </label>
 
       {rows === undefined ? (
-        <input type="email" autoComplete={suppressAutofill ? "off" : "email"} {...shared} />
+        /*
+          `name` for a signature the browser has no better guess at than the
+          buyer's own — which, unlike the recipient's address below it, is a
+          reasonable first offer here: the gift may well be from them under
+          their own name. It is a first offer and not an answer; "Mum" is what
+          the field is labelled for and is typed over the top of it.
+        */
+        <input
+          type={type}
+          autoComplete={suppressAutofill ? "off" : type === "email" ? "email" : "name"}
+          {...shared}
+        />
       ) : (
         <textarea rows={rows} {...shared} className={cn(field, "resize-y")} />
       )}
