@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { Container, Section } from "@/components/layout/Section";
 import { BeyondTheGate } from "@/components/reading/BeyondTheGate";
+import { ReadingBackdrop } from "@/components/reading/ReadingBackdrop";
 import { ReadingFeatures } from "@/components/reading/ReadingFeatures";
 import { ReadingHero } from "@/components/reading/ReadingHero";
 import { ReadingPanel } from "@/components/reading/ReadingPanel";
@@ -66,27 +66,12 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  */
 export function ReadingPresentation({ reading, commerce }: { reading: ReadingPage; commerce?: ReactNode }) {
   /*
-    The backdrop is scoped to the page's own content, as it is on the readings
-    index and for the same reason — the client's frames draw no site footer and
-    ours is opaque, so a room anchored to the layout column would spend its
-    height behind the footer and never be seen. See the note in
-    `../page.tsx`; `isolate` keeps its `-z-10` inside this box.
-
-    The mobile offset is the index's, and for the index's reason. Above `lg`
-    this page does open on flat colour — the observatory stands on the floor and
-    nothing reaches the top — but below it `.page-atmosphere-reading::before`
-    hangs the same night sky the index hangs, from this box's top edge. That
-    edge is `main`'s, which is the masthead's bottom, and the masthead is
-    transparent: left flush, the sky starts in a hard line under a strip of flat
-    colour, and the header reads as a solid block sitting on the page. 5rem
-    lifts the start of the picture above the header, the same clearance and the
-    same number as `../page.tsx` — it is tuned to the masthead's height, so it
-    moves when `SiteHeader`'s padding does.
+    The backdrop and the box that scopes it, which `/redeem/` draws too — both
+    of its screens. Why it is scoped here rather than to the layout column, and
+    what the mobile offset is tuned to, is in `ReadingBackdrop`.
   */
   return (
-    <div className="relative isolate">
-      <PageAtmosphere variant="reading" className="max-lg:-top-20" />
-
+    <ReadingBackdrop>
       {/*
         Figma sets the pair 144px under a frame that draws no masthead; ours
         renders one, so this is only the air between the two. 79px of floor
@@ -183,6 +168,6 @@ export function ReadingPresentation({ reading, commerce }: { reading: ReadingPag
         tone="champagne"
         width="reading"
       />
-    </div>
+    </ReadingBackdrop>
   );
 }

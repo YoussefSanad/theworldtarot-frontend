@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 
-import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
+import { ReadingBackdrop } from "@/components/reading/ReadingBackdrop";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";
@@ -52,9 +52,7 @@ export function CodeEntry({
   const id = useId();
 
   return (
-    <div className="relative isolate">
-      <PageAtmosphere variant="reading" className="max-lg:-top-20" />
-
+    <ReadingBackdrop>
       <section className="mx-auto w-full max-w-[36.25rem] px-6 py-24 text-center">
         <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">
           {entry.heading}
@@ -138,6 +136,6 @@ export function CodeEntry({
           {redeemCopy.backLabel}
         </ButtonLink>
       </section>
-    </div>
+    </ReadingBackdrop>
   );
 }

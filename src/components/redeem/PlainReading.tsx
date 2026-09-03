@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { Container, Section } from "@/components/layout/Section";
+import { ReadingBackdrop } from "@/components/reading/ReadingBackdrop";
 import { ReadingPanel } from "@/components/reading/ReadingPanel";
 import { Divider } from "@/components/ui/Divider";
 
@@ -37,9 +37,7 @@ export function PlainReading({
   children: ReactNode;
 }) {
   return (
-    <div className="relative isolate">
-      <PageAtmosphere variant="reading" className="max-lg:-top-20" />
-
+    <ReadingBackdrop>
       <Section padding="none" className="pt-[clamp(1rem,2.6vw,3.125rem)] pb-section">
         {/*
           `measure` rather than `reading`: one panel standing alone wants a
@@ -70,6 +68,6 @@ export function PlainReading({
           </ReadingPanel>
         </Container>
       </Section>
-    </div>
+    </ReadingBackdrop>
   );
 }
