@@ -204,6 +204,12 @@ On a self-purchase the querent is the buyer. On a gift they are whoever spent
 the code, **which is usually and not always the recipient** — a forwarded email
 is enough to part them, and the reading goes to the querent because that is the
 person who asked.
+
+**Their identity is asked for at redemption and never inherited from the gift.**
+`gifts.recipient_email` is where the mail was sent, typed by somebody else and
+unverified; the redemption page collects the querent's own address and name.
+That is the first and only moment the person who will actually be read for says
+who they are.
 _Avoid_: recipient, reader, customer, end user
 
 ### Gifting
@@ -225,6 +231,15 @@ becomes one when it is **redeemed**, and until then nobody has asked anything
 and there is nothing anyone could write.
 _Avoid_: gift card, voucher, credit (all three name an amount; a gift names one
 reading and is worth the right price in every currency), gift reading
+
+**Giftable**:
+A property of the product, `is_giftable` on `/products`, and what decides whether
+a reading's page draws GIFT A READING at all. **Not everything is**: `one-card`,
+the Viewing Room pass and the rush are not, decided 2 September 2026. The rule is
+enforced rather than trusted — `POST /orders` refuses a gift object on a line
+that is not giftable instead of quietly dropping it.
+_Avoid_: gift-enabled, `can_gift`, giftable as a property of the page rather than
+the product
 
 **Gift code**:
 The string carrying the authority to redeem one gift, in a link the recipient
@@ -272,6 +287,12 @@ The name the recipient is told the gift is from, and the only reason the buyer
 is asked for one. It is **not the buyer's name**: an order may legitimately have
 none since #52, a wallet supplies an address rather than a billing contact, and
 "Mum" is a truer answer here than whatever is on the card.
+
+**It is required**, which is a trust decision and not a completeness one. An
+unsolicited email carrying a code, from a brand the recipient may never have
+heard of, is phishing-shaped; a name they recognise is the single signal that
+separates it from one. That is why the field cannot be optional even though the
+message beside it is.
 
 **Not "sender".** `App\Enums\Sender` is already the identity a mail leaves
 from, in the repository that would send this one.
