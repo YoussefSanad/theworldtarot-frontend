@@ -60,14 +60,26 @@ const { gift } = readingPageChrome;
  *
  * **The panel shifts on the toggle, and this unit widens the shift.** Measured
  * against the export at 1920px: the question section stands 431px and this one
- * stood 557px before #71 and stands 760px after. The two new boxes are 101px
+ * stood 557px before #71 and 760px when it shipped. The two new boxes are 101px
  * each and their counters are in that; the message textarea gives 38px of it
  * back, dropping **3 rows to 2** with its `min-h` down from the 146px box to
  * the 100px one, because it is the only optional field on either section and a
- * shorter optional box is the cheaper of the two costs. It does not give back
- * anything like enough, and no rearrangement of four required boxes and a
- * textarea can: **the intent was a section that matched the question field's
- * 607px box in both directions, and only the width still does.**
+ * shorter optional box is the cheaper of the two costs.
+ *
+ * **Two more were spent on 3 September 2026**, the two the shipping comment
+ * offered and the issue held open for: the **address confirmation** draws no
+ * counter (−24px, and the better design of the two — the box above it counts
+ * the same 254), and the three gaps between the four fields go from 20px to
+ * 12px (−24px). Measured, not predicted: the section stands **712px** where it
+ * stood 760px, and the toggle costs the panel 337px where it cost 384px
+ * (1767 → 2104, against 1767 → 2151). The shipping comment's estimate for the
+ * counter was 27px; its line and margin measure 24px.
+ *
+ * That is as far as arrangement goes. **No arrangement of four required boxes
+ * and a textarea reaches 431px**: the intent was a section matching the
+ * question field's 607px box in both directions, and only the width still does.
+ * What is left to give would have to be a field, and all four are required or
+ * argued for above.
  *
  * The width is not a leftover. It is what stops the panel changing shape as
  * well as size when the visitor toggles, and it is one number in one place —
@@ -102,7 +114,7 @@ export function RecipientDetails() {
         />
       </FieldBox>
 
-      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
+      <FieldBox className="mt-[clamp(0.3rem,0.625vw,0.75rem)]">
         <CountedField
           name="recipientEmail"
           label={gift.email.label}
@@ -128,13 +140,21 @@ export function RecipientDetails() {
       */}
       <FieldBox
         data-mismatch={gift.confirmation.mismatch}
-        className="mt-[clamp(0.5rem,1.04vw,1.25rem)]"
+        className="mt-[clamp(0.3rem,0.625vw,0.75rem)]"
       >
         <CountedField
           name="addressConfirmation"
           label={gift.confirmation.label}
           placeholder={gift.confirmation.placeholder}
           limit={254}
+          /*
+            The one field on the site that does not say what it has left. The
+            box above it holds the same 254 and is counting them a line away,
+            so a second `0/254` under a second email field is the same sentence
+            twice — and it costs 24px on a section that is already the reason
+            the panel shifts. `maxLength` is still on the field.
+          */
+          counter={false}
           required
           /*
             Suppressed for the reason the field above it is, and for one more:
@@ -146,7 +166,7 @@ export function RecipientDetails() {
         />
       </FieldBox>
 
-      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
+      <FieldBox className="mt-[clamp(0.3rem,0.625vw,0.75rem)]">
         <CountedField
           name="giftMessage"
           label={gift.message.label}

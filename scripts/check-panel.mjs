@@ -397,6 +397,16 @@ async function drive(
       .inputValue()
       .catch(() => null),
     counter: (await page.locator("#get-my-reading p.tabular-nums").first().innerText().catch(() => "")).trim(),
+    /*
+      **How many fields in this section are counting**, which is one fewer than
+      the fields from 3 September 2026. The address confirmation draws no
+      counter: it stands under a box of the same 254 that is already counting,
+      so a second one says the first one's sentence again and charges the
+      toggle 24px for it. Counted rather than described because the prop that
+      turns it off is a default-on one — a caller that dropped it would put the
+      24px back with nothing to say it had.
+    */
+    counters: await page.locator("#get-my-reading p.tabular-nums").count(),
     recipient: await page.locator("#get-my-reading [data-field=recipientEmail]").count(),
     /*
       The two fields #71 added, counted separately from the address between
@@ -810,6 +820,7 @@ expect("live", "the panel never grows", sold.settled.height <= sold.resting.heig
 */
 expect("live", "and the collapsed row costs the column nothing", sold.settled.height, sold.resting.height);
 expect("live", "the API's price, in the API's currency", sold.settled.price, "€70");
+expect("live", "the question is the only field counting here", sold.settled.counters, 1);
 expect("live", "two frames: checkout, gift", sold.settled.ghosts, 2);
 /*
   The label alone, and the same string in every state the button is drawn in.
@@ -991,6 +1002,13 @@ expect("gifting", "and takes the address twice", gifted.settled.confirmation, 1)
   is what makes its height the one worth spending.
 */
 expect("gifting", "and the message box gave up a row to make room", gifted.settled.messageRows, 2);
+/*
+  **The second thing bought back**, on 3 September 2026 and by the decision this
+  issue was held open for. Three counters under four fields: the signature is
+  short enough to reach, the recipient's address carries the 254 for both
+  addresses, and the confirmation under it would be the same number twice.
+*/
+expect("gifting", "four fields, three counters", gifted.settled.counters, 3);
 /*
   **The half of the constraint that still holds.** The gift section was meant to
   match the question field's 607px box in both directions and now matches it in

@@ -13,6 +13,10 @@ import { cn } from "@/lib/cn";
  * exceeded, and in the counter, so the visitor sees it coming — and both take
  * the same number from `questionLimit`.
  *
+ * **One field turns it off**, from 3 September 2026 (#71) — the **address
+ * confirmation**, which stands directly under a box of the same limit that is
+ * already counting. See `counter`.
+ *
  * Uncontrolled apart from the count. The checkout button reads the question off
  * the form at the moment it is pressed (see `HostedCheckoutButton`), and holding
  * a controlled value
@@ -28,6 +32,7 @@ export function CountedField({
   label,
   placeholder,
   limit,
+  counter = true,
   type = "email",
   required = false,
   rows,
@@ -40,6 +45,26 @@ export function CountedField({
   label: string;
   placeholder: string;
   limit: number;
+  /**
+   * Whether the allowance is drawn under the field. On by default, because a
+   * limit nobody can see is the keyboard breaking.
+   *
+   * **Off on the address confirmation, and there only** (#71). The counter
+   * earns its line by telling a visitor something the field cannot: how much of
+   * an allowance they are spending. Under the second of two identical 254
+   * boxes it tells them what the first one is already telling them — two
+   * `0/254`s under two email fields, one of which is a copy of the other — and
+   * charges the panel 24px of a toggle that already grows for saying it twice.
+   *
+   * The limit is not relaxed by this: `maxLength` is on the field either way,
+   * and the box above it is where the number is visible. A field with no
+   * counter has nothing to count, so it drops its `onChange` too and goes as
+   * uncontrolled as the rest of it already is.
+   *
+   * `CodeEntry` on `/redeem/` wants the same thing and predates the prop; it
+   * draws this component's line by hand and says why beside it.
+   */
+  counter?: boolean;
   /**
    * What a single-line field holds. Ignored where `rows` is given, a
    * `<textarea>` having no type.
@@ -142,7 +167,10 @@ export function CountedField({
       them past everything above it.
     */
     autoFocus: autoFocusOnMount,
-    onChange: (event: { currentTarget: { value: string } }) => setUsed(event.currentTarget.value.length),
+    /* Only where something reads it — see `counter`. */
+    onChange: counter
+      ? (event: { currentTarget: { value: string } }) => setUsed(event.currentTarget.value.length)
+      : undefined,
     className: field,
   };
 
@@ -173,13 +201,19 @@ export function CountedField({
         Under the field and hard right, where a counter is looked for. `polite`
         rather than silent so it is available to a screen reader on demand, and
         `tabular-nums` so the number does not shuffle its own width as it grows.
+
+        Absent rather than hidden where `counter` is off: this line and its
+        `mt` are the 24px the address confirmation gives back to the panel, and
+        a `sr-only` copy of it would give back nothing.
       */}
-      <p
-        aria-live="polite"
-        className="mt-[0.3em] self-end text-fine leading-none tabular-nums font-light text-champagne/60"
-      >
-        {used}/{limit}
-      </p>
+      {counter ? (
+        <p
+          aria-live="polite"
+          className="mt-[0.3em] self-end text-fine leading-none tabular-nums font-light text-champagne/60"
+        >
+          {used}/{limit}
+        </p>
+      ) : null}
     </>
   );
 }

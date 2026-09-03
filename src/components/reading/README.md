@@ -575,6 +575,20 @@ the moment of a press, by `orderNoteIn`, rather than held in React — a
 controlled value in `ReadingOrder` would re-render the whole panel on every
 keystroke to do it.
 
+**One field turns the counter off**, from 3 September 2026 (#71): the **address
+confirmation**, through `CountedField`'s `counter`. It stands directly under a
+box of the same 254 that is already counting, so its own `0/254` is the line
+above it repeated — and it charges 24px to a section that is the reason the
+panel shifts on the toggle. The limit is untouched; `maxLength` is on the field
+either way, and the number is visible one box up. A field with no counter has
+nothing to count, so it drops its `onChange` as well and is uncontrolled
+outright. `check:panel` asserts **three counters under the gift section's four
+fields**, the prop being a default-on one that a caller could drop in silence.
+
+`CodeEntry` on `/redeem/` wants the same shape and predates the prop, drawing
+this component's line by hand — a fixed-length code being copied is not an
+allowance being spent.
+
 ## The rest of the furniture
 
 - **Section headings** (`Ask a Question`, `Get My Reading`, `Your Reading`,
