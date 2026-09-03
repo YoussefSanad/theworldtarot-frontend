@@ -182,5 +182,10 @@ export const redeemCopy = {
 
   /** The way back, in the same capitals the rest of the site sets this control in. */
   backLabel: "BACK TO READINGS",
-  backHref: "/readings",
+  /**
+   * Slashed, because `trailingSlash: true` exports a directory of `index.html`
+   * files and the unslashed form costs a 308 on the way. `headerActions.cta`
+   * moved for this on 29 August 2026; see `components/reading/README.md`.
+   */
+  backHref: "/readings/",
 } as const;
