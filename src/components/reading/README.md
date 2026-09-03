@@ -418,9 +418,11 @@ green. Both were corrected to `data-field` on 3 September 2026 in #71, and
 `order-note.test.ts` now drives that path from a node to an order note rather
 than leaving it to a browser nobody runs on every commit.
 
-**The signature is the one single-line field that is not an address**, so
-`CountedField` takes a `type` and it is the only caller that passes `"text"`.
-It keeps its autofill: the browser's guess there is the buyer's own name, which
+**The signature is the one single-line field on this panel that is not an
+address**, so `CountedField` takes a `type` for it. ~~It is the only caller that
+passes `"text"`.~~ **Corrected 3 September 2026**: `RedeemPanel` passes it too,
+for `querentName`, which is a name and not an address for the same reason. It
+keeps its autofill: the browser's guess there is the buyer's own name, which
 unlike their own address is a reasonable first offer for a gift that may well be
 from them under it.
 
