@@ -216,9 +216,13 @@ _Avoid_: recipient, reader, customer, end user
 
 ### Gifting
 
-Nothing in this section is built yet. It is the vocabulary settled while planning
-#54 on 1 September 2026, written down before the tickets are cut so that six
-of them do not each invent a word. The decisions behind it are
+~~Nothing in this section is built yet.~~ **Built on 3 September 2026**, across
+F1 to F5 of #54: the panel takes a signature and the recipient's address twice,
+the toggle is drawn from `is_giftable`, the confirmation has a gift screen that
+promises no reading, and `/redeem/` resolves a code without spending it. The
+vocabulary below was settled while planning on 1 September, written down before
+the tickets were cut so that six of them would not each invent a word, and
+nothing in it moved while they were built. The decisions behind it are
 `docs/adr/0003-redemption-is-a-page-of-its-own.md` here and ADRs 0004 and 0005
 in the backend.
 
@@ -268,7 +272,7 @@ this one meets no basket and reduces no total)
 
 **Redemption page**:
 `/redeem/`, one page for every reading rather than one per reading, and the only
-place a code is entered. It is a static export, so the code arrives as a query
+place a code is entered. **Built 3 September 2026** (#74). It is a static export, so the code arrives as a query
 parameter and never as a path segment.
 
 **It is a reading page with the commerce taken out, not a bare question box.**
