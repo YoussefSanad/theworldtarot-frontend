@@ -30,6 +30,7 @@ function priced(key: string, currency: string, amount: number, name = key.toUppe
     name,
     short_description: "Live copy.",
     allows_question: true,
+    is_giftable: true,
     price: { currency, amount },
   };
 }

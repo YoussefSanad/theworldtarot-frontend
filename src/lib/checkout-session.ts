@@ -82,6 +82,26 @@ export type CheckoutRecord = {
    */
   gift?: boolean;
   /**
+   * The **recipient**'s address, on a gift order where the buyer typed one.
+   *
+   * **The one thing on this record that is read by a customer**, and it is here
+   * because the confirmation has no other way to it. A gift buyer is owed the
+   * address their present went to — it is the whole of what they bought and the
+   * one detail they can still get wrong — and the screen is reached after a
+   * round trip to Stripe, from a payment that names nothing about a gift. The
+   * address is in `question` as prose, and reading it back out of that line is
+   * the `startsWith("Gift")` inference `lib/buy.ts` refuses by name.
+   *
+   * **It outlives the question.** `forgetQuestion` drops the composed note once
+   * the money has moved, and a reload of the confirmation still has to name
+   * where the gift went, so this is not in that sentence's fields.
+   *
+   * Absent on every self-purchase and on a gift the buyer left blank, which is
+   * also what keeps a record written before 3 September 2026 readable. See
+   * `OrderNote` in `lib/order-note.ts`.
+   */
+  giftRecipient?: string;
+  /**
    * The PaymentIntent's client secret. **Optional, and written on the wallet
    * road only** — a hosted Session leaves no secret on the client.
    *
@@ -239,10 +259,8 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
 
   if (typeof parsed !== "object" || parsed === null) return null;
 
-  const { payToken, money, sessionId, productKey, question, gift, clientSecret } = parsed as Record<
-    string,
-    unknown
-  >;
+  const { payToken, money, sessionId, productKey, question, gift, giftRecipient, clientSecret } =
+    parsed as Record<string, unknown>;
 
   if (typeof payToken !== "string" || payToken === "") return null;
   if (typeof productKey !== "string" || productKey === "") return null;
@@ -254,10 +272,11 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
   if (typeof currency !== "string" || currency === "") return null;
   if (typeof amount !== "number" || !Number.isFinite(amount)) return null;
 
-  // The three optional fields are validated when present and dropped when
+  // The four optional fields are validated when present and dropped when
   // absent, so a record that reads back is the same object that was written.
   if (question !== undefined && typeof question !== "string") return null;
   if (gift !== undefined && typeof gift !== "boolean") return null;
+  if (giftRecipient !== undefined && typeof giftRecipient !== "string") return null;
   if (clientSecret !== undefined && typeof clientSecret !== "string") return null;
 
   return {
@@ -267,6 +286,7 @@ function parseRecord(raw: string | null): CheckoutRecord | null {
     ...(sessionId === undefined ? {} : { sessionId }),
     ...(question === undefined ? {} : { question }),
     ...(gift === undefined ? {} : { gift }),
+    ...(giftRecipient === undefined ? {} : { giftRecipient }),
     ...(clientSecret === undefined ? {} : { clientSecret }),
   };
 }

@@ -71,6 +71,16 @@ for a **pay token**, and `CONTEXT.md` records why the two credentials are
 handled differently rather than leaving the next reader to apply one rule to the
 other.
 
+**What this does not license, decided 3 September 2026 building #74:** a code
+the visitor **typed** is never written into the address. The paragraph above is
+an acceptance of a cost that has to be paid — a link in an email carries its
+credential in its URL or it is not a link — and it reads as a general
+permission, which it is not. A typed code has already arrived without touching
+the address bar, so putting it there would be buying a history entry and a
+`Referer` for nothing. So `/redeem/` holds a hand-entered code in state and
+leaves the address alone, and `check:redeem` asserts that no address the browser
+visits contains it.
+
 ## Two operations, not one
 
 The page must resolve a code to a reading **without spending it**, or a visitor

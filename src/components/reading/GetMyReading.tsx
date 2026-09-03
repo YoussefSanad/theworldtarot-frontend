@@ -14,7 +14,7 @@ import { checkout as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 import { useWalletOffered } from "@/lib/payment-methods";
 import { formatPrice } from "@/lib/price";
-import type { ProductOffer } from "@/lib/product";
+import { giftOffered, type ProductOffer } from "@/lib/product";
 
 const { checkout, gift } = readingPageChrome;
 
@@ -101,6 +101,18 @@ const { checkout, gift } = readingPageChrome;
  * 30 August 2026 — the recipient rides to the backend on the order line
  * instead; see `lib/order-note.ts`.
  *
+ * **And it is drawn from the product rather than from this file**, from 3
+ * September 2026 (#73). `is_giftable` on `/products` says whether a reading may
+ * be bought for somebody else, and `POST /orders` refuses a gift object on a
+ * line that is not — so a frame drawn on every reading page is a control that
+ * 422s on submit for the ones that are not giftable. The rule is `giftOffered`
+ * in `lib/product.ts`, and it is "unless the catalogue said no" rather than
+ * "only when it said yes"; the argument is there and is not repeated here.
+ *
+ * **The divider goes with it.** It is the line between paying for a reading and
+ * buying one for somebody else, and on a page where the second is not offered
+ * it is a rule under the last thing on the panel.
+ *
  * ## Delivery
  *
  * Off — the state that ships — the frame's own line, stating the one delivery
@@ -128,6 +140,14 @@ export function GetMyReading({
     wallet button to draw.
   */
   const walletOffered = useWalletOffered();
+
+  /*
+    Whether this reading may be bought for somebody else, which is the
+    catalogue's answer and not this page's. `ReadingOrder` asks the same
+    question of the same offer rather than being told the answer, so the control
+    and the section it swaps to cannot disagree.
+  */
+  const mayBeGifted = giftOffered(offer);
 
   return (
     /* 49px under the question field. */
@@ -249,31 +269,37 @@ export function GetMyReading({
           448px is `--measure-flourish` capped by the 498px column above, which
           is why the column keeps a width of its own.
         */}
-        <Divider variant="hero" className="my-[-0.3em]" />
+        {mayBeGifted ? (
+          <>
+            <Divider variant="hero" className="my-[-0.3em]" />
 
-        {/*
-          The one control on this panel that does something. Its label is the
-          way back out of gift mode, so the state can be read off the button
-          rather than inferred from a section most of a panel above it.
-        */}
-        <CheckoutOption pressed={gifting} onClick={onGiftToggle}>
-          {/*
-            The mark turns over with the label. A gift box above "A Reading for
-            Myself" said the opposite of the words under it — the one frame on
-            the panel whose two states are opposites is the one that cannot
-            keep a single icon across them.
+            {/*
+              The one control on this panel that does something. Its label is
+              the way back out of gift mode, so the state can be read off the
+              button rather than inferred from a section most of a panel above
+              it.
+            */}
+            <CheckoutOption pressed={gifting} onClick={onGiftToggle}>
+              {/*
+                The mark turns over with the label. A gift box above "A Reading
+                for Myself" said the opposite of the words under it — the one
+                frame on the panel whose two states are opposites is the one
+                that cannot keep a single icon across them.
 
-            Both marks are 54 tall, so only the width changes here: `53 ÷ 6.87`
-            for the box and `38 ÷ 6.87` for the card, which is the scale the
-            docblock on `Mark` derives every number in this column from.
-          */}
-          {gifting ? (
-            <Mark art={marks.selfReading} width="5.53cqw" />
-          ) : (
-            <Mark art={marks.gift} width="7.71cqw" />
-          )}
-          {gifting ? gift.leave : gift.enter}
-        </CheckoutOption>
+                Both marks are 54 tall, so only the width changes here:
+                `53 ÷ 6.87` for the box and `38 ÷ 6.87` for the card, which is
+                the scale the docblock on `Mark` derives every number in this
+                column from.
+              */}
+              {gifting ? (
+                <Mark art={marks.selfReading} width="5.53cqw" />
+              ) : (
+                <Mark art={marks.gift} width="7.71cqw" />
+              )}
+              {gifting ? gift.leave : gift.enter}
+            </CheckoutOption>
+          </>
+        ) : null}
       </div>
     </section>
   );

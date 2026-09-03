@@ -85,9 +85,9 @@ const { checkout } = readingPageChrome;
  * button stands, states that gifting is coming, and places nothing.~~
  *
  * The endpoint still has no such field and the backend has grown nothing. What
- * changed is where the recipient goes: `orderNoteIn` composes the two gift
- * fields into the line's `question`. Why that is enough to charge on is argued
- * at the gate it replaced, in `GetMyReading`.
+ * changed is where the recipient goes: `orderNoteIn` composes the gift's
+ * signature, address and message into the line's `question`. Why that is enough
+ * to charge on is argued at the gate it replaced, in `GetMyReading`.
  *
  * `gifting` stays a prop and is now only about the note underneath: the button
  * is buyable in both modes, and the sentence under it is what differs.
@@ -127,10 +127,11 @@ export function HostedCheckoutButton({
 
     /*
       **Before an order exists**, which is the only place it is worth being.
-      Nothing submits this form, so the `required` on the recipient's address is
-      the browser's to enforce and nobody's to trigger; this is what triggers
-      it. Silent on a form with nothing wrong with it, so a self-purchase — where
-      the question is not required and never was — is untouched.
+      Nothing submits this form, so gift mode's three required fields and the
+      disagreement written on the address confirmation are the browser's to
+      enforce and nobody's to trigger; this is what triggers them. Silent on a form with
+      nothing wrong with it, so a self-purchase — where the question is not
+      required and never was — is untouched.
     */
     if (!orderFormAccepts(control)) return;
 
@@ -140,7 +141,13 @@ export function HostedCheckoutButton({
     setFailed(false);
 
     try {
-      const url = await startCheckout({ productKey, money, question: note.text, gift: note.gift });
+      const url = await startCheckout({
+        productKey,
+        money,
+        question: note.text,
+        gift: note.gift,
+        giftRecipient: note.recipient,
+      });
 
       /*
         The pending state is deliberately not cleared. The browser is leaving,

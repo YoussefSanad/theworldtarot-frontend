@@ -105,12 +105,13 @@ npm run check:reveal    # walks the whole reveal interaction
 npm run check:images    # flags images that failed or rendered at zero size
 ```
 
-Two need a build first, because they drive the real export rather than `next dev`:
+Three need a build first, because they drive the real export rather than `next dev`:
 
 ```bash
 npm run build
 npm run check:panel         # the payment panel's four states, and the wallet row
 npm run check:confirmation  # /checkout/complete/ through every payment outcome
+npm run check:redeem        # /redeem/ through every state a gift code can be in
 ```
 
 At 1920px the hero grid, card, buttons and product row land on the Figma

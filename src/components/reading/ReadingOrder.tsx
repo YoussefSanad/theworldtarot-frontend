@@ -7,7 +7,7 @@ import { GetMyReading } from "@/components/reading/GetMyReading";
 import { RecipientDetails } from "@/components/reading/RecipientDetails";
 import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
 import { questionFor } from "@/lib/checkout-session";
-import { useProduct } from "@/lib/product";
+import { giftOffered, useProduct } from "@/lib/product";
 
 /**
  * The left panel's form, and the one piece of state on this page.
@@ -90,18 +90,37 @@ import { useProduct } from "@/lib/product";
  * already bought, sitting in the box on the way back to the page, reads as an
  * order that did not go through.
  *
+ * ## Whether there is a gift mode at all is the catalogue's answer
+ *
+ * `is_giftable` on `/products` decides it, from 3 September 2026 (#73), and
+ * this component asks the same question `GetMyReading` asks rather than being
+ * handed the answer: the control that turns the mode on and the section it
+ * turns on are two files, and a page that drew one without the other is either
+ * a dead button or a form with no way out of it. The rule is `giftOffered` in
+ * `lib/product.ts`.
+ *
+ * **So the section is mounted on the mode *and* on the offer**, which is one
+ * `&&` guarding a transition that can happen: a page that first painted
+ * `unreachable` draws the toggle, and a later answer can be a live product the
+ * backend says may not be gifted. Without the second half the visitor is left
+ * in a gift form whose way out has just been removed from under them.
+ *
  * ## One thing here is a deliberate departure
  *
  * The client's frame puts "Gift a Reading" at the foot of the payment column,
  * and what it changes is most of a panel above it — an action whose effect is
  * off screen. Rather than move her button, `CountedField`'s `autoFocusOnMount`
- * brings the visitor to the fields that replaced the question. The control
- * also states what it is: it carries `aria-pressed`, and its label becomes the
- * way back out, so gift mode can never be somewhere a visitor is stuck.
+ * brings the visitor to the first of the fields that replaced the question —
+ * the **gift signature** from 3 September 2026, the recipient's address before
+ * it. The control also states what it is: it carries `aria-pressed`, and its
+ * label becomes the way back out, so gift mode can never be somewhere a visitor
+ * is stuck.
  */
 export function ReadingOrder({ reading }: { reading: ReadingPage }) {
-  const [gifting, setGifting] = useState(false);
+  const [wantsGift, setWantsGift] = useState(false);
   const offer = useProduct(reading.productKey);
+  // Both halves, so the mode cannot outlive the offer that allows it. See above.
+  const gifting = wantsGift && giftOffered(offer);
   const restored = useSyncExternalStore(
     nothingChangesIt,
     () => questionFor(reading.productKey),
@@ -128,7 +147,7 @@ export function ReadingOrder({ reading }: { reading: ReadingPage }) {
             reading={reading}
             offer={offer}
             gifting={gifting}
-            onGiftToggle={() => setGifting((on) => !on)}
+            onGiftToggle={() => setWantsGift((on) => !on)}
           />
         </form>
       )}

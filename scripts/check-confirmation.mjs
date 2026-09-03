@@ -105,6 +105,28 @@ function record({ sessionId, money }, productKey = "month-ahead") {
 }
 
 /**
+ * The same record, for a gift: the composed note on the line, the flag, and the
+ * **recipient**'s address as its own field.
+ *
+ * `question` is what `orderNoteIn` composes and is deliberately prose — the
+ * screen may not read the address back out of it, which is why `giftRecipient`
+ * sits beside it. A run that dropped that field would still find the address in
+ * the page if the screen ever started parsing the note, so the two are kept
+ * different addresses.
+ */
+function giftRecord({ sessionId, money }, giftRecipient = "alice@example.com") {
+  return {
+    payToken: PAY_TOKEN,
+    money,
+    sessionId,
+    productKey: "month-ahead",
+    question: "Gift from Mum — send this reading to somebody-elses@example.com",
+    gift: true,
+    ...(giftRecipient === null ? {} : { giftRecipient }),
+  };
+}
+
+/**
  * What the wallet road wrote before it confirmed. **No `sessionId`** — that
  * absence is not tidiness, it is the field `checkoutFor` refuses this record on.
  */
@@ -444,20 +466,98 @@ const runs = [
   {
     state: "A reading whose page does not exist yet, bought by product key alone",
     /*
-      `in-depth` is in the backend's catalogue and has no `ReadingPage` here, so
+      `one-card` is in the backend's catalogue and has no `ReadingPage` here, so
       there is no name to look up. That is the ordinary case for a product the
       backend learns about before the site does, and the screen answers it with
       the product-neutral sentence rather than with a blank, a key, or the last
       name it happens to know.
+
+      ~~`in-depth`~~ **until 3 September 2026**, when that reading got a page of
+      its own (#60) and this run started proving the opposite of what it says:
+      the key resolved, the screen named the product, and both assertions below
+      inverted. It is the one run in this file whose subject is "a key this
+      build has never drawn", so it goes stale every time the site draws one
+      more — which is a reason to pick the key that is furthest from being
+      drawn. `one-card` is not sold on a page of its own and is not giftable,
+      and the day it is, this run moves again.
     */
-    input: { stored: record(FIRST, "in-depth"), query: { session_id: FIRST.sessionId } },
+    input: { stored: record(FIRST, "one-card"), query: { session_id: FIRST.sessionId } },
     claimsTheReading: true,
     assert: ({ shown }) => {
       expect("unsold reading", "still says the reading is on its way", RECEIVED.test(shown.heading), true);
       expect("unsold reading", "falls back to naming no product", /Your reading has been received/i.test(shown.text), true);
-      expect("unsold reading", "and never renders the key itself", /in-depth/i.test(shown.text), false);
+      expect("unsold reading", "and never renders the key itself", /one-card/i.test(shown.text), false);
       // The one name this build does know, on a screen that was not sold it.
       expect("unsold reading", "nor some other reading's name", /Month Ahead/i.test(shown.text), false);
+    },
+  },
+  {
+    state: "A gift was bought, so there is no reading on its way to anybody",
+    input: { stored: giftRecord(FIRST), query: { session_id: FIRST.sessionId } },
+    /*
+      **The one `received` screen that may not make the promise**, which is why
+      this run sits on the same side of the line as the six that report
+      unfinished money. A gift is not a reading until somebody redeems it: the
+      recipient has asked nothing, nothing is being written, and a screen saying
+      otherwise would be promising delivery of a thing that does not exist. See
+      `giftReceived` in `content/checkout.ts`.
+    */
+    assert: ({ painted, shown }) => {
+      expect("gift", "says the gift is on its way", /gift is on its way/i.test(painted.heading), true);
+      /*
+        Read on the optimistic paint as well as after the answer, because the
+        card road paints before it asks and a gift screen that only became a
+        gift screen on verification would show a buyer the wrong sentence first.
+      */
+      expect("gift", "before the backend answers, as every card arrival does", /has been received/i.test(painted.text), false);
+      expect("gift", "names the address it went to", /alice@example\.com/.test(shown.text), true);
+      /*
+        The address on the record, never the one composed into the note. They
+        are two different addresses in this run precisely so that a screen
+        parsing the prose would fail here rather than pass by luck.
+      */
+      expect("gift", "and not the one written into the note", /somebody-elses@example\.com/.test(shown.text), false);
+      expect("gift", "restates the amount that was paid", /€49/.test(shown.text), true);
+      expect("gift", "under the label the client wrote", /Payment received:/.test(shown.text), true);
+      // The reading that was gifted is on the record, and naming it here would
+      // be the promise this screen exists to avoid making.
+      expect("gift", "names no reading at all", /Month Ahead Reading/.test(shown.text), false);
+      expect("gift", "and quotes no delivery window", /within 24 hours/.test(shown.text), false);
+    },
+  },
+  {
+    state: "A gift bought before the recipient was kept on the record",
+    /*
+      A record written by an older build, which is the ordinary way this field
+      is missing; a gift order placed with the address blank is the other, and
+      `orderFormAccepts` refuses that at the press. Either way the screen says
+      exactly as much as it knows rather than naming an address it does not
+      have.
+    */
+    input: { stored: giftRecord(FIRST, null), query: { session_id: FIRST.sessionId } },
+    assert: ({ shown }) => {
+      expect("gift, no address", "still says the gift is on its way", /gift is on its way/i.test(shown.heading), true);
+      expect("gift, no address", "and says only what it knows", /the address you gave/i.test(shown.text), true);
+      expect("gift, no address", "naming no address of its own", /@example\.com/.test(shown.text), false);
+    },
+  },
+  {
+    state: "A gift whose payment collected nothing",
+    input: {
+      stored: giftRecord(FIRST),
+      query: { session_id: FIRST.sessionId },
+      answer: api({ status: "requires_payment_method" }),
+    },
+    assert: ({ shown }) => {
+      /*
+        **The other six states are untouched by gifting**, and this is where
+        that is measured. A screen that hedges about a payment has nothing to
+        add about who a present went to, so `unpaid` says what it has always
+        said and names nobody.
+      */
+      expect("gift unpaid", "says no payment was taken", /no payment was taken/i.test(shown.heading), true);
+      expect("gift unpaid", "says nothing has been charged", /nothing has been charged/i.test(shown.text), true);
+      expect("gift unpaid", "and names no recipient on a screen about money", /alice@example\.com/.test(shown.text), false);
     },
   },
   /*
@@ -609,6 +709,22 @@ const runs = [
     assert: ({ shown, verifications }) => {
       expect("wallet record, card address", "refuses the other road's record", /cannot show/i.test(shown.heading), true);
       expect("wallet record, card address", "and asks the backend nothing", verifications, 0);
+    },
+  },
+  {
+    state: "A gift bought with a wallet, on the road that paints nothing first",
+    input: {
+      stored: { ...walletRecord(WALLET_FIRST), gift: true, giftRecipient: "alice@example.com" },
+      query: walletQuery(WALLET_FIRST, "succeeded"),
+      readWhileAsking: true,
+    },
+    assert: ({ painted, shown }) => {
+      // The two records are built separately in `lib/buy.ts`, which is why the
+      // gift screen is proved on both roads rather than on the one that was
+      // convenient to write.
+      expect("wallet gift", "says nothing until the backend has answered", /^Checking/.test(painted.heading), true);
+      expect("wallet gift", "then says the gift is on its way", /gift is on its way/i.test(shown.heading), true);
+      expect("wallet gift", "and names the address it went to", /alice@example\.com/.test(shown.text), true);
     },
   },
   {

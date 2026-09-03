@@ -82,6 +82,14 @@ from, and the route is deleted at #38 when a real payment panel does the same
 thing. Deleting the file is a stronger guarantee than an environment variable
 somebody can set by accident.
 
+**That bargain has been kept once already.** `/presentation-probe/` was the
+other probe on this branch — a reading page with its commerce slot empty, which
+is all `ReadingPresentation` needed to prove — and it went on 3 September 2026
+at [#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79), the
+day `/redeem/` mounted that composition for real. **A deletion that lives in a
+comment gets read; one that lives in an issue gets closed.** This is the only
+probe left, and #38 is where it goes.
+
 **So do not cut a production build from a branch that still has this route.**
 Anybody who loads it places a real pending order against whatever
 `NEXT_PUBLIC_API_BASE_URL` names.

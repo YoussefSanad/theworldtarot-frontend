@@ -37,9 +37,11 @@ _Avoid_: product id, SKU, slug, product name
 **Order note**:
 The one free-text string an order line carries, as `lines[].question` on the
 wire. It is the customer's **question** on a self-purchase and a composed
-**gift note** in gift mode — "Gift — send this reading to …", built from the
-recipient's address and the buyer's message, because `POST /orders` has no
-field for either. The wire name is the backend's and does not describe the
+**gift note** in gift mode — "Gift from … — send this reading to …", built from
+the **gift signature**, the recipient's address and the buyer's message,
+because `POST /orders` has no field for any of them. The confirm-address is not
+in it: that field is a check on what the buyer typed rather than a third thing
+they told us. The wire name is the backend's and does not describe the
 contents; `lib/order-note.ts` is where the two are told apart, by which section
 the form has mounted. **A stopgap whose end is now designed rather than hoped
 for**, decided 1 September 2026 (#54), and still what ships today. What replaces
@@ -214,9 +216,13 @@ _Avoid_: recipient, reader, customer, end user
 
 ### Gifting
 
-Nothing in this section is built yet. It is the vocabulary settled while planning
-#54 on 1 September 2026, written down before the tickets are cut so that six
-of them do not each invent a word. The decisions behind it are
+~~Nothing in this section is built yet.~~ **Built on 3 September 2026**, across
+F1 to F5 of #54: the panel takes a signature and the recipient's address twice,
+the toggle is drawn from `is_giftable`, the confirmation has a gift screen that
+promises no reading, and `/redeem/` resolves a code without spending it. The
+vocabulary below was settled while planning on 1 September, written down before
+the tickets were cut so that six of them would not each invent a word, and
+nothing in it moved while they were built. The decisions behind it are
 `docs/adr/0003-redemption-is-a-page-of-its-own.md` here and ADRs 0004 and 0005
 in the backend.
 
@@ -266,7 +272,7 @@ this one meets no basket and reduces no total)
 
 **Redemption page**:
 `/redeem/`, one page for every reading rather than one per reading, and the only
-place a code is entered. It is a static export, so the code arrives as a query
+place a code is entered. **Built 3 September 2026** (#74). It is a static export, so the code arrives as a query
 parameter and never as a path segment.
 
 **It is a reading page with the commerce taken out, not a bare question box.**
@@ -297,6 +303,24 @@ message beside it is.
 **Not "sender".** `App\Enums\Sender` is already the identity a mail leaves
 from, in the repository that would send this one.
 _Avoid_: sender, sender name, purchaser name, from name, buyer name
+
+**Address confirmation**:
+The second address box on the gift panel, and the only field in this system
+whose value is never kept. Its whole job is that the **recipient**'s address was
+typed twice by the person who knows it: it is compared with the first, trimmed
+and case-folded, and then thrown away.
+
+**Not a third thing the buyer told us.** It is a check on what they typed, so it
+is not in the **order note**, it will not be a column on a **gift**, and an
+order line quoting the same address twice would be Jennifer reading a form's
+validation out of a table cell.
+
+**It exists because the buyer never receives the code.** A mistyped address on
+an ordinary purchase costs somebody a receipt they can ask for again; here it
+sends a paid, non-expiring bearer credential to a stranger, with no expiry to
+reclaim it and nothing in the buyer's hands to resend.
+_Avoid_: confirm email, email confirmation (that is a mail asking somebody to
+verify an address, which this is not), verification, second email, retype
 
 ### After the money
 

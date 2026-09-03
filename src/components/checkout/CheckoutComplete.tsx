@@ -50,6 +50,25 @@ import { formatPrice, type Money } from "@/lib/price";
  * sentence names no product, which is the right answer for a backend catalogue
  * that can hold a reading this build has never drawn a page for.
  *
+ * ## A gift is the eighth screen, and it promises nothing
+ *
+ * **`received` has two forms and the other six outcomes have one.** A gift
+ * buyer paid for a present rather than for a reading: nobody has asked
+ * anything, no reading exists, and the sentence the client took on herself on
+ * #51 has no counterpart to make. So the gift form of `received` says what did
+ * happen — the gift has been sent, and to whom — and stops there. See
+ * `giftReceived` in `content/checkout.ts`.
+ *
+ * **The address comes off the record and never out of the note.** `question`
+ * on a gift order is prose composed for Jennifer, and parsing an address back
+ * out of it would be the inference `lib/buy.ts` refuses by name — with more at
+ * stake here, since what a mis-parse produces is a screen telling somebody the
+ * wrong address for their present. `giftRecipient` is the field, written
+ * before the browser left, and it outlives `forgetQuestion`.
+ *
+ * **The other six are untouched.** Four of them say no money was taken, and a
+ * screen hedging about a payment has nothing to add about a present.
+ *
  * ## Why it no longer asks Stripe
  *
  * Stripe used to put `payment_intent_client_secret` in the return URL, and a
@@ -190,13 +209,20 @@ type Result =
    */
   | { state: "unreadable" }
   /**
-   * `reading` is the noun phrase `received` puts after "Your", carried on every
-   * outcome rather than on that one: the outcome is the backend's answer and
-   * can change under a screen already painted, and a field that appeared with
-   * it would be a second thing to remember to set at each of the two places
-   * this is built.
+   * `named` is the noun phrase the `received` screen interpolates, carried on
+   * every outcome rather than on that one: the outcome is the backend's answer
+   * and can change under a screen already painted, and a field that appeared
+   * with it would be a second thing to remember to set at each of the two
+   * places this is built.
+   *
+   * **What it names depends on `gift`**, which is the same record read twice.
+   * A self-purchase names the reading that was bought; a gift names the address
+   * it was sent to, because a gift has no reading to name until somebody
+   * redeems it. `subjectOf` decides, once, so the two builds below cannot
+   * disagree — and the six outcomes that are about unfinished money ignore the
+   * string entirely, their `body` taking no argument.
    */
-  | { state: "known"; outcome: PaymentOutcome; money: Money | null; reading: string };
+  | { state: "known"; outcome: PaymentOutcome; money: Money | null; gift: boolean; named: string };
 
 export function CheckoutComplete() {
   const searchParams = useSearchParams();
@@ -255,7 +281,13 @@ export function CheckoutComplete() {
         safe to say.
       */
       if (card) {
-        setResult({ state: "known", outcome: "received", money: card.money, reading: readingName(card) });
+        setResult({
+          state: "known",
+          outcome: "received",
+          money: card.money,
+          gift: card.gift ?? false,
+          named: subjectOf(card),
+        });
       }
 
       try {
@@ -299,7 +331,13 @@ export function CheckoutComplete() {
         // replace a rendered object with an identical one for nothing.
         if (outcome === "received" && card) return;
 
-        setResult({ state: "known", outcome, money: record.money, reading: readingName(record) });
+        setResult({
+          state: "known",
+          outcome,
+          money: record.money,
+          gift: record.gift ?? false,
+          named: subjectOf(record),
+        });
       } catch {
         if (!live) return;
 
@@ -349,7 +387,17 @@ export function CheckoutComplete() {
     );
   }
 
-  const copy = checkoutCompleteCopy.outcomes[result.outcome];
+  /*
+    **The gift variant is `received`'s alone.** The other six report unfinished
+    money and have nothing gift-shaped to say — four of them say no payment was
+    taken, and hedging about a payment while naming who a present went to is
+    two screens in one. So the branch is here, at the one outcome it applies to,
+    rather than a second `outcomes` table keyed by mode.
+  */
+  const copy =
+    result.gift && result.outcome === "received"
+      ? checkoutCompleteCopy.giftReceived
+      : checkoutCompleteCopy.outcomes[result.outcome];
 
   return (
     <Panel>
@@ -362,7 +410,7 @@ export function CheckoutComplete() {
         </p>
       ) : null}
 
-      <p className="mt-4 text-note text-ash">{copy.body(result.reading)}</p>
+      <p className="mt-4 text-note text-ash">{copy.body(result.named)}</p>
 
       <Back />
     </Panel>
@@ -370,14 +418,29 @@ export function CheckoutComplete() {
 }
 
 /**
- * What the received screen calls the thing that was bought.
+ * The one noun the received screen interpolates, which is a different thing on
+ * each side of the gift flag.
  *
- * The record's product key is the backend's name for it and no customer's, so
- * it is never rendered — it is turned into a title or into nothing. The
- * fallback is copy rather than a literal here, because it is a word a customer
- * reads.
+ * **A self-purchase names the reading.** The record's product key is the
+ * backend's name for it and no customer's, so it is never rendered — it is
+ * turned into a title or into nothing. The fallback is copy rather than a
+ * literal here, because it is a word a customer reads.
+ *
+ * **A gift names the address it went to**, because a gift has no reading to
+ * name: nobody has asked anything yet, and the product on the record is what
+ * the recipient will be able to redeem rather than something on its way to
+ * anybody. The address is the one detail the buyer can still have got wrong,
+ * and this screen is the last place they will see it.
+ *
+ * One function for both, so the branch is here rather than at the two places
+ * the result is built — where a gift painted optimistically and a gift painted
+ * after verification could otherwise name two different things.
  */
-function readingName(record: CheckoutRecord): string {
+function subjectOf(record: CheckoutRecord): string {
+  if (record.gift) {
+    return record.giftRecipient ?? checkoutCompleteCopy.unnamedRecipient;
+  }
+
   return readingPageFor(record.productKey)?.title ?? checkoutCompleteCopy.unnamedReading;
 }
 

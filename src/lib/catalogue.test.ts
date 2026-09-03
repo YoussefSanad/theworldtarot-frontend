@@ -57,6 +57,7 @@ function priced(currency: string, amount: number) {
       name: "MONTH AHEAD",
       short_description: "What's in Store?",
       allows_question: true,
+      is_giftable: true,
       price: { currency, amount },
     },
   ];

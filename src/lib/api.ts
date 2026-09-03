@@ -215,6 +215,22 @@ export type ApiProduct = {
   short_description: string;
   /** Whether a question may be attached when buying. Always optional. */
   allows_question: boolean;
+  /**
+   * Whether this product may be bought for somebody else — **the property of
+   * the product that decides whether a page draws `Gift a Reading` at all**.
+   *
+   * `true` for the three written readings, `false` for `one-card` and the
+   * Viewing Room pass, and the backend's to change rather than ours to know:
+   * `POST /orders` **refuses** a gift object on a line that is not giftable
+   * rather than quietly dropping it, so a toggle drawn from a list held here
+   * is a button that 422s on submit.
+   *
+   * Independent of `allows_question` above, and `one-card` is the product that
+   * proves it — it takes a question and cannot be gifted. See `giftOffered` in
+   * `lib/product.ts`, which is the one place this is acted on, and `CONTEXT.md`
+   * for the word.
+   */
+  is_giftable: boolean;
   price: Money;
 };
 

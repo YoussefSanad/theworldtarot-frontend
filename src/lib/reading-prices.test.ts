@@ -11,6 +11,7 @@ function priced(key: string, currency: string, amount: number): ApiProduct {
     name: key.toUpperCase(),
     short_description: "",
     allows_question: true,
+    is_giftable: true,
     price: { currency, amount },
   };
 }
