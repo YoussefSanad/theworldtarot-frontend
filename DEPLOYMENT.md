@@ -90,6 +90,20 @@ It proves nothing anywhere but `staging.theworldtarot.com`: cookies are issued
 for `.theworldtarot.com`, so on a `pages.dev` preview URL the handshake fails
 for reasons that say nothing about the code.
 
+## The presentation probe
+
+`/presentation-probe/` is a reading page with its commerce slot empty — the
+proof that `ReadingPresentation` mounts without `ReadingOrder`, which is what
+`/redeem/` will do. It writes nothing, takes no input and places no order, so
+unlike the checkout probe above it is safe on any build; what it does do is
+serve `month-ahead`'s copy at a second address, which is why it carries
+`robots: noindex, nofollow`.
+
+It is deleted when `/redeem/` lands — [#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79),
+blocked on [#74](https://github.com/YoussefSanad/theworldtarot-frontend/issues/74).
+Both probes go the same way: a file deleted at a named ticket rather than a
+flag somebody has to remember to set.
+
 ## Cloudflare: static assets, not a Worker
 
 `wrangler.toml` reads in full:

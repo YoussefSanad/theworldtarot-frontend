@@ -39,7 +39,16 @@ export function ClosingSaying({
   width = "readings",
 }: {
   saying?: readonly string[];
-  action?: { label: string; href: string };
+  /**
+   * **`null` is a page with nowhere to send them**, and it renders the saying
+   * and its rules with no button under them. That is `/redeem/`, where this
+   * block is still the reading's closing line and the checkout it would
+   * otherwise scroll to is not on the page; see `ReadingPresentation`.
+   *
+   * Only an explicit `null` — omitting it is still the readings index's own
+   * call to action, which is what every caller that predates this wanted.
+   */
+  action?: { label: string; href: string } | null;
   /** Gold on the index; the warmer champagne on a reading's own page. */
   tone?: "gold" | "champagne";
   width?: ContainerWidth;
@@ -60,15 +69,23 @@ export function ClosingSaying({
 
         <Divider variant="hero" className="mt-[clamp(0.5rem,1.04vw,1.25rem)]" />
 
+        {/*
+          The box stays when the button does not. Its height is the room-space
+          above — the client's air between the last rule and the footer, which
+          is another slice of the artwork on show — and a page without a call
+          to action wants that air as much as one with it.
+        */}
         <div className="mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center lg:mt-0 lg:h-[clamp(6rem,14vw,16rem)]">
           {/* 68px tall at 30px type in Figma; the width is the label's own. */}
-          <ButtonLink
-            href={action.href}
-            size="fluid"
-            className="readings-cta tracking-[0.01em] lg:py-[0.633em] lg:text-nav lg:leading-none"
-          >
-            {action.label}
-          </ButtonLink>
+          {action === null ? null : (
+            <ButtonLink
+              href={action.href}
+              size="fluid"
+              className="readings-cta tracking-[0.01em] lg:py-[0.633em] lg:text-nav lg:leading-none"
+            >
+              {action.label}
+            </ButtonLink>
+          )}
         </div>
       </Container>
     </Section>

@@ -35,6 +35,35 @@ here changed for them. Where those two frames contradict copy that predates
 them — Three Card's price, In-Depth's card count — the entry in
 `reading-pages.ts` reproduces the frame and says so against itself.
 
+### The composition is one file, and the commerce is a slot
+
+`ReadingPresentation` is the page — the backdrop, the two panels, the gate, the
+props and the closing line. A reading's route is a `ReadingPage`, a `<title>`
+and one line that puts `ReadingOrder` in its `commerce` slot, which is what the
+paragraph above has claimed since Three Card landed and what a hundred lines
+copied three times had stopped being.
+
+**It was cut for `/redeem/`**, the gifting epic's F1
+([#70](https://github.com/YoussefSanad/theworldtarot-frontend/issues/70)).
+[ADR 0003](../../../docs/adr/0003-redemption-is-a-page-of-its-own.md) has the
+argument and the component's docblock has the shape; neither is repeated here.
+What matters at this level is the rule the slot carries: **whatever fills it
+owns the checkout anchor**, because the closing call to action renders only
+when the slot is full and scrolls to an id that lives inside it.
+
+**The presentation half mounts on its own**, and `/presentation-probe/` is that
+page — a throwaway route, deleted when `/redeem/` lands
+([#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79)), the
+same bargain `checkout-probe` is under. `DEPLOYMENT.md` names both.
+
+**Cutting the seam changed nothing about the three pages, and the export is the
+proof.** There is no renderer in this project, so what stands in for a
+component test here is `ALLOW_LOCAL_API_BUILD=1 npm run build` on either side of
+the change: the rendered markup of all three `out/readings/*/index.html` came
+back byte-identical, the only difference being the build id inside the flight
+payload, which is a fresh hash on every build. Worth repeating whenever this
+composition moves again.
+
 ## What the frame is, and what it isn't
 
 The same lossy PSD conversion the readings index has, so the same warnings
