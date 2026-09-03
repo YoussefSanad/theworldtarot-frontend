@@ -974,13 +974,19 @@ for (const run of runs) {
   expect(run.state, "and still does with a full screen of words on it", result.overhang.shown, 0);
   /*
     The rule this file has always carried, now with a side. Six of the seven
-    states may not promise the reading — four of them say no money was taken —
-    and the seventh is required to, because the client took that promise on
-    herself. A run that stops declaring which it is fails on whichever half it
-    lands the wrong side of.
+    payment states may not promise the reading — four of them say no money was
+    taken — and the seventh is required to, because the client took that promise
+    on herself. A run that stops declaring which it is fails on whichever half
+    it lands the wrong side of.
+
+    **The redemption road is inside the rule and on the other side of it**, from
+    #82: a querent who has asked is owed the promise, because the reading exists
+    as a row and Jennifer has been told. What is not owed it is the screen
+    reached by a handle with no record, which knows of no redemption at all. So
+    the declaration is per run rather than per road, and it always was.
   */
   if (run.claimsTheReading) {
-    expect(run.state, "promises the reading, which only the received screen may", FULFILMENT_CLAIMS.test(result.shown.text), true);
+    expect(run.state, "promises the reading, which only a received or redeemed screen may", FULFILMENT_CLAIMS.test(result.shown.text), true);
   } else {
     expect(run.state, "never claims a reading is on its way", FULFILMENT_CLAIMS.test(result.shown.text), false);
   }

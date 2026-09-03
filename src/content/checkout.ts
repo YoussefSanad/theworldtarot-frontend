@@ -214,5 +214,14 @@ export const checkoutCompleteCopy = {
    * place it would have quietly swallowed every capital here.
    */
   backLabel: "BACK TO READINGS",
-  backHref: "/readings",
+  /**
+   * ~~`/readings`~~ **Slashed 3 September 2026** (#82). `trailingSlash` exports
+   * a directory of `index.html` files, so the unslashed form costs a 308 on the
+   * way — the cost `redeemCopy.backHref` and `headerActions.cta` were both
+   * moved for. It went unnoticed here because every road that reaches this
+   * screen arrived from somewhere else; the redemption road made it this
+   * screen's own inconsistency, since `redemptionHref` argues the slash three
+   * files away and then routed a querent out through the unslashed form.
+   */
+  backHref: "/readings/",
 } as const;

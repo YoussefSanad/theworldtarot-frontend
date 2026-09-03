@@ -81,8 +81,8 @@ is a random string naming a record in the tab's `sessionStorage`, and
 `ReadingOnItsWay` true in substance: `sessionStorage` dies with the tab wherever
 the screen reading it lives, so the record that lasts is the one in the
 querent's inbox. That mailable's docblock names `/redeem/` as the screen that
-dies, and the sentence needs moving rather than deleting; it is filed on
-`YoussefSanad/TheWorldTarot` beside this.
+dies, and the sentence needs moving rather than deleting; it is filed as
+`YoussefSanad/TheWorldTarot#86` beside this.
 
 ## What this requires, and why now is when it is cheap
 

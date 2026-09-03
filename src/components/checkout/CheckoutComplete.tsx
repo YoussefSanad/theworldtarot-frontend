@@ -61,6 +61,10 @@ import { formatPrice, type Money } from "@/lib/price";
  *
  * ## It reports a payment, and on one screen of seven a fulfilment as well
  *
+ * **Everything in this section and the two below it is about the two payment
+ * roads.** The redemption above is outside all of it: it reports no payment,
+ * and the promise it makes is the querent's own, argued in `content/redeem.ts`.
+ *
  * There is no endpoint that reads an **order** back, and this screen does not
  * want one. It says what Stripe says about the payment, by way of our own
  * backend. Only the backend **settles** an order, on a verified webhook, and
@@ -84,6 +88,10 @@ import { formatPrice, type Money } from "@/lib/price";
  * that can hold a reading this build has never drawn a page for.
  *
  * ## A gift is the eighth screen, and it promises nothing
+ *
+ * Eighth of the payment roads' own, which is the count this section keeps. The
+ * redemption road added two more to the file on 3 September 2026 and neither is
+ * about a payment, so neither is in this arithmetic.
  *
  * **`received` has two forms and the other six outcomes have one.** A gift
  * buyer paid for a present rather than for a reading: nobody has asked

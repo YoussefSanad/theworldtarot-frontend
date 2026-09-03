@@ -266,20 +266,11 @@ export function recallCheckout(): CheckoutRecord | null {
 }
 
 function parseRecord(raw: string | null): CheckoutRecord | null {
-  if (!raw) return null;
+  const parsed = storedObject(raw);
 
-  let parsed: unknown;
+  if (parsed === null) return null;
 
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-
-  if (typeof parsed !== "object" || parsed === null) return null;
-
-  const { payToken, money, sessionId, productKey, question, gift, giftRecipient, clientSecret } =
-    parsed as Record<string, unknown>;
+  const { payToken, money, sessionId, productKey, question, gift, giftRecipient, clientSecret } = parsed;
 
   if (typeof payToken !== "string" || payToken === "") return null;
   if (typeof productKey !== "string" || productKey === "") return null;
@@ -570,6 +561,46 @@ export function redemptionFor(id: string | null): RedemptionRecord | null {
  * outlives the deploy that replaced it.
  */
 function parseRedemption(raw: string | null): RedemptionRecord | null {
+  const parsed = storedObject(raw);
+
+  if (parsed === null) return null;
+
+  const { id, productKey, question, querentEmail, askedAt } = parsed;
+
+  /*
+    **Every field is required, including the one nothing renders.** A redemption
+    that cannot name what was asked or where it goes has nothing to put on the
+    screen it exists to draw — and `askedAt`, which is carried rather than
+    shown, is required for the reason the whole of this function exists: what is
+    being tested is whether this is a record *this build wrote*, and a shape
+    with a field missing is a record from some other build. Reading four fields
+    out of it and rendering them would be trusting the half that happened to
+    survive.
+  */
+  for (const field of [id, productKey, question, querentEmail, askedAt]) {
+    if (typeof field !== "string" || field === "") return null;
+  }
+
+  return {
+    id: id as string,
+    productKey: productKey as string,
+    question: question as string,
+    querentEmail: querentEmail as string,
+    askedAt: askedAt as string,
+  };
+}
+
+/**
+ * What a stored key parses to, when it parses to an object at all.
+ *
+ * The half the two parsers above share: the value is attacker-writable in the
+ * sense that anything on this origin can put anything in either key, it
+ * outlives a deploy, and neither of the two things that go wrong first — a
+ * string that is not JSON, and JSON that is not an object — says anything about
+ * which record was expected. What each field means is the caller's business and
+ * is validated there.
+ */
+function storedObject(raw: string | null): Record<string, unknown> | null {
   if (!raw) return null;
 
   let parsed: unknown;
@@ -582,22 +613,7 @@ function parseRedemption(raw: string | null): RedemptionRecord | null {
 
   if (typeof parsed !== "object" || parsed === null) return null;
 
-  const { id, productKey, question, querentEmail, askedAt } = parsed as Record<string, unknown>;
-
-  // Every field is required. There is no optional half here as there is on a
-  // checkout: a redemption that cannot name what was asked, or where it goes,
-  // has nothing to put on the screen it exists to draw.
-  for (const field of [id, productKey, question, querentEmail, askedAt]) {
-    if (typeof field !== "string" || field === "") return null;
-  }
-
-  return {
-    id: id as string,
-    productKey: productKey as string,
-    question: question as string,
-    querentEmail: querentEmail as string,
-    askedAt: askedAt as string,
-  };
+  return parsed as Record<string, unknown>;
 }
 
 /**

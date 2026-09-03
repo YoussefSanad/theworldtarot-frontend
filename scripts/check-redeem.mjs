@@ -187,6 +187,8 @@ async function drive(state, { code, lookup, redeem, type, fill, lands = false })
     .catch(() => {});
   await page.waitForTimeout(250);
 
+  let entriesBefore = null;
+
   /** What is on the page before anything has been submitted. */
   const arrived = {
     text: (await page.locator("main").innerText().catch(() => "")).trim(),
@@ -198,6 +200,13 @@ async function drive(state, { code, lookup, redeem, type, fill, lands = false })
     for (const [field, value] of Object.entries(fill)) {
       await page.fill(`[data-field='${field}']`, value);
     }
+
+    /*
+      The tab's history depth before the submit, so the assertion below is
+      "nothing was added" rather than a number that depends on what Playwright's
+      own blank first page does to `history.length`.
+    */
+    if (lands) entriesBefore = await page.evaluate(() => history.length);
 
     await page.click("button[type='submit']");
 
@@ -232,18 +241,32 @@ async function drive(state, { code, lookup, redeem, type, fill, lands = false })
   const shown = (await page.locator("main").innerText().catch(() => "")).trim();
   const landed = page.url();
 
-  /*
-    **`replace`, not `push`**, read as a fact about the history rather than
-    about the call: the entry the redemption replaced is the form holding a code
-    that has just been spent, so there is nothing behind it to go back to.
-    `goBack` answering `null` is what a replaced entry looks like from here; a
-    push would answer a response and hand the querent that form again.
-  */
-  const back = lands ? ((await page.goBack().catch(() => null)) === null ? null : page.url()) : null;
+  /**
+   * **`replace`, not `push`**, measured twice and by neither of the obvious
+   * means.
+   *
+   * `goBack`'s own answer is `null` for a same-document history navigation
+   * whichever call was made — there is no main resource response to hand back
+   * either way — and `history.length` is a depth rather than a count of this
+   * page's doing, since Playwright's blank first page is an entry too. So what
+   * is read is the **change** in that depth across the submit, which `replace`
+   * leaves at zero and `push` moves by one, and then where back actually goes:
+   * anywhere but the form the code was spent in.
+   */
+  const history = lands
+    ? await (async () => {
+        const added = (await page.evaluate(() => window.history.length)) - entriesBefore;
+
+        await page.goBack().catch(() => {});
+        await page.waitForTimeout(200);
+
+        return { added, back: page.url() };
+      })()
+    : null;
 
   await page.close();
 
-  return { arrived, shown, landed, back, sells, offers, lookups, redemptions, visited };
+  return { arrived, shown, landed, history, sells, offers, lookups, redemptions, visited };
 }
 
 const runs = [
@@ -289,7 +312,7 @@ const runs = [
         querentName: "Sam",
       },
     },
-    assert: ({ arrived, shown, landed, back, offers, redemptions, visited }) => {
+    assert: ({ arrived, shown, landed, history, offers, redemptions, visited }) => {
       expect("asking", "spent nothing until the form was submitted", arrived.spent, 0);
       expect("asking", "then spends it exactly once", redemptions.length, 1);
       /*
@@ -318,7 +341,8 @@ const runs = [
         is in the tab and the address names it.
       */
       expect("asking", "carrying a handle and nothing else", /^\?redeemed=[A-Za-z0-9%-]+$/.test(new URL(landed).search), true);
-      expect("asking", "and no way back to a form whose code is spent", back, null);
+      expect("asking", "having added no history entry", history.added, 0);
+      expect("asking", "so back is no way to a form whose code is spent", /\/redeem\//.test(history.back), false);
 
       /*
         The four things that screen owes the querent, read off the confirmation
