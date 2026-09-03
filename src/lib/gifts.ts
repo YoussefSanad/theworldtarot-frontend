@@ -204,6 +204,15 @@ function toAskedReading(answer: ApiAskedReading): AskedReading {
  * deliberately: telling them apart is a way of asking whether a guess got
  * closer.
  *
+ * **404 is the whole of that answer, and a malformed code is one.** The
+ * endpoint's only rule is `required` with no length, no format and no character
+ * class — stated in the backend's `API_CONTRACT.md` and argued in
+ * `LookUpGiftRequest` — precisely so that a shape no gift has and a shape some
+ * gift might are not told apart by their status. So there is no 422 to map here
+ * for anything a visitor could type: the one this call can provoke is a blank
+ * `code`, which is this repository's bug rather than an answer about a gift,
+ * and `RedeemGift` refuses an empty code before it gets here.
+ *
  * Throws on anything else — a 429 from the tighter of the two throttles, a
  * 5xx, a network failure — because none of those says anything about the code,
  * and a page that rendered "no such code" from a 503 would be telling somebody

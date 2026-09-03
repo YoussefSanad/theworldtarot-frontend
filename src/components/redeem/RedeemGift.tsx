@@ -102,8 +102,17 @@ export function RedeemGift() {
     Read once into a plain string. `useSearchParams` answers a new object per
     render, and passing that to the effect below would re-run the lookup — which
     on this page is a request against a throttle of ten a minute.
+
+    **Trimmed, so that a `?code=` carrying nothing but spaces is no code at
+    all.** The lookup sends `code.trim()`, and the backend's rule is `required`
+    with no format beyond it — every malformed code that survives the trim is a
+    404 and reads as `unknown`, which is the true answer, but a blank one fails
+    `required` and comes back 422. That would put "we could not check that code"
+    on the screen for an address with no code in it, blaming a backend that
+    answered correctly. `lookUp` already refuses an empty press for the same
+    reason; this is the same refusal for the address.
   */
-  const linked = searchParams.get("code") ?? "";
+  const linked = (searchParams.get("code") ?? "").trim();
 
   const [result, setResult] = useState<State>(linked === "" ? { state: "entering" } : { state: "looking" });
   const [asking, setAsking] = useState(false);
