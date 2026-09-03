@@ -31,8 +31,14 @@ const { entry } = redeemCopy;
  * reproduce that rule, because a second implementation of an alphabet is a
  * second one to drift; the line under the field says so to the visitor.
  *
- * The same measure and rhythm as the confirmation and the two password pages,
- * which are the site's other standalone one-column pages reached from outside.
+ * The measure the site's other standalone one-column pages reached from outside
+ * are drawn in — the confirmation and the two password pages. **The
+ * confirmation shares the rhythm and the ground as well**, from 3 September
+ * 2026: it took this column, this heading, this divider and this backdrop
+ * wholesale, because it is the other page a stranger arrives at from a link
+ * they were sent. The password pages share the measure alone; they are left
+ * aligned and stand on flat colour.
+ *
  * The observatory behind it is the reading pages' own, so the page does not
  * change character the moment a code resolves.
  */

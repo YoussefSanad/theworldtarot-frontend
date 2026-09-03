@@ -221,6 +221,38 @@ function api(body, status = 200) {
   };
 }
 
+/**
+ * Pixels of scrollable document below the footer's own bottom edge.
+ *
+ * The reading backdrop is scoped to the page's own content and hangs below it
+ * on purpose, so the observatory floor sits behind the footer.
+ * `overflow-y-clip` on the site column is what stops that overhang lengthening
+ * the document — the footer stops being the last thing on the page and the
+ * scroll runs on into bare artwork below it.
+ *
+ * **Taken twice per run, and the first time is the one that matters.** The
+ * state most likely to show this going wrong is the shortest, where the artwork
+ * is taller than everything above it — and the shortest is `Checking`, which
+ * exists only before the backend answers and is gone by the time the screen has
+ * settled. A measurement taken once, at the end, would never see it.
+ *
+ * Under two pixels is sub-pixel rounding rather than an overhang. Anything more
+ * is reported as itself, so a failure says how far the page runs on.
+ */
+async function scrollPastFooter(page) {
+  return page.evaluate(() => {
+    const footer = document.querySelector("footer");
+
+    if (!footer) return "no footer";
+
+    const below = Math.round(
+      document.documentElement.scrollHeight - (footer.getBoundingClientRect().bottom + window.scrollY),
+    );
+
+    return below > 1 ? below : 0;
+  });
+}
+
 const settledHeading = () => {
   const heading = document.querySelector("h1");
 
@@ -298,10 +330,18 @@ async function drive(state, { stored, query, answer, settle = 400, readWhileAski
   const read = async () => ({
     heading: (await page.locator(HEADING).first().innerText().catch(() => "")).trim(),
     text: (await page.locator("main").innerText().catch(() => "")).trim(),
+    /*
+      The night sky, read as a fact about the rendered page rather than about
+      the source. It is one class on one element, so a state that lost its
+      `<ReadingBackdrop>` — or a screen that grew a ninth state outside the
+      panel — shows up here and nowhere else.
+    */
+    sky: (await page.locator("main .page-atmosphere-reading").count()) > 0,
   });
 
   /** What the customer sees while the backend is still being asked. */
   const painted = await read();
+  const paintedOverhang = await scrollPastFooter(page);
 
   release();
 
@@ -310,6 +350,7 @@ async function drive(state, { stored, query, answer, settle = 400, readWhileAski
   await page.waitForTimeout(settle);
 
   const shown = await read();
+  const shownOverhang = await scrollPastFooter(page);
   const verifications = asked.length;
 
   // The reload criterion, taken literally: the same address again, nothing
@@ -326,6 +367,7 @@ async function drive(state, { stored, query, answer, settle = 400, readWhileAski
     painted,
     shown,
     reloaded,
+    overhang: { painted: paintedOverhang, shown: shownOverhang },
     verifications,
     visited,
     stripeJs: visited.filter((url) => url.includes("js.stripe.com")),
@@ -753,6 +795,22 @@ for (const run of runs) {
   run.assert(result);
 
   expect(run.state, "says the same thing after a reload", result.reloaded, result.shown);
+  /*
+    The ground the screen stands on, on both reads. `/redeem/` stands under the
+    reading pages' own night sky and this address is the one a customer reaches
+    straight from a payment, so it stands under the same one — including on the
+    wallet road, where the first paint is the `Checking` screen and is the only
+    thing a customer sees for as long as the backend takes to answer.
+  */
+  expect(run.state, "stands under the reading sky before the backend answers", result.painted.sky, true);
+  expect(run.state, "and still does once it has", result.shown.sky, true);
+  /*
+    Both moments, because the short screen only exists at the first one. On the
+    wallet road that is `Checking`, which is a heading and nothing else — the
+    least content this address ever has under the tallest the artwork ever is.
+  */
+  expect(run.state, "ends the document at the footer rather than in bare artwork", result.overhang.painted, 0);
+  expect(run.state, "and still does with a full screen of words on it", result.overhang.shown, 0);
   /*
     The rule this file has always carried, now with a side. Six of the seven
     states may not promise the reading — four of them say no money was taken —

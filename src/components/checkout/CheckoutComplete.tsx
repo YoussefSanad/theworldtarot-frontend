@@ -3,7 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ReadingBackdrop } from "@/components/reading/ReadingBackdrop";
 import { ButtonLink } from "@/components/ui/Button";
+import { Divider } from "@/components/ui/Divider";
 import { checkoutCompleteCopy } from "@/content/checkout";
 import { readingPageFor } from "@/content/reading-pages";
 import { checkoutFor, forgetQuestion, type CheckoutRecord, walletCheckoutFor } from "@/lib/checkout-session";
@@ -362,7 +364,7 @@ export function CheckoutComplete() {
   if (result.state === "checking") {
     return (
       <Panel>
-        <h1 className="font-display text-h2 text-champagne">{checkoutCompleteCopy.checkingHeading}</h1>
+        <Heading>{checkoutCompleteCopy.checkingHeading}</Heading>
       </Panel>
     );
   }
@@ -370,8 +372,8 @@ export function CheckoutComplete() {
   if (result.state === "unknown") {
     return (
       <Panel>
-        <h1 className="font-display text-h2 text-champagne">{checkoutCompleteCopy.unknownHeading}</h1>
-        <p className="mt-4 text-note text-ash">{checkoutCompleteCopy.unknownBody}</p>
+        <Heading>{checkoutCompleteCopy.unknownHeading}</Heading>
+        <p className={`mt-4 ${BODY}`}>{checkoutCompleteCopy.unknownBody}</p>
         <Back />
       </Panel>
     );
@@ -380,8 +382,8 @@ export function CheckoutComplete() {
   if (result.state === "unreadable") {
     return (
       <Panel>
-        <h1 className="font-display text-h2 text-champagne">{checkoutCompleteCopy.errorHeading}</h1>
-        <p className="mt-4 text-note text-ash">{checkoutCompleteCopy.errorBody}</p>
+        <Heading>{checkoutCompleteCopy.errorHeading}</Heading>
+        <p className={`mt-4 ${BODY}`}>{checkoutCompleteCopy.errorBody}</p>
         <Back />
       </Panel>
     );
@@ -401,16 +403,22 @@ export function CheckoutComplete() {
 
   return (
     <Panel>
-      <h1 className="font-display text-h2 text-champagne">{copy.heading}</h1>
+      <Heading>{copy.heading}</Heading>
 
+      {/*
+        Above the sentence, where it has always been: it is the payment half of
+        a screen whose heading is now about the reading, and a customer looking
+        for what they were charged should not have to read past a paragraph to
+        find it. The amount itself stays a shade brighter than the line it sits
+        in — champagne is the one lift `CodeEntry` uses on this ground.
+      */}
       {result.money ? (
-        <p className="mt-6 text-note text-ash">
-          {copy.amountLabel}{" "}
-          <span className="text-champagne">{formatPrice(result.money)}</span>
+        <p className={`mt-6 ${BODY}`}>
+          {copy.amountLabel} <span className="text-champagne">{formatPrice(result.money)}</span>
         </p>
       ) : null}
 
-      <p className="mt-4 text-note text-ash">{copy.body(result.named)}</p>
+      <p className={`mt-4 ${BODY}`}>{copy.body(result.named)}</p>
 
       <Back />
     </Panel>
@@ -458,14 +466,73 @@ function Back() {
   );
 }
 
+/**
+ * The column every state of this screen is painted in, and the sky behind it.
+ *
+ * **`/redeem/`'s ground, measure and rhythm**, down to the class list: the two
+ * are the pages a stranger is handed a link to — one straight from a payment,
+ * one out of a gift mail — and until 3 September 2026 only one of them drew any
+ * artwork at all. Every other page on the site renders a `PageAtmosphere` as
+ * its first element (`src/app/(site)/layout.tsx` says why the column is the box
+ * it fills); this one stood on flat colour.
+ *
+ * `ReadingBackdrop` rather than a `PageAtmosphere` of its own, because the
+ * `-top-20` inside it is tuned to `SiteHeader`'s padding and has to move when
+ * the header does. That component exists to be the one place it moves.
+ *
+ * The measure is still the password pages' — `FormPanel`'s `Panel` is the same
+ * `max-w-[36.25rem] px-6 py-24` column — but nothing else is any more: they are
+ * left aligned and stand on flat colour, and this screen is centred under the
+ * observatory.
+ *
+ * **`aria-live` is load-bearing and predates all of this.** The card road
+ * paints `received` and may correct itself under somebody already reading it;
+ * this attribute is the only reason a screen reader hears the correction.
+ */
 function Panel({ children }: { children: React.ReactNode }) {
-  /*
-    The same measure and rhythm as the password pages, which are the site's
-    other two standalone one-column pages reached from outside.
-  */
   return (
-    <section className="mx-auto w-full max-w-[36.25rem] px-6 py-24" aria-live="polite">
-      {children}
-    </section>
+    <ReadingBackdrop>
+      <section
+        className="mx-auto w-full max-w-[36.25rem] px-6 py-24 text-center"
+        aria-live="polite"
+      >
+        {children}
+      </section>
+    </ReadingBackdrop>
   );
 }
+
+/**
+ * What a screen says it is, under the hero rule that separates it from the rest
+ * of the panel.
+ *
+ * **An `<h1>` on every state, which is not a detail.**
+ * `scripts/check-confirmation.mjs` reads the heading by tag on every run, so a
+ * state that demoted its own heading would go unread there rather than fail.
+ *
+ * One component for the pair rather than a heading class repeated at four call
+ * sites: the divider is part of the treatment and not decoration beside it, and
+ * a state that grew a heading without one would be the drift this replaces.
+ */
+function Heading({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">{children}</h1>
+
+      <Divider variant="hero" className="mt-[clamp(0.125rem,0.16vw,0.1875rem)]" />
+    </>
+  );
+}
+
+/**
+ * A sentence this screen says, in the redeem page's serif and gold.
+ *
+ * The typography only, with no margin in it. The four callers do not want the
+ * same one — the amount line sits further from the divider than a paragraph
+ * does — and a default here could not be overridden by adding a second `mt-`
+ * beside it: `cn` in this repo is a plain join rather than a Tailwind merge, so
+ * which of two competing margins wins is settled by the order of the stylesheet
+ * and not of the class list. So each caller writes its own, and this constant
+ * carries the half they share.
+ */
+const BODY = "font-serif text-body leading-[1.19] tracking-[-0.01em] text-gold";
