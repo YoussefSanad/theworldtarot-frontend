@@ -4,13 +4,18 @@ import { afterEach, beforeEach, test } from "node:test";
 import {
   checkoutFor,
   forgetQuestion,
+  freshRedemptionId,
   paymentIntentFrom,
   questionFor,
   recallCheckout,
+  redemptionFor,
+  redemptionHref,
   rememberCheckout,
+  rememberRedemption,
   sessionIdFrom,
   walletCheckoutFor,
   type CheckoutRecord,
+  type RedemptionRecord,
 } from "./checkout-session.ts";
 
 const realStorage = Reflect.get(globalThis, "sessionStorage");
@@ -419,4 +424,113 @@ test("the two roads refuse each other's records", () => {
   rememberCheckout(record);
 
   assert.equal(walletCheckoutFor("pi_3Abc123"), null);
+});
+
+/*
+  ## The redemption, which is not a checkout
+
+  No money, no pay token, and nothing to verify afterwards. What it has in
+  common with the two above is the guard: a handle in the address, compared
+  against the record in the tab, so a second redemption cannot be shown against
+  the first one's address.
+*/
+
+const redemption: RedemptionRecord = {
+  id: "0f3a6c2e-4b71-4c0d-9a12-8d5e6f70b1c4",
+  productKey: "month-ahead",
+  question: "What should I focus on this month?",
+  querentEmail: "sam@example.com",
+  askedAt: "2026-12-24T10:03:11+00:00",
+};
+
+test("a redemption reads back whole for the handle that names it", () => {
+  rememberRedemption(redemption);
+
+  assert.deepEqual(redemptionFor(redemption.id), redemption);
+});
+
+test("and reads back a second time, so a reload still confirms", () => {
+  rememberRedemption(redemption);
+
+  assert.deepEqual(redemptionFor(redemption.id), redemption);
+  assert.deepEqual(redemptionFor(redemption.id), redemption);
+});
+
+test("a redemption naming another handle is withheld — the stale-result guard", () => {
+  rememberRedemption(redemption);
+
+  assert.equal(redemptionFor("some-other-handle"), null);
+});
+
+test("a second gift redeemed in this tab cannot be shown against the first one's address", () => {
+  rememberRedemption(redemption);
+  rememberRedemption({ ...redemption, id: "the-second", question: "What else?" });
+
+  assert.equal(redemptionFor(redemption.id), null);
+  assert.deepEqual(redemptionFor("the-second"), { ...redemption, id: "the-second", question: "What else?" });
+});
+
+test("no handle in the address shows nothing, whatever the tab holds", () => {
+  rememberRedemption(redemption);
+
+  assert.equal(redemptionFor(null), null);
+  assert.equal(redemptionFor(""), null);
+});
+
+test("nothing stored shows nothing", () => {
+  assert.equal(redemptionFor(redemption.id), null);
+});
+
+/*
+  Every field is required, because a redemption that cannot name what was asked
+  or where it goes has nothing to put on the screen it exists to draw. The
+  ordinary way one arrives is a record written by an older build, in a tab left
+  open across the deploy that replaced it.
+*/
+for (const field of ["id", "productKey", "question", "querentEmail", "askedAt"] as const) {
+  test(`a redemption with no ${field} is refused whole`, () => {
+    const { [field]: dropped, ...rest } = redemption;
+
+    void dropped;
+
+    sessionStorage.setItem("redemption", JSON.stringify(rest));
+
+    assert.equal(redemptionFor(redemption.id), null);
+  });
+
+  test(`a redemption whose ${field} is not a string is refused whole`, () => {
+    sessionStorage.setItem("redemption", JSON.stringify({ ...redemption, [field]: 7 }));
+
+    assert.equal(redemptionFor(redemption.id), null);
+  });
+}
+
+test("a redemption that is not JSON is refused rather than thrown", () => {
+  sessionStorage.setItem("redemption", "not a record");
+
+  assert.equal(redemptionFor(redemption.id), null);
+});
+
+test("storage that refuses loses the confirmation and not the redemption", () => {
+  useStorage(refusingStorage());
+
+  assert.doesNotThrow(() => rememberRedemption(redemption));
+  assert.equal(redemptionFor(redemption.id), null);
+});
+
+test("the confirmation's address is slashed, so it is not reached through a 308", () => {
+  assert.equal(
+    redemptionHref("0f3a6c2e"),
+    "/checkout/complete/?redeemed=0f3a6c2e",
+  );
+});
+
+test("a handle that needs escaping is escaped rather than ending the query", () => {
+  assert.equal(redemptionHref("a b&c=d"), "/checkout/complete/?redeemed=a%20b%26c%3Dd");
+});
+
+test("every redemption gets its own handle", () => {
+  const handles = new Set(Array.from({ length: 50 }, freshRedemptionId));
+
+  assert.equal(handles.size, 50);
 });

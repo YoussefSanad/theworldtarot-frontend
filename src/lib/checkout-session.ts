@@ -1,5 +1,11 @@
 /**
- * The one thing a checkout leaves behind in the tab it was started in.
+ * ~~The one thing a checkout leaves behind in the tab it was started in.~~
+ * **Two things the tab holds for one screen, from 3 September 2026** (#82): a
+ * checkout's record, and a **redemption**'s beside it. The second is at the
+ * foot of this file and is not a checkout — no money moves on that road, and
+ * there is nothing to verify afterwards — but it is read by the same screen at
+ * the same address, and a module of its own holding one `sessionStorage` key
+ * for one page would be a second file to keep in step with this one.
  *
  * The confirmation screen has nothing else to read from. There is no endpoint
  * that reads an **order** back and there is deliberately not going to be one, so
@@ -426,4 +432,210 @@ export function forgetQuestion(paid: CheckoutRecord): void {
   void spent;
 
   rememberCheckout(rest);
+}
+
+/*
+  ## The third record, which is not a checkout
+
+  Everything above is written before a browser leaves for Stripe and read when
+  it comes back. What follows is written by a **redemption**, where no money
+  moves and nothing leaves the origin — it is here because the screen that reads
+  it is the same screen, and a second module holding one `sessionStorage` key
+  for the same page would be two files to keep in step. See `RedemptionRecord`.
+*/
+
+const REDEMPTION = "redemption";
+
+/**
+ * The one query parameter the redemption road is reached by.
+ *
+ * **Spelled once**, because it is a contract between the page that writes the
+ * address and the screen that reads it, and the last time this repository had a
+ * contract with two spellings — `data-field` — one of them drifted. The two
+ * beside it are Stripe's own (`session_id`, `payment_intent`) and are spelled
+ * where they are read, since nothing here builds those addresses.
+ */
+export const redeemedParam = "redeemed";
+
+/**
+ * What a spent **gift code** leaves behind in the tab that spent it.
+ *
+ * **The whole input to the confirmation on that road**, and there is nothing
+ * else it could be. `POST /orders/status` reports a payment, and the payment
+ * behind a redeemed gift happened months earlier to somebody else — so unlike
+ * the two records above, this one is not a thing to verify later. It is the
+ * answer that spent the code, carried across one `router.replace`.
+ *
+ * **No pay token, no Money, and no code.** A redemption has no payment to
+ * identify and no amount to restate, and the code is a bearer credential that
+ * has done its one job by the time this is written. The `id` below is the only
+ * thing that travels in the address.
+ */
+export type RedemptionRecord = {
+  /**
+   * The handle the confirmation is reached by, fresh for each redemption.
+   *
+   * **A random string and not the credential**, which is the constraint ADR
+   * 0003 puts on this road: a code the visitor typed is never written into an
+   * address, and `check:redeem` asserts it against every URL the browser
+   * visits — a redirect included. This is guessable and worth nothing to guess:
+   * it names a record in one tab's storage, and a tab that does not hold the
+   * record shows the screen that says so.
+   *
+   * It is on the record as well as in the address for the same reason
+   * `sessionId` is: it is what `redemptionFor` compares, so a second redemption
+   * in this tab cannot be shown against the first one's address.
+   */
+  id: string;
+  /**
+   * The **product key** of the reading that was asked for, which is what the
+   * confirmation names it and states its delivery window from — through
+   * `readingPageFor`, exactly as the card road resolves a title. A key this
+   * build has no page for names no reading and states no window.
+   */
+  productKey: string;
+  /** What the querent asked, read back so they can see it is what they meant. */
+  question: string;
+  /** Where the reading goes: the **querent**'s own address, never the recipient's. */
+  querentEmail: string;
+  /**
+   * When it was asked for, as the backend answered it.
+   *
+   * **The moment the clock starts** — see `CONTEXT.md` under **Ask** — and the
+   * reason a delivery window may be stated on that screen at all: it is a
+   * property of the reading counted from here, rather than a promise the screen
+   * makes. It is carried and not rendered, because the promise is made once, in
+   * the mail the backend sends the querent.
+   */
+  askedAt: string;
+};
+
+/**
+ * Writes the redemption, replacing whatever was there.
+ *
+ * Its caller is the redeem page's submit, immediately before it replaces the
+ * address — **before**, because after the navigation the page that had the
+ * answer is gone.
+ *
+ * **It cannot throw into a redemption.** Storage refused is a worse
+ * confirmation and not a lost gift: the code is spent either way, the reading
+ * is being written either way, and the mail the backend sends the querent is
+ * the durable half. The screen reached without a record says exactly that.
+ */
+export function rememberRedemption(record: RedemptionRecord): void {
+  try {
+    sessionStorage.setItem(REDEMPTION, JSON.stringify(record));
+  } catch {
+    // See above. A querent who cannot be shown their own confirmation has still
+    // asked, and has still been mailed.
+  }
+}
+
+/**
+ * The redemption one address names, or `null` when this tab holds no such
+ * record.
+ *
+ * **The third guard in this file**, and it is one for the same reason the other
+ * two are: a caller left to compare the fields itself is a caller that will one
+ * day compare the wrong ones. A second gift redeemed in this tab overwrites the
+ * first, so a record whose `id` is not the one on screen describes some other
+ * redemption and none of it may be shown.
+ *
+ * **`null` for a missing id, and for a record that is not one this build
+ * wrote.** Both land on the same screen, which says the mail is the record that
+ * counts — the honest answer for a handle whose record died with a tab, and for
+ * an address typed by somebody who never redeemed anything.
+ */
+export function redemptionFor(id: string | null): RedemptionRecord | null {
+  if (id === null || id === "") return null;
+
+  let raw: string | null;
+
+  try {
+    raw = sessionStorage.getItem(REDEMPTION);
+  } catch {
+    return null;
+  }
+
+  const record = parseRedemption(raw);
+
+  if (record === null) return null;
+
+  return record.id === id ? record : null;
+}
+
+/**
+ * Validated rather than cast, exactly as `parseRecord` is: anything on this
+ * origin can put anything in that key, and a record written by an older build
+ * outlives the deploy that replaced it.
+ */
+function parseRedemption(raw: string | null): RedemptionRecord | null {
+  if (!raw) return null;
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  if (typeof parsed !== "object" || parsed === null) return null;
+
+  const { id, productKey, question, querentEmail, askedAt } = parsed as Record<string, unknown>;
+
+  // Every field is required. There is no optional half here as there is on a
+  // checkout: a redemption that cannot name what was asked, or where it goes,
+  // has nothing to put on the screen it exists to draw.
+  for (const field of [id, productKey, question, querentEmail, askedAt]) {
+    if (typeof field !== "string" || field === "") return null;
+  }
+
+  return {
+    id: id as string,
+    productKey: productKey as string,
+    question: question as string,
+    querentEmail: querentEmail as string,
+    askedAt: askedAt as string,
+  };
+}
+
+/**
+ * A fresh handle for one redemption.
+ *
+ * **Random, and not a credential.** ADR 0003 decided that a code the visitor
+ * typed is never written into an address, and `check:redeem` asserts it against
+ * every URL the browser visits — the redirect included. So the address carries
+ * this instead, which names a record in one tab's storage and is worth nothing
+ * to guess: a tab without the record shows the screen that says so, whatever
+ * the address holds.
+ *
+ * `crypto.randomUUID` needs a secure context, which the site is and a plain
+ * `http://` dev origin is not. The fallback is not as random and does not need
+ * to be — what it has to avoid is one redemption's handle matching the record
+ * a *second* redemption left in the same tab, which is a collision inside one
+ * browser tab within one minute.
+ */
+export function freshRedemptionId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+}
+
+/**
+ * The address one redemption's confirmation is at.
+ *
+ * **Slashed.** `trailingSlash` in next.config.mjs exports a directory of
+ * `index.html` files, so the unslashed form costs a 308 on the way — and this
+ * one would carry a query string through it. The same reason `redeemCopy`'s way
+ * back is slashed.
+ *
+ * Its caller replaces the address rather than pushing it. A code is spent
+ * exactly once, and a back button that returned to the form it was spent in
+ * would offer somebody a second press of a button that cannot work twice.
+ */
+export function redemptionHref(id: string): string {
+  return `/checkout/complete/?${redeemedParam}=${encodeURIComponent(id)}`;
 }

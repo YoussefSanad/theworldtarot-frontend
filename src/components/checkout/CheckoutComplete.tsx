@@ -8,7 +8,16 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { checkoutCompleteCopy } from "@/content/checkout";
 import { readingPageFor } from "@/content/reading-pages";
-import { checkoutFor, forgetQuestion, type CheckoutRecord, walletCheckoutFor } from "@/lib/checkout-session";
+import { redeemCopy } from "@/content/redeem";
+import {
+  checkoutFor,
+  forgetQuestion,
+  redeemedParam,
+  redemptionFor,
+  type CheckoutRecord,
+  type RedemptionRecord,
+  walletCheckoutFor,
+} from "@/lib/checkout-session";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
@@ -16,7 +25,7 @@ import { formatPrice, type Money } from "@/lib/price";
 /**
  * The **confirmation**: where a paid-for checkout lands, by either road.
  *
- * ## Two roads arrive here, and they are told apart by the address
+ * ## ~~Two~~ **three** roads arrive here, and they are told apart by the address
  *
  * The card road returns from Stripe's **hosted page** with `session_id` in the
  * address and a record holding a Session id. The wallet road returns from
@@ -27,6 +36,28 @@ import { formatPrice, type Money } from "@/lib/price";
  *
  * **They do not paint the same way, and that is the whole of the difference.**
  * See below.
+ *
+ * ## The third road is not a payment at all
+ *
+ * **From 3 September 2026** (#82) `/redeem/` sends a querent here with
+ * `redeemed` in the address, naming a `RedemptionRecord` the tab holds. Two
+ * roads through one shop ended in two different rooms — a buyer's confirmation
+ * was a page and a querent's was a panel inside the reading page they were
+ * given — and the client's answer was that they should end in the same one.
+ *
+ * **Nothing on it is about money, and it is the first branch for that reason.**
+ * It asks the backend nothing: `POST /orders/status` reports a payment, and the
+ * payment behind a redeemed gift happened months earlier to somebody else, so
+ * there is no second call to make and nothing to verify. It paints no amount —
+ * there is none this querent paid — and none of the seven payment outcomes is
+ * reachable through it. What it draws is the answer that spent the code, which
+ * `/redeem/` wrote down before it replaced the address.
+ *
+ * **The record is the whole input, so a lost one has its own sentence.**
+ * `sessionStorage` dies with the tab: a reload is fine and a link opened
+ * somewhere else is not. `unknown` below says the **receipt** is the record
+ * that counts, which is true of a payment and false of a redemption — nobody
+ * sent a querent a receipt. `redeemCopy.lost` points at the mail instead.
  *
  * ## It reports a payment, and on one screen of seven a fulfilment as well
  *
@@ -224,7 +255,19 @@ type Result =
    * disagree — and the six outcomes that are about unfinished money ignore the
    * string entirely, their `body` taking no argument.
    */
-  | { state: "known"; outcome: PaymentOutcome; money: Money | null; gift: boolean; named: string };
+  | { state: "known"; outcome: PaymentOutcome; money: Money | null; gift: boolean; named: string }
+  /**
+   * The redemption road, which carries its own record rather than an outcome:
+   * there is no payment here to have an outcome about.
+   */
+  | { state: "redeemed"; asked: RedemptionRecord }
+  /**
+   * A redemption handle this tab holds no record for — a link opened somewhere
+   * else, or a tab closed since. It is `unknown`'s counterpart on a road with
+   * no receipt to point at, and it is a state of its own for exactly that
+   * reason.
+   */
+  | { state: "forgotten" };
 
 export function CheckoutComplete() {
   const searchParams = useSearchParams();
@@ -241,6 +284,13 @@ export function CheckoutComplete() {
     only to know which payment it is looking at.
   */
   const paymentIntentId = searchParams.get("payment_intent");
+  /*
+    The third road's handle. Ours rather than Stripe's, which is why it is
+    spelled in `lib/checkout-session.ts` and read from there: the page that
+    builds this address and the screen that reads it are one contract, and a
+    contract with two spellings is one spelling away from drifting.
+  */
+  const redeemed = searchParams.get(redeemedParam);
 
   const [result, setResult] = useState<Result>({ state: "checking" });
 
@@ -259,6 +309,22 @@ export function CheckoutComplete() {
       customer and it.
     */
     void (async () => {
+      /*
+        **The redemption road first, and it returns.** Nothing below it applies:
+        there is no payment to identify, no amount to restate and no status to
+        ask for. **The address is the whole signal**, and it has to be: one tab
+        can hold both records — somebody who bought a gift and then redeemed one
+        of their own — and which of them this screen is looking at is a question
+        only the address answers.
+      */
+      if (redeemed !== null) {
+        const asked = redemptionFor(redeemed);
+
+        if (live) setResult(asked ? { state: "redeemed", asked } : { state: "forgotten" });
+
+        return;
+      }
+
       /*
         The card road first, and the two are asked in turn rather than chosen
         between: each guard refuses the other road's record, so at most one of
@@ -359,12 +425,69 @@ export function CheckoutComplete() {
     return () => {
       live = false;
     };
-  }, [sessionId, paymentIntentId]);
+  }, [sessionId, paymentIntentId, redeemed]);
 
   if (result.state === "checking") {
     return (
       <Panel>
         <Heading>{checkoutCompleteCopy.checkingHeading}</Heading>
+      </Panel>
+    );
+  }
+
+  /*
+    The redemption road's two screens, above the payment ones and never falling
+    through to them. Six of those seven say something about money that is not
+    true here, and the seventh is about a payment this querent did not make.
+  */
+  if (result.state === "redeemed") {
+    const { asked } = result;
+    const page = readingPageFor(asked.productKey);
+
+    return (
+      <Panel>
+        <Heading>{redeemCopy.asked.heading}</Heading>
+
+        {/*
+          **No amount above this**, which is the one line every other state on
+          this screen has and this road may not: nothing was paid here, and the
+          payment behind the gift was somebody else's, months ago.
+        */}
+        <p className={`mt-4 ${BODY}`}>{redeemCopy.asked.body(titleOf(asked.productKey), asked.querentEmail)}</p>
+
+        {/*
+          The reading's own line, stated as a property of the reading rather
+          than as a promise this screen makes — the rule `API_CONTRACT.md` sets
+          for anything shown against `asked_at`, which is on the record for
+          exactly that reason. Absent on a product this build has no page for,
+          because there is then no such line to state.
+        */}
+        {page ? <p className={`mt-4 ${BODY}`}>{page.delivery}</p> : null}
+
+        <p className={`mt-8 ${BODY}`}>{redeemCopy.asked.asking}</p>
+
+        {/*
+          The class list written out rather than `BODY` with a colour beside it:
+          `cn` in this repo is a plain join, so two competing colours are
+          settled by the order of the stylesheet and not of the class list. The
+          question is the one thing on this screen in cream — it is what the
+          querent wrote, and the rest is what we are telling them.
+        */}
+        <blockquote className="mt-2 font-serif text-body leading-[1.19] tracking-[-0.01em] text-cream">
+          {asked.question}
+        </blockquote>
+
+        <Back />
+      </Panel>
+    );
+  }
+
+  if (result.state === "forgotten") {
+    return (
+      <Panel>
+        <Heading>{redeemCopy.lost.heading}</Heading>
+        <p className={`mt-4 ${BODY}`}>{redeemCopy.lost.body}</p>
+        <Back />
       </Panel>
     );
   }
@@ -449,7 +572,21 @@ function subjectOf(record: CheckoutRecord): string {
     return record.giftRecipient ?? checkoutCompleteCopy.unnamedRecipient;
   }
 
-  return readingPageFor(record.productKey)?.title ?? checkoutCompleteCopy.unnamedReading;
+  return titleOf(record.productKey);
+}
+
+/**
+ * What a **product key** is called on this screen, or the word that stands in
+ * for a key this build has drawn no page for.
+ *
+ * Its own function because two roads name a reading now and they must name it
+ * the same way: a self-purchase through `subjectOf`, and a redemption from the
+ * record `/redeem/` left in the tab. The key is the backend's name and no
+ * customer's, so it is turned into a title or into `unnamedReading` — never
+ * rendered, and never guessed at.
+ */
+function titleOf(productKey: string): string {
+  return readingPageFor(productKey)?.title ?? checkoutCompleteCopy.unnamedReading;
 }
 
 function Back() {

@@ -46,6 +46,44 @@ So the page keeps the **presentation** half — the name, the artwork, the
 description, what you receive — and swaps only the **commerce** half for the
 code's state and the question. What goes is everything that sells.
 
+### Amended 3 September 2026: the querent leaves once the code is spent
+
+~~And they stay there through the redemption: the confirmation is a third state
+of that panel, rendered from the answer that spent the code, and it dies with
+the tab.~~ **Struck on #82, which is the client walking the built flow and
+saying so.** A redemption now `replace`s the address with
+`/checkout/complete/`, where a buyer's confirmation already was — two roads
+through one shop ended in two different rooms, and her answer is that they
+should end in the same one.
+
+**Everything above this line still holds**, and the distinction is worth
+keeping: the argument is about the page a querent is *asked on*, and that page
+is unchanged. What moves is the screen they are *thanked on*, which is a
+different question and was never argued here — it was simply where the panel
+happened to be.
+
+**What it costs is the reason for this paragraph rather than a footnote to it.**
+The section above says the querent is the one person who never chose the reading
+they are holding, and that giving them less context than the person who chose it
+is the wrong way round. After this they end on a one-column confirmation with
+the reading's name on it and none of its artwork. That is a real loss of the
+thing this ADR argued for, taken knowingly, and it is the client's call: she is
+the one who wants both confirmations to look like one shop.
+
+**The handle in the address is not the code.** The rule below is untouched and
+is now load-bearing in a second place: what `/redeem/` writes into the address
+is a random string naming a record in the tab's `sessionStorage`, and
+`check:redeem` asserts the code appears in no address the browser visits but
+`/redeem/`'s own — a redirect being one of those. See `RedemptionRecord` in
+`lib/checkout-session.ts`.
+
+**The mail is still the durable half**, which is what keeps the backend's
+`ReadingOnItsWay` true in substance: `sessionStorage` dies with the tab wherever
+the screen reading it lives, so the record that lasts is the one in the
+querent's inbox. That mailable's docblock names `/redeem/` as the screen that
+dies, and the sentence needs moving rather than deleting; it is filed on
+`YoussefSanad/TheWorldTarot` beside this.
+
 ## What this requires, and why now is when it is cheap
 
 A reading page today is one composition. This needs a seam between what a

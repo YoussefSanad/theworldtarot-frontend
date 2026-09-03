@@ -58,6 +58,20 @@
  * run sets it to `failed` against a backend saying `succeeded`. The screen is
  * required to believe the backend: that is the party that settles the order,
  * and the query string is the party that was redirected.
+ *
+ * ## The third road has no payment on it, and that is what its runs measure
+ *
+ * From 3 September 2026 (#82) a **querent** who spends a gift code lands here
+ * too, with `redeemed` in the address naming a record `/redeem/` left in the
+ * tab. The held answer measures nothing on that road, because nothing is asked:
+ * `POST /orders/status` reports a payment, and the payment behind a redeemed
+ * gift happened months earlier to somebody else.
+ *
+ * So those runs assert the absences as hard as the words — no request, no
+ * amount, and none of the seven payment screens reachable — and the one screen
+ * that is not a confirmation says something true about the **mail**, which on
+ * that road is the durable record. `unknownBody` beside it sends a customer to
+ * look for a **receipt**, and a querent was never sent one.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -125,6 +139,29 @@ function giftRecord({ sessionId, money }, giftRecipient = "alice@example.com") {
     question: "Gift from Mum — send this reading to somebody-elses@example.com",
     gift: true,
     ...(giftRecipient === null ? {} : { giftRecipient }),
+  };
+}
+
+/** The handle one redemption is reached by, as `freshRedemptionId` mints them. */
+const REDEEMED_ID = "0f3a6c2e-4b71-4c0d-9a12-8d5e6f70b1c4";
+
+/**
+ * What `/redeem/` wrote before it replaced the address: the answer that spent
+ * the code, under the handle the address carries.
+ *
+ * **No pay token, no Money and no `sessionId`**, because there is no payment on
+ * this road to identify or to restate. The `id` is what `redemptionFor`
+ * compares, and it is a random handle rather than the gift code — ADR 0003
+ * forbids the credential in an address the visitor did not arrive with, and
+ * `check:redeem` asserts that end.
+ */
+function redemption({ id = REDEEMED_ID, productKey = "month-ahead" } = {}) {
+  return {
+    id,
+    productKey,
+    question: "What should I focus on this month?",
+    querentEmail: "sam@example.com",
+    askedAt: "2026-12-24T10:03:11+00:00",
   };
 }
 
@@ -267,7 +304,7 @@ const settledHeading = () => {
  * is what Stripe puts in the address on the way back. Either can be absent,
  * which is how the arrival with nothing at all is told apart from the rest.
  */
-async function drive(state, { stored, query, answer, settle = 400, readWhileAsking = false }) {
+async function drive(state, { stored, redeemed, query, answer, settle = 400, readWhileAsking = false }) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -284,6 +321,17 @@ async function drive(state, { stored, query, answer, settle = 400, readWhileAski
     await page.addInitScript((value) => {
       sessionStorage.setItem("checkout", value);
     }, JSON.stringify(stored));
+  }
+
+  /*
+    The redemption's own key, which is a second record rather than a second
+    shape of the first: no money moves on that road, so there is nothing on it
+    the two guards above could compare.
+  */
+  if (redeemed) {
+    await page.addInitScript((value) => {
+      sessionStorage.setItem("redemption", value);
+    }, JSON.stringify(redeemed));
   }
 
   let release = () => {};
@@ -772,6 +820,119 @@ const runs = [
       expect("wallet gift", "says nothing until the backend has answered", /^Checking/.test(painted.heading), true);
       expect("wallet gift", "then says the gift is on its way", /gift is on its way/i.test(shown.heading), true);
       expect("wallet gift", "and names the address it went to", /alice@example\.com/.test(shown.text), true);
+    },
+  },
+  /*
+    ## The redemption road
+
+    No payment, no record of one, and nothing asked of the backend. See the
+    header: what these four runs measure is mostly what is absent.
+  */
+  {
+    state: "A gift redeemed, which is a road with no payment on it at all",
+    input: { redeemed: redemption(), query: { redeemed: REDEEMED_ID } },
+    /*
+      **It may promise the reading**, and it is the one gift surface that may:
+      the querent has asked, the reading exists as a row and Jennifer has been
+      told. The gift *buyer*'s screen above promises nothing for the opposite
+      reason — at that moment nobody has asked anything.
+    */
+    claimsTheReading: true,
+    assert: ({ shown, verifications }) => {
+      expect("redeemed", "says the reading is on its way", RECEIVED.test(shown.heading), true);
+      /*
+        The four things the querent is owed, which are the four the panel on
+        `/redeem/` used to draw. The reading is named from the **product key**
+        on the record through `readingPageFor`, exactly as the card road names
+        what was bought.
+      */
+      expect("redeemed", "names the reading it was for", /Month Ahead Reading/.test(shown.text), true);
+      expect("redeemed", "names where the reading goes", /sam@example\.com/.test(shown.text), true);
+      expect("redeemed", "reads the question back", /What should I focus on this month\?/.test(shown.text), true);
+      /*
+        Stated as a property of the reading rather than as a promise this screen
+        makes — the rule for anything shown against `asked_at`, which is on the
+        record for exactly that reason. The promise is made once, in the mail.
+      */
+      expect("redeemed", "states the reading's delivery window", /within 24 hours/.test(shown.text), true);
+      /*
+        **And asks nothing.** `POST /orders/status` reports a payment, and the
+        payment behind a redeemed gift happened months earlier to somebody else.
+        `API_CONTRACT.md` says so in as many words.
+      */
+      expect("redeemed", "asks the backend nothing", verifications, 0);
+      // No money moved here, so there is no amount and no label for one.
+      expect("redeemed", "restates no amount", /€|\$|£/.test(shown.text), false);
+      expect("redeemed", "under no payment label", /Payment received:/.test(shown.text), false);
+      /*
+        And none of the seven payment screens is reachable from it. A querent
+        told "no payment was taken" would be told something true about a
+        payment they never made and false about their reading.
+      */
+      expect(
+        "redeemed",
+        "and none of the payment screens is reachable",
+        /no payment was taken|going through|is not finished|cannot show your payment|could not check your payment/i.test(shown.text),
+        false,
+      );
+    },
+  },
+  {
+    state: "A redemption whose reading this build has drawn no page for",
+    /*
+      `one-card` is in the backend's catalogue and has no `ReadingPage` here —
+      the same key the unsold-reading run above uses, and the same fallback at
+      the other end of the record. It is not giftable today, which makes this
+      the state a *withdrawn* product reaches: a code for one still redeems,
+      because the person paid.
+    */
+    input: { redeemed: redemption({ productKey: "one-card" }), query: { redeemed: REDEEMED_ID } },
+    claimsTheReading: true,
+    assert: ({ shown }) => {
+      expect("redeemed, no page", "still says the reading is on its way", RECEIVED.test(shown.heading), true);
+      expect("redeemed, no page", "falls back to naming no reading", /Your reading is being written/i.test(shown.text), true);
+      expect("redeemed, no page", "never renders the key itself", /one-card/i.test(shown.text), false);
+      expect("redeemed, no page", "nor some other reading's name", /Month Ahead/i.test(shown.text), false);
+      // No page here means no delivery line to state, and a window stated
+      // without one would be this screen inventing a promise.
+      expect("redeemed, no page", "and states no window it has no line for", /within 24 hours/.test(shown.text), false);
+      // What it does still say is where the reading goes, which is on the
+      // record rather than on any page.
+      expect("redeemed, no page", "and still names the address", /sam@example\.com/.test(shown.text), true);
+    },
+  },
+  {
+    state: "A redemption handle this tab has no record for",
+    /*
+      `sessionStorage` dies with the tab: a reload is fine, a link opened
+      somewhere else is not. This is the road's `unknown`, and it is a screen of
+      its own because `unknownBody` sends a customer to look for a **receipt** —
+      and nobody sent a querent one. Nobody took their money.
+    */
+    input: { query: { redeemed: REDEEMED_ID } },
+    assert: ({ shown, verifications }) => {
+      expect("lost redemption", "says plainly it cannot show the redemption", /cannot show you this redemption/i.test(shown.heading), true);
+      expect("lost redemption", "points at the mail, which is the record that counts here", /email confirming it is on its way/i.test(shown.text), true);
+      expect("lost redemption", "and never at a receipt they were never sent", /receipt/i.test(shown.text), false);
+      // It knows nothing, so it claims nothing: not that a code was spent, and
+      // not that a reading is being written.
+      expect("lost redemption", "claims no reading", /is being written/i.test(shown.text), false);
+      expect("lost redemption", "and asks the backend nothing", verifications, 0);
+    },
+  },
+  {
+    state: "A second gift redeemed in this tab, with the first one's address",
+    /*
+      The third guard, doing what the two above it do: a record naming a
+      different redemption than the address does describes some other
+      redemption, and none of it may be shown. What that would cost here is one
+      querent's question and address on another's screen.
+    */
+    input: { redeemed: redemption({ id: "the-second-redemption" }), query: { redeemed: REDEEMED_ID } },
+    assert: ({ shown }) => {
+      expect("two redemptions", "shows nothing of the other redemption", /cannot show you this redemption/i.test(shown.heading), true);
+      expect("two redemptions", "and neither its question", /What should I focus on this month\?/.test(shown.text), false);
+      expect("two redemptions", "nor the address it goes to", /sam@example\.com/.test(shown.text), false);
     },
   },
   {

@@ -1,5 +1,12 @@
 /**
- * The words on `/redeem/`.
+ * The words a **querent** reads: on `/redeem/`, and — from 3 September 2026
+ * (#82) — on the confirmation a spent code now lands on. `asked` and `lost`
+ * are read at `/checkout/complete/` and everything above them on this page.
+ *
+ * **One file for the two, because it is one person being spoken to** in one
+ * voice across two addresses, and the sentence that promises the reading has to
+ * sit beside `giftReceived`'s reason for promising nothing. It is the same
+ * arrangement `content/checkout.ts` already has, from the other end.
  *
  * **All of it is ours.** The client's walkthrough draws a stripped-down page —
  * the reading's name, a question box and a submit — and
@@ -164,6 +171,13 @@ export const redeemCopy = {
    * The confirmation, rendered from the answer that spent the code and from no
    * second call. `POST /orders/status` reports a payment, and the payment
    * behind a redeemed gift happened months earlier to somebody else.
+   *
+   * **It is read at `/checkout/complete/` from 3 September 2026** (#82), not on
+   * this page. The words did not move with it — a querent is told the same
+   * three things in the same voice — but the screen did, so that both roads
+   * through the shop end in the same room. See
+   * `docs/adr/0003-redemption-is-a-page-of-its-own.md`, amended for it, and
+   * `RedemptionRecord` in `lib/checkout-session.ts` for what carries it there.
    */
   asked: {
     heading: "Your Reading Is On Its Way",
@@ -173,11 +187,38 @@ export const redeemCopy = {
      * Jennifer has been told. The confirmation a gift *buyer* sees promises
      * nothing, because at that moment nobody has asked anything — see
      * `giftReceived` in `content/checkout.ts`.
+     *
+     * `reading` is the noun phrase after "Your", resolved from the **product
+     * key** on the record through `readingPageFor` — the same way the card
+     * road names what was bought, down to `unnamedReading` standing in for a
+     * key this build has drawn no page for. **It is named here and was not on
+     * the panel** because the panel stood inside that reading's own page, with
+     * the name and the artwork above it; this screen has nothing above it.
      */
-    body: (email: string) =>
-      `Thank you. Your reading is being written, and it will be sent to ${email}. A confirmation email is on its way to you now.`,
+    body: (reading: string, email: string) =>
+      `Thank you. Your ${reading} is being written, and it will be sent to ${email}. A confirmation email is on its way to you now.`,
     /** Above the question, so somebody can check it is the one they meant. */
     asking: "You asked",
+  },
+
+  /**
+   * The confirmation reached by a handle this tab has no record for.
+   *
+   * **`sessionStorage` dies with the tab**, so this is reachable: a reload is
+   * fine and a link opened somewhere else is not. It is the redemption road's
+   * `unknown`, and it is a screen of its own rather than that one because
+   * `unknownBody` sends a customer to look for a **receipt** — and a querent
+   * has none. Nobody sent them a receipt; nobody took their money.
+   *
+   * **So it points at the mail instead**, which on this road is the durable
+   * record — the backend's `ReadingOnItsWay`, sent to the address they gave. It
+   * says so conditionally, because the other way to this screen is an address
+   * nobody redeemed anything with, and a screen cannot tell the two apart.
+   */
+  lost: {
+    heading: "We Cannot Show You This Redemption",
+    body:
+      "There is nothing here for us to look up — this page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts.",
   },
 
   /** The way back, in the same capitals the rest of the site sets this control in. */

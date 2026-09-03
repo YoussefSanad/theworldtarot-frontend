@@ -25,6 +25,9 @@
  *   must not enter the product through a sentence
  * - that a reading this build has **no page for still redeems**, since refusing
  *   to render is refusing to redeem
+ * - that a spent code **lands on `/checkout/complete/`** and says the same four
+ *   things there, which is #82 and is the one assertion here that is about a
+ *   second page
  *
  * ## The code is a credential, and this counts where it goes
  *
@@ -33,6 +36,12 @@
  * static export cannot pre-render a path segment per code. What it does not
  * accept is a *second* place it leaks to, so every run checks that a code typed
  * into the box never reaches an address the browser visits.
+ *
+ * **A redirect is one of those addresses**, which is why that rule is now a
+ * check on every run rather than on the typed one alone: the redemption
+ * replaces the address, and the thing it must carry there is a random handle
+ * naming a record in the tab. The code may appear in `/redeem/`'s own query
+ * string, because that is the link the mail sent, and nowhere else at all.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -139,7 +148,7 @@ function api(body, status = 200) {
  * is the question form, and running it is what spends the code — nothing else
  * in here does, which is the point of the counts that come back.
  */
-async function drive(state, { code, lookup, redeem, type, fill }) {
+async function drive(state, { code, lookup, redeem, type, fill, lands = false }) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -191,6 +200,18 @@ async function drive(state, { code, lookup, redeem, type, fill }) {
     }
 
     await page.click("button[type='submit']");
+
+    /*
+      A redemption leaves this page (#82) and the two refusals stay on it, so
+      the wait is for the address rather than for a frame — the runs that do
+      not navigate would otherwise each pay a timeout to learn nothing.
+    */
+    if (lands) {
+      await page
+        .waitForFunction(() => location.pathname === "/checkout/complete/", null, { timeout: 20000 })
+        .catch(() => {});
+    }
+
     await page.waitForTimeout(400);
   }
 
@@ -209,10 +230,20 @@ async function drive(state, { code, lookup, redeem, type, fill }) {
   };
 
   const shown = (await page.locator("main").innerText().catch(() => "")).trim();
+  const landed = page.url();
+
+  /*
+    **`replace`, not `push`**, read as a fact about the history rather than
+    about the call: the entry the redemption replaced is the form holding a code
+    that has just been spent, so there is nothing behind it to go back to.
+    `goBack` answering `null` is what a replaced entry looks like from here; a
+    push would answer a response and hand the querent that form again.
+  */
+  const back = lands ? ((await page.goBack().catch(() => null)) === null ? null : page.url()) : null;
 
   await page.close();
 
-  return { arrived, shown, sells, offers, lookups, redemptions, visited };
+  return { arrived, shown, landed, back, sells, offers, lookups, redemptions, visited };
 }
 
 const runs = [
@@ -248,16 +279,17 @@ const runs = [
     },
   },
   {
-    state: "The question is asked, which is the one thing that spends the code",
+    state: "The question is asked, which spends the code and ends on the confirmation",
     input: {
       code: CODE,
+      lands: true,
       fill: {
         question: "What should I focus on this month?",
         querentEmail: "sam@example.com",
         querentName: "Sam",
       },
     },
-    assert: ({ arrived, shown, offers, redemptions }) => {
+    assert: ({ arrived, shown, landed, back, offers, redemptions, visited }) => {
       expect("asking", "spent nothing until the form was submitted", arrived.spent, 0);
       expect("asking", "then spends it exactly once", redemptions.length, 1);
       /*
@@ -273,7 +305,27 @@ const runs = [
         querent_email: "sam@example.com",
         querent_name: "Sam",
       });
+
+      /*
+        **#82: both roads through the shop end in the same room.** A buyer's
+        confirmation was a page and a querent's was a panel inside the reading
+        page they were given; the querent now lands where the buyer does.
+      */
+      expect("asking", "lands on the confirmation", new URL(landed).pathname, "/checkout/complete/");
+      /*
+        And is reached by a **handle**, not by the credential. ADR 0003 permits
+        the code in the link the mail sent and licenses nothing else; the record
+        is in the tab and the address names it.
+      */
+      expect("asking", "carrying a handle and nothing else", /^\?redeemed=[A-Za-z0-9%-]+$/.test(new URL(landed).search), true);
+      expect("asking", "and no way back to a form whose code is spent", back, null);
+
+      /*
+        The four things that screen owes the querent, read off the confirmation
+        rather than off the panel that used to draw them.
+      */
       expect("asking", "confirms from that answer and not a second call", /on its way/i.test(shown), true);
+      expect("asking", "names the reading it was for", /Month Ahead Reading/.test(shown), true);
       expect("asking", "names where the reading will be sent", /sam@example\.com/.test(shown), true);
       expect("asking", "echoes back what was asked", /What should I focus on this month\?/.test(shown), true);
       /*
@@ -282,6 +334,14 @@ const runs = [
         once, in the mail the backend sends the querent.
       */
       expect("asking", "states the reading's delivery window", /within 24 hours/i.test(shown), true);
+      /*
+        **And asks nothing about a payment.** `POST /orders/status` reports one,
+        and the payment behind a redeemed gift happened months earlier to
+        somebody else — `API_CONTRACT.md` says so in as many words. There is no
+        amount on this road for the same reason.
+      */
+      expect("asking", "asks the orders endpoint nothing", visited.filter((url) => url.includes("/orders/status")), []);
+      expect("asking", "and quotes no money", /€|\$|£/.test(shown), false);
       expect("asking", "and there is nothing left to ask with", offers.question, 0);
     },
   },
@@ -379,17 +439,39 @@ const runs = [
         is refusing to redeem.
       */
       lookup: api({ ...LOOKED, product: "one-card", name: "ONE CARD", long_description: "A single card, read in full." }),
+      /*
+        The **redemption's** own answer names the product too, and it is the one
+        the confirmation reads: the record is written from what spending the
+        code returned, not from what looking it up did.
+      */
+      redeem: api({ ...ASKED, product: "one-card", name: "ONE CARD", question: "What should I know?" }),
+      lands: true,
       fill: { question: "What should I know?", querentEmail: "sam@example.com", querentName: "" },
     },
+    /*
+      Read off `arrived`, which is the page before the submit: this run now
+      spends the code and leaves, so the reading it drew is only on screen at
+      the first of the two reads.
+    */
     assert: ({ arrived, shown, redemptions }) => {
-      expect("no page", "falls back to the API's own name", /ONE CARD/.test(shown), true);
-      expect("no page", "and its own description", /A single card, read in full\./.test(shown), true);
-      expect("no page", "renders no other reading's copy", /Month Ahead/.test(shown), false);
+      expect("no page", "falls back to the API's own name", /ONE CARD/.test(arrived.text), true);
+      expect("no page", "and its own description", /A single card, read in full\./.test(arrived.text), true);
+      expect("no page", "renders no other reading's copy", /Month Ahead/.test(arrived.text), false);
       expect("no page", "still asks for a question", arrived.asks, 1);
       expect("no page", "and still redeems", redemptions.length, 1);
       // Optional, exactly as a buyer's name is. An empty box sends no name at
       // all rather than an empty string a validator would read as one.
       expect("no page", "sending no name where none was given", "querent_name" in JSON.parse(redemptions[0]), false);
+      /*
+        **The same fallback at the other end.** The confirmation names the
+        reading from the product key on the record, through `readingPageFor`,
+        so a key this build has drawn no page for names no reading and states
+        no window — rather than a blank, a key, or the last name it knows.
+      */
+      expect("no page", "confirms without naming a reading it has no page for", /Your reading is being written/i.test(shown), true);
+      expect("no page", "and states no window it has no line for", /within 24 hours/i.test(shown), false);
+      expect("no page", "and never renders the key itself", /one-card/i.test(shown), false);
+      expect("no page", "nor some other reading's name", /Month Ahead/.test(shown), false);
     },
   },
   {
@@ -431,6 +513,36 @@ const runs = [
     },
   },
   {
+    state: "Typed off the mail and then spent, so the code touches no address at all",
+    input: {
+      type: AS_TYPED,
+      lands: true,
+      fill: {
+        question: "What should I focus on this month?",
+        querentEmail: "sam@example.com",
+        querentName: "",
+      },
+    },
+    assert: ({ landed, shown, redemptions, visited }) => {
+      /*
+        The strictest form of ADR 0003's rule, end to end. This run's code never
+        arrives in an address — it is typed — so unlike every other run here,
+        **no** address the browser visits may contain it, the redirect the
+        redemption makes least of all. The general check below allows
+        `/redeem/`'s own query string, because that is the link the mail sends;
+        this run allows nothing.
+      */
+      expect("typed and spent", "spends the code that was typed", JSON.parse(redemptions[0]).code, "k7m4 9pqr 2xyz");
+      expect("typed and spent", "lands on the confirmation", new URL(landed).pathname, "/checkout/complete/");
+      expect("typed and spent", "and the code is in no address at all", visited.filter((url) => /9pqr/i.test(url)), []);
+      expect("typed and spent", "the confirmation reads off the record it was handed", /sam@example\.com/.test(shown), true);
+      // The printed form was on the panel and is not on the confirmation: the
+      // code is spent, and a screen that shows a spent credential is showing
+      // somebody a string that can do nothing.
+      expect("typed and spent", "and shows no gift code", shown.includes(CODE), false);
+    },
+  },
+  {
     state: "Arriving with no code at all",
     input: {},
     assert: ({ arrived, shown, offers, lookups }) => {
@@ -444,6 +556,31 @@ const runs = [
   },
 ];
 
+/**
+ * Every address the browser visited that carries the code, bar `/redeem/`'s own
+ * query string.
+ *
+ * That one is the link the mail sends, and ADR 0003 accepts it knowingly: a
+ * link carries its credential in its URL or it is not a link. **It licenses
+ * nothing else** — not a typed code, and from #82 not the redirect a redemption
+ * makes either, which carries a random handle naming a record in the tab.
+ *
+ * An address that will not parse is reported rather than skipped: it is not one
+ * this check can clear, and the safe reading of "we could not tell" here is a
+ * failure.
+ */
+function codeInAddresses(visited) {
+  return visited.filter((url) => {
+    if (!/9pqr/i.test(url)) return false;
+
+    try {
+      return new URL(url).pathname !== "/redeem/";
+    } catch {
+      return true;
+    }
+  });
+}
+
 for (const run of runs) {
   const result = await drive(run.state, run.input);
 
@@ -455,6 +592,12 @@ for (const run of runs) {
     that arrives in a copy change rather than in a decision.
   */
   expect(run.state, "mentions no expiry anywhere", EXPIRY.test(result.shown), false);
+  /*
+    And every state, not only the typed one. A redirect is an address the
+    browser visits, so the road a spent code takes to `/checkout/complete/` is
+    inside this rule rather than beside it.
+  */
+  expect(run.state, "puts the code in no address but the link's own", codeInAddresses(result.visited), []);
 }
 
 await browser.close();

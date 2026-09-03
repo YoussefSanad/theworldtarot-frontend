@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
 import { redeemCopy } from "@/content/redeem";
-import { redeemedOn, type AskedReading, type Asking, type Gift } from "@/lib/gifts";
+import { redeemedOn, type Asking, type Gift } from "@/lib/gifts";
 import { currentLocale } from "@/lib/locale";
 import { textIn } from "@/lib/order-note";
 
-const { ask, spent, asked } = redeemCopy;
+const { ask, spent } = redeemCopy;
 
 /**
  * What stands where the commerce goes on `/redeem/`: the code's state, and the
@@ -29,15 +29,22 @@ const { ask, spent, asked } = redeemCopy;
  * scrolls to `readingPageChrome.checkout.anchor`, and a slot that did not carry
  * it would leave that button pointing at an element not in the document.
  *
- * ## Three states, and the fourth that does not exist
+ * ## Two states, and the ones that are somewhere else
  *
- * **Ask**, **already redeemed** and **asked** — a code that resolved, one that
- * was already spent, and one this page has just spent. There is no expired
- * state: gift codes do not expire, and the concept does not enter the product
- * through a screen. See `content/redeem.ts`.
+ * **Ask** and **already redeemed** — a code that resolved, and one that was
+ * already spent. There is no expired state: gift codes do not expire, and the
+ * concept does not enter the product through a screen. See `content/redeem.ts`.
  *
- * The unknown code and the unreachable backend are not here, because in neither
- * case is there a reading to draw a page of. They live on `CodeEntry`.
+ * ~~**Asked**, the confirmation this page drew from the answer that spent the
+ * code.~~ **Struck 3 September 2026** (#82): a redemption now lands on
+ * `/checkout/complete/`, where a buyer's confirmation already was. The words
+ * did not change and are still `redeemCopy.asked`; the screen they are read on
+ * did. With them went `delivery`, which was passed in for that state alone —
+ * the confirmation states the reading's window from the **product key** on the
+ * record it is handed, which is the same rule read at the other end.
+ *
+ * The unknown code and the unreachable backend are not here either, because in
+ * neither case is there a reading to draw a page of. They live on `CodeEntry`.
  *
  * ## Spending happens here and only on submit
  *
@@ -45,28 +52,14 @@ const { ask, spent, asked } = redeemCopy;
  * this component does either. Email scanners and link prefetchers follow links,
  * so a page that redeemed on arrival would hand a present to whatever opened
  * the mail first — and there is no expiry to reclaim it with and no refund.
- *
- * ## The delivery window is the reading's, and only where the reading has one
- *
- * `delivery` is the line the page already states as a property of this reading;
- * it is passed in from whichever shell mounted this, and is absent on a product
- * with no `ReadingPage` here. That is the ADR's rule and the contract's: state
- * the window as a property of the reading, never as a promise this call makes.
- * The promise is made once, in the mail the backend sends the querent.
  */
 export function RedeemPanel({
   gift,
-  reading,
-  delivery,
   asking,
   failed,
   onAsk,
 }: {
   gift: Gift;
-  /** The redemption, once this page has made one. */
-  reading: AskedReading | null;
-  /** The reading's own delivery line, where this build has a page for it. */
-  delivery?: string;
   /** A submit in flight, which holds the button's label across the round trip. */
   asking: boolean;
   /** The last submit was refused by something that was not about the code. */
@@ -74,21 +67,20 @@ export function RedeemPanel({
   /**
    * Runs the redemption. It answers rather than throws for the two states that
    * are about the code, and throws for everything that is not — see
-   * `lib/gifts.ts`. The state machine is the page's, not this component's.
+   * `lib/gifts.ts`. The state machine is the page's, not this component's —
+   * and on the one answer that succeeds, so is the navigation.
    */
   onAsk: (asking: Asking) => Promise<void>;
 }) {
   return (
     /*
       The anchor sits on the wrapper rather than on any one state's section, so
-      the closing call to action lands on this panel whichever of the three is
+      the closing call to action lands on this panel whichever of the two is
       rendered — exactly as `ReadingOrder` puts it on its own wrapper so a
       withdrawn product does not leave the button pointing at nothing.
     */
     <div id={readingPageChrome.checkout.anchor}>
-      {reading ? (
-        <Asked reading={reading} delivery={delivery} />
-      ) : gift.redeemed ? (
+      {gift.redeemed ? (
         <Spent gift={gift} />
       ) : (
         <AskForReading gift={gift} asking={asking} failed={failed} onAsk={onAsk} />
@@ -260,48 +252,6 @@ function Spent({ gift }: { gift: Gift }) {
       <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
         {when === null ? spent.undated : spent.body(when)}
       </p>
-    </section>
-  );
-}
-
-/**
- * The confirmation, rendered from the answer that spent the code.
- *
- * **There is no second call**, and in particular not `POST /orders/status`:
- * that reports a payment, and the payment behind a redeemed gift happened
- * months earlier to somebody else. The contract says so in as many words.
- *
- * The question is echoed back so somebody can check it is the one they meant —
- * it is the question of record, off the reading rather than off the form.
- */
-function Asked({ reading, delivery }: { reading: AskedReading; delivery?: string }) {
-  return (
-    <section className="mt-[clamp(2rem,5.63vw,6.75rem)] flex flex-col items-center text-center">
-      <PanelHeading className="text-h2-md">{asked.heading}</PanelHeading>
-
-      <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
-        {asked.body(reading.querentEmail)}
-      </p>
-
-      {/*
-        The reading's own line, stated as a property of the reading rather than
-        as a promise this screen makes — which is the contract's rule for
-        anything shown against `asked_at`. Absent on a product this build has no
-        page for, because there is no such line to state.
-      */}
-      {delivery ? (
-        <p className="mt-[clamp(0.25rem,0.36vw,0.4375rem)] text-note leading-none tracking-[0.01em] font-light text-gold">
-          {delivery}
-        </p>
-      ) : null}
-
-      <p className="mt-[clamp(0.75rem,1.56vw,1.875rem)] text-note leading-none font-light text-champagne/73">
-        {asked.asking}
-      </p>
-
-      <blockquote className="mt-[0.4em] max-w-[80cqw] font-serif text-body leading-[1.19] text-cream">
-        {reading.question}
-      </blockquote>
     </section>
   );
 }

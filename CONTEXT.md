@@ -287,6 +287,12 @@ The querent is the one person who never chose the reading they are holding, so
 the name, the artwork and what arrives are exactly what they most need. What
 goes is everything that sells: no price, no wallet row, no checkout button, no
 Gift a Reading.
+
+**It ends at the confirmation and not on itself.** ~~The panel's third state is
+the confirmation.~~ Struck 3 September 2026 (#82): spending the code replaces
+the address with `/checkout/complete/`, so both roads through the shop end in
+the same room. The words the querent reads there did not change — they are the
+same `redeemCopy.asked` the panel drew — and the screen did.
 _Avoid_: redemption form, gift page, claim page, unlock page
 
 **Recipient**:
@@ -336,6 +342,13 @@ The screen that tells a customer what happened to their payment, rendered from
 the payment rather than from an order. It reports what our backend says about
 the payment, ~~never what we hope it has since done~~ — and on **one** of its
 seven states it also promises the reading itself.
+
+**It is also where a redemption lands, from 3 September 2026** (#82), and that
+road is not about a payment at all: no money moved for the **querent**, nothing
+is asked of `POST /orders/status`, no amount is painted and none of the seven
+states is reachable. What it renders is the answer that spent the code, carried
+here in the tab under a random handle. The **Redemption page** is still where a
+code is entered; this is where one ends up. `docs/adr/0003` is amended for it.
 
 That exception is the client's, made knowingly on #51 (30 August 2026) and not
 the code's to make or to take back: the `received` screen says the reading is on

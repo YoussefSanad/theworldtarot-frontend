@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ReadingPresentation } from "@/components/reading/ReadingPresentation";
@@ -10,7 +10,8 @@ import { RedeemPanel } from "@/components/redeem/RedeemPanel";
 import { readingPageFor } from "@/content/reading-pages";
 import { redeemCopy } from "@/content/redeem";
 import { ApiRateLimitError } from "@/lib/api-write";
-import { lookUpGift, redeemGift, type AskedReading, type Asking, type Gift } from "@/lib/gifts";
+import { freshRedemptionId, redemptionHref, rememberRedemption } from "@/lib/checkout-session";
+import { lookUpGift, redeemGift, type Asking, type Gift } from "@/lib/gifts";
 import { currentLocale } from "@/lib/locale";
 
 /**
@@ -54,6 +55,18 @@ import { currentLocale } from "@/lib/locale";
  * putting a hand-typed one there as well would be adding a browser history
  * entry and a `Referer` nobody asked for.
  *
+ * ## And a spent code leaves this page
+ *
+ * ~~The confirmation is the third state of the panel.~~ **From 3 September 2026
+ * (#82) a redemption `replace`s the address with `/checkout/complete/`**, where
+ * a buyer's confirmation already is: two roads through one shop ended in two
+ * different rooms, and the client's answer was that they should end in the
+ * same one. What travels is a record in the tab under a fresh handle — the
+ * answer that spent the code, which is the whole of that screen's input — and
+ * the handle rather than the code is what the address carries. See
+ * `RedemptionRecord` in `lib/checkout-session.ts`, and ADR 0003, amended for
+ * it.
+ *
  * ## Three states, and no expired one
  *
  * Valid, already redeemed, unknown. **There is no expired state** — gift codes
@@ -91,12 +104,16 @@ type State =
    * is a sentence inside the panel.
    */
   | { state: "found"; gift: Gift }
-  /** The code resolved and this page has just spent it. */
-  | { state: "asked"; gift: Gift; reading: AskedReading }
+  /*
+    ~~The code resolved and this page has just spent it.~~ **Struck 3 September
+    2026** (#82): a spent code leaves this page. There is no state here for a
+    redemption, because the screen that reports one is `/checkout/complete/`.
+  */
   /** The code resolved to nothing, the backend could not be asked, or a throttle. */
   | { state: "refused"; said: string };
 
 export function RedeemGift() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   /*
     Read once into a plain string. `useSearchParams` answers a new object per
@@ -221,7 +238,7 @@ export function RedeemGift() {
   }, [linked, look]);
 
   async function ask(asked: Asking) {
-    if (asking || (result.state !== "found" && result.state !== "asked")) return;
+    if (asking || result.state !== "found") return;
 
     setAsking(true);
     setFailed(false);
@@ -232,8 +249,43 @@ export function RedeemGift() {
       const answer = await redeemGift({ ...asked, code }, { locale: currentLocale() });
 
       if (answer.state === "asked") {
-        setResult({ state: "asked", gift: result.gift, reading: answer.reading });
-      } else if (answer.state === "spent") {
+        /*
+          **The answer is written down and the browser is sent to it**, which is
+          the whole of #82: a querent who spends a code ends where a buyer who
+          spends money ends, rather than on a panel inside the reading page they
+          were given. The answer is the confirmation — there is no second call
+          on that road and nothing there to verify — so it travels in the tab
+          under a handle, and the handle is what goes in the address.
+
+          **`replace`, not `push`.** The entry it replaces is a form holding a
+          code that has just been spent, and a back button returning to it would
+          offer a second press of a button that cannot work twice. It is also
+          the address the link carried the code in, which is the one entry on
+          this road worth losing.
+
+          Storage that refused leaves the handle naming nothing, and the
+          confirmation says so in its own words — the mail the backend sends is
+          the durable half of this either way. So this navigates whatever
+          happened above it, and `asking` is not put back: the button holds its
+          label until the page goes, rather than flashing "GET MY READING" over
+          a code already spent.
+        */
+        const id = freshRedemptionId();
+
+        rememberRedemption({
+          id,
+          productKey: answer.reading.productKey,
+          question: answer.reading.question,
+          querentEmail: answer.reading.querentEmail,
+          askedAt: answer.reading.askedAt,
+        });
+
+        router.replace(redemptionHref(id));
+
+        return;
+      }
+
+      if (answer.state === "spent") {
         /*
           **Lost the race, and the querent has to be told which race it was.**
           The code was good when this page looked it up and was spent in
@@ -255,14 +307,21 @@ export function RedeemGift() {
       console.error("The gift could not be redeemed.", cause);
 
       setFailed(true);
-    } finally {
-      setAsking(false);
     }
+
+    /*
+      Reached by the three arms that stay on this page, and not by the one that
+      leaves — a redemption returns above, holding the button's label until the
+      navigation takes the page with it. ~~A `finally`~~ would put "GET MY
+      READING" back under somebody whose code is already spent, for as long as
+      the route change takes. `SignInForm` is the same shape for the same
+      reason.
+    */
+    setAsking(false);
   }
 
-  if (result.state === "found" || result.state === "asked") {
+  if (result.state === "found") {
     const gift = result.gift;
-    const reading = result.state === "asked" ? result.reading : null;
     /*
       The page this build has drawn for that product, or nothing. `undefined` is
       the ordinary answer for a reading the backend's catalogue holds and this
@@ -271,16 +330,7 @@ export function RedeemGift() {
     */
     const page = readingPageFor(gift.productKey);
 
-    const panel = (
-      <RedeemPanel
-        gift={gift}
-        reading={reading}
-        delivery={page?.delivery}
-        asking={asking}
-        failed={failed}
-        onAsk={ask}
-      />
-    );
+    const panel = <RedeemPanel gift={gift} asking={asking} failed={failed} onAsk={ask} />;
 
     if (page) {
       /*
