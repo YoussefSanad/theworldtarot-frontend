@@ -1,4 +1,5 @@
 import { CountedField } from "@/components/reading/CountedField";
+import { FieldBox } from "@/components/reading/FieldBox";
 import { PanelHeading } from "@/components/reading/PanelHeading";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
@@ -47,12 +48,12 @@ export function AskQuestion({ question }: { question?: string }) {
       </p>
 
       {/*
-        607px of the 687px panel, and 230px tall. `cqw` resolves against the
-        panel rather than the column this sits in, so the width is the frame's
-        own number and not a share of a share. The box wraps the counter too,
+        607px of the 687px panel, and 230px tall — the box `RecipientDetails`
+        matches on every field it swaps in, which is why the width is a
+        component and not a number written out here. It wraps the counter too,
         so that lines up on the field's own right edge rather than the column's.
       */}
-      <div className="mt-[clamp(0.75rem,1.56vw,1.875rem)] flex w-[88.35cqw] flex-col">
+      <FieldBox className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
         <CountedField
           name="question"
           label={copy.label}
@@ -62,7 +63,7 @@ export function AskQuestion({ question }: { question?: string }) {
           defaultValue={question}
           className="min-h-[clamp(7rem,11.98vw,14.375rem)]"
         />
-      </div>
+      </FieldBox>
     </section>
   );
 }

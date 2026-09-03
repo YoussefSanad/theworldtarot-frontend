@@ -1,12 +1,12 @@
 "use client";
 
 import { CountedField } from "@/components/reading/CountedField";
+import { FieldBox } from "@/components/reading/FieldBox";
 import { PanelHeading } from "@/components/reading/PanelHeading";
 import { Button } from "@/components/ui/Button";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
 import { redeemCopy } from "@/content/redeem";
-import { cn } from "@/lib/cn";
 import { redeemedOn, type AskedReading, type Asking, type Gift } from "@/lib/gifts";
 import { currentLocale } from "@/lib/locale";
 import { textIn } from "@/lib/order-note";
@@ -168,7 +168,7 @@ function AskForReading({
         panel opposite is set to. `cqw` resolves against the panel rather than
         the column, so this is the frame's own number.
       */}
-      <Box className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
+      <FieldBox className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
         <CountedField
           name="question"
           label={ask.question.label}
@@ -184,9 +184,9 @@ function AskForReading({
           required
           className="min-h-[clamp(7rem,11.98vw,14.375rem)]"
         />
-      </Box>
+      </FieldBox>
 
-      <Box className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
+      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
         <CountedField
           name="querentEmail"
           label={ask.email.label}
@@ -195,9 +195,9 @@ function AskForReading({
           limit={254}
           required
         />
-      </Box>
+      </FieldBox>
 
-      <Box className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
+      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
         <CountedField
           name="querentName"
           label={ask.name.label}
@@ -210,7 +210,7 @@ function AskForReading({
           limit={255}
           type="text"
         />
-      </Box>
+      </FieldBox>
 
       <Button
         type="submit"
@@ -304,14 +304,4 @@ function Asked({ reading, delivery }: { reading: AskedReading; delivery?: string
       </blockquote>
     </section>
   );
-}
-
-/**
- * The 607px box every field on this panel and the one opposite is set to.
- *
- * `cn` rather than a template literal: `className` is optional, and an omitted
- * one interpolates the string "undefined" into the class list.
- */
-function Box({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("flex w-[88.35cqw] flex-col", className)}>{children}</div>;
 }

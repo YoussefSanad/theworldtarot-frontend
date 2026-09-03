@@ -1,4 +1,5 @@
 import { CountedField } from "@/components/reading/CountedField";
+import { FieldBox } from "@/components/reading/FieldBox";
 import { PanelHeading } from "@/components/reading/PanelHeading";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
@@ -68,9 +69,9 @@ const { gift } = readingPageChrome;
  * textarea can: **the intent was a section that matched the question field's
  * 607px box in both directions, and only the width still does.**
  *
- * The width is not a leftover. It is why the fields are `88.35cqw` rather than
- * a share of the column they sit in, and it is what stops the panel changing
- * shape as well as size when the visitor toggles.
+ * The width is not a leftover. It is what stops the panel changing shape as
+ * well as size when the visitor toggles, and it is one number in one place —
+ * `FieldBox`, which the question field and `/redeem/`'s panel stand in too.
  */
 export function RecipientDetails() {
   return (
@@ -83,7 +84,7 @@ export function RecipientDetails() {
 
       {/* The same 607px box the question field takes, which is the half of the
           not-shifting that this section still keeps. See the note above. */}
-      <div className="mt-[clamp(0.75rem,1.56vw,1.875rem)] flex w-[88.35cqw] flex-col">
+      <FieldBox className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
         <CountedField
           name="giftSignature"
           label={gift.signature.label}
@@ -99,9 +100,9 @@ export function RecipientDetails() {
           required
           autoFocusOnMount
         />
-      </div>
+      </FieldBox>
 
-      <div className="mt-[clamp(0.5rem,1.04vw,1.25rem)] flex w-[88.35cqw] flex-col">
+      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
         <CountedField
           name="recipientEmail"
           label={gift.email.label}
@@ -117,7 +118,7 @@ export function RecipientDetails() {
           */
           suppressAutofill
         />
-      </div>
+      </FieldBox>
 
       {/*
         The refusal's sentence, bound to the field it refuses rather than passed
@@ -125,9 +126,9 @@ export function RecipientDetails() {
         `markGiftAddresses` in `lib/order-note.ts` for why it is not an import
         and not an argument.
       */}
-      <div
+      <FieldBox
         data-mismatch={gift.confirmation.mismatch}
-        className="mt-[clamp(0.5rem,1.04vw,1.25rem)] flex w-[88.35cqw] flex-col"
+        className="mt-[clamp(0.5rem,1.04vw,1.25rem)]"
       >
         <CountedField
           name="addressConfirmation"
@@ -143,9 +144,9 @@ export function RecipientDetails() {
           */
           suppressAutofill
         />
-      </div>
+      </FieldBox>
 
-      <div className="mt-[clamp(0.5rem,1.04vw,1.25rem)] flex w-[88.35cqw] flex-col">
+      <FieldBox className="mt-[clamp(0.5rem,1.04vw,1.25rem)]">
         <CountedField
           name="giftMessage"
           label={gift.message.label}
@@ -161,7 +162,7 @@ export function RecipientDetails() {
           rows={2}
           className="min-h-[clamp(3rem,5.2vw,6.25rem)]"
         />
-      </div>
+      </FieldBox>
 
       <p className="mt-[clamp(0.375rem,0.78vw,0.9375rem)] max-w-[70cqw] text-fine leading-[1.2] font-light text-champagne/73">
         {gift.note}
