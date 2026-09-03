@@ -42,6 +42,8 @@ export const signature = {
   title: "1 Card Reading",
   /** One desktop line, then two; three separate lines on the phone. */
   body: ["Ask your question.", "Reveal your card.", "Watch it come to life."],
+  /** The backend's key for this reading, which is what its price is asked for by. */
+  productKey: "one-card",
   price: "$12",
   href: "/readings/one-card",
   image: readingArtwork.signature,
@@ -55,6 +57,14 @@ export const traditional = {
 
 export type Reading = {
   id: string;
+  /**
+   * The backend's key for this reading, and **never the `id`**. They are the
+   * same three strings today and they are two fields on purpose, for the reason
+   * `reading-pages.ts` sets out at its own `productKey`: an `id` names a piece
+   * of artwork in this list, and a product key is the catalogue's. Pricing a
+   * card by treating one as the other is exactly that conflation.
+   */
+  productKey: string;
   /** The mobile card's title — short enough to hold one line beside the photograph. */
   title: string;
   /**
@@ -84,6 +94,7 @@ export type Reading = {
 export const readings: Reading[] = [
   {
     id: "three-card",
+    productKey: "three-card",
     title: "3 Card Reading",
     subtitle: "past • present • future",
     body: ["Explore the deeper story", "behind your question", "through the wisdom of cards."],
@@ -94,6 +105,7 @@ export const readings: Reading[] = [
   },
   {
     id: "month-ahead",
+    productKey: "month-ahead",
     title: "Month Ahead",
     titleTail: " Reading",
     subtitle: "discover what lies ahead",
@@ -105,11 +117,12 @@ export const readings: Reading[] = [
   },
   {
     id: "in-depth",
+    productKey: "in-depth",
     title: "In-Depth",
     titleTail: " Reading",
     subtitle: "the full picture",
     body: ["Discover the complete picture", "through the Celtic Cross."],
-    price: "$125",
+    price: "$120",
     href: "/readings/in-depth",
     image: readingArtwork.inDepth,
     imageAlt: "A Celtic Cross tarot spread laid out across a wooden table",

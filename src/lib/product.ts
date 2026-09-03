@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchProduct, type ApiProductDetail } from "./api.ts";
+import { currencySelection, rememberResolvedCurrency, useCurrency } from "./currency.ts";
 import { currentLocale } from "./locale.ts";
 import type { Money } from "./price.ts";
 
@@ -48,6 +49,16 @@ export type ProductOffer =
   | { status: "withdrawn" };
 
 /**
+ * The last thing the backend said, and which product it said it about.
+ *
+ * **The key travels with the answer** so a stale one cannot outlive the product
+ * it was about. `useProduct` keeps what it holds through a failure — that is the
+ * rule below — and without the key the thing it kept could be a different
+ * reading's price, on a hook whose argument is free to change.
+ */
+type Answered = { key: string; product: ApiProductDetail | null };
+
+/**
  * The state a response — or the lack of one — puts the page in.
  *
  * Pure, and exported apart from the hook so the table in the plan can be
@@ -57,16 +68,52 @@ export type ProductOffer =
  * they are two values rather than one nullable: collapsing them would make the
  * first paint of every page indistinguishable from a withdrawn product, and
  * those states are opposites.
+ *
+ * **A failure only decides anything when there is nothing to keep.** An answer
+ * already in hand outranks it, so a currency switch the API cannot answer goes
+ * on quoting the price that was on screen instead of withdrawing the offer
+ * under the visitor's thumb — `lib/catalogue.ts` states the same rule for the
+ * catalogue, and this is the page that takes money. The caller passes only what
+ * is about the key it is asking for; see `Answered`.
  */
 export function resolveOffer(
   answer: ApiProductDetail | null | undefined,
   failed: boolean,
 ): ProductOffer {
-  if (failed) return { status: "unreachable" };
-  if (answer === undefined) return { status: "loading" };
+  if (answer === undefined) return { status: failed ? "unreachable" : "loading" };
   if (answer === null) return { status: "withdrawn" };
 
   return { status: "live", money: answer.price, product: answer };
+}
+
+/**
+ * Whether this page may offer the reading as a gift.
+ *
+ * **The rule is "unless the catalogue said no", not "only when it said yes",**
+ * and the asymmetry is the point. `is_giftable` reaches this page on one state
+ * — `live` — and the other two the panel renders in are states in which nothing
+ * can be bought at all: `loading` reserves the panel's height behind an `inert`
+ * block, and `unreachable` draws the client's frames with nothing behind them
+ * so a visitor arriving while the API is down does not meet a hole where the
+ * checkout is. Hiding the toggle in either would shorten a panel that is about
+ * to be told the answer, for a control that can take no money in either case.
+ *
+ * **What it does close is the one case the ticket is about**: a live product
+ * the backend says may not be gifted draws no toggle. `POST /orders` refuses a
+ * gift object on such a line with a 422 keyed to it, so a toggle drawn from a
+ * list held in this repository is a button that refuses on submit — and the
+ * list would be wrong the first time the client made a fourth reading giftable.
+ *
+ * `withdrawn` never reaches here: `ReadingOrder` takes the whole order off the
+ * page rather than deciding what to draw inside it.
+ *
+ * **Two callers, and they have to agree.** `GetMyReading` draws the control and
+ * `ReadingOrder` mounts the section it swaps to, so a page that stopped
+ * offering gifting under a visitor already in gift mode would strand them in a
+ * form with no way out.
+ */
+export function giftOffered(offer: ProductOffer): boolean {
+  return offer.status === "live" ? offer.product.is_giftable : offer.status !== "withdrawn";
 }
 
 /**
@@ -80,10 +127,25 @@ export function resolveOffer(
  * contains — so there is no hydration mismatch, and the state the static file
  * ships is the one that reserves the panel's height rather than one that
  * advertises a price.
+ *
+ * **A currency switch does not return the page to `loading`, and does not take
+ * the offer down when the refetch fails either.** The previous answer is left in
+ * place while the new one is in flight and left there if it never lands, so the
+ * panel keeps quoting the old price rather than collapsing under a customer's
+ * thumb. It is the same rule `lib/catalogue.ts` follows, and the same reason:
+ * the price that is about to change is better company than a gap.
+ *
+ * **Both pieces of state are held against the key they are about**, which is
+ * what keeps that rule from leaking one reading's price onto another. `key` is
+ * an argument and arguments change; a kept answer that did not remember which
+ * product it priced would be kept under the next one too. The precedence used
+ * to carry this — a failure outranked every answer — and paid for it on the
+ * case above.
  */
 export function useProduct(key: string): ProductOffer {
-  const [answer, setAnswer] = useState<ApiProductDetail | null | undefined>(undefined);
-  const [failed, setFailed] = useState(false);
+  const { chosen } = useCurrency();
+  const [answered, setAnswered] = useState<Answered | undefined>(undefined);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,16 +154,36 @@ export function useProduct(key: string): ProductOffer {
     // `useProducts` gives: `formatPrice` formats against `currentLocale()`, and
     // a second language added there but not here would price Spanish copy off
     // an English response.
-    fetchProduct(key, { locale: currentLocale(), signal: controller.signal })
+    //
+    // The currency is sent only when the visitor has chosen one. A cold request
+    // carries none and is answered by the backend's detection — see
+    // `withCurrency` in `lib/api.ts`.
+    //
+    // **Read from the store, not from the render that scheduled this**, for the
+    // reason `useCatalogue` sets out at length: the hydration render is required
+    // to report "nothing chosen", so closing over its `chosen` asks cold for
+    // everybody and then asks again. It costs more here than it does there. The
+    // cold answer's currency is written to `resolved` on the way past, so a
+    // returning visitor's stored resolution was being replaced by a detected one
+    // — on the page that holds the checkout button, with the offer beside it
+    // quoting the wrong currency until the second answer landed.
+    fetchProduct(key, {
+      locale: currentLocale(),
+      currency: currencySelection().chosen ?? undefined,
+      signal: controller.signal,
+    })
       .then((product) => {
         if (product === null) {
           // Rare and deliberate, and invisible on the page by design — the
           // reading simply stops being for sale. Worth a line, because from the
           // outside that looks identical to a checkout that broke.
           console.warn(`The API has no product for "${key}", so it is not offered for sale.`);
+        } else {
+          rememberResolvedCurrency(product.price.currency);
         }
 
-        setAnswer(product);
+        setAnswered({ key, product });
+        setFailedKey(null);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -111,11 +193,11 @@ export function useProduct(key: string): ProductOffer {
         // would look like one to us too.
         console.error(`Could not reach the API for product "${key}".`, error);
 
-        setFailed(true);
+        setFailedKey(key);
       });
 
     return () => controller.abort();
-  }, [key]);
+  }, [key, chosen]);
 
-  return resolveOffer(answer, failed);
+  return resolveOffer(answered?.key === key ? answered.product : undefined, failedKey === key);
 }

@@ -180,6 +180,22 @@ export async function fetchCard(
 }
 
 /**
+ * `?currency=` when the visitor has chosen one, and nothing at all when they
+ * have not.
+ *
+ * **The absence is the request**, not an omission: a parameterless call is what
+ * asks the backend to detect from `CF-IPCountry`, and `API_CONTRACT.md` section
+ * 4 honours an explicit code over any detection. So a visitor who has never
+ * chosen keeps being re-detected — which is what makes crossing a border work —
+ * and a visitor who has chosen is never re-detected against their choice.
+ *
+ * See `lib/currency.ts`, which holds the distinction this parameter carries.
+ */
+function withCurrency(url: string, currency?: string): string {
+  return currency ? `${url}?currency=${encodeURIComponent(currency)}` : url;
+}
+
+/**
  * What kind of sellable thing a product is. The backend's `ProductType`, which
  * is part of the contract deliberately: presentation maps to it rather than to
  * a list of keys, so a pass and a reading can be told apart without either side
@@ -199,6 +215,22 @@ export type ApiProduct = {
   short_description: string;
   /** Whether a question may be attached when buying. Always optional. */
   allows_question: boolean;
+  /**
+   * Whether this product may be bought for somebody else — **the property of
+   * the product that decides whether a page draws `Gift a Reading` at all**.
+   *
+   * `true` for the three written readings, `false` for `one-card` and the
+   * Viewing Room pass, and the backend's to change rather than ours to know:
+   * `POST /orders` **refuses** a gift object on a line that is not giftable
+   * rather than quietly dropping it, so a toggle drawn from a list held here
+   * is a button that 422s on submit.
+   *
+   * Independent of `allows_question` above, and `one-card` is the product that
+   * proves it — it takes a question and cannot be gifted. See `giftOffered` in
+   * `lib/product.ts`, which is the one place this is acted on, and `CONTEXT.md`
+   * for the word.
+   */
+  is_giftable: boolean;
   price: Money;
 };
 
@@ -222,9 +254,13 @@ export type ApiProduct = {
  * this file's to repeat it.
  */
 export async function fetchProducts(
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+  {
+    locale = DEFAULT_LOCALE,
+    currency,
+    signal,
+  }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},
 ): Promise<ApiProduct[]> {
-  const response = await fetch(`${baseUrl()}/api/v1/${locale}/products`, {
+  const response = await fetch(withCurrency(`${baseUrl()}/api/v1/${locale}/products`, currency), {
     headers: { Accept: "application/json" },
     signal,
   });
@@ -260,12 +296,19 @@ export type ApiProductDetail = ApiProduct & { long_description: string };
  */
 export async function fetchProduct(
   key: string,
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
-): Promise<ApiProductDetail | null> {
-  const response = await fetch(`${baseUrl()}/api/v1/${locale}/products/${key}`, {
-    headers: { Accept: "application/json" },
+  {
+    locale = DEFAULT_LOCALE,
+    currency,
     signal,
-  });
+  }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},
+): Promise<ApiProductDetail | null> {
+  const response = await fetch(
+    withCurrency(`${baseUrl()}/api/v1/${locale}/products/${key}`, currency),
+    {
+      headers: { Accept: "application/json" },
+      signal,
+    },
+  );
 
   if (response.status === 404) return null;
 
@@ -329,4 +372,106 @@ export async function fetchPaymentMethods(
   if (!Array.isArray(body.methods)) return [];
 
   return body.methods.filter((method): method is string => typeof method === "string");
+}
+
+/** One entry from `/currencies`. The symbol is what a control prints. */
+export type ApiCurrency = { code: string; symbol: string };
+
+/**
+ * The currencies the site sells in, and the symbol for each.
+ *
+ * **Flat, with no locale segment**, and only `available` is read. The response
+ * also carries `detected`, which is this request's own resolution — we never
+ * read it, because the highlight comes from `price.currency` on the product
+ * response, which is the currency the visitor is actually being charged in
+ * rather than the one a second endpoint would have resolved to. Dropping the
+ * field is asked for in `YoussefSanad/TheWorldTarot#66`, and takes the CDN's
+ * per-visitor cache-key complication with it.
+ *
+ * Throws on a broken API. **The caller keeps the three currencies it knows**
+ * rather than taking the control off the page: unlike a language, a currency
+ * cannot appear or vanish without a migration and a deploy on both sides, so a
+ * list held here cannot silently drift the way a hardcoded language list can.
+ *
+ * A body shaped some other way answers nothing rather than being cast, on
+ * `fetchPaymentMethods`'s reasoning — the caller treats an empty answer and a
+ * throw the same way, and both are the safe way to be wrong here.
+ */
+export async function fetchCurrencies(
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<ApiCurrency[]> {
+  const response = await fetch(`${baseUrl()}/api/v1/currencies`, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetching the currencies failed with ${response.status}.`);
+  }
+
+  const body = (await response.json()) as { available?: unknown };
+
+  if (!Array.isArray(body.available)) return [];
+
+  return body.available.filter(
+    (entry): entry is ApiCurrency =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as ApiCurrency).code === "string" &&
+      typeof (entry as ApiCurrency).symbol === "string",
+  );
+}
+
+/**
+ * One entry from `/languages`.
+ *
+ * `native_name` is optional because the backend does not send it yet — the
+ * column exists on its `Locale` and is unexposed, asked for in
+ * `YoussefSanad/TheWorldTarot#66`. Render it over `label` when it arrives: a
+ * language switcher is one of the few controls read by people who cannot read
+ * the language it is currently in, which is exactly when "Español" works and
+ * "Spanish" does not.
+ */
+export type ApiLanguage = { code: string; label: string; native_name?: string };
+
+/**
+ * The languages that are live, which is the only list a switcher may be built
+ * from.
+ *
+ * **Flat, with no locale segment**, being the thing that says which languages
+ * there are. `API_CONTRACT.md` calls building the switcher from this endpoint
+ * the one requirement it cannot enforce for us: a language can be taken down at
+ * any moment, effective on the next request with no deploy on our side, and a
+ * hardcoded switcher then offers a dead link with a 404 behind it.
+ *
+ * A single-entry answer is the normal state today and is not a failure. The
+ * caller draws no language group at one entry — see `LocaleControls` — which is
+ * the contract's own advice.
+ *
+ * Throws on a broken API, and the caller draws nothing, same as at one entry:
+ * both mean there is nothing safe to offer.
+ */
+export async function fetchLanguages(
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<ApiLanguage[]> {
+  const response = await fetch(`${baseUrl()}/api/v1/languages`, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetching the languages failed with ${response.status}.`);
+  }
+
+  const body: unknown = await response.json();
+
+  if (!Array.isArray(body)) return [];
+
+  return body.filter(
+    (entry): entry is ApiLanguage =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as ApiLanguage).code === "string" &&
+      typeof (entry as ApiLanguage).label === "string",
+  );
 }

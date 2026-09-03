@@ -18,6 +18,7 @@ import { readingPageChrome } from "@/content/reading-pages";
 import { startWalletPayment } from "@/lib/buy";
 import { cn } from "@/lib/cn";
 import { orderFormAccepts, orderNoteIn } from "@/lib/order-note";
+import { paymentStopped } from "@/lib/payment-in-flight";
 import { formatPrice, type Money } from "@/lib/price";
 import { getStripe, walletAppearance } from "@/lib/stripe";
 
@@ -646,6 +647,14 @@ function Wallet({
     const refused = (why: string, cause?: unknown) => {
       log(why, cause);
 
+      /*
+        **The two arms `buy.ts` cannot settle for itself.** Everything above the
+        confirmation throws out of `startWalletPayment`, and `whileInFlight`
+        lowers the flag on the way past. This one and `unresolved` below run
+        *after* that call returned, so the currency control is still frozen and
+        this is the only place left that knows the sheet has closed.
+      */
+      paymentStopped();
       onFailure(checkout.walletFailed);
     };
 
@@ -666,6 +675,13 @@ function Wallet({
     const unresolved = (why: string, cause?: unknown) => {
       log(why, cause);
 
+      /*
+        Unfrozen even though what happened to the money is not known: the
+        customer is back on our page with a sentence pointing at the receipt,
+        and a currency control they cannot press is not what protects them from
+        a charge that may already exist.
+      */
+      paymentStopped();
       onFailure(checkout.walletUnresolved);
     };
 
@@ -673,10 +689,20 @@ function Wallet({
 
     /*
       **Before the group is submitted and before an order exists.** Nothing
-      submits this form, so the `required` on the recipient's address is
-      enforced by nobody unless something asks — and without asking, a customer
-      reaches this line having authorised with their face for a gift addressed
-      to no one. `giftNote` would record the absence rather than prevent it.
+      submits this form, so gift mode's three required fields and the
+      disagreement written on the address confirmation are enforced by nobody
+      unless something asks —
+      and without asking, a customer reaches this line having authorised with
+      their face for a gift addressed to no one, or to an address they mistyped
+      and cannot be told about. The backend refuses an unaddressed present too,
+      but a 422 arriving after a wallet sheet has been authorised is a worse
+      way to learn it than a bubble on the field, and nothing on either side
+      would ever record the typo.
+
+      **This is the only place either is refused**, which is why the check is a
+      call and not a branch: `orderFormAccepts` asks the form, the form has the
+      mismatch on it already, and a second test out here would be a rule kept in
+      two places on the one road no automated check in this repo can press.
 
       Safe to `paymentFailed` here for the reason every arm above the
       confirmation is: there is no secret yet, so nothing can have been charged.
@@ -684,7 +710,7 @@ function Wallet({
       time, for when Stripe closes the sheet over it.
     */
     if (!orderFormAccepts(anchor.current)) {
-      return fail("The gift has no recipient on it.", undefined, checkout.walletNeedsRecipient);
+      return fail("The gift section refused the press.", undefined, checkout.walletNeedsGiftDetails);
     }
 
     let clientSecret: string;

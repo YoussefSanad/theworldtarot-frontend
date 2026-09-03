@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 
 import Link from "next/link";
@@ -7,6 +9,7 @@ import { Divider } from "@/components/ui/Divider";
 import { OrnateFrame, OrnateMark } from "@/components/ui/OrnateFrame";
 import { Phrase } from "@/components/ui/Phrase";
 import { readingAction, signature } from "@/content/readings";
+import { useReadingPrice } from "@/lib/reading-prices";
 
 /**
  * The one-card experience, in the page's only open-top panel — the heading
@@ -35,14 +38,22 @@ import { readingAction, signature } from "@/content/readings";
  *
  * The bottom padding is the 101px Figma leaves between this panel and the
  * Traditional Tarot Readings heading below it.
+ *
+ * **A client component, for the reason `ChooseYourJourney` is one**: the price
+ * is resolved per visitor and can only be read in the browser. The exported
+ * HTML holds the bundled string and the live figure replaces it once the
+ * catalogue answers — one answer shared with the three cards below, since both
+ * read the same store.
  */
 export function SignatureExperience() {
+  const price = useReadingPrice(signature.productKey, signature.price);
+
   return (
     <Section padding="none" className="pb-[clamp(1.5rem,5.26vw,6.3125rem)]">
       <Container width="readings">
         <Link
           href={signature.href}
-          aria-label={`${signature.title} — ${signature.price} ${readingAction}`}
+          aria-label={`${signature.title} — ${price} ${readingAction}`}
           className="panel-hover block no-underline"
         >
           <OrnateFrame
@@ -122,7 +133,7 @@ export function SignatureExperience() {
                 spans the panel, which is what the mockup draws.
               */}
                 <span className="signature-cta panel-hover__cta btn btn-gold readings-cta mt-[3%] lg:mt-[clamp(0.75rem,1.51vw,1.8125rem)] lg:py-[0.85em] lg:text-nav lg:leading-none">
-                  {`${signature.price} ${readingAction}`}
+                  {`${price} ${readingAction}`}
                 </span>
               </div>
             </div>

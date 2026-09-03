@@ -35,15 +35,29 @@ language, and it is a fixed set the backend validates against.
 _Avoid_: product id, SKU, slug, product name
 
 **Order note**:
-The one free-text string an order line carries, as `lines[].question` on the
-wire. It is the customer's **question** on a self-purchase and a composed
-**gift note** in gift mode — "Gift — send this reading to …", built from the
-recipient's address and the buyer's message, because `POST /orders` has no
-field for either. The wire name is the backend's and does not describe the
-contents; `lib/order-note.ts` is where the two are told apart, by which section
-the form has mounted. A stopgap: the gifting milestone gives the recipient a
-column of their own.
-_Avoid_: "the question" for the gift case (it is not one), comment, note field, message
+What one press puts on an order line, read off whichever of the panel's two
+sections is mounted. On a self-purchase it is the customer's **question**, as
+`lines[].question`. On a gift it is a **present** — the recipient's address,
+the **gift signature** and the buyer's message — as `lines[].gift`, and the
+line then carries **no** `question` at all until the **querent** asks one at
+redemption. Sending both is a 422 keyed to the question. The confirm-address is
+in neither: that field is a check on what the buyer typed rather than a third
+thing they told us. `lib/order-note.ts` is where the two are told apart.
+
+~~It is one free-text string, and a composed gift note in gift mode — "Gift
+from … — send this reading to …" — because `POST /orders` has no field for any
+of them.~~ **Struck 3 September 2026, when the stopgap ended as designed**
+(decided 1 September 2026, #54). It ended a day late: the backend shipped
+`lines[].gift` and the `gifts` table on 3 September and the panel kept composing
+the sentence, so every gift bought in between was placed as an ordinary
+self-purchase with a note on it — no `gifts` row, no code, no mail to the
+recipient, nothing on the Gifts screen, and a reading queued for the **buyer**.
+`giftNote` is deleted as that decision said it would be. **The `gift` flag on
+the checkout record is not**, which is where that decision was wrong: its reader
+turned out to be the confirmation rather than `questionFor`, and the screen is
+reached after a round trip to Stripe with nothing else to tell it a present was
+bought.
+_Avoid_: "the question" for the gift case (it is not one), gift note, comment, note field, message
 
 **Payment method**:
 One way money arrives, as the backend's registry defines it. There are **two
@@ -58,7 +72,12 @@ would publish it. **Both methods are now named** in the `/pay` call: the card
 road sends `method: "stripe"` rather than leaving it to a default, so neither
 road is the one the backend has to assume. Which methods an environment offers
 is answered by `GET /payment-methods`, and an environment that offers no wallet
-draws no wallet row. Gift code redemption will be a third.
+draws no wallet row. ~~Gift code redemption will be a third.~~ **Withdrawn 1 September 2026,
+before it ever had a caller.** Redeeming collects nothing because the order was
+paid at purchase, and there is no second order for a third method to settle —
+so `gift_code` names a payment that does not happen. It is struck from
+`API_CONTRACT.md` too; `GET /payment-methods` keeps the two it has. See the
+backend's `docs/adr/0004-a-reading-is-a-row-of-its-own.md`.
 _Avoid_: payment path, checkout option, wallet (a wallet is one presentation of `stripe_wallet`, not a method)
 
 **Checkout button**:
@@ -89,6 +108,38 @@ _Avoid_: checkout page, payment page, Stripe checkout (the act is a checkout; th
 A currency and an integer count of its minor units, always together. Never a
 float and never a bare number. Formatting is ours; the value is the backend's.
 _Avoid_: price (as a number), amount on its own, cents
+
+**Chosen currency**:
+The currency a visitor explicitly picked from the header control. It is the only
+currency value that ever travels: it rides on every product request as
+`?currency=`, and the backend honours it exactly and stops detecting. Absent
+until somebody presses a row, and absent is meaningful — see **cold**.
+_Avoid_: selected currency, preferred currency, user currency, currency (bare — the bare word hides which of the three this is)
+
+**Resolved currency**:
+The currency the backend answered in, read off `price.currency` on the product
+response. It is what the visitor is actually being charged in, and it is
+display-only: it is remembered so the control has something to highlight on
+`/login/`, `/set-password/` and `/checkout/complete/`, which fetch no product,
+and it is **never sent back**. Sending it would turn a detected visitor into an
+explicitly-choosing one on their second page load, and the border they crossed
+since would never be noticed.
+
+**A chosen currency and a resolved one disagree whenever the backend does not
+sell in what was asked for**, and the control highlights the resolved one — so
+somebody who asked for JPY and is being charged in USD is not shown as paying in
+JPY. Choosing drops the resolution, or on the three pages above the highlight
+would outlive the choice that produced it.
+_Avoid_: detected currency (that is the backend's own resolution, on the `/currencies` response, which we never read — see `fetchCurrencies`), active currency, current currency
+
+**Cold**:
+A visitor who has chosen nothing. A cold request carries no `?currency=` at all
+and is answered from the backend's `CF-IPCountry` detection, which is what makes
+crossing a border re-price somebody. The static export is built cold, so it is
+also the state every hydration render must report whatever storage holds — and
+an effect that reads its currency from that render rather than from the store
+asks cold for everybody, which is a mistake this codebase has made twice.
+_Avoid_: default currency, fallback currency, anonymous (that is about identity, not pricing), first-time visitor (a cold visitor may have been here many times)
 
 **Guest**:
 A buyer with no session. Guests are the normal case at checkout: they supply a
@@ -121,6 +172,162 @@ Wallet, or in Chrome signed into Google Pay, on a registered payment method
 domain — so `check:panel` proves the row and the collapse, and a real device is
 what proves the sheet.
 _Avoid_: Apple Pay popup, payment modal, checkout sheet, express checkout element (that is the button, this is the dialog)
+
+### The reading itself
+
+**Reading**:
+A question somebody asked and the answer owed for it. **Becomes a row of its
+own**, rather than a property of an order line — decided 1 September 2026 and
+not yet built; the argument is the backend's
+`docs/adr/0004-a-reading-is-a-row-of-its-own.md`. It exists from the moment
+somebody **asks**, which is settlement on a self-purchase and **redemption** on
+a gift, and it is the only thing in this system that is ever waiting to be
+written.
+
+**An order is not one.** An order is what somebody bought and what it cost; a
+reading is what they asked. Those were the same event until a gift could be
+bought in September and asked in December, and one row holding both cannot say
+that a paid reading has no question yet.
+_Avoid_: order, order line, fulfillment, delivery (the last two are what happens
+to a reading, not what it is)
+
+**Ask**:
+The one moment a reading starts existing, and the only moment Jennifer is told
+one is waiting. It was the clock the 24-hour rush would have run from — **the
+rush is gone from the design, dropped 25 August 2026, and is not returning** —
+but the reasoning survives it for any delivery promise counted from a purchase:
+"within 24 hours" of a gift bought three months earlier is a promise about
+nothing.
+_Avoid_: submit, request, order, place (an order is placed; a reading is asked
+for)
+
+**Querent**:
+The person a reading is for, whose question it answers and whose address it is
+sent to. **The tarot's own word, taken because the three this vocabulary
+already has are each wrong for it**: a **Customer** need not exist, since
+nothing here makes the recipient of a gift sign up; a **Guest** is a *buyer*
+with no session; and a **Recipient** is who a gift was addressed to rather than
+who redeemed it.
+
+On a self-purchase the querent is the buyer. On a gift they are whoever spent
+the code, **which is usually and not always the recipient** — a forwarded email
+is enough to part them, and the reading goes to the querent because that is the
+person who asked.
+
+**Their identity is asked for at redemption and never inherited from the gift.**
+`gifts.recipient_email` is where the mail was sent, typed by somebody else and
+unverified; the redemption page collects the querent's own address and name.
+That is the first and only moment the person who will actually be read for says
+who they are.
+_Avoid_: recipient, reader, customer, end user
+
+### Gifting
+
+~~Nothing in this section is built yet.~~ **Built on 3 September 2026**, across
+F1 to F5 of #54: the panel takes a signature and the recipient's address twice,
+the toggle is drawn from `is_giftable`, the confirmation has a gift screen that
+promises no reading, and `/redeem/` resolves a code without spending it. The
+vocabulary below was settled while planning on 1 September, written down before
+the tickets were cut so that six of them would not each invent a word, and
+nothing in it moved while they were built. The decisions behind it are
+`docs/adr/0003-redemption-is-a-page-of-its-own.md` here and ADRs 0004 and 0005
+in the backend.
+
+**Gift**:
+One purchase, addressed to somebody else. **A mode of an order rather than a
+product or a second order**: the money, the currency and the line are exactly
+what a self-purchase places, and what makes it a gift is a row beside it holding
+the address the buyer typed.
+
+**A gift is not a reading**, and the gap between them is the whole feature. It
+becomes one when it is **redeemed**, and until then nobody has asked anything
+and there is nothing anyone could write.
+_Avoid_: gift card, voucher, credit (all three name an amount; a gift names one
+reading and is worth the right price in every currency), gift reading
+
+**Giftable**:
+A property of the product, `is_giftable` on `/products`, and what decides whether
+a reading's page draws GIFT A READING at all. **Not everything is**: `one-card`,
+the Viewing Room pass and the rush are not, decided 2 September 2026. The rule is
+enforced rather than trusted — `POST /orders` refuses a gift object on a line
+that is not giftable instead of quietly dropping it.
+_Avoid_: gift-enabled, `can_gift`, giftable as a property of the page rather than
+the product
+
+**Gift code**:
+The string carrying the authority to redeem one gift, in a link the recipient
+clicks and in the same characters printed underneath for them to type.
+
+**A bearer credential like a pay token, with the opposite handling rule.** A pay
+token may never reach an address bar; this one is built to. The two forms are
+one authority, so **a link is never safer than the code inside it** and the
+entropy has to be in the code — which is why it is **not derived from anything
+about the gift**. `3CARD10021`, the client's example, names its own value and
+can be counted to; `Order::mintPayToken` already argues that point for the
+token beside it.
+_Avoid_: voucher code, coupon, promo code, discount code (nothing here is
+discounted), gift certificate, redemption token
+
+**Redeem**:
+The one moment a gift becomes a reading, and **the third word of that shape in
+this vocabulary** — it is not **settle**, because no money moves and the order
+was paid at purchase, and it is not **claim**, which finishes an account.
+Single-use and atomic: what it spends is the code, and what it makes is the
+reading.
+_Avoid_: activate, use, cash in, **apply** (a code is *applied* to a basket;
+this one meets no basket and reduces no total)
+
+**Redemption page**:
+`/redeem/`, one page for every reading rather than one per reading, and the only
+place a code is entered. **Built 3 September 2026** (#74). It is a static export, so the code arrives as a query
+parameter and never as a path segment.
+
+**It is a reading page with the commerce taken out, not a bare question box.**
+The querent is the one person who never chose the reading they are holding, so
+the name, the artwork and what arrives are exactly what they most need. What
+goes is everything that sells: no price, no wallet row, no checkout button, no
+Gift a Reading.
+_Avoid_: redemption form, gift page, claim page, unlock page
+
+**Recipient**:
+Who a gift was addressed to when it was bought — an email typed by somebody
+else, unverified and unaccounted-for. **Not yet a querent** and possibly never
+one: the gift may be forwarded, or never opened at all.
+_Avoid_: giftee, receiver, querent (before redemption there is nobody to be one)
+
+**Gift signature**:
+The name the recipient is told the gift is from, and the only reason the buyer
+is asked for one. It is **not the buyer's name**: an order may legitimately have
+none since #52, a wallet supplies an address rather than a billing contact, and
+"Mum" is a truer answer here than whatever is on the card.
+
+**It is required**, which is a trust decision and not a completeness one. An
+unsolicited email carrying a code, from a brand the recipient may never have
+heard of, is phishing-shaped; a name they recognise is the single signal that
+separates it from one. That is why the field cannot be optional even though the
+message beside it is.
+
+**Not "sender".** `App\Enums\Sender` is already the identity a mail leaves
+from, in the repository that would send this one.
+_Avoid_: sender, sender name, purchaser name, from name, buyer name
+
+**Address confirmation**:
+The second address box on the gift panel, and the only field in this system
+whose value is never kept. Its whole job is that the **recipient**'s address was
+typed twice by the person who knows it: it is compared with the first, trimmed
+and case-folded, and then thrown away.
+
+**Not a third thing the buyer told us.** It is a check on what they typed, so it
+is not in the **order note**, it will not be a column on a **gift**, and an
+order line quoting the same address twice would be Jennifer reading a form's
+validation out of a table cell.
+
+**It exists because the buyer never receives the code.** A mistyped address on
+an ordinary purchase costs somebody a receipt they can ask for again; here it
+sends a paid, non-expiring bearer credential to a stranger, with no expiry to
+reclaim it and nothing in the buyer's hands to resend.
+_Avoid_: confirm email, email confirmation (that is a mail asking somebody to
+verify an address, which this is not), verification, second email, retype
 
 ### After the money
 

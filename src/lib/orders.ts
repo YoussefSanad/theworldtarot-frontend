@@ -17,8 +17,69 @@ export type OrderLineInput = {
   /**
    * Refused with a 422 on any product whose `allows_question` is false, and
    * never required on one where it is true.
+   *
+   * **Never sent beside a `gift`**, from 3 September 2026: the backend refuses
+   * the pair with a 422 keyed to this field. The person who will ask has not
+   * seen the present yet, and asking is what redemption is for.
    */
   question?: string;
+  /**
+   * The present this line is, on a line somebody bought for another person.
+   *
+   * Refused with a 422 keyed to `lines.N.gift` on any product whose
+   * `is_giftable` is false — which is why `giftOffered` draws the toggle from
+   * that field and never from a list this repo holds.
+   */
+  gift?: GiftInput;
+};
+
+/**
+ * What the buyer typed about a present, in the wire's own words.
+ *
+ * ## Snake case, because this is the body rather than a model of it
+ *
+ * `PlaceOrderInput` is handed to `apiWrite` as it stands, so every field on it
+ * is the backend's spelling; the mapping to ours happens on the way *back*, in
+ * `placeOrder` below. A camelCase shape here would be a second naming to keep
+ * in step with no boundary to do it at.
+ *
+ * ## It replaces a sentence
+ *
+ * Until 3 September 2026 there was no such field, and the panel composed these
+ * three into the line's `question` as prose for the admin orders table to
+ * print. That stopgap is what the backend's `gifts` table ended: a row of its
+ * own, a code minted when the money arrives, and a mail to the recipient — none
+ * of which a sentence in a question box can start. See the backend's
+ * `docs/adr/0004-a-reading-is-a-row-of-its-own.md`.
+ *
+ * ## What is not here
+ *
+ * **The address confirmation**, which is a check on what the buyer typed and is
+ * thrown away where it was compared. Sending it would be asking the backend to
+ * re-run a validation it has no second address to run against.
+ *
+ * **`locale`**, which the backend defaults to the order's own language. It is
+ * optional on the wire and this endpoint carries no locale segment, so there is
+ * nothing here to state that would be truer than the default.
+ */
+export type GiftInput = {
+  /**
+   * Where the code is sent, and **required**: the buyer never receives it, so
+   * a typo'd address is unrecoverable and nothing on either side can tell that
+   * a gift mail arrived nowhere. It is collected twice on our side for exactly
+   * that reason; see `giftAddressesAgree` in `lib/order-note.ts`.
+   */
+  recipient_email: string;
+  /**
+   * Who the present is from, and **required**. It is what the buyer signs with
+   * rather than what is on their card, and it is the only name in the
+   * transaction the recipient can be expected to recognise — which is what
+   * keeps an unsolicited mail carrying a code from reading exactly like
+   * phishing.
+   */
+  signature: string;
+  /** The buyer's message, optional. Absent rather than empty. */
+  message?: string;
 };
 
 export type PlaceOrderInput = {

@@ -278,6 +278,42 @@ test("a gift's note is kept on the record and never offered to the question box"
   assert.equal(questionFor("month-ahead"), undefined);
 });
 
+test("a gift carries the address it was sent to, so the confirmation can name it", () => {
+  /*
+    The address is inside `question` as prose written for Jennifer, and the
+    confirmation may not parse it back out of there — see `giftRecipient`. It
+    travels as its own field for one reader, and that reader is a sentence on a
+    screen the buyer reaches after a round trip to Stripe.
+  */
+  rememberCheckout({ ...record, gift: true, giftRecipient: "alice@example.com" });
+
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
+});
+
+test("the address outlives the question it was composed into", () => {
+  /*
+    `forgetQuestion` spends the note once the money has moved, and a reload of
+    the confirmation still has to say where the gift went. So the two fields
+    part company at exactly the moment the screen needs the second one.
+  */
+  const gift = { ...record, gift: true, giftRecipient: "alice@example.com" };
+
+  rememberCheckout(gift);
+  forgetQuestion(gift);
+
+  assert.equal(recallCheckout()?.question, undefined);
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
+});
+
+test("a recipient of the wrong type refuses the whole record", () => {
+  // The same treatment as every optional field beside it. A record whose
+  // recipient is a number is a record from some other build, and a screen that
+  // rendered it would print an object into a sentence.
+  sessionStorage.setItem("checkout", JSON.stringify({ ...record, gift: true, giftRecipient: 7 }));
+
+  assert.equal(recallCheckout(), null);
+});
+
 test("a gift flag of the wrong type refuses the whole record", () => {
   // The same treatment every other optional field gets: validated when present,
   // and a record that reads back is the object that was written.

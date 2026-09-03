@@ -1,9 +1,10 @@
 # A reading's own page
 
-Built from one Figma frame, `329:496` (`month-ahead-reading-page`, 1920x3191),
+Built from the Figma frame `329:496` (`month-ahead-reading-page`, 1920x3191),
 plus a handful of things the frame does not draw at all — see [Beyond the
-frame](#beyond-the-frame). Route:
-`src/app/(site)/readings/month-ahead/page.tsx`. Copy lives in
+frame](#beyond-the-frame). Three routes render it:
+`src/app/(site)/readings/three-card/`, `.../month-ahead/` and `.../in-depth/`,
+which differ only in which constant they import. Copy lives in
 [`src/content/reading-pages.ts`](../../content/reading-pages.ts).
 
 Read [`src/app/README.md`](../../app/README.md) first — the token system, the
@@ -22,12 +23,53 @@ price and testimonial are copy — they never reach logic.
 
 So `reading-pages.ts` splits in two. `readingPageChrome` is everything the
 three say identically and is written once; a `ReadingPage` is the handful of
-things that differ. Adding the other two is a `ReadingPage` and a route that
-imports it, and **nothing else** — don't build per-product delivery UI for
-them. The hero film is chrome rather than product copy for the same reason: one
-loop of the deck serves all three.
+things that differ. A fourth would be a `ReadingPage` and a route that imports
+it, and **nothing else** — don't build per-product delivery UI for them. The
+hero film is chrome rather than product copy for the same reason: one loop of
+the deck serves all three.
 
-Only Month Ahead is wired up, because it is the only one the client has drawn.
+All three are wired up. Month Ahead came first, being the frame this page was
+built from; the client drew Three Card and In-Depth on 2 September 2026 from
+that same template and they went in the next day as copy alone — no component
+here changed for them. Where those two frames contradict copy that predates
+them — Three Card's price, In-Depth's card count — the entry in
+`reading-pages.ts` reproduces the frame and says so against itself.
+
+### The composition is one file, and the commerce is a slot
+
+`ReadingPresentation` is the page — the backdrop, the two panels, the gate, the
+props and the closing line. A reading's route is a `ReadingPage`, a `<title>`
+and one line that puts `ReadingOrder` in its `commerce` slot, which is what the
+paragraph above has claimed since Three Card landed and what a hundred lines
+copied three times had stopped being.
+
+**It was cut for `/redeem/`**, the gifting epic's F1
+([#70](https://github.com/YoussefSanad/theworldtarot-frontend/issues/70)).
+[ADR 0003](../../../docs/adr/0003-redemption-is-a-page-of-its-own.md) has the
+argument and the component's docblock has the shape; neither is repeated here.
+What matters at this level is the rule the slot carries: **whatever fills it
+owns the checkout anchor**, because the closing call to action renders only
+when the slot is full and scrolls to an id that lives inside it.
+
+**The presentation half mounts on its own**, and
+[`/redeem/`](../../app/(site)/redeem/page.tsx) is the page that does it — the
+gifting epic's F5
+([#74](https://github.com/YoussefSanad/theworldtarot-frontend/issues/74)): this
+composition with the code's state and the question in the slot instead of the
+commerce. ~~`/presentation-probe/`~~ was the throwaway route that proved it
+first, with the slot empty, and it went at
+[#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79) the day
+`/redeem/` landed. **The empty slot is still a supported state** — `absent`,
+`null` and `false` all mean empty, and `ClosingSaying` takes `action={null}` for
+it — it is simply no longer a route anybody can load.
+
+**Cutting the seam changed nothing about the three pages, and the export is the
+proof.** There is no renderer in this project, so what stands in for a
+component test here is `ALLOW_LOCAL_API_BUILD=1 npm run build` on either side of
+the change: the rendered markup of all three `out/readings/*/index.html` came
+back byte-identical, the only difference being the build id inside the flight
+payload, which is a fresh hash on every build. Worth repeating whenever this
+composition moves again.
 
 ## What the frame is, and what it isn't
 
@@ -348,21 +390,41 @@ The client puts "Gift a Reading" at the foot of the payment column, and what it
 changes is a section most of a panel above it — an action whose effect is off
 screen. Rather than move her button:
 
-- entering gift mode **moves focus into the recipient's email field**
+- entering gift mode **moves focus into the section's first field**
   (`CountedField`'s `autoFocusOnMount`), which brings the visitor to the part
-  of the page that just became different;
+  of the page that just became different. That was the recipient's address
+  until 3 September 2026 and is the **gift signature** from #71, which is now
+  what stands first;
 - the button **says what it is** — `aria-pressed`, a gold
   `.checkout-option[aria-pressed="true"]` state that does not depend on a
   pointer being near it, and a label that becomes the way back out, so gift
   mode is never somewhere a visitor is stuck.
 
-The recipient's email field also **suppresses browser autofill**
-(`CountedField`'s `suppressAutofill`). Chrome classifies a field by its `name`
-and `id` as much as by its `autocomplete`, so `recipientEmail` had it offering
-the purchaser their own saved address — the one address a gift must not go to.
-The field therefore submits under React's opaque `useId` string and carries its
-real name on `data-field`, which is where anything reading this form should
-look for it; `autocomplete="off"` and the password-manager opt-outs ride along.
+**Both address fields suppress browser autofill** (`CountedField`'s
+`suppressAutofill`). Chrome classifies a field by its `name` and `id` as much as
+by its `autocomplete`, so `recipientEmail` had it offering the purchaser their
+own saved address — the one address a gift must not go to — and a confirmation
+the browser filled in has confirmed nothing anyway. The fields therefore submit
+under React's opaque `useId` string and carry their real names on `data-field`,
+which is where anything reading this form should look for them;
+`autocomplete="off"` and the password-manager opt-outs ride along.
+
+**That rule was broken for the four days nothing enforced it.** Suppression
+landed on 29 August 2026 and `lib/order-note.ts` shipped on 30 August reading
+`new FormData(form)` keyed by `name` — which answered `null` for a field sitting
+in the form under another name, so every gift order composed no note and was
+sent as a self-purchase. `check:panel` read it the same wrong way and stayed
+green. Both were corrected to `data-field` on 3 September 2026 in #71, and
+`order-note.test.ts` now drives that path from a node to an order note rather
+than leaving it to a browser nobody runs on every commit.
+
+**The signature is the one single-line field on this panel that is not an
+address**, so `CountedField` takes a `type` for it. ~~It is the only caller that
+passes `"text"`.~~ **Corrected 3 September 2026**: `RedeemPanel` passes it too,
+for `querentName`, which is a name and not an address for the same reason. It
+keeps its autofill: the browser's guess there is the buyer's own name, which
+unlike their own address is a reasonable first offer for a gift that may well be
+from them under it.
 
 The recipient's side of the flow — redeem, then ask — is not built, and since
 31 August 2026 this panel does not advertise it either: the `Redeem A Gift
@@ -377,19 +439,71 @@ reason to refuse the money is argued in `GetMyReading`, beside the gate it
 removed.
 
 So the recipient rides to the backend on the order line instead. `orderNoteIn`
-reads whichever of the two sections is mounted and composes the gift's two
-fields into the line's `question`, which is the field the admin orders table
-already prints; see `lib/order-note.ts`. Two things fall out of that and are
-worth knowing before reading either file:
+reads whichever of the two sections is mounted and answers what that line
+carries; see `lib/order-note.ts`.
+
+~~It composes the gift's signature, address and message into the line's
+`question`, which is the field the admin orders table already prints.~~
+**Struck 3 September 2026.** The backend grew `lines[].gift` — a `gifts` row, a
+code minted when the money arrives, a mail to the recipient and a Gifts screen —
+and the panel kept sending the sentence for a day after it landed. Everything
+downstream was silent about it: the order was accepted, the money taken, and
+the buyer got a receipt headed "Your Reading Is On Its Way" for a present that
+had no code, no mail and no row. **The lesson is where the assertion goes.**
+`order-note.test.ts` proved the panel noticed the gift section, and
+`check:panel` proved a sentence reached the line; neither asked what the
+**order body** carried, which is the only thing any of the machinery reads.
+Both do now.
+
+Three things fall out and are worth knowing before reading either file:
 
 - **A gift order is never indistinguishable from a self-purchase**, however
   little the buyer typed — which is also why `orderFormAccepts` exists. Nothing
   submits this form, so the `required` on the recipient's address was decoration
   until the panel could take money; both controls now ask for it before they
-  place anything.
-- **The record is flagged and the restore refuses it.** A cancelled gift
-  checkout must not refill the question textarea with a note this code composed,
-  so `CheckoutRecord.gift` marks it and `questionFor` turns it down.
+  place anything. The present is sent even when it is empty, so the backend
+  refuses the order rather than accepting a purchase nobody meant to make.
+- **A gift line carries no question**, and the pair is a 422. The person who
+  will ask has not seen the present yet, and asking is what redemption is for.
+- **The record is flagged, and the flag outlived the note.** Its reader is the
+  confirmation — reached after a round trip to Stripe, from a payment that names
+  nothing about a gift — which needs `CheckoutRecord.gift` and `giftRecipient`
+  to say a present was bought and where it went. `questionFor` still refuses a
+  gift record, which is now belt and braces.
+
+**The address is taken twice, and the disagreement has exactly one way out.**
+The buyer never receives the code, so a typo sends a paid, non-expiring bearer
+credential to a stranger with nothing in the buyer's hands to resend. The
+comparison is `markGiftAddresses`, called by `orderFormAccepts` on its way to
+`reportValidity()`, and what it does is `setCustomValidity` on the **address
+confirmation** and nothing else — so the refusal comes out of the same single
+call the `required`s do. **Recomputed at every press rather than kept current as
+the buyer types**, which is what makes editing the address after confirming it
+as safe as editing the confirmation; a listener would be one more thing that has
+to have run. **And no payment control tests for it.** A parallel branch is how a
+buyer authorises with their face for a gift the form had already rejected, and
+the wallet road is the one road no headless browser here can press.
+
+The sentence it writes lives in `content/reading-pages.ts` like the rest of the
+copy, and reaches `src/lib` — which can import nothing from `@/content`, since
+`node --test` resolves no `@/` — on the confirmation's own wrapper as
+`data-mismatch`. An argument on `orderFormAccepts` was the alternative and is
+the forgettable one: a third caller omitting it would turn the check off
+silently.
+
+**The section holds four fields where it held two, and the panel shifts.** It
+was meant to match the question field's 607px box in both directions; it still
+matches the width, which is what stops the panel changing shape as well as size
+on the toggle, and it no longer matches the height. Measured against the export
+at 1920px: the question section stands 431px, and this one stood 557px before
+#71 and stands 760px after. The message textarea pays part of it back — three
+rows to two, its `min-h` down from the 146px box to the 100px one — because it
+is the only optional field on either section and a shorter optional box is the
+cheaper of the two costs. It pays 38px of 242px, and nothing else on a section
+of four required boxes has height to give. `check:panel` asserts the width and
+the row count and **reports** the height the toggle costs rather than asserting
+it, there being no number to hold it to that would not be today's copy written
+down twice.
 
 **What the wallet row taught, and why it came back first.** The row was
 unmounted rather than made inert, because a wallet takes the money the instant a
@@ -428,18 +542,26 @@ price — is
 
 The form itself stays, with its fields named.
 
-### Delivery is a CMS switch
+### Delivery is not a choice
 
-`rushDelivery.enabled` is the client's, not the code's. **Off** — the state
-that ships — a reading offers one delivery and states it, as the frame draws
-it. **On**, that line becomes two radios with standard still `defaultChecked`,
-so throwing the switch never changes what a visitor gets by doing nothing.
+**The 24-Hour Rush is gone from the design.** The client dropped it on 25 August
+2026 and confirmed it on 1 September. A reading offers one delivery and states
+it, as the frame draws it, and that is the finished state rather than the
+off-state of a switch.
 
-The standard option is labelled "Standard Delivery" rather than the product's
-own delivery line. "Delivery Time: within 24 hours" is right when it is the
-only thing on offer and reads as a contradiction beside an upgrade called
-24-Hour Rush. **Worth raising with the client**: as written, the rush buys
-nothing this product does not already promise.
+The point that killed it is the one this section used to raise as a question.
+"Delivery Time: within 24 hours" is the product's own line, so an upgrade called
+24-Hour Rush sold nothing the reading did not already promise, and set beside the
+standard option it read as a contradiction rather than an offer. The client
+agreed and removed it.
+
+**What is left behind, and what to do with it.** `rushDelivery` in
+`src/content/reading-pages.ts` still exists with `enabled: false`, and
+`GetMyReading` still carries the two-radio branch behind it. Nothing renders
+today, so the shipped page is correct — but this is dead code awaiting removal,
+not a feature flag. **Do not build against it and do not turn it on.** Removing
+it takes the flag, the branch, the `DeliveryOption` radios and the
+`"Standard Delivery"` label with it.
 
 ### The counter
 

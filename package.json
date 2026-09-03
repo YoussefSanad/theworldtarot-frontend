@@ -17,7 +17,9 @@
     "check:images": "node scripts/check-images.mjs",
     "check:reveal": "node scripts/check-reveal.mjs",
     "check:panel": "node scripts/check-panel.mjs",
+    "check:currency": "node scripts/check-currency.mjs",
     "check:confirmation": "node scripts/check-confirmation.mjs",
+    "check:redeem": "node scripts/check-redeem.mjs",
     "check:login": "node scripts/check-login.mjs"
   },
   "dependencies": {

@@ -141,19 +141,26 @@ The risk was that a *person* would, for want of anything on the order saying it
 was a gift.
 
 So the recipient rides on the order line instead. `orderNoteIn`
-(`lib/order-note.ts`) reads whichever section the form has mounted and composes
-the gift's two fields into the line's `question` — the field the admin orders
-table already prints — and both payment controls read through it. Its one
+(`lib/order-note.ts`) reads whichever section the form has mounted and answers
+what the line carries, and both payment controls read through it. Its one
 invariant is that a gift order is never indistinguishable from a self-purchase,
 however little the buyer typed.
 
+~~It composes the gift's fields into the line's `question` — the field the admin
+orders table already prints.~~ **Struck 3 September 2026**: they go as
+`lines[].gift`, which the backend grew along with a `gifts` table, a code minted
+at settlement and a mail to the recipient. The composed sentence started none of
+that, and for a day after the endpoint existed the panel was still sending it.
+
 Two things follow and are worth stating rather than discovering:
 
-- **The record is flagged.** A cancelled gift checkout must not refill the
-  question textarea with a note this code composed, so `CheckoutRecord.gift`
-  marks it and `questionFor` refuses it. The cost is that the recipient and the
-  message are lost on a cancelled gift checkout — the smaller of the two losses,
-  and the milestone's to fix properly.
+- **The record is flagged.** Not for the restore any more — a gift writes no
+  question here — but for the **confirmation**, which is reached after a round
+  trip to Stripe from a payment that names nothing about a gift, and reads
+  `CheckoutRecord.gift` and `giftRecipient` to say a present was bought and
+  where it went. `questionFor` still refuses a gift record. The cost is that the
+  recipient, the signature and the message are lost on a cancelled gift
+  checkout — the smaller of the two losses, and a separate piece of work.
 - **The copy changed with it.** `checkout.giftingComing` said there was no way
   to pay for a gift; it now says a person will arrange delivery by email. A note
   refusing the payment under a button that charges is worse than no note.

@@ -5,27 +5,35 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { cn } from "@/lib/cn";
+import type { ApiCurrency, ApiLanguage } from "@/lib/api";
+import { highlightedCurrency, useCurrency } from "@/lib/currency";
+import { useCurrencyOptions } from "@/lib/currencies";
+import { usePaymentInFlight } from "@/lib/payment-in-flight";
+import { useLanguageOptions } from "@/lib/languages";
+import { currentLocale } from "@/lib/locale";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
 /**
- * The language and currency selectors, as chrome only.
+ * The language and currency selectors.
  *
- * **Nothing here is wired to anything yet, and that is the whole scope.**
- * Choosing changes what the control says and nothing else — no request carries
- * the choice, no price re-renders, no route changes, and nothing is remembered
- * between page loads. This exists so the controls can be seen, laid out and
- * approved before the plumbing behind them is built.
+ * **Currency is wired and language is not.** That is the shape of the pair
+ * rather than an unfinished edge — they were always going to be two different
+ * mechanisms, and only one of them is a thing this app can do on its own:
  *
- * What each one becomes is already decided and they are not the same thing:
- *
+ * - **Currency is a preference**, sent as `?currency=` on the product fetch and
+ *   kept in `localStorage`. Choosing one re-prices the homepage tiles and both
+ *   readings-index surfaces from a single call, and survives a reload. The site
+ *   never converts a price itself; the backend holds a real price per currency.
+ *   `lib/currency.ts` holds the choice and `lib/catalogue.ts` re-asks on it
  * - **Language is a route**, so its options become `Link`s to a locale segment
  *   and the list comes from `GET /api/v1/languages`. A client-side toggle would
  *   leave `html lang` reading `en` over Spanish copy and would be invisible to
- *   crawlers, which is why it is not one. See `lib/locale.ts`
- * - **Currency is a preference**, sent as `?currency=` on the product fetch and
- *   kept in `localStorage`. The site never converts a price itself; the backend
- *   holds a real price per currency. See `docs/plans/products-api-wiring.md`
+ *   crawlers, which is why it is not one. The segment itself is deferred to
+ *   #69, so `setLanguage` does nothing today. See `lib/locale.ts` and
+ *   `docs/adr/0004-language-is-a-path-segment.md`
+ *
+ * See `docs/plans/language-and-currency-selector.md` for the whole route.
  *
  * The selection is held by whoever renders this rather than inside it, because
  * the header shows these twice — as one icon and its panel on desktop and as
@@ -52,65 +60,121 @@ export type SelectOption = {
 };
 
 /**
- * Placeholder options.
+ * One language as a row in either control.
  *
- * **The site is English-only today.** The three besides English are here so the
- * control can be shown working, and are the one thing in this file that is
- * knowingly untrue — the real list is whatever `/api/v1/languages` answers, and
- * the control renders nothing at all while that list holds a single entry.
+ * **`native_name` over `label`.** A language switcher is one of the few
+ * controls read by people who cannot read the language it is currently in,
+ * which is exactly when "Español" works and "Spanish" does not. The backend
+ * does not send the field yet — `YoussefSanad/TheWorldTarot#66` asks for it —
+ * so this reads the English name until the day it ships, and then stops.
  *
  * No flags, on purpose. A flag names a country and these name languages, which
- * are not the same set; and a colour bitmap would be the only saturated thing in
- * a header drawn entirely in gold on night.
+ * are not the same set; and a colour bitmap would be the only saturated thing
+ * in a header drawn entirely in gold on night.
  */
-export const LANGUAGE_OPTIONS: SelectOption[] = [
-  { value: "en", label: "English", short: "EN" },
-  { value: "es", label: "Español", short: "ES" },
-  { value: "fr", label: "Français", short: "FR" },
-  { value: "de", label: "Deutsch", short: "DE" },
-];
+function languageRows(languages: readonly ApiLanguage[]): SelectOption[] {
+  return languages.map(({ code, label, native_name }) => ({
+    value: code,
+    label: native_name ?? label,
+    short: code.toUpperCase(),
+  }));
+}
 
 /**
- * The three the backend actually sells in, per `products-api-wiring.md`. Real,
- * unlike the languages above — but still a constant here rather than a fetch,
- * because there is no endpoint that lists them yet.
+ * One currency as a row in either control.
+ *
+ * The code is both the value and the label — "USD" is what the row reads, and
+ * the symbol is a glyph printed ahead of it. No names ("US Dollar"): three
+ * codes in a 13em panel are read faster than three names, and the symbol
+ * already says which is which to anybody who does not know the codes.
  */
-export const CURRENCY_OPTIONS: SelectOption[] = [
-  { value: "USD", label: "USD", symbol: "$" },
-  { value: "EUR", label: "EUR", symbol: "€" },
-  { value: "GBP", label: "GBP", symbol: "£" },
-];
+function currencyRows(currencies: readonly ApiCurrency[]): SelectOption[] {
+  return currencies.map(({ code, symbol }) => ({ value: code, label: code, symbol }));
+}
 
+/**
+ * What the two controls draw and what pressing a row does.
+ *
+ * **`highlighted`, not `currency`.** The bare word is in `CONTEXT.md`'s _Avoid_
+ * list for exactly the collision this type used to contain: the value read here
+ * is the **resolved** currency where there is one, while the setter writes a
+ * **chosen** one — two of the three concepts under a single name, which is the
+ * failure the glossary entry predicts. `choose` is the store's own word for the
+ * write; see `lib/currency.ts`.
+ */
 export type LocaleSelection = {
   language: string;
-  currency: string;
   setLanguage: (value: string) => void;
-  setCurrency: (value: string) => void;
+  /** The currency row drawn as current — `highlightedCurrency`'s answer. */
+  highlighted: string;
+  /** Records an explicitly chosen currency, which is what starts travelling. */
+  choose: (code: string) => void;
 };
 
 /**
- * Where the choice lives, for now.
+ * Language does not move yet, so this is where that is written down rather than
+ * a `setLanguage` that silently does nothing.
  *
- * Plain state, so a refresh forgets it. The body of this hook is what gets
- * replaced when the choice becomes real — a route segment for the language and a
- * stored preference for the currency — and every call site reading it as a hook
- * today is a call site that needs no edit then.
+ * Unreachable in practice: the language group is drawn only at two entries or
+ * more, and `/languages` answers one. It exists because `LocaleSelection` is
+ * one shape for both halves, and because the day #69 lands this is the line
+ * that becomes a navigation.
+ */
+const LANGUAGE_DOES_NOT_MOVE_YET = (): void => {};
+
+/**
+ * Where the choice lives.
+ *
+ * **This hook was always the seam**, and replacing its body is the whole of the
+ * wiring — both call sites in `SiteHeader` needed no edit, which is what the
+ * plain state it used to hold was standing in for.
+ *
+ * The two halves come from different places and neither is component state:
+ *
+ * - **Currency** reads `lib/currency.ts`, a module-scoped store, because the
+ *   header renders this twice and the things that act on the choice are `lib/`
+ *   modules that are not the header's descendants. `highlightedCurrency` is the
+ *   rule for which row is drawn as chosen, and it prefers what the backend
+ *   resolved over what was asked for
+ * - **Language** reads `currentLocale()`, which is `"en"` until #69 puts a
+ *   segment in the path
  */
 export function useLocaleSelection(): LocaleSelection {
-  const [language, setLanguage] = useState("en");
-  const [currency, setCurrency] = useState("USD");
+  const { chosen, resolved, choose } = useCurrency();
 
-  return { language, currency, setLanguage, setCurrency };
+  return {
+    language: currentLocale(),
+    setLanguage: LANGUAGE_DOES_NOT_MOVE_YET,
+    highlighted: highlightedCurrency({ chosen, resolved }),
+    choose,
+  };
 }
 
 /** The mobile drawer's shape: both groups flat, every option one tap away. */
 export function LocaleControls({ selection, className }: { selection: LocaleSelection; className?: string }) {
-  const { language, currency, setLanguage, setCurrency } = selection;
+  const { language, setLanguage, highlighted, choose } = selection;
+  const currencies = useCurrencyOptions();
+  const languages = useLanguageOptions();
+
+  /*
+    Currency only. Language prices nothing, so freezing it would be freezing a
+    control for a reason that is not its own.
+  */
+  const frozen = usePaymentInFlight();
 
   return (
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
-      <SegmentRow label="Language" options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
-      <SegmentRow label="Currency" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
+      {/* Empty until there are two languages to choose between — see `lib/languages.ts`. */}
+      {languages.length > 0 ? (
+        <SegmentRow label="Language" options={languageRows(languages)} value={language} onChange={setLanguage} />
+      ) : null}
+      <SegmentRow
+        label="Currency"
+        options={currencyRows(currencies)}
+        value={highlighted}
+        onChange={choose}
+        frozen={frozen}
+      />
     </div>
   );
 }
@@ -133,8 +197,14 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
  * first currency.
  */
 export function LocaleMenu({ selection, className }: { selection: LocaleSelection; className?: string }) {
-  const { language, currency, setLanguage, setCurrency } = selection;
+  const { language, setLanguage, highlighted, choose } = selection;
+  const currencies = useCurrencyOptions();
+  const languages = useLanguageOptions();
+  const hasLanguages = languages.length > 0;
   const [open, setOpen] = useState(false);
+
+  // Currency only, for the reason `LocaleControls` above gives.
+  const frozen = usePaymentInFlight();
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -188,6 +258,12 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
       <button
         ref={triggerRef}
         type="button"
+        // `check:currency` opens this panel before it can assert on a row —
+        // both controls live behind `open` inside `AnimatePresence`, so neither
+        // is in the export. A hook rather than the label, as
+        // `data-hosted-checkout` is on the checkout button and for the same
+        // reason: the words are copy and copy changes.
+        data-locale-menu
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="true"
         aria-expanded={open}
@@ -214,15 +290,33 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: EASE_VEIL }}
           >
+            {/*
+              Both the group and the hairline under it go when there is nothing
+              to choose between — a divider above the only group in the panel
+              would be a rule under a heading that is not there. The globe
+              itself stays either way: its panel then holds Currency alone,
+              which is a smaller control and not a missing one.
+            */}
+            {hasLanguages ? (
+              <>
+                <LocaleGroup
+                  label="Language"
+                  options={languageRows(languages)}
+                  value={language}
+                  onChange={setLanguage}
+                  autoFocus={open}
+                />
+                <div className="my-[0.3em] border-t border-(--edge-gold)" />
+              </>
+            ) : null}
             <LocaleGroup
-              label="Language"
-              options={LANGUAGE_OPTIONS}
-              value={language}
-              onChange={setLanguage}
-              autoFocus={open}
+              label="Currency"
+              options={currencyRows(currencies)}
+              value={highlighted}
+              onChange={choose}
+              autoFocus={open && !hasLanguages}
+              frozen={frozen}
             />
-            <div className="my-[0.3em] border-t border-(--edge-gold)" />
-            <LocaleGroup label="Currency" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -237,12 +331,19 @@ function LocaleGroup({
   value,
   onChange,
   autoFocus,
+  frozen = false,
 }: {
   label: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
-  /** Focuses the current choice the moment the panel opens. Only the first group takes this. */
+  /** A payment is in flight, so this group announces itself and refuses presses. */
+  frozen?: boolean;
+  /**
+   * Focuses the current choice the moment the panel opens. Only whichever group
+   * is drawn first takes it, which is Language where there is one and Currency
+   * where there is not.
+   */
   autoFocus?: boolean;
 }) {
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -296,9 +397,13 @@ function LocaleGroup({
           type="button"
           role="option"
           aria-selected={option.value === value}
+          aria-disabled={frozen}
           tabIndex={index === activeIndex ? 0 : -1}
           onFocus={() => setActiveIndex(index)}
-          onClick={() => onChange(option.value)}
+          onClick={() => {
+            if (frozen) return;
+            onChange(option.value);
+          }}
           onKeyDown={(event) => onOptionKeyDown(event, index)}
           className="menu-option flex w-full items-center gap-[0.6em] px-[1.1em] py-[0.42em]"
         >
@@ -363,11 +468,14 @@ function SegmentRow({
   options,
   value,
   onChange,
+  frozen = false,
 }: {
   label: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
+  /** A payment is in flight, so this row announces itself and refuses presses. */
+  frozen?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -379,7 +487,11 @@ function SegmentRow({
             key={option.value}
             type="button"
             aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
+            aria-disabled={frozen}
+            onClick={() => {
+              if (frozen) return;
+              onChange(option.value);
+            }}
             className="segment flex min-h-[1.9em] items-center gap-[0.3em] px-[0.7em] py-[0.15em]"
           >
             {option.symbol ? <span aria-hidden>{option.symbol}</span> : null}

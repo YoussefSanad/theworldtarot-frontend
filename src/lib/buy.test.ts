@@ -3,6 +3,7 @@ import { after, beforeEach, test } from "node:test";
 
 import { CheckoutUnavailable, startCheckout, startWalletPayment } from "./buy.ts";
 import { recallCheckout } from "./checkout-session.ts";
+import { forgetPayment, paymentInFlight } from "./payment-in-flight.ts";
 
 type Call = { url: string; init: RequestInit };
 
@@ -12,8 +13,21 @@ const realStorage = Reflect.get(globalThis, "sessionStorage");
 
 let calls: Call[] = [];
 
+type Deferred = { promise: Promise<Response>; settle: (response: Response) => void };
+
+/**
+ * A response held open, so the state *during* a write can be measured rather
+ * than raced for. `catalogue.test.ts` holds one the same way.
+ */
+function deferred(): Deferred {
+  let settle!: (response: Response) => void;
+  const promise = new Promise<Response>((resolve) => (settle = resolve));
+
+  return { promise, settle };
+}
+
 /** Stubbed at the network, so what is asserted is the request that leaves. */
-function stubFetch(...responses: Response[]): void {
+function stubFetch(...responses: (Response | Deferred)[]): void {
   const queue = [...responses];
 
   globalThis.fetch = (async (input: RequestInfo | URL, init: RequestInit = {}) => {
@@ -22,7 +36,7 @@ function stubFetch(...responses: Response[]): void {
     const next = queue.shift();
     if (!next) throw new Error(`Unexpected fetch to ${String(input)}.`);
 
-    return next;
+    return next instanceof Response ? next : next.promise;
   }) as typeof fetch;
 }
 
@@ -74,6 +88,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "https://staging-api.theworldtarot.com";
   globalThis.document = { cookie: "XSRF-TOKEN=token" } as Document;
   Object.defineProperty(globalThis, "sessionStorage", { value: memoryStorage(), configurable: true });
+  forgetPayment();
 });
 
 after(() => {
@@ -141,15 +156,16 @@ test("the record holds what the backend charged, not what the page was quoting",
   });
 });
 
-test("a gift rides to the backend on the line and is flagged on the record", async () => {
+test("a gift rides to the backend on the line, and is flagged on the record", async () => {
   /*
-    **The flag goes one way and the note goes both.** `POST /orders` has no
-    field for a gift and never sees one; the record keeps it, because that is
-    what stops a cancelled gift checkout refilling the question textarea with a
-    note this code composed. See `questionFor` in `lib/checkout-session.ts`.
+    **The assertion the gifting release was missing.** Until 3 September 2026
+    the panel read all four boxes correctly, composed a sentence, and sent it as
+    the line's `question` — so the backend wrote no `gifts` row, minted no code
+    at settlement, sent the recipient nothing, showed nothing on the Gifts
+    screen, and queued a reading for the **buyer**. Every piece downstream hangs
+    off this one field reaching the order body, which is why it is asserted on
+    the body rather than on what the caller passed.
   */
-  const note = "Gift — send this reading to alice@example.com";
-
   stubFetch(
     new Response(null, { status: 204 }),
     placed(),
@@ -157,12 +173,82 @@ test("a gift rides to the backend on the line and is flagged on the record", asy
     json({ type: "redirect", redirect_url: SESSION_URL }),
   );
 
-  await startCheckout({ productKey: "month-ahead", money: offer, question: note, gift: true });
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum", message: "Happy birthday." },
+  });
 
-  assert.deepEqual(bodies()[0].lines, [{ product: "month-ahead", quantity: 1, question: note }]);
-  assert.equal("gift" in bodies()[0], false);
-  assert.equal(recallCheckout()?.question, note);
+  assert.deepEqual(bodies()[0].lines, [
+    {
+      product: "month-ahead",
+      quantity: 1,
+      // **And no `question` key beside it.** A line carrying both is a 422
+      // keyed to the question, so the pair may not be built here even by an
+      // empty string surviving the trim above.
+      gift: { recipient_email: "alice@example.com", signature: "Mum", message: "Happy birthday." },
+    },
+  ]);
+  assert.equal("question" in bodies()[0].lines[0], false);
   assert.equal(recallCheckout()?.gift, true);
+});
+
+test("the record gets a flag and an address, read off the present itself", async () => {
+  /*
+    **The order takes the present and the record takes two fields off it.** The
+    record's pair is what the **confirmation** reads: it is reached after a
+    round trip to Stripe and has no other channel to either. Derived here rather
+    than passed beside the present, so a road cannot fill one and forget the
+    other, and so the screen can never name an address the order did not carry.
+  */
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum" },
+  });
+
+  assert.equal(recallCheckout()?.gift, true);
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
+});
+
+test("a present with no address is sent anyway, and names nobody on the record", async () => {
+  /*
+    **The refusal belongs to the backend, and nothing is charged reaching it.**
+    `orderFormAccepts` turns the press down first and is a guard rather than a
+    guarantee; where one gets through, an address-less present is a 422 on the
+    order. Dropping it here would place an ordinary order the buyer pays for —
+    the exact failure of the composed note this replaced.
+
+    The record names nobody rather than naming the empty string, because
+    `giftReceived.body` falls back to "the address you gave" and that sentence
+    is true where a blank interpolated into it is not.
+  */
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "",
+    gift: { recipient_email: "", signature: "" },
+  });
+
+  assert.deepEqual(bodies()[0].lines[0].gift, { recipient_email: "", signature: "" });
+  assert.equal(recallCheckout()?.gift, true);
+  assert.equal("giftRecipient" in recallCheckout()!, false);
 });
 
 test("a self-purchase leaves no gift key on the record at all", async () => {
@@ -327,10 +413,11 @@ test("a wallet press places an order, pays it as a wallet, remembers it, and ans
   ]);
 });
 
-test("the wallet road flags a gift the same way the card road does", async () => {
-  // The two roads write the record separately, which is exactly why this is
-  // asserted on both: a flag added to one and forgotten on the other is a gift
-  // note in a question box on whichever road the customer happened to take.
+test("the wallet road sends the present the same way the card road does", async () => {
+  // The two roads build the order body and the record separately, which is
+  // exactly why this is asserted on both: a present sent on one road and
+  // forgotten on the other is a gift that silently becomes a self-purchase on
+  // whichever road the customer happened to take.
   stubFetch(
     new Response(null, { status: 204 }),
     placed(),
@@ -341,11 +428,16 @@ test("the wallet road flags a gift the same way the card road does", async () =>
   await startWalletPayment({
     productKey: "month-ahead",
     money: offer,
-    question: "Gift — the buyer gave no recipient address.",
-    gift: true,
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum" },
   });
 
+  assert.deepEqual(bodies()[0].lines[0].gift, { recipient_email: "alice@example.com", signature: "Mum" });
   assert.equal(recallCheckout()?.gift, true);
+  // Written on both roads for the reason the present is: two records are built
+  // separately, and a field added to one and forgotten on the other is a gift
+  // confirmation that names nobody on whichever road the customer took.
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
 });
 
 test("the wallet record carries the secret and no Session id", async () => {
@@ -429,4 +521,58 @@ test("a refused order never reaches the wallet payment call", async () => {
 
   assert.equal(bodies().length, 1);
   assert.equal(recallCheckout(), null);
+});
+
+test("the currency control freezes the moment a card write starts, before a byte has left", async () => {
+  // Synchronous on purpose: the freeze cannot wait for a round trip, because the
+  // round trip is the thing it is protecting.
+  const held = deferred();
+  stubFetch(new Response(null, { status: 204 }), held, new Response(null, { status: 204 }), json({ type: "redirect", redirect_url: SESSION_URL }));
+
+  const buying = startCheckout({ productKey: "month-ahead", money: offer });
+
+  assert.equal(paymentInFlight(), true);
+
+  held.settle(placed());
+  await buying;
+});
+
+test("a refused card write settles, and the currency control is live again", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ message: "That is not something you can buy right now.", errors: { "lines.0.product": ["No."] } }, 422),
+  );
+
+  await assert.rejects(() => startCheckout({ productKey: "month-ahead", money: offer }), { status: 422 });
+
+  // Nothing was charged and nothing is leaving, so there is no reason left to
+  // refuse a press.
+  assert.equal(paymentInFlight(), false);
+});
+
+test("the wallet road freezes it too, and a sheet is the reason the freeze exists", async () => {
+  const held = deferred();
+  stubFetch(new Response(null, { status: 204 }), held, new Response(null, { status: 204 }), json({ type: "client_secret", client_secret: SECRET }));
+
+  const buying = startWalletPayment({ productKey: "month-ahead", money: offer });
+
+  assert.equal(paymentInFlight(), true);
+
+  held.settle(placed());
+  await buying;
+
+  // Still frozen after the secret comes back: the caller is about to confirm it
+  // with Stripe, and the sheet is open the whole time.
+  assert.equal(paymentInFlight(), true);
+});
+
+test("a refused wallet write settles, so a cancelled attempt does not leave the control stuck", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({ message: "That is not something you can buy right now.", errors: { "lines.0.product": ["No."] } }, 422),
+  );
+
+  await assert.rejects(() => startWalletPayment({ productKey: "month-ahead", money: offer }), { status: 422 });
+
+  assert.equal(paymentInFlight(), false);
 });

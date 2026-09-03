@@ -39,7 +39,9 @@
  */
 
 import { rememberCheckout, sessionIdFrom } from "./checkout-session.ts";
+import type { GiftInput } from "./orders.ts";
 import { payOrder, placeOrder } from "./orders.ts";
+import { paymentStarted, paymentStopped } from "./payment-in-flight.ts";
 import type { Money } from "./price.ts";
 
 /**
@@ -78,34 +80,43 @@ type Bought = {
   productKey: string;
   money: Money;
   /**
-   * What the customer typed, if anything. Optional on every product.
+   * What the customer typed, if anything. Optional on every product, and
+   * **never sent beside a `gift`**: the backend refuses the pair with a 422
+   * keyed to this field, and the panel answers empty in gift mode for that
+   * reason. See `lib/order-note.ts`.
    *
-   * **The wire field is `question` and what reaches it is not always one.** In
-   * gift mode the panel composes the recipient and the message into this same
-   * string, because `POST /orders` has no field of its own for either and the
-   * line's `question` is what the admin orders table prints. Nothing here
-   * inspects it — it is one string to trim and forward on both roads — but the
-   * name is the backend's rather than a description of the contents. See
-   * `lib/order-note.ts`.
+   * ~~The wire field is `question` and what reaches it is not always one.~~
+   * **Struck 3 September 2026.** It was a composed gift note in gift mode until
+   * the backend grew `lines[].gift` and a `gifts` table behind it; a sentence
+   * in this field could tell Jennifer a present had been bought, and could not
+   * mint a code, send it, or put the obligation on a screen. See `gift` below.
    */
   question?: string;
   /**
-   * Whether `question` above is a composed gift note rather than a typed
-   * question. **It reaches the record and never the order** — `POST /orders`
-   * has no field for it and would not know what to do with one; see
-   * `questionFor` in `checkout-session.ts` for what the record does with it.
+   * The present, on a gift, and **it reaches the order as well as the record**.
    *
-   * It is here rather than worked out from the string because the panel already
-   * knows: `orderNoteIn` answers it as it composes, and a `startsWith("Gift")`
-   * anywhere downstream would be this flag inferred badly.
+   * ~~It reaches the record and never the order — `POST /orders` has no field
+   * for it.~~ **Struck 3 September 2026**, which is the whole of this change:
+   * the endpoint has `lines[].gift`, and a gift that does not travel on it is a
+   * gift the backend never hears about. What that cost, until it did travel: no
+   * `gifts` row, so no code minted at settlement, so no mail to the recipient
+   * and nothing on the panel's Gifts screen — and a reading queued for the
+   * **buyer**, who was never the querent.
    *
-   * **Flat beside `question` rather than the `OrderNote` the panel reads**, and
-   * this is where the pair legitimately parts: one of them is a field on the
-   * order and the other is a field on the record, and the two round trips this
-   * module makes send them to different places. A caller passes what it read;
-   * what it is *for* is decided here.
+   * **The record still gets its own two fields**, derived from this one rather
+   * than passed beside it. That is the pair that legitimately parts: the order
+   * takes the present, and the record takes a flag and an address, because the
+   * confirmation is reached after a round trip to Stripe and has no other
+   * channel to either. Deriving them here rather than taking them from the
+   * caller is what stops a road being added that fills one and forgets the
+   * other.
+   *
+   * Passed rather than parsed back out of `question`, which was never possible
+   * and is worth saying: a `startsWith("Gift")` anywhere downstream would be a
+   * mis-parse putting a wrong address in a sentence telling somebody where
+   * their present went.
    */
-  gift?: boolean;
+  gift?: GiftInput;
 };
 
 /**
@@ -120,7 +131,7 @@ type Bought = {
  * Answers the trimmed question alongside the order, because both callers need
  * it again for the record and re-trimming it in each is how the two drift.
  */
-async function placeOneReading({ productKey, money, question }: Bought) {
+async function placeOneReading({ productKey, money, question, gift }: Bought) {
   // Absent rather than empty, in the line and in the record both. A question of
   // three spaces is not a question, and sending one would put whitespace on an
   // order line and back into a textarea on the way home.
@@ -128,10 +139,58 @@ async function placeOneReading({ productKey, money, question }: Bought) {
 
   const order = await placeOrder({
     currency: money.currency,
-    lines: [{ product: productKey, quantity: 1, ...(asked === undefined ? {} : { question: asked }) }],
+    lines: [
+      {
+        product: productKey,
+        quantity: 1,
+        ...(asked === undefined ? {} : { question: asked }),
+        /*
+          **Sent as it was read, empty fields and all.** The backend requires an
+          address and a signature on a present, so a gift the buyer typed
+          nothing into is a 422 with nothing charged — which is the refusal this
+          road wants. Dropping an empty one here would place an ordinary order
+          for the buyer instead, and that is the exact failure of the composed
+          note this replaced: an order that looked like a self-purchase, paid
+          for, with a reading queued to the wrong person.
+        */
+        ...(gift === undefined ? {} : { gift }),
+      },
+    ],
   });
 
   return { order, asked };
+}
+
+/**
+ * Runs one road, with the currency control frozen for its length.
+ *
+ * **The rule is here rather than on each road**, so that a third road cannot be
+ * added that forgets it, and so that the one asymmetry in it is stated once.
+ *
+ * That asymmetry: **only a refusal lowers the flag.** A `finally` here would be
+ * the obvious shape and it would be wrong — both roads succeed by handing the
+ * caller something that takes the browser away, and clearing the flag in the gap
+ * between the return and the navigation puts a live currency row back under a
+ * thumb for exactly the moment the freeze exists to cover. A page that is
+ * leaving stays frozen until it unloads. `HostedCheckoutButton` holds its own
+ * `pending` state through the same gap, for the same reason and in the same
+ * words.
+ *
+ * The raise is synchronous with the call, before the first byte leaves: the
+ * write is what is being protected, so waiting for the write to start would be
+ * waiting for the thing being guarded against.
+ */
+async function whileInFlight<T>(road: () => Promise<T>): Promise<T> {
+  paymentStarted();
+
+  try {
+    return await road();
+  } catch (refusal: unknown) {
+    // Nothing was charged on any arm that throws — `startCheckout` and
+    // `startWalletPayment` both say so — so there is nothing left to protect.
+    paymentStopped();
+    throw refusal;
+  }
 }
 
 /**
@@ -149,13 +208,12 @@ async function placeOneReading({ productKey, money, question }: Bought) {
  * whatever `api-write.ts` throws on a refused write — a 422 on the line, a 429,
  * a network failure. In every one of those cases nothing has been charged.
  */
-export async function startCheckout({
-  productKey,
-  money,
-  question,
-  gift,
-}: Bought): Promise<string> {
-  const { order, asked } = await placeOneReading({ productKey, money, question });
+export function startCheckout(bought: Bought): Promise<string> {
+  return whileInFlight(() => hostedRoad(bought));
+}
+
+async function hostedRoad({ productKey, money, question, gift }: Bought): Promise<string> {
+  const { order, asked } = await placeOneReading({ productKey, money, question, gift });
 
   /*
     `return_to` is the product key of the page this started from, and it is what
@@ -203,9 +261,15 @@ export async function startCheckout({
     // Absent on a self-purchase rather than `false`, so a record carries the
     // same keys it always has unless there is something new to say. Written the
     // same way on the wallet road below; the two records are built separately
-    // and a flag added to one and forgotten on the other is a gift note in a
-    // question box on whichever road the customer happened to take.
+    // and a field added to one and forgotten on the other is a confirmation
+    // that names nobody on whichever road the customer happened to take.
     ...(gift ? { gift: true } : {}),
+    // The address the present went to, and absent where the buyer left it
+    // blank — a sentence naming the empty string is worse than the one the
+    // confirmation falls back to. Read off the present rather than taken
+    // beside it, so the record cannot disagree with the order about where a
+    // gift was sent.
+    ...(gift?.recipient_email ? { giftRecipient: gift.recipient_email } : {}),
   });
 
   return instruction.redirectUrl;
@@ -241,13 +305,12 @@ export async function startCheckout({
  * quietly follow — and whatever `api-write.ts` throws on a refused write. In
  * every one of those cases nothing has been charged.
  */
-export async function startWalletPayment({
-  productKey,
-  money,
-  question,
-  gift,
-}: Bought): Promise<string> {
-  const { order, asked } = await placeOneReading({ productKey, money, question });
+export function startWalletPayment(bought: Bought): Promise<string> {
+  return whileInFlight(() => walletRoad(bought));
+}
+
+async function walletRoad({ productKey, money, question, gift }: Bought): Promise<string> {
+  const { order, asked } = await placeOneReading({ productKey, money, question, gift });
 
   const instruction = await payOrder(order.payToken, { method: "stripe_wallet" });
 
@@ -266,6 +329,7 @@ export async function startWalletPayment({
     clientSecret: instruction.clientSecret,
     ...(asked === undefined ? {} : { question: asked }),
     ...(gift ? { gift: true } : {}),
+    ...(gift?.recipient_email ? { giftRecipient: gift.recipient_email } : {}),
   });
 
   return instruction.clientSecret;

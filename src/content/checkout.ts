@@ -113,6 +113,48 @@ export const checkoutCompleteCopy = {
     },
   } satisfies Record<PaymentOutcome, OutcomeCopy>,
 
+  /**
+   * The eighth screen, and the only one that is not a `PaymentOutcome`: what
+   * `received` says when what was paid for was a **gift**.
+   *
+   * **It is a variant of `received` and of nothing else.** The other six states
+   * are untouched by gifting, and four of them say no money was taken — a
+   * screen that hedges about a payment has nothing to add about who a present
+   * went to, and a gift-shaped `unpaid` would be two hedges where one will do.
+   * So this is chosen at render, on `received` alone, and the six keep the
+   * words they have.
+   *
+   * **It promises no reading, because nobody has one.** A gift is not a reading
+   * until it is **redeemed** — the recipient has not asked anything, and there
+   * is nothing for anybody to write — so the sentence the client took on
+   * herself for `received` on #51 has no counterpart here, and none is invented
+   * for her. The delivery window is not stated for the same reason: the clock
+   * starts at `asked_at`, which is a moment that has not happened. See the
+   * backend's `docs/adr/0004-a-reading-is-a-row-of-its-own.md`.
+   *
+   * **What it does say is who it went to.** That is the one detail a gift buyer
+   * can still have got wrong, the reason the panel takes the address twice, and
+   * the last moment anybody can catch it — the code goes to the recipient and
+   * the buyer never sees it. `check:confirmation` reads both halves: the
+   * address is named, and no sentence claims a reading.
+   *
+   * **Ours, not the client's.** She has no gift confirmation frame, as she has
+   * no gift panel — this goes to her with `giftingComing` and the rest of the
+   * gift copy in `content/reading-pages.ts`.
+   */
+  giftReceived: {
+    heading: "Your gift is on its way",
+    /*
+      `recipient` is the address the buyer typed, not a name — the panel asks
+      for no name for the recipient, only for the **gift signature** of the
+      person sending it, and quoting an address back is what lets a typo be
+      seen. `unnamedRecipient` below stands in where the record has none.
+    */
+    body: (recipient) =>
+      `Thank you. We have sent your gift to ${recipient}, with a code to redeem it whenever they are ready. Your own confirmation email is on its way.`,
+    amountLabel: "Payment received:",
+  } satisfies OutcomeCopy,
+
   /** While Stripe is being asked. Not a claim about anything. */
   checkingHeading: "Checking your payment",
 
@@ -145,6 +187,22 @@ export const checkoutCompleteCopy = {
    * product says less rather than something else.
    */
   unnamedReading: "reading",
+
+  /**
+   * What `giftReceived.body` calls the address when the record carries none.
+   *
+   * The ordinary way that happens is a record written before 3 September 2026,
+   * when `giftRecipient` did not exist; the other is a gift order placed with
+   * the address left blank, which `orderFormAccepts` refuses at the press
+   * because it is a guard rather than a guarantee — and which the backend then
+   * refuses with a 422, so that screen is reached by a reload rather than by a
+   * payment.
+   *
+   * Phrased so the sentence stays true either way. "The address you gave" is
+   * exactly as much as the screen knows, and it is better than naming the wrong
+   * one — which is the failure this whole field exists to avoid.
+   */
+  unnamedRecipient: "the address you gave",
 
   /**
    * ~~"Back to the readings"~~, and set in the client's capitals from 30 August

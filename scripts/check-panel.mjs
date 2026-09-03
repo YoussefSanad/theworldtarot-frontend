@@ -108,20 +108,31 @@ const WALLET = "#get-my-reading [data-express-checkout]";
 const QUESTION = "What should I focus on this month?";
 
 /**
- * Gift mode's two fields, and the single string they have to arrive as.
+ * Gift mode's fields, and the object three of them have to arrive as.
  *
- * `POST /orders` has no field for either, so `orderNoteIn` composes them into
- * the line's `question` — the field the admin orders table already prints. The
- * composition is unit-tested in `lib/order-note.test.ts`; what only a browser
- * can settle is that the composition runs against **this** form, reached from
- * the payment controls' own nodes, which is what the press below proves.
+ * ~~`POST /orders` has no field for any of them, so `orderNoteIn` composes them
+ * into the line's `question`.~~ **Struck 3 September 2026.** The endpoint has
+ * `lines[].gift`, and the panel sends the three fields under their own names —
+ * which is what mints a code, mails it to the recipient and puts the obligation
+ * on the Gifts screen, none of which a sentence in a question box could start.
  *
- * Restated here as a literal rather than imported. An assertion that computed
+ * The shape is unit-tested in `lib/order-note.test.ts`; what only a browser can
+ * settle is that the reading runs against **this** form, reached from the
+ * payment controls' own nodes, which is what the press below proves.
+ *
+ * **`MISTYPED` is the fourth field's whole reason.** The buyer never receives
+ * the code, so a confirmation that disagrees with the address has to refuse the
+ * press — through `setCustomValidity` and the form's one `reportValidity()`,
+ * which is a browser behaviour and provable nowhere else in this repository.
+ *
+ * Restated here as literals rather than imported. An assertion that computed
  * its expectation the way the code does would pass whatever the code did.
  */
+const SIGNATURE = "Mum";
 const RECIPIENT = "alice@example.com";
+const MISTYPED = "alicia@example.com";
 const GIFT_MESSAGE = "Happy birthday — thought this one was you.";
-const GIFT_NOTE = `Gift — send this reading to ${RECIPIENT}\n\nThe buyer's message: ${GIFT_MESSAGE}`;
+const PRESENT = { recipient_email: RECIPIENT, signature: SIGNATURE, message: GIFT_MESSAGE };
 
 /**
  * Where the browser is sent instead of Stripe. It carries a `cs_...` in its
@@ -227,6 +238,7 @@ async function drive(
     giftBack = false,
     press = false,
     blank = false,
+    mistyped = false,
     cancelled,
     payAnswer,
     holdWrites = false,
@@ -372,7 +384,7 @@ async function drive(
     mutually exclusive — so this is skipped rather than made conditional inside
     the page.
   */
-  const question = await page.locator("#get-my-reading textarea[name=question]").count();
+  const question = await page.locator("#get-my-reading [data-field=question]").count();
 
   const answered = {
     height: Math.round(await page.$eval(PANEL, (node) => node.getBoundingClientRect().height)),
@@ -381,11 +393,38 @@ async function drive(
     question,
     /** What is in the box before anything is typed into it. */
     restored: await page
-      .locator("#get-my-reading textarea[name=question]")
+      .locator("#get-my-reading [data-field=question]")
       .inputValue()
       .catch(() => null),
     counter: (await page.locator("#get-my-reading p.tabular-nums").first().innerText().catch(() => "")).trim(),
-    recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
+    recipient: await page.locator("#get-my-reading [data-field=recipientEmail]").count(),
+    /*
+      The two fields #71 added, counted separately from the address between
+      them. The **gift signature** and the confirmation are each required, and a
+      section that drew one of the three would refuse every press for a reason
+      no assertion here could name.
+    */
+    signature: await page.locator("#get-my-reading [data-field=giftSignature]").count(),
+    confirmation: await page.locator("#get-my-reading [data-field=addressConfirmation]").count(),
+    /*
+      **The half of "the panel may not shift" that this section still keeps**,
+      and the row count that pays part of the other half. #71 put four fields
+      where there were two, and no arrangement of them matches the question
+      field's height any more — so what is held is the 607px width, which is
+      what stops the panel changing shape as well as size on the toggle. The
+      height it does change by is reported under this state rather than
+      asserted; there is no number to hold it to that would not simply be
+      today's copy written down twice.
+    */
+    boxWidth: await page
+      .locator("#get-my-reading section > div")
+      .first()
+      .evaluate((node) => Math.round(node.getBoundingClientRect().width))
+      .catch(() => -1),
+    messageRows: await page
+      .locator("#get-my-reading [data-field=giftMessage]")
+      .evaluate((node) => node.rows)
+      .catch(() => -1),
     anchor: await page.locator("#get-my-reading").count(),
     ghosts: await page.locator(GHOST).count(),
     /*
@@ -460,16 +499,23 @@ async function drive(
       .catch(() => 0),
   };
 
-  if (question > 0 && press) await page.locator("#get-my-reading textarea[name=question]").fill(QUESTION);
+  if (question > 0 && press) await page.locator("#get-my-reading [data-field=question]").fill(QUESTION);
 
   /*
-    Gift mode's two, filled the same way and read by the same press. They are
-    what the order line is composed from there, and an order placed from a form
-    nobody typed into would prove the plumbing and none of the composition.
+    Gift mode's four, filled the same way and read by the same press. Three of
+    them are what the order line is composed from there, and an order placed
+    from a form nobody typed into would prove the plumbing and none of the
+    composition.
+
+    `mistyped` fills the confirmation with a different address, which is the one
+    state that has to be refused **after** the buyer has typed in every box: a
+    fault no `required` can catch, and the only one this panel decides itself.
   */
   if (answered.recipient > 0 && press && !blank) {
-    await page.locator("#get-my-reading input[name=recipientEmail]").fill(RECIPIENT);
-    await page.locator("#get-my-reading textarea[name=giftMessage]").fill(GIFT_MESSAGE);
+    await page.locator("#get-my-reading [data-field=giftSignature]").fill(SIGNATURE);
+    await page.locator("#get-my-reading [data-field=recipientEmail]").fill(RECIPIENT);
+    await page.locator("#get-my-reading [data-field=addressConfirmation]").fill(mistyped ? MISTYPED : RECIPIENT);
+    await page.locator("#get-my-reading [data-field=giftMessage]").fill(GIFT_MESSAGE);
   }
 
   /*
@@ -488,10 +534,19 @@ async function drive(
     later refactor that lifted the row out by one level would break every wallet
     payment's question silently, and nothing else here would notice.
 
-    **All three fields, raw.** `orderNoteIn` picks between them by which section
-    is mounted, and composing here as well would be this script keeping its own
+    **Every field, raw.** `orderNoteIn` picks between them by which section is
+    mounted, and composing here as well would be this script keeping its own
     copy of the rule — so what is read is what the form holds, and the composing
     is proved by the order the press actually places.
+
+    **By `data-field`, which is the half of this that has already been wrong
+    once.** The two address fields go to the browser under `CountedField`'s
+    opaque `useId` name so Chrome does not offer the purchaser their own
+    address, so `new FormData(form)` — what this read, and what `orderNoteIn`
+    read, from 30 August to 3 September 2026 — answers `null` for a field that
+    is sitting right there. Reading it the way the code reads it is the point;
+    reading it the way the code *used* to is how a check passes green on a panel
+    that has silently turned every gift into a self-purchase.
   */
   const walletFormReads = await page
     .locator(WALLET)
@@ -501,18 +556,15 @@ async function drive(
 
       if (!form) return null;
 
-      const fields = new FormData(form);
       // `null` for a field that is not in this section at all, which is the
       // distinction the row's own reader turns on.
-      const read = (name) => {
-        const value = fields.get(name);
-
-        return typeof value === "string" ? value : null;
-      };
+      const read = (name) => form.querySelector(`[data-field="${name}"]`)?.value ?? null;
 
       return {
         question: read("question"),
+        giftSignature: read("giftSignature"),
         recipientEmail: read("recipientEmail"),
+        addressConfirmation: read("addressConfirmation"),
         giftMessage: read("giftMessage"),
       };
     })
@@ -615,8 +667,10 @@ async function drive(
       walletFrames: (
         await page.locator(`#get-my-reading ${STRIPE_FRAME}`).evaluateAll((nodes) => nodes.map((node) => node.name))
       ).sort(),
-      question: await page.locator("#get-my-reading textarea[name=question]").count(),
-      recipient: await page.locator("#get-my-reading input[name=recipientEmail]").count(),
+      question: await page.locator("#get-my-reading [data-field=question]").count(),
+      recipient: await page.locator("#get-my-reading [data-field=recipientEmail]").count(),
+      signature: await page.locator("#get-my-reading [data-field=giftSignature]").count(),
+      confirmation: await page.locator("#get-my-reading [data-field=addressConfirmation]").count(),
     };
   }
 
@@ -647,6 +701,13 @@ const PRODUCT = {
   short_description: "One month, five cards.",
   long_description: "A written reading of the weeks to come.",
   allows_question: true,
+  /*
+    What draws `Gift a Reading` from 3 September 2026 (#73). The toggle is the
+    catalogue's answer rather than this repository's, so a stub that omitted
+    this would put the whole panel into the state a non-giftable product is in
+    and every gift assertion below would fail on a page that is working.
+  */
+  is_giftable: true,
   price: { currency: "EUR", amount: 7000 },
 };
 
@@ -724,8 +785,11 @@ expect("live", "and nothing in it is reachable", sold.settled.walletReachable, 0
 expect("live", "the wallet row reads the same question off the same form", sold.walletFormReads, {
   question: QUESTION,
   // Absent rather than empty, and that is the discriminator: the two sections
-  // are mutually exclusive, so a form holding a question holds no recipient.
+  // are mutually exclusive, so a form holding a question holds none of the
+  // gift's four.
+  giftSignature: null,
   recipientEmail: null,
+  addressConfirmation: null,
   giftMessage: null,
 });
 expect("live", "the checkout button is in the layout while loading", sold.resting.hosted, 1);
@@ -892,17 +956,66 @@ expect("gifting", "the wallet row reads the recipient off the same form", gifted
   // Absent, not empty: the two sections are mutually exclusive, and it is this
   // field's absence that tells `orderNoteIn` which one it is looking at.
   question: null,
+  giftSignature: SIGNATURE,
   recipientEmail: RECIPIENT,
+  addressConfirmation: RECIPIENT,
   giftMessage: GIFT_MESSAGE,
 });
 /*
-  **The assertion this state now exists for.** `POST /orders` has no field for a
-  recipient or a message, so an order placed here carries them or carries
-  nothing — and an order carrying nothing is indistinguishable from somebody
-  buying a reading for themselves, which is the reading Jennifer would act on.
+  **The confirmation is read and never sent**, which the line below settles by
+  carrying the three fields and nothing else. It is a check on what the buyer
+  typed rather than a second thing they told us, and there is nowhere for it to
+  go: the backend has one address on a present and no second one to compare it
+  against.
 */
+/*
+  **The assertion this state now exists for.** Everything downstream of the
+  order hangs on `lines[].gift` arriving — the `gifts` row, the code minted at
+  settlement, the mail to the recipient, the Gifts screen, and a reading queued
+  for the **querent** rather than the buyer. An order that carries the fields as
+  prose in `question` instead is accepted, paid for, and starts none of it,
+  which is what shipped between 3 September 2026 and the fix.
+*/
+/*
+  **All four boxes, or the section asks for less than it needs.** The signature
+  and the confirmation are each required and each refuses a press on its own, so
+  a section that drew three of the four would fail every gift purchase with a
+  browser message pointing at a field nobody could see.
+*/
+expect("gifting", "the section asks who the gift is from", gifted.settled.signature, 1);
+expect("gifting", "and takes the address twice", gifted.settled.confirmation, 1);
+/*
+  **The message box is the only thing paying for the two new fields**, and it
+  pays in rows: three to two, with its `min-h` dropped to the two-row box so the
+  row count is not inert. It is the only optional field on either section, which
+  is what makes its height the one worth spending.
+*/
+expect("gifting", "and the message box gave up a row to make room", gifted.settled.messageRows, 2);
+/*
+  **The half of the constraint that still holds.** The gift section was meant to
+  match the question field's 607px box in both directions and now matches it in
+  one: four required boxes and a textarea are more height than the question
+  field has, whatever is done with them. The width is what keeps the panel from
+  changing shape as well as size when the visitor toggles, and it is a `cqw` of
+  the panel rather than a share of the column so that it is the frame's own
+  number on both sections.
+*/
+expect("gifting", "the fields keep the question box's width", gifted.settled.boxWidth, sold.settled.boxWidth);
+/*
+  Reported rather than asserted. The panel grows on the toggle — it did before
+  #71 and it grows further after it — and the cost is worth seeing on every run,
+  but there is no number to hold it to that would not be today's copy written
+  down a second time and failed by the client's next revision.
+*/
+console.log(`  · the toggle costs the panel ${gifted.settled.height - sold.settled.height}px (${sold.settled.height} → ${gifted.settled.height})`);
 expect("gifting", "the press places one order", gifted.placed.length, 1);
-expect("gifting", "carrying the recipient and the message as the line's one string", gifted.placed[0]?.lines?.[0]?.question, GIFT_NOTE);
+expect("gifting", "carrying the present in the field the backend reads", gifted.placed[0]?.lines?.[0]?.gift, PRESENT);
+/*
+  **And no question beside it.** A line carrying both is a 422 keyed to the
+  question — the person who will ask has not seen the present yet — so the pair
+  has to be impossible to build from this panel and not merely unusual.
+*/
+expect("gifting", "and no question on the same line", "question" in (gifted.placed[0]?.lines?.[0] ?? {}), false);
 expect("gifting", "then pays it by the same road a self-purchase takes", gifted.paid[0]?.body, {
   return_to: "month-ahead",
   method: "stripe",
@@ -910,18 +1023,22 @@ expect("gifting", "then pays it by the same road a self-purchase takes", gifted.
 expect("gifting", "and the browser goes where Stripe said", gifted.landed, SESSION_URL);
 /*
   Written before the navigation, as on every other road, and **flagged**. The
-  note is kept — support and the confirmation both want to know what was bought
-  and for whom — but `questionFor` refuses to hand it back to the question
-  textarea after a cancelled checkout, and this flag is the only thing that
-  tells it a composed note from a typed sentence. See `lib/checkout-session.ts`.
+  flag and the address are the confirmation's: it is reached after a round trip
+  to Stripe, from a payment that names nothing about a gift, and this record is
+  the only thing that can tell it a present was bought and where it went. See
+  `lib/checkout-session.ts`.
+
+  **No `question` key at all**, which is the half worth asserting: the gift
+  section fills no question field, so there is nothing to send and nothing for
+  a cancelled checkout to put back in a textarea.
 */
 expect("gifting", "with the gift remembered before it went, and marked as one", gifted.record, {
   payToken: PAY_TOKEN,
   money: { currency: "EUR", amount: 7000 },
   sessionId: SESSION_ID,
   productKey: "month-ahead",
-  question: GIFT_NOTE,
   gift: true,
+  giftRecipient: RECIPIENT,
 });
 
 const unaddressed = await drive("gifting — a gift addressed to nobody cannot be paid for", PRICED, priced, {
@@ -935,14 +1052,17 @@ const unaddressed = await drive("gifting — a gift addressed to nobody cannot b
   August 2026 in the same change that made gift mode buyable. Nothing submits
   this form, so the `required` on the recipient's address is enforced by nobody
   unless something asks — and without asking, a buyer toggles to gift, presses,
-  and is charged for a gift addressed to no one. `giftNote` would have recorded
-  the absence rather than prevented it.
+  and is charged for a gift addressed to no one. The backend refuses an
+  address-less present too, but a 422 arriving after a wallet sheet has been
+  authorised is a worse way to learn it than a bubble on the field.
 
   Pressed with the fields left as the toggle produced them, which is the whole
   point: this is not a malformed address, it is a buyer who never typed one.
 */
 assertStripeIsQuiet("unaddressed", unaddressed);
 expect("unaddressed", "the recipient's field is there and empty", unaddressed.settled.recipient, 1);
+expect("unaddressed", "and so is the signature above it", unaddressed.settled.signature, 1);
+expect("unaddressed", "and the confirmation below it", unaddressed.settled.confirmation, 1);
 expect("unaddressed", "no order is placed", unaddressed.orderCalls, []);
 expect("unaddressed", "nothing is paid for", unaddressed.paid, []);
 expect("unaddressed", "the browser stays where it is", unaddressed.landed, PAGE);
@@ -951,6 +1071,41 @@ expect("unaddressed", "the browser stays where it is", unaddressed.landed, PAGE)
   which would read as a checkout in flight that never arrives.
 */
 expect("unaddressed", "and the button is pressable again", unaddressed.afterwards, "Pay Another Way");
+
+const mistyped = await drive("gifting — an address confirmed as a different address cannot be paid for", PRICED, priced, {
+  gift: true,
+  press: true,
+  mistyped: true,
+});
+
+/*
+  **The fault no `required` can catch**, and the reason the address is taken
+  twice at all. Every box on this section is filled: the signature, an address,
+  a confirmation, a message. The browser is perfectly happy with all four — the
+  confirmation is a well-formed email in a required box — and the panel refuses
+  the press anyway, because the buyer never receives the code and a typo here
+  sends a paid, non-expiring bearer credential to a stranger.
+
+  **Refused the same way the empty address is**, which is the whole design of
+  it. The mismatch is written onto the confirmation field with
+  `setCustomValidity` and comes out of the form's one `reportValidity()` call in
+  `orderFormAccepts`; nothing raises an error of its own. A parallel branch in a
+  payment control is how a buyer authorises with their face for a gift the form
+  had already rejected — and on the wallet road, which no headless browser can
+  press, nothing downstream of that branch would ever be run here.
+*/
+assertStripeIsQuiet("mistyped", mistyped);
+expect("mistyped", "every field on the section is filled in", mistyped.walletFormReads, {
+  question: null,
+  giftSignature: SIGNATURE,
+  recipientEmail: RECIPIENT,
+  addressConfirmation: MISTYPED,
+  giftMessage: GIFT_MESSAGE,
+});
+expect("mistyped", "no order is placed", mistyped.orderCalls, []);
+expect("mistyped", "nothing is paid for", mistyped.paid, []);
+expect("mistyped", "the browser stays where it is", mistyped.landed, PAGE);
+expect("mistyped", "and the button is pressable again", mistyped.afterwards, "Pay Another Way");
 
 /*
   **A page of its own, and it has to be.** The press above leaves for Stripe,
@@ -980,6 +1135,14 @@ expect("toggling", "the element has frames of its own with the toggle down", tog
 expect("toggling", "and they are the same frames on the way back, never rebuilt", toggled.returned.walletFrames, toggled.settled.walletFrames);
 expect("toggling", "with the question field the recipient's replaced", toggled.returned.question, 1);
 expect("toggling", "and the recipient's fields gone with it", toggled.returned.recipient, 0);
+/*
+  All four, counted. The hard rule is that the purchaser never leaves a gift
+  field in a form they are buying for themselves — the two sections are mutually
+  exclusive in the DOM rather than hidden from each other with CSS, and a
+  signature left behind would ride to the backend on a self-purchase's line.
+*/
+expect("toggling", "including the signature", toggled.returned.signature, 0);
+expect("toggling", "and the confirmation", toggled.returned.confirmation, 0);
 
 const gone = await drive("withdrawn — a 404", WITHDRAWN, unsold);
 
