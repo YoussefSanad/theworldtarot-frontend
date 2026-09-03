@@ -737,6 +737,7 @@ function Wallet({
         money,
         question: note.text,
         gift: note.gift,
+        giftRecipient: note.recipient,
       });
     } catch (cause: unknown) {
       /*

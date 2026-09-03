@@ -116,6 +116,7 @@ test("the gift section is read by `data-field`, not by the name it submits under
   assert.deepEqual(orderNoteIn(node), {
     text: "Gift from Mum — send this reading to alice@example.com\n\nThe buyer's message: Happy birthday.",
     gift: true,
+    recipient: "alice@example.com",
   });
 });
 
@@ -124,10 +125,42 @@ test("an untouched gift section is still a gift", () => {
   // here, and it is a guard rather than a guarantee.
   const { node } = formOf({ giftSignature: "", recipientEmail: "", confirmEmail: "", giftMessage: "" });
 
+  // No `recipient` key at all rather than an empty one, so the confirmation
+  // falls back to naming nobody instead of interpolating a blank into a
+  // sentence about where the gift went.
   assert.deepEqual(orderNoteIn(node), {
     text: "Gift — the buyer gave no recipient address.",
     gift: true,
   });
+});
+
+test("the note carries the address the confirmation will name, trimmed", () => {
+  /*
+    **The one thing a gift buyer is owed that the note cannot give back.** The
+    line is prose written for Jennifer and parsing an address back out of it
+    downstream is the `startsWith("Gift")` inference `lib/buy.ts` refuses by
+    name, so the address travels beside the line as its own field.
+
+    Trimmed here, because it is the value a sentence on the confirmation is
+    built from and a mobile keyboard leaves a space after a pasted address.
+  */
+  const { node } = formOf({
+    giftSignature: "Mum",
+    recipientEmail: "  alice@example.com  ",
+    confirmEmail: "alice@example.com",
+    giftMessage: "",
+  });
+
+  const note = orderNoteIn(node);
+
+  assert.equal(note.recipient, "alice@example.com");
+  assert.equal(note.text, "Gift from Mum — send this reading to alice@example.com");
+});
+
+test("a self-purchase carries no recipient at all", () => {
+  // The field the record is written from, so "not a gift" has to be absence
+  // rather than an empty string a screen could still print.
+  assert.equal(orderNoteIn(formOf({ question: "What next?" }).node).recipient, undefined);
 });
 
 test("the confirmation is a check on the buyer, and never travels", () => {

@@ -107,6 +107,21 @@ type Bought = {
    * what it is *for* is decided here.
    */
   gift?: boolean;
+  /**
+   * The **recipient**'s address, on a gift where the buyer typed one.
+   *
+   * **It reaches the record and never the order**, exactly as `gift` above
+   * does, and for a plainer reason than that flag has: it is already in
+   * `question`, composed into the line Jennifer reads, and `POST /orders` has
+   * nowhere else to put it. What the record buys is the **confirmation**, which
+   * is reached after Stripe and has no other channel to the address.
+   *
+   * Passed rather than parsed back out of `question`, which would be the
+   * `startsWith("Gift")` inference the flag above refuses, doing more damage:
+   * a mis-parse there puts a wrong address in a sentence telling somebody where
+   * their present went.
+   */
+  giftRecipient?: string;
 };
 
 /**
@@ -186,7 +201,7 @@ export function startCheckout(bought: Bought): Promise<string> {
   return whileInFlight(() => hostedRoad(bought));
 }
 
-async function hostedRoad({ productKey, money, question, gift }: Bought): Promise<string> {
+async function hostedRoad({ productKey, money, question, gift, giftRecipient }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
   /*
@@ -238,6 +253,9 @@ async function hostedRoad({ productKey, money, question, gift }: Bought): Promis
     // and a flag added to one and forgotten on the other is a gift note in a
     // question box on whichever road the customer happened to take.
     ...(gift ? { gift: true } : {}),
+    // Gated on the flag rather than on its own presence, so there is no reading
+    // of a record in which a self-purchase names somebody it was sent to.
+    ...(gift && giftRecipient ? { giftRecipient } : {}),
   });
 
   return instruction.redirectUrl;
@@ -277,7 +295,7 @@ export function startWalletPayment(bought: Bought): Promise<string> {
   return whileInFlight(() => walletRoad(bought));
 }
 
-async function walletRoad({ productKey, money, question, gift }: Bought): Promise<string> {
+async function walletRoad({ productKey, money, question, gift, giftRecipient }: Bought): Promise<string> {
   const { order, asked } = await placeOneReading({ productKey, money, question });
 
   const instruction = await payOrder(order.payToken, { method: "stripe_wallet" });
@@ -297,6 +315,7 @@ async function walletRoad({ productKey, money, question, gift }: Bought): Promis
     clientSecret: instruction.clientSecret,
     ...(asked === undefined ? {} : { question: asked }),
     ...(gift ? { gift: true } : {}),
+    ...(gift && giftRecipient ? { giftRecipient } : {}),
   });
 
   return instruction.clientSecret;

@@ -172,12 +172,69 @@ test("a gift rides to the backend on the line and is flagged on the record", asy
     json({ type: "redirect", redirect_url: SESSION_URL }),
   );
 
-  await startCheckout({ productKey: "month-ahead", money: offer, question: note, gift: true });
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: note,
+    gift: true,
+    giftRecipient: "alice@example.com",
+  });
 
   assert.deepEqual(bodies()[0].lines, [{ product: "month-ahead", quantity: 1, question: note }]);
   assert.equal("gift" in bodies()[0], false);
   assert.equal(recallCheckout()?.question, note);
   assert.equal(recallCheckout()?.gift, true);
+});
+
+test("the recipient's address goes on the record and never on the order", async () => {
+  /*
+    **The same one-way trip the flag above makes, and for a different reader.**
+    The address is already on the line inside the note, where Jennifer reads it;
+    a second copy on the order body would be the same address in two cells. What
+    the record buys is the **confirmation**, which is reached after Stripe and
+    has nothing else to name the address from.
+  */
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "Gift from Mum — send this reading to alice@example.com",
+    gift: true,
+    giftRecipient: "alice@example.com",
+  });
+
+  assert.equal("giftRecipient" in bodies()[0], false);
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
+});
+
+test("a recipient without the gift flag reaches no record", async () => {
+  /*
+    There is no reading of a record in which a self-purchase names somebody it
+    was sent to, so the flag gates the address rather than the address standing
+    on its own. A caller that passed one without the other has misread the form,
+    and the record must not paint a gift screen off it.
+  */
+  stubFetch(
+    new Response(null, { status: 204 }),
+    placed(),
+    new Response(null, { status: 204 }),
+    json({ type: "redirect", redirect_url: SESSION_URL }),
+  );
+
+  await startCheckout({
+    productKey: "month-ahead",
+    money: offer,
+    question: "Where next?",
+    giftRecipient: "alice@example.com",
+  });
+
+  assert.equal("giftRecipient" in recallCheckout()!, false);
 });
 
 test("a self-purchase leaves no gift key on the record at all", async () => {
@@ -356,11 +413,16 @@ test("the wallet road flags a gift the same way the card road does", async () =>
   await startWalletPayment({
     productKey: "month-ahead",
     money: offer,
-    question: "Gift — the buyer gave no recipient address.",
+    question: "Gift from Mum — send this reading to alice@example.com",
     gift: true,
+    giftRecipient: "alice@example.com",
   });
 
   assert.equal(recallCheckout()?.gift, true);
+  // Written on both roads for the reason the flag is: two records are built
+  // separately, and a field added to one and forgotten on the other is a gift
+  // confirmation that names nobody on whichever road the customer took.
+  assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
 });
 
 test("the wallet record carries the secret and no Session id", async () => {

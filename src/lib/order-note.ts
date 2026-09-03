@@ -58,6 +58,27 @@ export type OrderNote = {
   text: string;
   /** Whether that section was the gift one. */
   gift: boolean;
+  /**
+   * The **recipient**'s address, on a gift and where the buyer typed one.
+   *
+   * **For the record, like `gift` beside it, and never for the order** — it is
+   * already inside `text`, which is the only field `POST /orders` has for it,
+   * and sending it twice would be Jennifer reading the same address out of two
+   * cells. What it buys is the **confirmation**: a gift buyer is owed the
+   * address their present went to, and the screen has no other channel to it
+   * once the browser has been to Stripe and back. See `giftRecipient` on
+   * `CheckoutRecord`.
+   *
+   * **Absent rather than empty**, on a self-purchase and on a gift the buyer
+   * left blank. `orderFormAccepts` is what stops the second reaching a payment
+   * control, and this module is a guard rather than a guarantee — so the empty
+   * case answers "no address" rather than an empty string the confirmation
+   * would interpolate into a sentence naming nobody.
+   *
+   * **Not the address confirmation**, which is a check on what the buyer typed
+   * and is thrown away where it was compared. See `CONTEXT.md`.
+   */
+  recipient?: string;
 };
 
 /**
@@ -319,12 +340,21 @@ export function orderNoteIn(node: Element | null | undefined): OrderNote {
     return { text: textIn(form, "question"), gift: false };
   }
 
+  // Trimmed once, here, and used for both things a gift order does with it:
+  // `giftNote` trims again on its own way past — it is exported as a seam and
+  // is tested with untrimmed input — and the record wants the same string the
+  // note quotes rather than one with the buyer's trailing space on it.
+  const recipient = textIn(form, "recipientEmail").trim();
+
   return {
     text: giftNote({
-      recipient: textIn(form, "recipientEmail"),
+      recipient,
       message: textIn(form, "giftMessage"),
       signature: textIn(form, "giftSignature"),
     }),
     gift: true,
+    // Absent rather than empty; see `OrderNote`. `giftNote` above says so in
+    // prose on the line, which is the reader that cannot leave a field out.
+    ...(recipient === "" ? {} : { recipient }),
   };
 }

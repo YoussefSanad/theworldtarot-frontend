@@ -141,7 +141,13 @@ export function HostedCheckoutButton({
     setFailed(false);
 
     try {
-      const url = await startCheckout({ productKey, money, question: note.text, gift: note.gift });
+      const url = await startCheckout({
+        productKey,
+        money,
+        question: note.text,
+        gift: note.gift,
+        giftRecipient: note.recipient,
+      });
 
       /*
         The pending state is deliberately not cleared. The browser is leaving,
