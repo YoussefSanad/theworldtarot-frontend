@@ -73,12 +73,22 @@ export type CheckoutRecord = {
    */
   question?: string;
   /**
-   * Whether the `question` above is a **gift note this code composed** rather
-   * than a sentence the customer wrote.
+   * Whether this checkout was a present rather than a purchase.
+   *
+   * ~~Whether the `question` above is a gift note this code composed.~~
+   * **Struck 3 September 2026**, when the present became `lines[].gift` on the
+   * order and stopped being a sentence in the question field. There is no
+   * composed note left for this to tell apart from a typed one.
+   *
+   * **It did not go with the note.** Its reader is now the **confirmation**,
+   * which is reached after a round trip to Stripe from a payment that names
+   * nothing about a gift, and has this record and nothing else to know it was
+   * one. `questionFor` below still refuses a gift record, which is now belt and
+   * braces — a gift writes no question here at all — and is kept because the
+   * two facts are still separate ones.
    *
    * Absent on every self-purchase, which is what keeps a record written before
-   * 30 August 2026 readable. It exists for one reader — `questionFor` below,
-   * where what it prevents is argued.
+   * 30 August 2026 readable.
    */
   gift?: boolean;
   /**
@@ -88,13 +98,16 @@ export type CheckoutRecord = {
    * because the confirmation has no other way to it. A gift buyer is owed the
    * address their present went to — it is the whole of what they bought and the
    * one detail they can still get wrong — and the screen is reached after a
-   * round trip to Stripe, from a payment that names nothing about a gift. The
-   * address is in `question` as prose, and reading it back out of that line is
-   * the `startsWith("Gift")` inference `lib/buy.ts` refuses by name.
+   * round trip to Stripe, from a payment that names nothing about a gift.
    *
-   * **It outlives the question.** `forgetQuestion` drops the composed note once
-   * the money has moved, and a reload of the confirmation still has to name
-   * where the gift went, so this is not in that sentence's fields.
+   * **Written from the present the order carried**, since 3 September 2026, so
+   * this screen cannot name an address the backend was never sent. It used to
+   * be lifted out of a composed sentence's neighbourhood in `lib/buy.ts`; it is
+   * now `gift.recipient_email`, read off the one object both roads send.
+   *
+   * **It outlives the question.** `forgetQuestion` drops the question once the
+   * money has moved, and a reload of the confirmation still has to name where
+   * the gift went, so this is not in that sentence's fields.
    *
    * Absent on every self-purchase and on a gift the buyer left blank, which is
    * also what keeps a record written before 3 September 2026 readable. See
@@ -356,17 +369,22 @@ export function walletCheckoutFor(paymentIntentId: string | null): CheckoutRecor
  * compare the wrong ones. A question restored onto a different reading is a
  * sentence appearing in a box the visitor did not type it in.
  *
- * **A gift's note is not a question and is never offered here.** In gift mode
- * the line's `question` is composed rather than typed — "Gift — send this
- * reading to …" — and putting that back in a textarea the customer writes their
- * own sentence in is this guard's own fault arriving by a different door. The
- * record keeps it; this refuses it.
+ * **A gift record is never offered here**, and from 3 September 2026 there is
+ * nothing on one to offer. The line's `question` used to be a composed note in
+ * gift mode — "Gift — send this reading to …" — and putting that back in a
+ * textarea the customer writes their own sentence in was this guard's own fault
+ * arriving by a different door. The present is its own field now and the
+ * question is empty, so a gift record carries no question to restore.
  *
- * The cost is that a customer who cancels a gift checkout loses the recipient
- * and the message they typed, which is a real loss and the smaller of the two.
- * Giving it back means restoring the panel to gift mode with both fields
- * refilled, and that is the gifting milestone's to build rather than something
- * to infer from one composed string.
+ * **The refusal stays anyway**, because "this record is a gift" and "this
+ * record has nothing to restore" are two facts and only one of them is written
+ * down here. A revision that gave gift mode a question box of its own would
+ * find this already correct.
+ *
+ * The cost is unchanged: a customer who cancels a gift checkout loses the
+ * recipient, the signature and the message they typed. Giving those back means
+ * restoring the panel to gift mode with four fields refilled, which is a
+ * separate piece of work and not something to infer from a record.
  *
  * **A string, not a record**, so it can be a `useSyncExternalStore` snapshot
  * without the caller reaching past it into anything else.

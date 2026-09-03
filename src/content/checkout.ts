@@ -193,9 +193,10 @@ export const checkoutCompleteCopy = {
    *
    * The ordinary way that happens is a record written before 3 September 2026,
    * when `giftRecipient` did not exist; the other is a gift order placed with
-   * the address left blank, which `orderFormAccepts` refuses at the press and
-   * `giftNote` still composes a line for, because it is a guard rather than a
-   * guarantee.
+   * the address left blank, which `orderFormAccepts` refuses at the press
+   * because it is a guard rather than a guarantee — and which the backend then
+   * refuses with a 422, so that screen is reached by a reload rather than by a
+   * payment.
    *
    * Phrased so the sentence stays true either way. "The address you gave" is
    * exactly as much as the screen knows, and it is better than naming the wrong

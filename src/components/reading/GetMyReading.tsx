@@ -216,6 +216,13 @@ export function GetMyReading({
           on the line itself, and both controls read through it; see
           `lib/order-note.ts`.
 
+          ~~On the line's `question`, as prose for a person to act on.~~
+          **Corrected 3 September 2026**: on `lines[].gift`, which the backend
+          grew, so the evidence is machinery rather than a sentence — a `gifts`
+          row, a code minted when the money arrives, and a mail to the
+          recipient. The gap the old gate guarded is closed by the endpoint
+          now, not only by the reading of it.
+
           Absent rather than collapsed in both conditions that remain. The row's
           own collapse answers a third question — this device has no wallet —
           and it must stay the only reason the row is ever zero-height, or the

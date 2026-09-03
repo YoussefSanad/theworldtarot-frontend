@@ -105,14 +105,16 @@ function record({ sessionId, money }, productKey = "month-ahead") {
 }
 
 /**
- * The same record, for a gift: the composed note on the line, the flag, and the
- * **recipient**'s address as its own field.
+ * The same record, for a gift: the flag, the **recipient**'s address as its own
+ * field, and a `question` the screen must never read.
  *
- * `question` is what `orderNoteIn` composes and is deliberately prose — the
- * screen may not read the address back out of it, which is why `giftRecipient`
- * sits beside it. A run that dropped that field would still find the address in
- * the page if the screen ever started parsing the note, so the two are kept
- * different addresses.
+ * **The `question` here is not what the panel writes any more.** `orderNoteIn`
+ * composed a gift note into it until 3 September 2026 and now sends the present
+ * as `lines[].gift`, so a gift record written today carries no question at all.
+ * It is kept in this fixture on purpose, as the shape a record written before
+ * that date has and as the trap: it holds a **different** address from
+ * `giftRecipient`, so a screen that ever started parsing the prose would fail
+ * here rather than pass by luck.
  */
 function giftRecord({ sessionId, money }, giftRecipient = "alice@example.com") {
   return {
@@ -512,11 +514,14 @@ const runs = [
       expect("gift", "before the backend answers, as every card arrival does", /has been received/i.test(painted.text), false);
       expect("gift", "names the address it went to", /alice@example\.com/.test(shown.text), true);
       /*
-        The address on the record, never the one composed into the note. They
-        are two different addresses in this run precisely so that a screen
-        parsing the prose would fail here rather than pass by luck.
+        The address on the record's own field, never one found in a question.
+        They are two different addresses in this run precisely so that a screen
+        parsing the prose would fail here rather than pass by luck — which
+        matters more now than it did: a gift record written since 3 September
+        2026 has no question on it, so a screen that read one would be reading
+        a record from before the present had a field of its own.
       */
-      expect("gift", "and not the one written into the note", /somebody-elses@example\.com/.test(shown.text), false);
+      expect("gift", "and not one found in the question", /somebody-elses@example\.com/.test(shown.text), false);
       expect("gift", "restates the amount that was paid", /€49/.test(shown.text), true);
       expect("gift", "under the label the client wrote", /Payment received:/.test(shown.text), true);
       // The reading that was gifted is on the record, and naming it here would

@@ -35,22 +35,29 @@ language, and it is a fixed set the backend validates against.
 _Avoid_: product id, SKU, slug, product name
 
 **Order note**:
-The one free-text string an order line carries, as `lines[].question` on the
-wire. It is the customer's **question** on a self-purchase and a composed
-**gift note** in gift mode — "Gift from … — send this reading to …", built from
-the **gift signature**, the recipient's address and the buyer's message,
-because `POST /orders` has no field for any of them. The confirm-address is not
-in it: that field is a check on what the buyer typed rather than a third thing
-they told us. The wire name is the backend's and does not describe the
-contents; `lib/order-note.ts` is where the two are told apart, by which section
-the form has mounted. **A stopgap whose end is now designed rather than hoped
-for**, decided 1 September 2026 (#54), and still what ships today. What replaces
-it: the recipient, the message and the **gift signature** become columns on a
-**gift**, so nothing is composed into a field that was never for it, and a gift
-order's line carries **no** `question` at all until the **querent** asks one.
-`giftNote` and the `gift` flag in the checkout record are then deleted rather
-than rewired — there is nothing left for either to tell apart.
-_Avoid_: "the question" for the gift case (it is not one), comment, note field, message
+What one press puts on an order line, read off whichever of the panel's two
+sections is mounted. On a self-purchase it is the customer's **question**, as
+`lines[].question`. On a gift it is a **present** — the recipient's address,
+the **gift signature** and the buyer's message — as `lines[].gift`, and the
+line then carries **no** `question` at all until the **querent** asks one at
+redemption. Sending both is a 422 keyed to the question. The confirm-address is
+in neither: that field is a check on what the buyer typed rather than a third
+thing they told us. `lib/order-note.ts` is where the two are told apart.
+
+~~It is one free-text string, and a composed gift note in gift mode — "Gift
+from … — send this reading to …" — because `POST /orders` has no field for any
+of them.~~ **Struck 3 September 2026, when the stopgap ended as designed**
+(decided 1 September 2026, #54). It ended a day late: the backend shipped
+`lines[].gift` and the `gifts` table on 3 September and the panel kept composing
+the sentence, so every gift bought in between was placed as an ordinary
+self-purchase with a note on it — no `gifts` row, no code, no mail to the
+recipient, nothing on the Gifts screen, and a reading queued for the **buyer**.
+`giftNote` is deleted as that decision said it would be. **The `gift` flag on
+the checkout record is not**, which is where that decision was wrong: its reader
+turned out to be the confirmation rather than `questionFor`, and the screen is
+reached after a round trip to Stripe with nothing else to tell it a present was
+bought.
+_Avoid_: "the question" for the gift case (it is not one), gift note, comment, note field, message
 
 **Payment method**:
 One way money arrives, as the backend's registry defines it. There are **two

@@ -413,7 +413,7 @@ which is where anything reading this form should look for them;
 landed on 29 August 2026 and `lib/order-note.ts` shipped on 30 August reading
 `new FormData(form)` keyed by `name` — which answered `null` for a field sitting
 in the form under another name, so every gift order composed no note and was
-flagged as a self-purchase. `check:panel` read it the same wrong way and stayed
+sent as a self-purchase. `check:panel` read it the same wrong way and stayed
 green. Both were corrected to `data-field` on 3 September 2026 in #71, and
 `order-note.test.ts` now drives that path from a node to an order note rather
 than leaving it to a browser nobody runs on every commit.
@@ -439,19 +439,37 @@ reason to refuse the money is argued in `GetMyReading`, beside the gate it
 removed.
 
 So the recipient rides to the backend on the order line instead. `orderNoteIn`
-reads whichever of the two sections is mounted and composes the gift's
-signature, address and message into the line's `question`, which is the field
-the admin orders table already prints; see `lib/order-note.ts`. Two things fall
-out of that and are worth knowing before reading either file:
+reads whichever of the two sections is mounted and answers what that line
+carries; see `lib/order-note.ts`.
+
+~~It composes the gift's signature, address and message into the line's
+`question`, which is the field the admin orders table already prints.~~
+**Struck 3 September 2026.** The backend grew `lines[].gift` — a `gifts` row, a
+code minted when the money arrives, a mail to the recipient and a Gifts screen —
+and the panel kept sending the sentence for a day after it landed. Everything
+downstream was silent about it: the order was accepted, the money taken, and
+the buyer got a receipt headed "Your Reading Is On Its Way" for a present that
+had no code, no mail and no row. **The lesson is where the assertion goes.**
+`order-note.test.ts` proved the panel noticed the gift section, and
+`check:panel` proved a sentence reached the line; neither asked what the
+**order body** carried, which is the only thing any of the machinery reads.
+Both do now.
+
+Three things fall out and are worth knowing before reading either file:
 
 - **A gift order is never indistinguishable from a self-purchase**, however
   little the buyer typed — which is also why `orderFormAccepts` exists. Nothing
   submits this form, so the `required` on the recipient's address was decoration
   until the panel could take money; both controls now ask for it before they
-  place anything.
-- **The record is flagged and the restore refuses it.** A cancelled gift
-  checkout must not refill the question textarea with a note this code composed,
-  so `CheckoutRecord.gift` marks it and `questionFor` turns it down.
+  place anything. The present is sent even when it is empty, so the backend
+  refuses the order rather than accepting a purchase nobody meant to make.
+- **A gift line carries no question**, and the pair is a 422. The person who
+  will ask has not seen the present yet, and asking is what redemption is for.
+- **The record is flagged, and the flag outlived the note.** Its reader is the
+  confirmation — reached after a round trip to Stripe, from a payment that names
+  nothing about a gift — which needs `CheckoutRecord.gift` and `giftRecipient`
+  to say a present was bought and where it went. `questionFor` still refuses a
+  gift record, which is now belt and braces.
 
 **The address is taken twice, and the disagreement has exactly one way out.**
 The buyer never receives the code, so a typo sends a paid, non-expiring bearer

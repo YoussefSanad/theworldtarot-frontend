@@ -694,8 +694,10 @@ function Wallet({
       unless something asks —
       and without asking, a customer reaches this line having authorised with
       their face for a gift addressed to no one, or to an address they mistyped
-      and cannot be told about. `giftNote` would record the absence rather than
-      prevent it, and nothing at all would record the typo.
+      and cannot be told about. The backend refuses an unaddressed present too,
+      but a 422 arriving after a wallet sheet has been authorised is a worse
+      way to learn it than a bubble on the field, and nothing on either side
+      would ever record the typo.
 
       **This is the only place either is refused**, which is why the check is a
       call and not a branch: `orderFormAccepts` asks the form, the form has the
@@ -737,7 +739,6 @@ function Wallet({
         money,
         question: note.text,
         gift: note.gift,
-        giftRecipient: note.recipient,
       });
     } catch (cause: unknown) {
       /*

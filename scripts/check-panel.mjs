@@ -108,14 +108,17 @@ const WALLET = "#get-my-reading [data-express-checkout]";
 const QUESTION = "What should I focus on this month?";
 
 /**
- * Gift mode's fields, and the single string three of them have to arrive as.
+ * Gift mode's fields, and the object three of them have to arrive as.
  *
- * `POST /orders` has no field for any of them, so `orderNoteIn` composes them
- * into the line's `question` — the field the admin orders table already prints.
- * The composition is unit-tested in `lib/order-note.test.ts`; what only a
- * browser can settle is that the composition runs against **this** form,
- * reached from the payment controls' own nodes, which is what the press below
- * proves.
+ * ~~`POST /orders` has no field for any of them, so `orderNoteIn` composes them
+ * into the line's `question`.~~ **Struck 3 September 2026.** The endpoint has
+ * `lines[].gift`, and the panel sends the three fields under their own names —
+ * which is what mints a code, mails it to the recipient and puts the obligation
+ * on the Gifts screen, none of which a sentence in a question box could start.
+ *
+ * The shape is unit-tested in `lib/order-note.test.ts`; what only a browser can
+ * settle is that the reading runs against **this** form, reached from the
+ * payment controls' own nodes, which is what the press below proves.
  *
  * **`MISTYPED` is the fourth field's whole reason.** The buyer never receives
  * the code, so a confirmation that disagrees with the address has to refuse the
@@ -129,7 +132,7 @@ const SIGNATURE = "Mum";
 const RECIPIENT = "alice@example.com";
 const MISTYPED = "alicia@example.com";
 const GIFT_MESSAGE = "Happy birthday — thought this one was you.";
-const GIFT_NOTE = `Gift from ${SIGNATURE} — send this reading to ${RECIPIENT}\n\nThe buyer's message: ${GIFT_MESSAGE}`;
+const PRESENT = { recipient_email: RECIPIENT, signature: SIGNATURE, message: GIFT_MESSAGE };
 
 /**
  * Where the browser is sent instead of Stripe. It carries a `cs_...` in its
@@ -960,16 +963,18 @@ expect("gifting", "the wallet row reads the recipient off the same form", gifted
 });
 /*
   **The confirmation is read and never sent**, which the line below settles by
-  carrying `GIFT_NOTE` and nothing else. It is a check on what the buyer typed
-  rather than a second thing they told us, and there is nowhere for it to go:
-  `POST /orders` has one free-text field per line and three things are already
-  composed into it.
+  carrying the three fields and nothing else. It is a check on what the buyer
+  typed rather than a second thing they told us, and there is nowhere for it to
+  go: the backend has one address on a present and no second one to compare it
+  against.
 */
 /*
-  **The assertion this state now exists for.** `POST /orders` has no field for a
-  recipient or a message, so an order placed here carries them or carries
-  nothing — and an order carrying nothing is indistinguishable from somebody
-  buying a reading for themselves, which is the reading Jennifer would act on.
+  **The assertion this state now exists for.** Everything downstream of the
+  order hangs on `lines[].gift` arriving — the `gifts` row, the code minted at
+  settlement, the mail to the recipient, the Gifts screen, and a reading queued
+  for the **querent** rather than the buyer. An order that carries the fields as
+  prose in `question` instead is accepted, paid for, and starts none of it,
+  which is what shipped between 3 September 2026 and the fix.
 */
 /*
   **All four boxes, or the section asks for less than it needs.** The signature
@@ -1004,7 +1009,13 @@ expect("gifting", "the fields keep the question box's width", gifted.settled.box
 */
 console.log(`  · the toggle costs the panel ${gifted.settled.height - sold.settled.height}px (${sold.settled.height} → ${gifted.settled.height})`);
 expect("gifting", "the press places one order", gifted.placed.length, 1);
-expect("gifting", "carrying the recipient and the message as the line's one string", gifted.placed[0]?.lines?.[0]?.question, GIFT_NOTE);
+expect("gifting", "carrying the present in the field the backend reads", gifted.placed[0]?.lines?.[0]?.gift, PRESENT);
+/*
+  **And no question beside it.** A line carrying both is a 422 keyed to the
+  question — the person who will ask has not seen the present yet — so the pair
+  has to be impossible to build from this panel and not merely unusual.
+*/
+expect("gifting", "and no question on the same line", "question" in (gifted.placed[0]?.lines?.[0] ?? {}), false);
 expect("gifting", "then pays it by the same road a self-purchase takes", gifted.paid[0]?.body, {
   return_to: "month-ahead",
   method: "stripe",
@@ -1012,18 +1023,22 @@ expect("gifting", "then pays it by the same road a self-purchase takes", gifted.
 expect("gifting", "and the browser goes where Stripe said", gifted.landed, SESSION_URL);
 /*
   Written before the navigation, as on every other road, and **flagged**. The
-  note is kept — support and the confirmation both want to know what was bought
-  and for whom — but `questionFor` refuses to hand it back to the question
-  textarea after a cancelled checkout, and this flag is the only thing that
-  tells it a composed note from a typed sentence. See `lib/checkout-session.ts`.
+  flag and the address are the confirmation's: it is reached after a round trip
+  to Stripe, from a payment that names nothing about a gift, and this record is
+  the only thing that can tell it a present was bought and where it went. See
+  `lib/checkout-session.ts`.
+
+  **No `question` key at all**, which is the half worth asserting: the gift
+  section fills no question field, so there is nothing to send and nothing for
+  a cancelled checkout to put back in a textarea.
 */
 expect("gifting", "with the gift remembered before it went, and marked as one", gifted.record, {
   payToken: PAY_TOKEN,
   money: { currency: "EUR", amount: 7000 },
   sessionId: SESSION_ID,
   productKey: "month-ahead",
-  question: GIFT_NOTE,
   gift: true,
+  giftRecipient: RECIPIENT,
 });
 
 const unaddressed = await drive("gifting — a gift addressed to nobody cannot be paid for", PRICED, priced, {
@@ -1037,8 +1052,9 @@ const unaddressed = await drive("gifting — a gift addressed to nobody cannot b
   August 2026 in the same change that made gift mode buyable. Nothing submits
   this form, so the `required` on the recipient's address is enforced by nobody
   unless something asks — and without asking, a buyer toggles to gift, presses,
-  and is charged for a gift addressed to no one. `giftNote` would have recorded
-  the absence rather than prevented it.
+  and is charged for a gift addressed to no one. The backend refuses an
+  address-less present too, but a 422 arriving after a wallet sheet has been
+  authorised is a worse way to learn it than a bubble on the field.
 
   Pressed with the fields left as the toggle produced them, which is the whole
   point: this is not a malformed address, it is a buyer who never typed one.

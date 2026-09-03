@@ -1,16 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { giftAddressesAgree, giftNote, orderFormAccepts, orderNoteIn } from "./order-note.ts";
+import { giftAddressesAgree, orderFormAccepts, orderNoteIn } from "./order-note.ts";
 
 /**
- * Two halves, and ~~only one of them is testable here~~ **both of them are,
- * from 3 September 2026**.
+ * ~~Two halves, and both of them are testable here.~~ **One half, from 3
+ * September 2026**, and the other one stopped existing.
  *
- * The **composition** is a pure function of three strings and was always proved
- * here, because what it answers is what Jennifer reads in the orders table and
- * it is the whole of what a gift order carries. That split is why `giftNote` is
- * exported at all: it exists as a seam, not because anything else calls it.
+ * The **composition** was a pure function of three strings — `giftNote` — and
+ * it is gone with the stopgap it served. `POST /orders` grew `lines[].gift`,
+ * so a present travels as three fields rather than as a sentence about them,
+ * and there is no prose left to assert the wording of. What replaced those
+ * eleven tests is the shape of the object and the one rule the wire adds: a
+ * line may carry a question or a present, never both.
  *
  * The **reading** — `closest("form")` from the wallet row's own node, and the
  * fields out of the form it finds — used to be DOM the way `sessionStorage` is
@@ -26,6 +28,14 @@ import { giftAddressesAgree, giftNote, orderFormAccepts, orderNoteIn } from "./o
  * every gift order in between composed no note and was flagged as a
  * self-purchase. The seam that was too hard to test is the seam that failed, so
  * the tests below drive the whole path from a node to an `OrderNote`.
+ *
+ * **The same shape of failure cost the gifting release**, and it is what the
+ * assertions on `gift` below are for: the panel read all four boxes correctly
+ * and answered a sentence, `POST /orders` was never given the object, and every
+ * gift bought was a self-purchase with a note on it — no code, no mail to the
+ * recipient, nothing on the Gifts screen, and a reading queued for the buyer.
+ * A test that stops at "it noticed the gift section" cannot see that. These
+ * assert what is handed to the order.
  *
  * `check:panel` still owns what a fake cannot reach: that the row really is
  * inside the form, that the fields really carry `data-field`, and that a real
@@ -69,16 +79,16 @@ function formOf(fields: Record<string, string>, mismatch: string | null = "These
   return { form, node: { closest: () => form } as unknown as Element };
 }
 
-test("no node is an empty note, and not a gift", () => {
+test("no node is an empty note, and no gift", () => {
   // `event.currentTarget` after a React event has been pooled, or a ref that
   // has not attached yet. Both are ordinary, and neither is a reason to refuse
   // a press.
   //
-  // `gift: false` rather than absent, because the flag decides what a cancelled
-  // checkout puts back in the question box — and "we could not tell" has to
-  // resolve to the safe one of the two.
-  assert.deepEqual(orderNoteIn(null), { text: "", gift: false });
-  assert.deepEqual(orderNoteIn(undefined), { text: "", gift: false });
+  // No `gift` key rather than one holding nothing, because its presence is what
+  // decides whether the line carries a present at all — and "we could not tell"
+  // has to resolve to the safe one of the two.
+  assert.deepEqual(orderNoteIn(null), { text: "" });
+  assert.deepEqual(orderNoteIn(undefined), { text: "" });
 });
 
 test("a node outside any form is an empty note", () => {
@@ -88,13 +98,13 @@ test("a node outside any form is an empty note", () => {
   // note arrives rather than trusting this to fail loudly.
   const orphan = { closest: () => null } as unknown as Element;
 
-  assert.deepEqual(orderNoteIn(orphan), { text: "", gift: false });
+  assert.deepEqual(orderNoteIn(orphan), { text: "" });
 });
 
 test("the question section answers the question, and is not a gift", () => {
   const { node } = formOf({ question: "What should I let go of?" });
 
-  assert.deepEqual(orderNoteIn(node), { text: "What should I let go of?", gift: false });
+  assert.deepEqual(orderNoteIn(node), { text: "What should I let go of?" });
 });
 
 test("the gift section is read by `data-field`, not by the name it submits under", () => {
@@ -102,7 +112,7 @@ test("the gift section is read by `data-field`, not by the name it submits under
     **The regression this file exists to hold.** The two address fields go to
     the browser under `CountedField`'s opaque `useId` string so that Chrome does
     not offer the purchaser their own address, so a reader keyed to `name` finds
-    nothing, takes the not-a-gift arm and sends no note — an order that is
+    nothing, takes the not-a-gift arm and sends no present — an order that is
     indistinguishable from somebody buying a reading for themselves, on which
     the reading goes quietly to the buyer.
   */
@@ -114,61 +124,126 @@ test("the gift section is read by `data-field`, not by the name it submits under
   });
 
   assert.deepEqual(orderNoteIn(node), {
-    text: "Gift from Mum — send this reading to alice@example.com\n\nThe buyer's message: Happy birthday.",
-    gift: true,
-    recipient: "alice@example.com",
+    text: "",
+    gift: {
+      recipient_email: "alice@example.com",
+      signature: "Mum",
+      message: "Happy birthday.",
+    },
   });
 });
 
-test("an untouched gift section is still a gift", () => {
-  // Presence, not truthiness. `orderFormAccepts` is what stops a press getting
-  // here, and it is a guard rather than a guarantee.
-  const { node } = formOf({ giftSignature: "", recipientEmail: "", addressConfirmation: "", giftMessage: "" });
-
-  // No `recipient` key at all rather than an empty one, so the confirmation
-  // falls back to naming nobody instead of interpolating a blank into a
-  // sentence about where the gift went.
-  assert.deepEqual(orderNoteIn(node), {
-    text: "Gift — the buyer gave no recipient address.",
-    gift: true,
-  });
-});
-
-test("the note carries the address the confirmation will name, trimmed", () => {
+test("the fields are the wire's, not ours", () => {
   /*
-    **The one thing a gift buyer is owed that the note cannot give back.** The
-    line is prose written for Jennifer and parsing an address back out of it
-    downstream is the `startsWith("Gift")` inference `lib/buy.ts` refuses by
-    name, so the address travels beside the line as its own field.
-
-    Trimmed here, because it is the value a sentence on the confirmation is
-    built from and a mobile keyboard leaves a space after a pasted address.
+    `PlaceOrderInput` is handed to `apiWrite` as it stands, so a camelCase key
+    here is a field the backend does not read and a present with no address —
+    which is a 422 at best and, on a required field the endpoint defaulted,
+    would be a gift sent nowhere. The names are asserted rather than the values
+    because it is the spelling that travels.
   */
   const { node } = formOf({
     giftSignature: "Mum",
-    recipientEmail: "  alice@example.com  ",
+    recipientEmail: "alice@example.com",
     addressConfirmation: "alice@example.com",
-    giftMessage: "",
+    giftMessage: "Happy birthday.",
   });
 
-  const note = orderNoteIn(node);
-
-  assert.equal(note.recipient, "alice@example.com");
-  assert.equal(note.text, "Gift from Mum — send this reading to alice@example.com");
+  assert.deepEqual(Object.keys(orderNoteIn(node).gift!).sort(), ["message", "recipient_email", "signature"]);
 });
 
-test("a self-purchase carries no recipient at all", () => {
-  // The field the record is written from, so "not a gift" has to be absence
-  // rather than an empty string a screen could still print.
-  assert.equal(orderNoteIn(formOf({ question: "What next?" }).node).recipient, undefined);
+test("a gift carries no question, so the pair is never sent", () => {
+  /*
+    **A 422 keyed to the question**, and the one rule the wire adds that the
+    panel could break on its own. The person who will ask has not seen the
+    present yet — asking is what redemption is for — so a line carrying both is
+    refused rather than quietly stripped.
+
+    The form here holds both boxes, which the panel never draws: the sections
+    are mutually exclusive and this is the state a revision that merged them
+    would produce. The reader states the empty question rather than reading one,
+    so it stays right through that.
+  */
+  const { node } = formOf({
+    question: "What should I focus on?",
+    giftSignature: "Mum",
+    recipientEmail: "alice@example.com",
+    addressConfirmation: "alice@example.com",
+  });
+
+  assert.equal(orderNoteIn(node).text, "");
+});
+
+test("an untouched gift section is still a gift", () => {
+  /*
+    Presence, not truthiness. `orderFormAccepts` is what stops a press getting
+    here, and it is a guard rather than a guarantee.
+
+    **The empty present travels**, which is the half worth stating. The backend
+    requires an address and a signature, so this order is refused with nothing
+    charged; dropping the empty object here would place an ordinary order for
+    the buyer instead — the exact failure of the composed note this replaced.
+  */
+  const { node } = formOf({ giftSignature: "", recipientEmail: "", addressConfirmation: "", giftMessage: "" });
+
+  assert.deepEqual(orderNoteIn(node), {
+    text: "",
+    // No `message` key at all rather than an empty one, so a gift mail cannot
+    // render the buyer's words as a blank line.
+    gift: { recipient_email: "", signature: "" },
+  });
+});
+
+test("every field is trimmed, as the question already was", () => {
+  /*
+    Whitespace on an order line comes back out in the admin table and in the
+    two mails sent from it — and the signature is in the **subject** of one of
+    them, sent to somebody who has never heard of us, where a leading space is
+    the sort of thing a filter reads as machinery.
+
+    Trimmed here rather than downstream because there is one reader and two
+    roads, and a trim in either road is a trim the other can forget.
+  */
+  const { node } = formOf({
+    giftSignature: "  Mum  ",
+    recipientEmail: "  alice@example.com  ",
+    addressConfirmation: "alice@example.com",
+    giftMessage: "  Happy birthday.  ",
+  });
+
+  assert.deepEqual(orderNoteIn(node).gift, {
+    recipient_email: "alice@example.com",
+    signature: "Mum",
+    message: "Happy birthday.",
+  });
+});
+
+test("a message of nothing but spaces is no message", () => {
+  // `giftMessage` is the only field on either section that says "optional" on
+  // its own label, and the mail branches on its presence. A gift mail rendering
+  // three spaces where the buyer's words go is the ordinary case reading like a
+  // fault.
+  const { node } = formOf({
+    giftSignature: "Mum",
+    recipientEmail: "alice@example.com",
+    addressConfirmation: "alice@example.com",
+    giftMessage: "   ",
+  });
+
+  assert.equal("message" in orderNoteIn(node).gift!, false);
+});
+
+test("a self-purchase carries no present at all", () => {
+  // The field the line and the record are both written from, so "not a gift"
+  // has to be absence rather than an empty object the backend would refuse.
+  assert.equal(orderNoteIn(formOf({ question: "What next?" }).node).gift, undefined);
 });
 
 test("the confirmation is a check on the buyer, and never travels", () => {
   /*
     It is not a second thing the buyer told us and there is nowhere for it to
-    go: `POST /orders` has one free-text field per line and the note is already
-    composed of three things. An order line quoting the same address twice would
-    be Jennifer reading a form's validation out of a table cell.
+    go: the backend has one address on a present and no second one to compare
+    it against. An order quoting the same address twice would be asking the
+    other side to re-run a validation this one already did.
   */
   const { node } = formOf({
     giftSignature: "Mum",
@@ -177,88 +252,26 @@ test("the confirmation is a check on the buyer, and never travels", () => {
     giftMessage: "",
   });
 
-  assert.equal(orderNoteIn(node).text.match(/alice@example\.com/g)?.length, 1);
-});
-
-test("a gift names who it is from, who it is for, and what was said", () => {
   assert.equal(
-    giftNote({ signature: "Mum", recipient: "alice@example.com", message: "Happy birthday." }),
-    "Gift from Mum — send this reading to alice@example.com\n\nThe buyer's message: Happy birthday.",
+    JSON.stringify(orderNoteIn(node)).match(/alice@example\.com/g)?.length,
+    1,
   );
 });
 
-test("the signature goes in front of the address, never after it", () => {
+test("a gift is a gift however little was typed into it", () => {
   /*
-    The same rule as the full stop: whatever ends this clause is a character
-    somebody copying the address out of a table cell takes with them, and a
-    comma is no better than a period for that. The address ends the line in
-    every arm of this function.
+    The invariant stated once, over the eight ways the three fields can be
+    blank — the property the untouched section above asserts by example.
+    `placeOneReading` drops an empty **question** from the line; it does not
+    drop an empty present, because an order carrying no trace of the gift is
+    one the backend accepts and the buyer pays for.
   */
-  const line = giftNote({ signature: "Mum", recipient: "alice@example.com", message: "" });
+  for (const giftSignature of ["", "   "]) {
+    for (const recipientEmail of ["", "   "]) {
+      for (const giftMessage of ["", "   "]) {
+        const { node } = formOf({ giftSignature, recipientEmail, addressConfirmation: "", giftMessage });
 
-  assert.ok(line.endsWith("alice@example.com"));
-});
-
-test("the message is optional, and its absence leaves no empty label", () => {
-  // `giftMessage` is the only field on either section that says "optional" on
-  // its own label. A note ending in a dangling "The buyer's message:" would be
-  // the ordinary case reading like a fault.
-  assert.equal(
-    giftNote({ signature: "Mum", recipient: "alice@example.com", message: "   " }),
-    "Gift from Mum — send this reading to alice@example.com",
-  );
-});
-
-test("a gift with no recipient still says it is a gift", () => {
-  /*
-    **The assertion this function exists for.** Nothing submits the order form,
-    so the `required` on the recipient's field never fires and a buyer can pay
-    for a gift having typed nothing at all. An empty note on that order is
-    indistinguishable from somebody buying a reading for themselves — and the
-    reading would go to the buyer, silently, which is the one outcome no state
-    of this form may produce.
-  */
-  assert.equal(
-    giftNote({ signature: "", recipient: "", message: "" }),
-    "Gift — the buyer gave no recipient address.",
-  );
-
-  assert.equal(
-    giftNote({ signature: " ", recipient: " ", message: "For you." }),
-    "Gift — the buyer gave no recipient address.\n\nThe buyer's message: For you.",
-  );
-});
-
-test("a signature with no address still names who it is from", () => {
-  // The signature is required on the form from #71, and composed here as though
-  // it might be missing for the reason the recipient is. Jennifer is the one
-  // who has to act on this line, and half of it is worth more than none.
-  assert.equal(
-    giftNote({ signature: "Mum", recipient: "  ", message: "" }),
-    "Gift from Mum — the buyer gave no recipient address.",
-  );
-});
-
-test("all three fields are trimmed, as the question already was", () => {
-  // Whitespace on an order line comes back out in the admin table and in the
-  // email Jennifer sends from it.
-  assert.equal(
-    giftNote({ signature: "  Mum  ", recipient: "  alice@example.com  ", message: "  Happy birthday.  " }),
-    "Gift from Mum — send this reading to alice@example.com\n\nThe buyer's message: Happy birthday.",
-  );
-});
-
-test("a gift note is never empty, whatever it is given", () => {
-  /*
-    The invariant stated once, over the eight ways the three fields can be blank
-    — the property the case above asserts by example. `placeOneReading` drops an
-    empty question from the line entirely, so an empty answer here would not be
-    a blank note on a gift order. It would be no note at all.
-  */
-  for (const signature of ["", "   "]) {
-    for (const recipient of ["", "   "]) {
-      for (const message of ["", "   "]) {
-        assert.notEqual(giftNote({ signature, recipient, message }), "");
+        assert.notEqual(orderNoteIn(node).gift, undefined);
       }
     }
   }

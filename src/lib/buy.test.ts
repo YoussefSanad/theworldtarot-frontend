@@ -156,15 +156,16 @@ test("the record holds what the backend charged, not what the page was quoting",
   });
 });
 
-test("a gift rides to the backend on the line and is flagged on the record", async () => {
+test("a gift rides to the backend on the line, and is flagged on the record", async () => {
   /*
-    **The flag goes one way and the note goes both.** `POST /orders` has no
-    field for a gift and never sees one; the record keeps it, because that is
-    what stops a cancelled gift checkout refilling the question textarea with a
-    note this code composed. See `questionFor` in `lib/checkout-session.ts`.
+    **The assertion the gifting release was missing.** Until 3 September 2026
+    the panel read all four boxes correctly, composed a sentence, and sent it as
+    the line's `question` — so the backend wrote no `gifts` row, minted no code
+    at settlement, sent the recipient nothing, showed nothing on the Gifts
+    screen, and queued a reading for the **buyer**. Every piece downstream hangs
+    off this one field reaching the order body, which is why it is asserted on
+    the body rather than on what the caller passed.
   */
-  const note = "Gift — send this reading to alice@example.com";
-
   stubFetch(
     new Response(null, { status: 204 }),
     placed(),
@@ -175,24 +176,31 @@ test("a gift rides to the backend on the line and is flagged on the record", asy
   await startCheckout({
     productKey: "month-ahead",
     money: offer,
-    question: note,
-    gift: true,
-    giftRecipient: "alice@example.com",
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum", message: "Happy birthday." },
   });
 
-  assert.deepEqual(bodies()[0].lines, [{ product: "month-ahead", quantity: 1, question: note }]);
-  assert.equal("gift" in bodies()[0], false);
-  assert.equal(recallCheckout()?.question, note);
+  assert.deepEqual(bodies()[0].lines, [
+    {
+      product: "month-ahead",
+      quantity: 1,
+      // **And no `question` key beside it.** A line carrying both is a 422
+      // keyed to the question, so the pair may not be built here even by an
+      // empty string surviving the trim above.
+      gift: { recipient_email: "alice@example.com", signature: "Mum", message: "Happy birthday." },
+    },
+  ]);
+  assert.equal("question" in bodies()[0].lines[0], false);
   assert.equal(recallCheckout()?.gift, true);
 });
 
-test("the recipient's address goes on the record and never on the order", async () => {
+test("the record gets a flag and an address, read off the present itself", async () => {
   /*
-    **The same one-way trip the flag above makes, and for a different reader.**
-    The address is already on the line inside the note, where Jennifer reads it;
-    a second copy on the order body would be the same address in two cells. What
-    the record buys is the **confirmation**, which is reached after Stripe and
-    has nothing else to name the address from.
+    **The order takes the present and the record takes two fields off it.** The
+    record's pair is what the **confirmation** reads: it is reached after a
+    round trip to Stripe and has no other channel to either. Derived here rather
+    than passed beside the present, so a road cannot fill one and forget the
+    other, and so the screen can never name an address the order did not carry.
   */
   stubFetch(
     new Response(null, { status: 204 }),
@@ -204,21 +212,25 @@ test("the recipient's address goes on the record and never on the order", async 
   await startCheckout({
     productKey: "month-ahead",
     money: offer,
-    question: "Gift from Mum — send this reading to alice@example.com",
-    gift: true,
-    giftRecipient: "alice@example.com",
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum" },
   });
 
-  assert.equal("giftRecipient" in bodies()[0], false);
+  assert.equal(recallCheckout()?.gift, true);
   assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");
 });
 
-test("a recipient without the gift flag reaches no record", async () => {
+test("a present with no address is sent anyway, and names nobody on the record", async () => {
   /*
-    There is no reading of a record in which a self-purchase names somebody it
-    was sent to, so the flag gates the address rather than the address standing
-    on its own. A caller that passed one without the other has misread the form,
-    and the record must not paint a gift screen off it.
+    **The refusal belongs to the backend, and nothing is charged reaching it.**
+    `orderFormAccepts` turns the press down first and is a guard rather than a
+    guarantee; where one gets through, an address-less present is a 422 on the
+    order. Dropping it here would place an ordinary order the buyer pays for —
+    the exact failure of the composed note this replaced.
+
+    The record names nobody rather than naming the empty string, because
+    `giftReceived.body` falls back to "the address you gave" and that sentence
+    is true where a blank interpolated into it is not.
   */
   stubFetch(
     new Response(null, { status: 204 }),
@@ -230,10 +242,12 @@ test("a recipient without the gift flag reaches no record", async () => {
   await startCheckout({
     productKey: "month-ahead",
     money: offer,
-    question: "Where next?",
-    giftRecipient: "alice@example.com",
+    question: "",
+    gift: { recipient_email: "", signature: "" },
   });
 
+  assert.deepEqual(bodies()[0].lines[0].gift, { recipient_email: "", signature: "" });
+  assert.equal(recallCheckout()?.gift, true);
   assert.equal("giftRecipient" in recallCheckout()!, false);
 });
 
@@ -399,10 +413,11 @@ test("a wallet press places an order, pays it as a wallet, remembers it, and ans
   ]);
 });
 
-test("the wallet road flags a gift the same way the card road does", async () => {
-  // The two roads write the record separately, which is exactly why this is
-  // asserted on both: a flag added to one and forgotten on the other is a gift
-  // note in a question box on whichever road the customer happened to take.
+test("the wallet road sends the present the same way the card road does", async () => {
+  // The two roads build the order body and the record separately, which is
+  // exactly why this is asserted on both: a present sent on one road and
+  // forgotten on the other is a gift that silently becomes a self-purchase on
+  // whichever road the customer happened to take.
   stubFetch(
     new Response(null, { status: 204 }),
     placed(),
@@ -413,13 +428,13 @@ test("the wallet road flags a gift the same way the card road does", async () =>
   await startWalletPayment({
     productKey: "month-ahead",
     money: offer,
-    question: "Gift from Mum — send this reading to alice@example.com",
-    gift: true,
-    giftRecipient: "alice@example.com",
+    question: "",
+    gift: { recipient_email: "alice@example.com", signature: "Mum" },
   });
 
+  assert.deepEqual(bodies()[0].lines[0].gift, { recipient_email: "alice@example.com", signature: "Mum" });
   assert.equal(recallCheckout()?.gift, true);
-  // Written on both roads for the reason the flag is: two records are built
+  // Written on both roads for the reason the present is: two records are built
   // separately, and a field added to one and forgotten on the other is a gift
   // confirmation that names nobody on whichever road the customer took.
   assert.equal(recallCheckout()?.giftRecipient, "alice@example.com");

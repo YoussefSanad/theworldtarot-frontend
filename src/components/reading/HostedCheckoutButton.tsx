@@ -84,10 +84,14 @@ const { checkout } = readingPageChrome;
  * it a bug that charges somebody for a gift delivered to themselves. So the
  * button stands, states that gifting is coming, and places nothing.~~
  *
- * The endpoint still has no such field and the backend has grown nothing. What
- * changed is where the recipient goes: `orderNoteIn` composes the gift's
- * signature, address and message into the line's `question`. Why that is enough
- * to charge on is argued at the gate it replaced, in `GetMyReading`.
+ * ~~The endpoint still has no such field and the backend has grown nothing.
+ * What changed is where the recipient goes: `orderNoteIn` composes the gift's
+ * signature, address and message into the line's `question`.~~ **Struck 3
+ * September 2026.** The endpoint has `lines[].gift` now, and `orderNoteIn`
+ * answers the present itself rather than a sentence about it — so a press here
+ * mints a code, sends it to the recipient and puts the obligation on Jennifer's
+ * Gifts screen, none of which the composed note could start. Why gift mode is
+ * chargeable at all is argued at the gate it replaced, in `GetMyReading`.
  *
  * `gifting` stays a prop and is now only about the note underneath: the button
  * is buyable in both modes, and the sentence under it is what differs.
@@ -146,7 +150,6 @@ export function HostedCheckoutButton({
         money,
         question: note.text,
         gift: note.gift,
-        giftRecipient: note.recipient,
       });
 
       /*

@@ -1,6 +1,6 @@
 /**
  * What the customer typed, read out of the form a control sits in, and turned
- * into the one line of text an order carries.
+ * into the fields an order line carries.
  *
  * Shared by the panel's two payment controls, which is the whole reason it is
  * not a private function in either of them. **What the customer typed has to
@@ -9,15 +9,24 @@
  * nobody named a recipient for, and the customer would have no way of knowing
  * until it arrived.
  *
- * ## One field on the wire, two things a customer can put in it
+ * ## Two sections, and from 3 September 2026 two fields on the wire
  *
  * ~~`questionIn`, in `lib/question.ts`.~~ **Renamed on 30 August 2026**, when
  * gift mode grew a live pair of payment controls and this function stopped
- * answering only with questions. `lines[].question` is still the field it fills
- * — the wire shape is unchanged and the backend has grown nothing — but what
- * goes in it now depends on which of the panel's two mutually exclusive
- * sections is mounted, and a name promising a question would have been a name
- * that lied in half the cases.
+ * answering only with questions.
+ *
+ * ~~`lines[].question` is still the field it fills — the wire shape is
+ * unchanged and the backend has grown nothing — but what goes in it now depends
+ * on which of the panel's two mutually exclusive sections is mounted.~~
+ * **Struck 3 September 2026.** The backend grew `lines[].gift`, and the two
+ * sections now fill two different fields: the question section fills
+ * `question`, and the gift section fills `gift` and leaves `question` empty.
+ * They may not both be filled — a line carrying a question and a present is a
+ * 422 keyed to the question — so the exclusivity the panel draws is the
+ * exclusivity the wire enforces.
+ *
+ * **The name is still not a promise about a question.** What this answers is
+ * what one press puts on the line, and which of the two that is.
  *
  * Why a gift may be charged at all is argued where the gate came off, in
  * `GetMyReading`, and is not repeated here.
@@ -45,128 +54,55 @@
  * it; what is readable is the row it sits in and the form around that.
  */
 
+import type { GiftInput } from "./orders.ts";
+
 /**
  * What one press puts on the order line, and which of the two sections it came
  * from.
  *
- * The flag is not for the order — `POST /orders` never sees it. It is for the
- * **record**, and what it prevents there is argued at `questionFor` in
- * `lib/checkout-session.ts`.
+ * **The two fields are mutually exclusive and the type does not say so.** A
+ * union would, and it would put a narrowing branch in both payment controls to
+ * read one field — which is the drift this module exists to prevent, in a
+ * shape TypeScript would approve of. What the controls do instead is forward
+ * both, and `buy.ts` decides what each is for.
+ *
+ * ~~The flag is not for the order — `POST /orders` never sees it.~~ **Struck 3
+ * September 2026**, when the backend grew `lines[].gift`. The present is now
+ * the order's, and it is the record's as well: the confirmation still has to
+ * name the address after a round trip to Stripe, and that is `questionFor`'s
+ * and `giftRecipient`'s business in `lib/checkout-session.ts`.
  */
 export type OrderNote = {
-  /** The line's `question`, composed where the form was the gift section. */
-  text: string;
-  /** Whether that section was the gift one. */
-  gift: boolean;
   /**
-   * The **recipient**'s address, on a gift and where the buyer typed one.
+   * The line's `question`, and **empty in gift mode**.
    *
-   * **For the record, like `gift` beside it, and never for the order** — it is
-   * already inside `text`, which is the only field `POST /orders` has for it,
-   * and sending it twice would be Jennifer reading the same address out of two
-   * cells. What it buys is the **confirmation**: a gift buyer is owed the
-   * address their present went to, and the screen has no other channel to it
-   * once the browser has been to Stripe and back. See `giftRecipient` on
-   * `CheckoutRecord`.
+   * Not "composed" any more, and never both: a line carrying a question and a
+   * present is a 422 keyed to the question. In gift mode there is no question
+   * field in the form at all — the sections are mutually exclusive — so this
+   * answers empty by reading nothing rather than by being cleared.
+   */
+  text: string;
+  /**
+   * The present, on a gift, in the wire's own words.
    *
-   * **Absent rather than empty**, on a self-purchase and on a gift the buyer
-   * left blank. `orderFormAccepts` is what stops the second reaching a payment
-   * control, and this module is a guard rather than a guarantee — so the empty
-   * case answers "no address" rather than an empty string the confirmation
-   * would interpolate into a sentence naming nobody.
+   * **Present rather than true**, which is the change of 3 September 2026: the
+   * mode used to be a boolean beside a sentence this module composed, and is
+   * now the object the order carries. One thing says a press was a gift, and it
+   * is the same thing that says what the gift is.
+   *
+   * **Absent on a self-purchase**, and present-with-empty-strings on a gift the
+   * buyer typed nothing into. That second case is not this module's to refuse —
+   * `orderFormAccepts` turns the press down first, and this is a guard rather
+   * than a guarantee — and where it does get through, the backend refuses the
+   * order with a 422 naming the missing field. **Nothing is charged either
+   * way**, which is what the composed sentence could never promise: a gift with
+   * no address used to be placed, paid for, and left for a person to notice.
    *
    * **Not the address confirmation**, which is a check on what the buyer typed
    * and is thrown away where it was compared. See `CONTEXT.md`.
    */
-  recipient?: string;
+  gift?: GiftInput;
 };
-
-/**
- * What a gift order says on its line, and the only account anybody has of who
- * it was for.
- *
- * ## It is read by a person, not parsed by anything
- *
- * `POST /orders` has no field for a recipient email or a gift message, so the
- * gap this closes is **knowing**: without it the paid order reaches the admin
- * orders table looking exactly like somebody buying a reading for themselves.
- * The line's `question` is the field that table already prints, which is why it
- * is the one used.
- *
- * This is a stopgap with a real end date — the gifting milestone gives the
- * recipient, the message and the **gift signature** columns of their own on a
- * `gifts` row, and a code beside them — and it is written as prose because
- * prose is what survives being read out of a table cell by somebody deciding
- * what to send and where. See the backend's
- * `docs/adr/0004-a-reading-is-a-row-of-its-own.md`.
- *
- * ## It may never answer empty
- *
- * A buyer can reach a payment control in gift mode with nothing typed;
- * `orderFormAccepts` is what stops them, and it is a guard rather than a
- * guarantee — this has to hold even if it is one day pressed without one. An
- * empty note on a gift order is indistinguishable from a self-purchase, because
- * `placeOneReading` drops an empty question from the line rather than sending a
- * blank one, so the order would carry no trace of the gift at all and the
- * reading would go quietly to the buyer. Every blank combination therefore
- * still answers, and says which part is missing.
- *
- * ## Two limits it lives inside, neither of them checked here
- *
- * The backend refuses a line's `question` over 2000 characters, and this stays
- * under it **by construction**: `CountedField` sets `maxLength`, so the address
- * is capped at 254, the signature at 50 and the message at `questionLimit`,
- * which is 500 — a little over 850 at the very worst, prose included. The
- * confirmation is not in that sum and never travels: it is a check on what the
- * buyer typed, not a second thing they told us.
- *
- * It also refuses a `question` on any product whose `allows_question` is false.
- * That is safe because gift mode is drawn on reading pages alone and the
- * backend's `ProductKey::allowsQuestion` is true for every `Reading` — but it
- * is a dependency rather than a coincidence, and a giftable product that
- * allowed no question would 422 on **every** gift order rather than only on the
- * ones somebody typed into.
- */
-export function giftNote({
-  recipient,
-  message,
-  signature,
-}: {
-  recipient: string;
-  message: string;
-  signature: string;
-}): string {
-  // Trimmed for the reason the question is: whitespace on an order line comes
-  // back out in the admin table and in the email that is sent from it.
-  const to = recipient.trim();
-  const said = message.trim();
-  const signed = signature.trim();
-
-  /*
-    The **gift signature** goes in front of the address rather than after it,
-    which is the same rule as the full stop below: whatever ends this clause is
-    a character somebody copying the address out of a table cell takes with
-    them, and a comma is no better than a period for that.
-
-    It is required on the form from 3 September 2026 (#71) and still composed
-    here as though it might be missing, for the reason the recipient is — this
-    function is a guard rather than a guarantee, and a required attribute that
-    nothing submits is enforced by `orderFormAccepts` alone.
-  */
-  const opening = signed ? `Gift from ${signed}` : "Gift";
-
-  // No full stop after the address, and one after the sentence that has no
-  // address in it. A period hard against an email is a character somebody
-  // copying the address out of a table cell takes with them.
-  const line = to
-    ? `${opening} — send this reading to ${to}`
-    : `${opening} — the buyer gave no recipient address.`;
-
-  // Absent rather than labelled empty. The message is the one field on either
-  // section whose label says "optional", so a dangling "The buyer's message:"
-  // would be the ordinary case reading like a fault.
-  return said ? `${line}\n\nThe buyer's message: ${said}` : line;
-}
 
 /**
  * One of the panel's fields, found by the name the app knows it by.
@@ -325,46 +261,55 @@ export function orderFormAccepts(node: Element | null | undefined): boolean {
 }
 
 /**
- * The line's text and its mode, read off whichever section the form has
- * mounted.
+ * What the line carries, read off whichever section the form has mounted.
  *
- * An empty `text` where there is no form, no field, or nothing typed — all
- * three mean the same thing to an order, whose `question` is optional on every
- * product. **A gift is the one case that never answers empty**; see `giftNote`.
+ * An empty `text` and no gift where there is no form, no field, or nothing
+ * typed — all three mean the same thing to an order, whose `question` is
+ * optional on every product.
+ *
+ * **Every field is trimmed on the way out.** Whitespace on an order line comes
+ * back out in the admin table, in the mail sent from it, and — for the
+ * signature — in the subject line of a message to somebody who has never heard
+ * of us. It is done here rather than downstream because there is one reader and
+ * two roads, and a trim in either road is a trim the other can forget.
  */
 export function orderNoteIn(node: Element | null | undefined): OrderNote {
   const form = node?.closest("form");
 
-  // Not a gift, rather than unknown. There is one flag and it decides whether a
+  // Not a gift, rather than unknown. What is read here decides whether a
   // cancelled checkout refills a textarea, so the case where nothing could be
   // read has to land on the answer that puts nothing anywhere.
-  if (!form) return { text: "", gift: false };
+  if (!form) return { text: "" };
 
   /*
     Presence, not truthiness. A field that is not in the form at all and one
     that is there and empty are the two states this has to tell apart, because
-    an empty recipient in gift mode is still a gift and must still be marked as
+    an empty recipient in gift mode is still a gift and must still be sent as
     one — which is why the element is looked for rather than its value read.
+
+    Sending it as one is what earns the refusal. The backend requires an address
+    on a gift, so the blank case is a 422 with nothing charged; dropping the
+    empty object here would place an ordinary order for the buyer instead, which
+    is the outcome this module exists to prevent.
   */
   if (fieldIn(form, "recipientEmail") === null) {
-    return { text: textIn(form, "question"), gift: false };
+    return { text: textIn(form, "question") };
   }
 
-  // Trimmed once, here, and used for both things a gift order does with it:
-  // `giftNote` trims again on its own way past — it is exported as a seam and
-  // is tested with untrimmed input — and the record wants the same string the
-  // note quotes rather than one with the buyer's trailing space on it.
-  const recipient = textIn(form, "recipientEmail").trim();
+  const message = textIn(form, "giftMessage").trim();
 
   return {
-    text: giftNote({
-      recipient,
-      message: textIn(form, "giftMessage"),
-      signature: textIn(form, "giftSignature"),
-    }),
-    gift: true,
-    // Absent rather than empty; see `OrderNote`. `giftNote` above says so in
-    // prose on the line, which is the reader that cannot leave a field out.
-    ...(recipient === "" ? {} : { recipient }),
+    // **Never both.** The gift section mounts no question field, so this reads
+    // empty on its own; it is stated rather than read so that a section that
+    // one day holds both boxes cannot quietly send a 422.
+    text: "",
+    gift: {
+      recipient_email: textIn(form, "recipientEmail").trim(),
+      signature: textIn(form, "giftSignature").trim(),
+      // Absent rather than empty. The message is the one field on this section
+      // whose label says "optional", and a gift mail rendering a blank line
+      // where the buyer's words go is the ordinary case reading like a fault.
+      ...(message === "" ? {} : { message }),
+    },
   };
 }
