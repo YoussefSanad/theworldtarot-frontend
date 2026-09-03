@@ -51,10 +51,17 @@ What matters at this level is the rule the slot carries: **whatever fills it
 owns the checkout anchor**, because the closing call to action renders only
 when the slot is full and scrolls to an id that lives inside it.
 
-**The presentation half mounts on its own**, and `/presentation-probe/` is that
-page — a throwaway route, deleted when `/redeem/` lands
-([#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79)), the
-same bargain `checkout-probe` is under. `DEPLOYMENT.md` names both.
+**The presentation half mounts on its own**, and
+[`/redeem/`](../../app/(site)/redeem/page.tsx) is the page that does it — the
+gifting epic's F5
+([#74](https://github.com/YoussefSanad/theworldtarot-frontend/issues/74)): this
+composition with the code's state and the question in the slot instead of the
+commerce. ~~`/presentation-probe/`~~ was the throwaway route that proved it
+first, with the slot empty, and it went at
+[#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79) the day
+`/redeem/` landed. **The empty slot is still a supported state** — `absent`,
+`null` and `false` all mean empty, and `ClosingSaying` takes `action={null}` for
+it — it is simply no longer a route anybody can load.
 
 **Cutting the seam changed nothing about the three pages, and the export is the
 proof.** There is no renderer in this project, so what stands in for a

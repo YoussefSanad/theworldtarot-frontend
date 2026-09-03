@@ -82,6 +82,14 @@ from, and the route is deleted at #38 when a real payment panel does the same
 thing. Deleting the file is a stronger guarantee than an environment variable
 somebody can set by accident.
 
+**That bargain has been kept once already.** `/presentation-probe/` was the
+other probe on this branch — a reading page with its commerce slot empty, which
+is all `ReadingPresentation` needed to prove — and it went on 3 September 2026
+at [#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79), the
+day `/redeem/` mounted that composition for real. **A deletion that lives in a
+comment gets read; one that lives in an issue gets closed.** This is the only
+probe left, and #38 is where it goes.
+
 **So do not cut a production build from a branch that still has this route.**
 Anybody who loads it places a real pending order against whatever
 `NEXT_PUBLIC_API_BASE_URL` names.
@@ -89,20 +97,6 @@ Anybody who loads it places a real pending order against whatever
 It proves nothing anywhere but `staging.theworldtarot.com`: cookies are issued
 for `.theworldtarot.com`, so on a `pages.dev` preview URL the handshake fails
 for reasons that say nothing about the code.
-
-## The presentation probe
-
-`/presentation-probe/` is a reading page with its commerce slot empty — the
-proof that `ReadingPresentation` mounts without `ReadingOrder`, which is what
-`/redeem/` will do. It writes nothing, takes no input and places no order, so
-unlike the checkout probe above it is safe on any build; what it does do is
-serve `month-ahead`'s copy at a second address, which is why it carries
-`robots: noindex, nofollow`.
-
-It is deleted when `/redeem/` lands — [#79](https://github.com/YoussefSanad/theworldtarot-frontend/issues/79),
-blocked on [#74](https://github.com/YoussefSanad/theworldtarot-frontend/issues/74).
-Both probes go the same way: a file deleted at a named ticket rather than a
-flag somebody has to remember to set.
 
 ## Cloudflare: static assets, not a Worker
 

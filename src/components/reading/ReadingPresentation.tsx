@@ -20,6 +20,10 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  * and a `<title>` — which is what the README has claimed since the second page
  * landed, and what a hundred lines copied three times had stopped being.
  *
+ * The second caller is `/redeem/`, which puts `RedeemPanel` in the slot — the
+ * code's state and the question, in commerce's place, collecting no money. See
+ * `components/redeem/RedeemGift.tsx`.
+ *
  * **The seam is here rather than at `/redeem/` because of when.** Frontend
  * `docs/adr/0003-redemption-is-a-page-of-its-own.md` gives redemption a page of
  * its own and makes it "a reading page with the commerce taken out": the name,
@@ -37,12 +41,18 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  * `/redeem/` will pass is the code's state and the question: commerce's place
  * on the page, holding something that collects no money.
  *
- * **Empty is a supported state**, and the one F1's gate asks for: the
+ * **Empty is a supported state**, and the one F1's gate asked for: the
  * presentation half alone, both panels, the gate, the props and the closing
  * line, with nothing that sells. Absent, `null` and `false` all mean empty,
- * because the natural way to fill this slot is a condition — `/redeem/` has a
- * code it has not resolved yet — and a slot that treated `false` as full would
- * put the closing button back on a page with nothing to scroll to.
+ * because the natural way to fill this slot is a condition, and a slot that
+ * treated `false` as full would put the closing button back on a page with
+ * nothing to scroll to.
+ *
+ * **No route renders it empty today.** `/presentation-probe/` did, and went at
+ * #79 once `/redeem/` had mounted this composition for real. The state stays
+ * supported rather than being tightened to a required prop: what fills the slot
+ * on `/redeem/` is decided by a lookup, and a caller that has not resolved a
+ * code yet is exactly the condition this was taught for.
  *
  * **What is not in the slot is deliberate.** `BeyondTheGate` and
  * `ReadingFeatures` sell nothing — an archway, three props and a promise about
@@ -95,9 +105,9 @@ export function ReadingPresentation({ reading, commerce }: { reading: ReadingPag
               Left: the reading, and then whatever this page does with it.
               Where it sells one, the slot is `ReadingOrder` — the question
               or, in gift mode, the recipient, with the payment under it, and
-              the one piece of state on that page. Where it does not, the slot
-              is the code's state and the question, and nothing here changes;
-              see `docs/adr/0003-redemption-is-a-page-of-its-own.md`.
+              the one piece of state on that page. On `/redeem/` it is the
+              code's state and the question, and nothing here changes; see
+              `docs/adr/0003-redemption-is-a-page-of-its-own.md`.
 
               Top padding is 78px of the 687px panel, which also clears the
               half of the moon hanging below the border. See `ReadingPanel`.
