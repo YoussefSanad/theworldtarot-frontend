@@ -3,7 +3,7 @@
 import { CountedField } from "@/components/reading/CountedField";
 import { FieldBox } from "@/components/reading/FieldBox";
 import { PanelHeading } from "@/components/reading/PanelHeading";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Phrase } from "@/components/ui/Phrase";
 import { questionLimit, readingPageChrome } from "@/content/reading-pages";
 import { redeemCopy } from "@/content/redeem";
@@ -252,6 +252,25 @@ function Spent({ gift }: { gift: Gift }) {
       <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
         {when === null ? spent.undated : spent.body(when)}
       </p>
+
+      {/*
+        The way onward. A spent code is the one state on this page with nothing
+        to do next, and a screen that ends on the refusal leaves somebody
+        standing on a reading page with no control on it — so the shelf is one
+        press away, at `backHref`, where every other exit from this page lands.
+      */}
+      <p className="mt-[clamp(0.75rem,1.87vw,2.25rem)] max-w-[70cqw] text-fine leading-[1.2] font-light text-champagne/73">
+        {spent.invitation}
+      </p>
+
+      <ButtonLink
+        href={redeemCopy.backHref}
+        variant="ghost"
+        size="md"
+        className="mt-[clamp(0.75rem,1.56vw,1.875rem)]"
+      >
+        {spent.cta}
+      </ButtonLink>
     </section>
   );
 }

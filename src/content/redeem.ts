@@ -162,9 +162,22 @@ export const redeemCopy = {
      * asked: this endpoint answers to anybody holding the code.
      */
     body: (when: string) =>
-      `This gift was redeemed on ${when}. A gift code can only be used once, so there is nothing left to ask for here.`,
+      `This gift was opened on ${when}, and the reading it carried has already been asked for. A gift code holds a single reading, so this one has done what it was sent to do.`,
     /** The same sentence for an answer that carried no date to read. */
-    undated: "This gift has already been redeemed. A gift code can only be used once.",
+    undated:
+      "This gift has already been opened, and the reading it carried has already been asked for. A gift code holds a single reading.",
+    /**
+     * **The way onward, which is the only thing this screen can offer.** The
+     * code is spent and no sentence can unspend it, so the screen stops being
+     * a refusal at this line: a reading of one's own is a thing the visitor
+     * can still have, and this is the page that has their attention.
+     *
+     * It is an invitation and not a promise — it must not read as though the
+     * spent gift entitles them to anything further.
+     */
+    invitation: "The cards are always ready for another question.",
+    /** Sent to `backHref`, the same shelf every other way out of this page lands on. */
+    cta: "GET ANOTHER READING",
   },
 
   /**
