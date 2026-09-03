@@ -698,6 +698,13 @@ const PRODUCT = {
   short_description: "One month, five cards.",
   long_description: "A written reading of the weeks to come.",
   allows_question: true,
+  /*
+    What draws `Gift a Reading` from 3 September 2026 (#73). The toggle is the
+    catalogue's answer rather than this repository's, so a stub that omitted
+    this would put the whole panel into the state a non-giftable product is in
+    and every gift assertion below would fail on a page that is working.
+  */
+  is_giftable: true,
   price: { currency: "EUR", amount: 7000 },
 };
 

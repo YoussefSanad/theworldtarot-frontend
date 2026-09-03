@@ -35,6 +35,7 @@ const product = {
   name: "MONTH AHEAD",
   short_description: "What's in Store?",
   allows_question: true,
+  is_giftable: true,
   price: { currency: "USD", amount: 7500 },
 };
 

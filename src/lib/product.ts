@@ -87,6 +87,36 @@ export function resolveOffer(
 }
 
 /**
+ * Whether this page may offer the reading as a gift.
+ *
+ * **The rule is "unless the catalogue said no", not "only when it said yes",**
+ * and the asymmetry is the point. `is_giftable` reaches this page on one state
+ * — `live` — and the other two the panel renders in are states in which nothing
+ * can be bought at all: `loading` reserves the panel's height behind an `inert`
+ * block, and `unreachable` draws the client's frames with nothing behind them
+ * so a visitor arriving while the API is down does not meet a hole where the
+ * checkout is. Hiding the toggle in either would shorten a panel that is about
+ * to be told the answer, for a control that can take no money in either case.
+ *
+ * **What it does close is the one case the ticket is about**: a live product
+ * the backend says may not be gifted draws no toggle. `POST /orders` refuses a
+ * gift object on such a line with a 422 keyed to it, so a toggle drawn from a
+ * list held in this repository is a button that refuses on submit — and the
+ * list would be wrong the first time the client made a fourth reading giftable.
+ *
+ * `withdrawn` never reaches here: `ReadingOrder` takes the whole order off the
+ * page rather than deciding what to draw inside it.
+ *
+ * **Two callers, and they have to agree.** `GetMyReading` draws the control and
+ * `ReadingOrder` mounts the section it swaps to, so a page that stopped
+ * offering gifting under a visitor already in gift mode would strand them in a
+ * form with no way out.
+ */
+export function giftOffered(offer: ProductOffer): boolean {
+  return offer.status === "live" ? offer.product.is_giftable : offer.status !== "withdrawn";
+}
+
+/**
  * The offer for one product key, live once the backend has answered.
  *
  * **Never fetched at build time**, which is not optional here: prices resolve

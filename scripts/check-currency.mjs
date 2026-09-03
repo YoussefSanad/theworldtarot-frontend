@@ -133,6 +133,7 @@ function catalogue(currency) {
     name,
     short_description: "Priced by the stub.",
     allows_question: true,
+    is_giftable: true,
     price: { currency, amount: Math.round(base * rate) },
   }));
 }
