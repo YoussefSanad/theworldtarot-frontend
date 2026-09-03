@@ -402,7 +402,7 @@ async function drive(
       no assertion here could name.
     */
     signature: await page.locator("#get-my-reading [data-field=giftSignature]").count(),
-    confirmation: await page.locator("#get-my-reading [data-field=confirmEmail]").count(),
+    confirmation: await page.locator("#get-my-reading [data-field=addressConfirmation]").count(),
     /*
       **The half of "the panel may not shift" that this section still keeps**,
       and the row count that pays part of the other half. #71 put four fields
@@ -511,7 +511,7 @@ async function drive(
   if (answered.recipient > 0 && press && !blank) {
     await page.locator("#get-my-reading [data-field=giftSignature]").fill(SIGNATURE);
     await page.locator("#get-my-reading [data-field=recipientEmail]").fill(RECIPIENT);
-    await page.locator("#get-my-reading [data-field=confirmEmail]").fill(mistyped ? MISTYPED : RECIPIENT);
+    await page.locator("#get-my-reading [data-field=addressConfirmation]").fill(mistyped ? MISTYPED : RECIPIENT);
     await page.locator("#get-my-reading [data-field=giftMessage]").fill(GIFT_MESSAGE);
   }
 
@@ -561,7 +561,7 @@ async function drive(
         question: read("question"),
         giftSignature: read("giftSignature"),
         recipientEmail: read("recipientEmail"),
-        confirmEmail: read("confirmEmail"),
+        addressConfirmation: read("addressConfirmation"),
         giftMessage: read("giftMessage"),
       };
     })
@@ -667,7 +667,7 @@ async function drive(
       question: await page.locator("#get-my-reading [data-field=question]").count(),
       recipient: await page.locator("#get-my-reading [data-field=recipientEmail]").count(),
       signature: await page.locator("#get-my-reading [data-field=giftSignature]").count(),
-      confirmation: await page.locator("#get-my-reading [data-field=confirmEmail]").count(),
+      confirmation: await page.locator("#get-my-reading [data-field=addressConfirmation]").count(),
     };
   }
 
@@ -786,7 +786,7 @@ expect("live", "the wallet row reads the same question off the same form", sold.
   // gift's four.
   giftSignature: null,
   recipientEmail: null,
-  confirmEmail: null,
+  addressConfirmation: null,
   giftMessage: null,
 });
 expect("live", "the checkout button is in the layout while loading", sold.resting.hosted, 1);
@@ -955,7 +955,7 @@ expect("gifting", "the wallet row reads the recipient off the same form", gifted
   question: null,
   giftSignature: SIGNATURE,
   recipientEmail: RECIPIENT,
-  confirmEmail: RECIPIENT,
+  addressConfirmation: RECIPIENT,
   giftMessage: GIFT_MESSAGE,
 });
 /*
@@ -1083,7 +1083,7 @@ expect("mistyped", "every field on the section is filled in", mistyped.walletFor
   question: null,
   giftSignature: SIGNATURE,
   recipientEmail: RECIPIENT,
-  confirmEmail: MISTYPED,
+  addressConfirmation: MISTYPED,
   giftMessage: GIFT_MESSAGE,
 });
 expect("mistyped", "no order is placed", mistyped.orderCalls, []);

@@ -102,7 +102,7 @@ export function CountedField({
   /*
     Chrome does not take `autocomplete="off"` at its word on a box it has
     already decided is an email field: it classifies by name and id as well,
-    and `recipientEmail` — or `confirmEmail` — is all the excuse it needs to
+    and `recipientEmail` — or `addressConfirmation` — is all the excuse it needs to
     prompt the purchaser with their own address, the one address neither of
     those fields wants.
 

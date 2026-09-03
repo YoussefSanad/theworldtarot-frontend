@@ -126,13 +126,13 @@ export function RecipientDetails() {
         and not an argument.
       */}
       <div
-        data-mismatch={gift.confirm.mismatch}
+        data-mismatch={gift.confirmation.mismatch}
         className="mt-[clamp(0.5rem,1.04vw,1.25rem)] flex w-[88.35cqw] flex-col"
       >
         <CountedField
-          name="confirmEmail"
-          label={gift.confirm.label}
-          placeholder={gift.confirm.placeholder}
+          name="addressConfirmation"
+          label={gift.confirmation.label}
+          placeholder={gift.confirmation.placeholder}
           limit={254}
           required
           /*

@@ -263,7 +263,7 @@ export function giftAddressesAgree(recipient: string, confirmation: string): boo
  * gift section that has not mounted.
  */
 function markGiftAddresses(form: ParentNode): void {
-  const confirmation = fieldIn(form, "confirmEmail");
+  const confirmation = fieldIn(form, "addressConfirmation");
 
   if (!confirmation) return;
 

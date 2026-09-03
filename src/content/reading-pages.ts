@@ -124,7 +124,7 @@ export const readingPageChrome = {
      * `markGiftAddresses` in `lib/order-note.ts` for why that is load-bearing
      * on the wallet road.
      */
-    confirm: {
+    confirmation: {
       label: "Confirm the recipient's email address",
       placeholder: "Confirm the recipient’s email address…",
       mismatch: "These two email addresses do not match.",

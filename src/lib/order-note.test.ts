@@ -109,7 +109,7 @@ test("the gift section is read by `data-field`, not by the name it submits under
   const { node } = formOf({
     giftSignature: "Mum",
     recipientEmail: "alice@example.com",
-    confirmEmail: "alice@example.com",
+    addressConfirmation: "alice@example.com",
     giftMessage: "Happy birthday.",
   });
 
@@ -123,7 +123,7 @@ test("the gift section is read by `data-field`, not by the name it submits under
 test("an untouched gift section is still a gift", () => {
   // Presence, not truthiness. `orderFormAccepts` is what stops a press getting
   // here, and it is a guard rather than a guarantee.
-  const { node } = formOf({ giftSignature: "", recipientEmail: "", confirmEmail: "", giftMessage: "" });
+  const { node } = formOf({ giftSignature: "", recipientEmail: "", addressConfirmation: "", giftMessage: "" });
 
   // No `recipient` key at all rather than an empty one, so the confirmation
   // falls back to naming nobody instead of interpolating a blank into a
@@ -147,7 +147,7 @@ test("the note carries the address the confirmation will name, trimmed", () => {
   const { node } = formOf({
     giftSignature: "Mum",
     recipientEmail: "  alice@example.com  ",
-    confirmEmail: "alice@example.com",
+    addressConfirmation: "alice@example.com",
     giftMessage: "",
   });
 
@@ -173,7 +173,7 @@ test("the confirmation is a check on the buyer, and never travels", () => {
   const { node } = formOf({
     giftSignature: "Mum",
     recipientEmail: "alice@example.com",
-    confirmEmail: "alice@example.com",
+    addressConfirmation: "alice@example.com",
     giftMessage: "",
   });
 
@@ -295,24 +295,24 @@ test("a press writes the disagreement on the confirmation, and refuses", () => {
     keeps this the single place a press can be refused, and why the comparison
     happens on the way past rather than in a listener that has to have run.
   */
-  const { form, node } = formOf({ recipientEmail: "alice@example.com", confirmEmail: "alicia@example.com" });
+  const { form, node } = formOf({ recipientEmail: "alice@example.com", addressConfirmation: "alicia@example.com" });
 
   assert.equal(orderFormAccepts(node), false);
-  assert.equal(form.boxes.get("confirmEmail")?.validity, "These do not match.");
+  assert.equal(form.boxes.get("addressConfirmation")?.validity, "These do not match.");
 });
 
 test("and takes it back off as soon as the two agree", () => {
   // Recomputed at every press, so **editing the address after confirming it**
   // is caught exactly as editing the confirmation is. A listener would have to
   // have seen the keystroke; this only has to have been called.
-  const { form, node } = formOf({ recipientEmail: "alice@example.com", confirmEmail: "alicia@example.com" });
+  const { form, node } = formOf({ recipientEmail: "alice@example.com", addressConfirmation: "alicia@example.com" });
 
   assert.equal(orderFormAccepts(node), false);
 
   form.boxes.get("recipientEmail")!.value = "alicia@example.com";
 
   assert.equal(orderFormAccepts(node), true);
-  assert.equal(form.boxes.get("confirmEmail")?.validity, "");
+  assert.equal(form.boxes.get("addressConfirmation")?.validity, "");
 });
 
 test("a section with no sentence to refuse with does not refuse", () => {
@@ -320,12 +320,12 @@ test("a section with no sentence to refuse with does not refuse", () => {
   // bubble the buyer cannot read is worse than the typo it was catching, and
   // `check:panel` is what would catch the missing attribute.
   const { form, node } = formOf(
-    { recipientEmail: "alice@example.com", confirmEmail: "alicia@example.com" },
+    { recipientEmail: "alice@example.com", addressConfirmation: "alicia@example.com" },
     null,
   );
 
   assert.equal(orderFormAccepts(node), true);
-  assert.equal(form.boxes.get("confirmEmail")?.validity, "");
+  assert.equal(form.boxes.get("addressConfirmation")?.validity, "");
 });
 
 test("a press on a section with no confirmation field compares nothing", () => {
