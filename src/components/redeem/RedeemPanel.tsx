@@ -9,6 +9,7 @@ import { redeemCopy } from "@/content/redeem";
 import { cn } from "@/lib/cn";
 import { redeemedOn, type AskedReading, type Asking, type Gift } from "@/lib/gifts";
 import { currentLocale } from "@/lib/locale";
+import { textIn } from "@/lib/order-note";
 
 const { ask, spent, asked } = redeemCopy;
 
@@ -125,10 +126,11 @@ function AskForReading({
         /*
           Read off the form at the moment of the press, the way the reading
           panel reads its own — which is what keeps `CountedField`
-          uncontrolled. `data-field` rather than `name`: the fields that
-          suppress autofill submit under an opaque id, and a reader keyed to
-          `name` is the fault that turned every gift order into a
-          self-purchase for four days. See `fieldIn` in `lib/order-note.ts`.
+          uncontrolled. `textIn` rather than a reader of this panel's own:
+          `data-field` is a contract and it is one reader, because the last
+          time there were two, one of them drifted and it took four days and
+          every gift order placed in them. The attribute is what it keys to
+          because the fields that suppress autofill submit under an opaque id.
         */
         // A second press while the first is still in flight would place a
         // second redemption for a code the first one is spending. The backend
@@ -138,14 +140,11 @@ function AskForReading({
         if (asking) return;
 
         const form = event.currentTarget;
-        const valueOf = (field: string) =>
-          form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-field="${field}"]`)
-            ?.value ?? "";
 
         void onAsk({
-          question: valueOf("question"),
-          querentEmail: valueOf("querentEmail"),
-          querentName: valueOf("querentName"),
+          question: textIn(form, "question"),
+          querentEmail: textIn(form, "querentEmail"),
+          querentName: textIn(form, "querentName"),
         });
       }}
     >

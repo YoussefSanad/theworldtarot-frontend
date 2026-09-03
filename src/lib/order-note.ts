@@ -192,12 +192,22 @@ export function giftNote({
  * Reading the element also gets `setCustomValidity` a field to write on, which
  * `FormData` — a snapshot of values — never could.
  */
-function fieldIn(form: ParentNode, name: string): (HTMLInputElement | HTMLTextAreaElement) | null {
+export function fieldIn(form: ParentNode, name: string): (HTMLInputElement | HTMLTextAreaElement) | null {
   return form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-field="${name}"]`);
 }
 
-/** What one field holds, answering `""` for a field this section has not mounted. */
-function textIn(form: ParentNode, name: string): string {
+/**
+ * What one field holds, answering `""` for a field this section has not mounted.
+ *
+ * **Exported for `RedeemPanel`**, which reads its own three fields off its own
+ * form and had a verbatim copy of the selector above until 3 September 2026.
+ * The reader is one function for the reason the docblock on `fieldIn` gives at
+ * length: a second copy is a second thing to forget when the attribute it keys
+ * to moves, and the last time that happened it took four days and every gift
+ * order placed in them. `scripts/check-panel.mjs` reads the DOM independently
+ * on purpose — a check that shared this function could not catch it drifting.
+ */
+export function textIn(form: ParentNode, name: string): string {
   return fieldIn(form, name)?.value ?? "";
 }
 
