@@ -18,9 +18,12 @@ import {
   type RedemptionRecord,
   walletCheckoutFor,
 } from "@/lib/checkout-session";
+import type { ApiProduct } from "@/lib/api";
+import { useCatalogue } from "@/lib/catalogue";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
+import { resolveReadingName } from "@/lib/reading-prices";
 
 /**
  * The **confirmation**: where a paid-for checkout lands, by either road.
@@ -250,20 +253,28 @@ type Result =
    */
   | { state: "unreadable" }
   /**
-   * `named` is the noun phrase the `received` screen interpolates, carried on
-   * every outcome rather than on that one: the outcome is the backend's answer
-   * and can change under a screen already painted, and a field that appeared
-   * with it would be a second thing to remember to set at each of the two
-   * places this is built.
+   * `subject` is what the `received` screen's noun phrase is built from,
+   * carried on every outcome rather than on that one: the outcome is the
+   * backend's answer and can change under a screen already painted, and a
+   * field that appeared with it would be a second thing to remember to set at
+   * each of the two places this is built.
    *
-   * **What it names depends on `gift`**, which is the same record read twice.
-   * A self-purchase names the reading that was bought; a gift names the address
-   * it was sent to, because a gift has no reading to name until somebody
-   * redeems it. `subjectOf` decides, once, so the two builds below cannot
-   * disagree — and the six outcomes that are about unfinished money ignore the
-   * string entirely, their `body` taking no argument.
+   * **Held as the raw record rather than the resolved string**, unlike before
+   * `useReadingName` existed. A self-purchase's noun is a live product name
+   * once the catalogue answers, and that answer can land after this state is
+   * set — a string frozen at that moment could never pick it up, where
+   * `subjectOf` reading `subject` at render time can. `subjectOf` still
+   * decides, once, so the two builds below cannot disagree — and the six
+   * outcomes that are about unfinished money ignore it entirely, their `body`
+   * taking no argument.
    */
-  | { state: "known"; outcome: PaymentOutcome; money: Money | null; gift: boolean; named: string }
+  | {
+      state: "known";
+      outcome: PaymentOutcome;
+      money: Money | null;
+      gift: boolean;
+      subject: { gift: boolean; productKey: string; giftRecipient?: string };
+    }
   /**
    * The redemption road, which carries its own record rather than an outcome:
    * there is no payment here to have an outcome about.
@@ -278,6 +289,12 @@ type Result =
   | { state: "forgotten" };
 
 export function CheckoutComplete() {
+  /*
+    Named apart from the `let live` inside the effect below, which is an
+    unrelated "has this effect been cleaned up" flag and predates this one —
+    two `live`s in one function reads as one shadowing the other by mistake.
+  */
+  const catalogue = useCatalogue();
   const searchParams = useSearchParams();
   /*
     Read once into a plain string rather than passing the params object to the
@@ -362,7 +379,7 @@ export function CheckoutComplete() {
           outcome: "received",
           money: card.money,
           gift: card.gift ?? false,
-          named: subjectOf(card),
+          subject: subjectOf(card),
         });
       }
 
@@ -412,7 +429,7 @@ export function CheckoutComplete() {
           outcome,
           money: record.money,
           gift: record.gift ?? false,
-          named: subjectOf(record),
+          subject: subjectOf(record),
         });
       } catch {
         if (!live) return;
@@ -461,7 +478,7 @@ export function CheckoutComplete() {
           this screen has and this road may not: nothing was paid here, and the
           payment behind the gift was somebody else's, months ago.
         */}
-        <p className={`mt-4 ${BODY}`}>{redeemCopy.asked.body(titleOf(asked.productKey), asked.querentEmail)}</p>
+        <p className={`mt-4 ${BODY}`}>{redeemCopy.asked.body(titleOf(asked.productKey, catalogue), asked.querentEmail)}</p>
 
         {/*
           The reading's own line, stated as a property of the reading rather
@@ -549,7 +566,7 @@ export function CheckoutComplete() {
         </p>
       ) : null}
 
-      <p className={`mt-4 ${BODY}`}>{copy.body(result.named)}</p>
+      <p className={`mt-4 ${BODY}`}>{copy.body(subjectNameOf(result.subject, catalogue))}</p>
 
       <Back />
     </Panel>
@@ -557,13 +574,23 @@ export function CheckoutComplete() {
 }
 
 /**
+ * What the received screen's noun phrase is about — the raw record, not yet
+ * turned into words. Kept apart from `subjectNameOf` so `Result`'s `known`
+ * state can carry this rather than a string: a self-purchase's name comes
+ * from the live catalogue, which can still be asking when this is built, and
+ * a string frozen at that moment could never pick up a later answer.
+ */
+function subjectOf(record: CheckoutRecord): { gift: boolean; productKey: string; giftRecipient?: string } {
+  return { gift: record.gift ?? false, productKey: record.productKey, giftRecipient: record.giftRecipient };
+}
+
+/**
  * The one noun the received screen interpolates, which is a different thing on
  * each side of the gift flag.
  *
- * **A self-purchase names the reading.** The record's product key is the
- * backend's name for it and no customer's, so it is never rendered — it is
- * turned into a title or into nothing. The fallback is copy rather than a
- * literal here, because it is a word a customer reads.
+ * **A self-purchase names the reading**, live off `/products` once the
+ * catalogue has answered and the bundled title before or without one — see
+ * `titleOf`.
  *
  * **A gift names the address it went to**, because a gift has no reading to
  * name: nobody has asked anything yet, and the product on the record is what
@@ -575,26 +602,30 @@ export function CheckoutComplete() {
  * the result is built — where a gift painted optimistically and a gift painted
  * after verification could otherwise name two different things.
  */
-function subjectOf(record: CheckoutRecord): string {
-  if (record.gift) {
-    return record.giftRecipient ?? checkoutCompleteCopy.unnamedRecipient;
+function subjectNameOf(subject: { gift: boolean; productKey: string; giftRecipient?: string }, live: ApiProduct[] | null): string {
+  if (subject.gift) {
+    return subject.giftRecipient ?? checkoutCompleteCopy.unnamedRecipient;
   }
 
-  return titleOf(record.productKey);
+  return titleOf(subject.productKey, live);
 }
 
 /**
- * What a **product key** is called on this screen, or the word that stands in
- * for a key this build has drawn no page for.
+ * What a **product key** is called on this screen, live off `/products` once
+ * the catalogue has answered, or the word that stands in for a key this build
+ * has drawn no page for.
  *
  * Its own function because two roads name a reading now and they must name it
- * the same way: a self-purchase through `subjectOf`, and a redemption from the
- * record `/redeem/` left in the tab. The key is the backend's name and no
+ * the same way: a self-purchase through `subjectNameOf`, and a redemption from
+ * the record `/redeem/` left in the tab. The key is the backend's name and no
  * customer's, so it is turned into a title or into `unnamedReading` — never
  * rendered, and never guessed at.
  */
-function titleOf(productKey: string): string {
-  return readingPageFor(productKey)?.title ?? checkoutCompleteCopy.unnamedReading;
+function titleOf(productKey: string, live: ApiProduct[] | null): string {
+  const bundled = readingPageFor(productKey)?.title;
+  if (!bundled) return checkoutCompleteCopy.unnamedReading;
+
+  return resolveReadingName(live, productKey, bundled);
 }
 
 function Back() {

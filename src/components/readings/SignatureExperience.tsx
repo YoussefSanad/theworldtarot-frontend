@@ -9,7 +9,7 @@ import { Divider } from "@/components/ui/Divider";
 import { OrnateFrame, OrnateMark } from "@/components/ui/OrnateFrame";
 import { Phrase } from "@/components/ui/Phrase";
 import { readingAction, signature } from "@/content/readings";
-import { useReadingPrice } from "@/lib/reading-prices";
+import { useReadingName, useReadingPrice } from "@/lib/reading-prices";
 
 /**
  * The one-card experience, in the page's only open-top panel — the heading
@@ -47,13 +47,14 @@ import { useReadingPrice } from "@/lib/reading-prices";
  */
 export function SignatureExperience() {
   const price = useReadingPrice(signature.productKey, signature.price);
+  const title = useReadingName(signature.productKey, signature.title);
 
   return (
     <Section padding="none" className="pb-[clamp(1.5rem,5.26vw,6.3125rem)]">
       <Container width="readings">
         <Link
           href={signature.href}
-          aria-label={`${signature.title} — ${price} ${readingAction}`}
+          aria-label={`${title} — ${price} ${readingAction}`}
           className="panel-hover block no-underline"
         >
           <OrnateFrame
@@ -104,7 +105,7 @@ export function SignatureExperience() {
               <div className="signature-copy lg:flex lg:w-full lg:flex-1 lg:flex-col lg:items-center lg:justify-center lg:px-[clamp(1rem,2vw,2.5rem)] lg:py-[clamp(1.25rem,2.6vw,3.125rem)]">
                 <div className="signature-text flex flex-col items-center justify-center px-[4%] pb-[4%] text-center lg:contents">
                   <h3 className="font-display text-[clamp(1.375rem,6.4vw,1.75rem)] tracking-[-0.01em] text-cream lg:text-h1-sm">
-                    {signature.title}
+                    {title}
                   </h3>
 
                   {/*

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { ApiProduct } from "./api.ts";
-import { resolveReadingPrice } from "./reading-prices.ts";
+import { resolveReadingName, resolveReadingPrice } from "./reading-prices.ts";
 
 function priced(key: string, currency: string, amount: number): ApiProduct {
   return {
@@ -43,4 +43,20 @@ test("an empty catalogue is a fault rather than a shop with nothing in it", () =
 
 test("a price that is not a whole unit keeps its decimals", () => {
   assert.equal(resolveReadingPrice([priced("in-depth", "USD", 12050)], "in-depth", "$120"), "$120.50");
+});
+
+test("before an answer, the bundled name stands", () => {
+  assert.equal(resolveReadingName(null, "in-depth", "In-Depth"), "In-Depth");
+});
+
+test("a live name replaces it", () => {
+  assert.equal(resolveReadingName(live, "in-depth", "In-Depth"), "IN-DEPTH");
+});
+
+test("a key the catalogue answered without keeps the bundled name", () => {
+  assert.equal(resolveReadingName(live, "month-ahead", "Month Ahead"), "Month Ahead");
+});
+
+test("an empty catalogue keeps the bundled name, same fault as the price", () => {
+  assert.equal(resolveReadingName([], "in-depth", "In-Depth"), "In-Depth");
 });

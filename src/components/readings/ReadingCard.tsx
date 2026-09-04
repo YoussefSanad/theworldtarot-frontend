@@ -7,7 +7,7 @@ import { Divider } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";
 import { readingAction, type Reading } from "@/content/readings";
 import { ornaments } from "@/lib/assets";
-import { useReadingPrice } from "@/lib/reading-prices";
+import { useReadingName, useReadingPrice } from "@/lib/reading-prices";
 
 /**
  * One of the three traditional readings, in either of the two forms the client
@@ -47,7 +47,7 @@ import { useReadingPrice } from "@/lib/reading-prices";
 export function ReadingCard({ reading }: { reading: Reading }) {
   const price = useReadingPrice(reading.productKey, reading.price);
   const label = `${price} ${readingAction}`;
-  const fullTitle = `${reading.title}${reading.titleTail ?? ""}`;
+  const fullTitle = useReadingName(reading.productKey, `${reading.title}${reading.titleTail ?? ""}`);
 
   return (
     <Link href={reading.href} aria-label={`${fullTitle} — ${label}`} className="reading-card panel-hover no-underline">
@@ -92,9 +92,7 @@ export function ReadingCard({ reading }: { reading: Reading }) {
       */}
       <div className="reading-card__copy flex flex-col items-center justify-center px-[2cqw] pt-[8.52cqw] pb-[4.59cqw] text-center lg:px-0 lg:justify-start lg:pt-[5.19cqw] lg:pb-0">
         <h3 className="font-display text-[7.87cqw] leading-none tracking-[-0.01em] text-cream lg:text-[9.96cqw]">
-          {reading.title}
-          {/* Added back at `lg`; the mobile card drops it so the title holds one line. */}
-          {reading.titleTail ? <span className="hidden lg:inline">{reading.titleTail}</span> : null}
+          {fullTitle}
         </h3>
 
         <Divider variant="hero" className="w-[52cqw] max-w-none lg:-mt-[1.66cqw] lg:w-[92.95cqw]" />

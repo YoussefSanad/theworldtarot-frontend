@@ -230,10 +230,16 @@ export function ConceptHeader() {
               </div>
 
               <nav aria-label="Primary" className="flex flex-col gap-5 text-nav">
+                {/*
+                  A dropdown-capable NavGroup joined `primaryNav` for the
+                  live header's READINGS item (see `content/site.ts`); this
+                  demo predates it and has no dropdown of its own, so a group
+                  here just links its first child.
+                */}
                 {primaryNav.map((link) => (
                   <Link
-                    key={link.href}
-                    href={link.href}
+                    key={link.label}
+                    href={"children" in link ? link.children[0].href : link.href}
                     className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
                     onClick={closeMenu}
                   >
