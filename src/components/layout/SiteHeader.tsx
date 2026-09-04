@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { AccountControl } from "@/components/account/AccountControl";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
+import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
@@ -203,26 +204,7 @@ export function SiteHeader() {
               {headerActions.cta.label}
             </ButtonLink>
 
-            {/*
-              No longer mapped with the bag beside it: the account control has
-              two states and the bag has one, so what was a list of identical
-              icon links is now one component and one link.
-            */}
             <AccountControl />
-
-            <Link
-              href={headerActions.bag.href}
-              aria-label={headerActions.bag.label}
-              className="opacity-90 transition-opacity hover:opacity-100"
-            >
-              <Image
-                src={headerActions.bag.icon.src}
-                alt=""
-                width={headerActions.bag.icon.width}
-                height={headerActions.bag.icon.height}
-                className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-              />
-            </Link>
 
             {/*
               Last, not first: `LocaleMenu` anchors its panel to its own right
@@ -233,15 +215,19 @@ export function SiteHeader() {
           </div>
 
           <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
-            {primaryNav.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {primaryNav.map((item) =>
+              "children" in item ? (
+                <NavDropdown key={item.label} group={item} />
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
         </div>
       </div>
@@ -321,34 +307,37 @@ export function SiteHeader() {
                 </ButtonLink>
 
                 <AccountControl onNavigate={closeMenu} />
-
-                <Link
-                  href={headerActions.bag.href}
-                  aria-label={headerActions.bag.label}
-                  className="opacity-90 transition-opacity hover:opacity-100"
-                  onClick={closeMenu}
-                >
-                  <Image
-                    src={headerActions.bag.icon.src}
-                    alt=""
-                    width={headerActions.bag.icon.width}
-                    height={headerActions.bag.icon.height}
-                    className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-                  />
-                </Link>
               </div>
 
               <nav aria-label="Primary" className="flex flex-col gap-5 text-nav-sm">
-                {primaryNav.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
-                    onClick={closeMenu}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {primaryNav.map((item) =>
+                  "children" in item ? (
+                    <div key={item.label} className="flex flex-col gap-5">
+                      <span className="text-mist-dim tracking-[0.01em]">{item.label}</span>
+                      <div className="flex flex-col gap-5 border-l border-(--edge-gold) pl-5">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                            onClick={closeMenu}
+                          >
+                            <NavGroupLinkLabel link={child} />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                      onClick={closeMenu}
+                    >
+                      {item.label}
+                    </Link>
+                  ),
+                )}
               </nav>
 
               {/*

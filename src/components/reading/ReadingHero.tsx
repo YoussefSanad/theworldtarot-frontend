@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 
 import { Divider } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";
 import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
+import { useReadingName } from "@/lib/reading-prices";
 
 const { hero } = readingPageChrome;
 
@@ -32,9 +35,11 @@ const { hero } = readingPageChrome;
  * for it to dissolve towards.
  */
 export function ReadingHero({ reading }: { reading: ReadingPage }) {
+  const title = useReadingName(reading.productKey, reading.title);
+
   return (
     <div className="flex flex-col items-center text-center">
-      <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">{reading.title}</h1>
+      <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">{title}</h1>
 
       {/* 448px, which is the cap `.divider--hero` already carries. */}
       <Divider variant="hero" className="mt-[clamp(0.125rem,0.16vw,0.1875rem)]" />

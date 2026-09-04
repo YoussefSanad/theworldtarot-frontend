@@ -7,28 +7,54 @@ import { icons } from "@/lib/assets";
  * yet, so links point at the paths from the navigation document and will
  * resolve once those pages land.
  *
- * **`/readings/` carries a trailing slash and the paths below it do not.** The
- * export is a directory of `index.html` files and `next.config.mjs` sets
- * `trailingSlash: true`, so a link without one costs a 308 on the way — the
- * same reasoning as `signInPath` in `content/login.ts`. The slash only buys
- * anything on a route that exists, and every other path named in this file is
- * unbuilt: each answers a 404 whichever way it is written, and slashing them
- * now would say they had been built.
+ * **A path carries a trailing slash once its route is built, and not before.**
+ * The export is a directory of `index.html` files and `next.config.mjs` sets
+ * `trailingSlash: true`, so a link without one costs a 308 on the way for a
+ * route that exists — the same reasoning as `signInPath` in
+ * `content/login.ts`. `/readings/`, `/readings/three-card/`,
+ * `/readings/month-ahead/` and `/readings/in-depth/` are built and slashed;
+ * `/readings/one-card` is not (see `signature` in `content/readings.ts`) and
+ * stays bare, along with every other unbuilt path in this file — each answers
+ * a 404 whichever way it is written, and slashing it now would say it had
+ * been built.
  *
  * **The rule is not yet true of the whole repository, and this file is not the
- * place that would make it so.** `content/home.ts`, `content/checkout.ts` and
- * `content/readings.ts` still link `/readings` and `/readings/month-ahead`
- * without the slash, and both of those are built routes paying the hop. Left
- * for the ticket that owns it rather than swept in here; recorded in
+ * place that would make it so.** `content/home.ts` and `content/checkout.ts`
+ * still link `/readings` without the slash, a built route paying the hop.
+ * Left for the ticket that owns it rather than swept in here; recorded in
  * `AUTH-REVIEW-FIXES.md` under F4.
  */
 
 export type NavLink = { label: string; href: string };
 
-export const primaryNav: NavLink[] = [
+/**
+ * A row inside a `NavGroup`'s dropdown. `productKey` is the same key
+ * `Reading.productKey` in `content/readings.ts` uses to ask `/products` for a
+ * price — here it is asked for a name instead, via `useReadingName` in
+ * `lib/reading-prices.ts`. `label` is what shows before that answer arrives
+ * and whenever a row has no product to ask for, such as Overview.
+ */
+export type NavGroupLink = NavLink & { productKey?: string };
+
+/** A nav item that opens a dropdown of links instead of navigating itself. */
+export type NavGroup = { label: string; children: readonly NavGroupLink[] };
+
+export type NavItem = NavLink | NavGroup;
+
+export const primaryNav: NavItem[] = [
   { label: "WORLD TAROT", href: "/world-tarot" },
   { label: "LIVING TAROT", href: "/living-tarot" },
-  { label: "READINGS", href: "/readings/" },
+  {
+    label: "READINGS",
+    children: [
+      { label: "OVERVIEW", href: "/readings/" },
+      /** Dead until the AI One-Card Experience ships; see `signature` in `content/readings.ts`. */
+      { label: "1 CARD EXPERIENCE", href: "/readings/one-card", productKey: "one-card" },
+      { label: "3 CARD", href: "/readings/three-card/", productKey: "three-card" },
+      { label: "MONTH AHEAD", href: "/readings/month-ahead/", productKey: "month-ahead" },
+      { label: "IN DEPTH", href: "/readings/in-depth/", productKey: "in-depth" },
+    ],
+  },
   { label: "LIBRARY", href: "/library" },
   { label: "FAQ", href: "/faq" },
 ];

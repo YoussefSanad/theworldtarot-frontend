@@ -44,3 +44,28 @@ export function resolveReadingPrice(
 export function useReadingPrice(productKey: string, bundled: string): string {
   return resolveReadingPrice(useCatalogue(), productKey, bundled);
 }
+
+/**
+ * What a reading is called, live once the backend has answered.
+ *
+ * The same join as `resolveReadingPrice`, on the same key, for `name` instead
+ * of `price` — see that function for the fallback rule this shares: a missing
+ * or unmatched answer keeps the bundled copy rather than showing nothing.
+ */
+export function resolveReadingName(
+  live: ApiProduct[] | null,
+  productKey: string,
+  bundled: string,
+): string {
+  const match = live?.find((product) => product.key === productKey);
+
+  return match ? match.name : bundled;
+}
+
+/**
+ * The name for one reading, live once the backend has answered. Shares the
+ * same `/products` call as `useReadingPrice`, via `lib/catalogue.ts`.
+ */
+export function useReadingName(productKey: string, bundled: string): string {
+  return resolveReadingName(useCatalogue(), productKey, bundled);
+}
