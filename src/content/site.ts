@@ -97,10 +97,9 @@ export const footerNav: NavLink[] = [
 ];
 
 export const socialLinks: { label: string; href: string; icon: SocialIconName }[] = [
-  { label: "Facebook", href: "https://facebook.com", icon: "facebook" },
-  { label: "Instagram", href: "https://instagram.com", icon: "instagram" },
+  { label: "Facebook", href: "https://www.facebook.com/theworldtarotofficial/", icon: "facebook" },
+  { label: "Instagram", href: "https://www.instagram.com/theworldtarotofficial/", icon: "instagram" },
   { label: "TikTok", href: "https://tiktok.com", icon: "tiktok" },
-  { label: "YouTube", href: "https://youtube.com", icon: "youtube" },
 ];
 
 /**
