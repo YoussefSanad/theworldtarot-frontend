@@ -86,3 +86,33 @@ backend's side knows. **Whatever builds the deferred half needs its own
 completeness check at build time**, or a language ships with English holes in it.
 That is the cost of keeping the copy here, stated where the next person will find
 it.
+
+## What `/en/` would have cost, priced
+
+**Recorded 5 September 2026**, when this decision was revisited before launch as
+the section above asks, and confirmed unchanged. The price is kept here because
+the document that established it — `docs/plans/locale-controls.md`, never
+committed — was deleted the same day, and the number is the whole argument.
+
+Moving English from `/` to `/en/`: a route move across nine routes, a root-layout
+move, `generateStaticParams`, a `LocaleLink` applied across **48 `href`s in
+`src/content/`**, all **seven `check:` scripts**, a Cloudflare Worker for the
+`/` → `/en/` redirect, and **`/` answering 404 in `next dev` forever**.
+
+That last is not a matter of effort. `redirects`, `rewrites`, `headers` and Proxy
+are all listed as unsupported under `output: "export"` — verified against
+`node_modules/next/dist/docs/01-app/02-guides/static-exports.md` on 5 September
+2026 — so nothing can send `/` to `/en/` locally, and the Worker only fixes it in
+production.
+
+Keeping `/` costs one thing: an "unless it is the default locale" branch in the
+link and canonical helpers. `src/lib/seo.ts` is where that branch lives.
+
+The three documents deleted alongside this note — `locale-controls.md`,
+`locale-controls-implementation.md` and `local-controls-reply.md`, all dated
+30 August 2026 and never committed — argued the opposite decision: language as a
+stored browser preference with no URL at all, accepting that *"non-English pages
+cannot be found in search, ever."* This ADR reversed that on 3 September. They
+were deleted because a 1,925-line implementation plan for a design that lost,
+sitting untracked and undated in `docs/plans/`, reads as current to everyone who
+finds it.

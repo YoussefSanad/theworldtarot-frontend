@@ -150,5 +150,17 @@ export const newsletter = {
   },
 };
 
-export const siteName = "The World Tarot";
+/**
+ * The house name.
+ *
+ * **Declared in `src/lib/seo.ts` since 5 September 2026** and re-exported here,
+ * which is the opposite of where a name like this belongs — copy lives in
+ * `content/`. It moved because `src/lib` cannot value-import through the `@/`
+ * alias without breaking `node --test`, and `seo.ts` is unit-tested while this
+ * file is not. Every consumer was a page title, and composing page titles is
+ * what `buildMetadata` does, so this export exists for anything that arrives
+ * later.
+ */
+export { SITE_NAME as siteName } from "@/lib/seo";
+
 export const copyright = "© 2026 The World Tarot • All rights reserved.";

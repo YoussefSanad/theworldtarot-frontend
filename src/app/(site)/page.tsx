@@ -8,10 +8,13 @@ import { ValueProps } from "@/components/home/ValueProps";
 import { WhatsIncluded } from "@/components/home/WhatsIncluded";
 import { WorldTarotIntro } from "@/components/home/WorldTarotIntro";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationJsonLd } from "@/lib/structured-data";
 
 export default function HomePage() {
   return (
     <>
+      <JsonLd data={organizationJsonLd()} />
       <PageAtmosphere variant="hero" />
       <Hero />
       <WorldTarotIntro />

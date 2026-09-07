@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
+
 import { CheckoutProbe } from "@/components/probe/CheckoutProbe";
+import { buildMetadata } from "@/lib/seo";
 
 /**
  * The throwaway proof that a browser on our own origin can place an order and
@@ -24,6 +27,22 @@ import { CheckoutProbe } from "@/components/probe/CheckoutProbe";
  * against whichever API the build points at. That is acceptable while the only
  * such build is staging. It stops being acceptable the moment it is not.
  */
+
+/**
+ * Out of the index, belt and braces.
+ *
+ * `DEPLOYMENT.md` says no production build may be cut from a branch carrying
+ * this route, and deleting the file at #38 is the real guarantee. This is the
+ * cheap second one: anybody who loads this page places a real pending order
+ * against whatever API the build points at, and a search result is the one way
+ * somebody arrives here without meaning to.
+ */
+export const metadata: Metadata = buildMetadata({
+  path: "/checkout-probe/",
+  title: "Checkout Probe",
+  index: false,
+});
+
 export default function CheckoutProbePage() {
   return <CheckoutProbe />;
 }

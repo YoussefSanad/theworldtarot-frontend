@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { CheckoutComplete } from "@/components/checkout/CheckoutComplete";
 import { checkoutCompleteCopy } from "@/content/checkout";
-import { siteName } from "@/content/site";
+import { buildMetadata } from "@/lib/seo";
 
 /**
  * `/checkout/complete/` — where a paid-for checkout lands, and the address a
@@ -19,16 +19,17 @@ import { siteName } from "@/content/site";
  * deployed before the first payment that can be challenged, which is why it
  * lands ahead of the payment panel rather than with it.
  */
-export const metadata: Metadata = {
-  title: `${checkoutCompleteCopy.pageTitle} — ${siteName}`,
+export const metadata: Metadata = buildMetadata({
+  path: "/checkout/complete/",
+  title: checkoutCompleteCopy.pageTitle,
   /*
     Reached only from a payment, and the address carries a payment intent's
     client secret when Stripe put one there. Nothing about it belongs in an
     index, and a search result pointing here would show a stranger a page that
     can only tell them it has nothing to show.
   */
-  robots: { index: false, follow: false },
-};
+  index: false,
+});
 
 export default function CheckoutCompletePage() {
   /*
