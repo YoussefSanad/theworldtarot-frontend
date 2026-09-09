@@ -8,6 +8,7 @@ import { brand } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 import { useReveal } from "./reveal-context";
+import { chrome } from "@/content/site";
 
 const FADE_SECONDS = 0.8;
 
@@ -19,7 +20,7 @@ const FADE_SECONDS = 0.8;
  * visits skip the button and fade the name in with the cinematic replay.
  */
 export function RevealTrigger({
-  label = "REVEAL YOUR CARD",
+  label = chrome.revealCard,
   question = "Why has this card appeared for you now?",
   className,
 }: {

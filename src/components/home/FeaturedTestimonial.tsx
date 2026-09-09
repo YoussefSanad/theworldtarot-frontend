@@ -1,3 +1,5 @@
+"use client";
+
 import { Container, Section } from "@/components/layout/Section";
 import { StarRating } from "@/components/ui/StarRating";
 import { featuredTestimonial } from "@/content/home";

@@ -1,4 +1,31 @@
 import type { PaymentOutcome } from "@/lib/payment-outcome";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/checkout.json" with { type: "json" };
+import es from "./locales/es/checkout.json" with { type: "json" };
+
+/**
+ * The words on the confirmation screen. `backHref` stays here, being an address.
+ *
+ * **Two of the six sentences are built around a value** and are stored with
+ * `{reading}` and `{recipient}` in them; `fill` puts the value in. The other
+ * four take no argument and must keep ignoring the one their type gives them —
+ * a body that started interpolating would put a product name into a sentence
+ * about a payment that never happened.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
+
+/**
+ * Substitutes `{name}` placeholders.
+ *
+ * An unknown key is left visible rather than blanked, for the reason
+ * `content/redeem.ts` gives at its own copy of this: a sentence missing the
+ * value it was built around reads as finished and is wrong, where one still
+ * carrying `{reading}` is obviously broken.
+ */
+function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (whole, key) => values[key] ?? whole);
+}
 
 /**
  * The words on the confirmation screen.
@@ -64,11 +91,11 @@ export const checkoutCompleteCopy = {
    * payment was taken, and a tab reading "Payment received" above them is the
    * part of a page that gets screenshotted and re-read.
    */
-  pageTitle: "Your payment",
+  pageTitle: copy.pageTitle,
   /** Above the amount, whatever the outcome. */
   outcomes: {
     received: {
-      heading: "Your reading is on its way",
+      heading: copy.outcomes.received.heading,
       /*
         `reading` is the noun phrase after "Your" — "Month Ahead Reading" where
         the record names a product this build has a page for, and
@@ -89,27 +116,23 @@ export const checkoutCompleteCopy = {
         too**, and the delivery figure moves to `readingPageFor` the same way
         the name already has.
       */
-      body: (reading) =>
-        `Thank you. Your ${reading} has been received and will be delivered within 24 hours. A confirmation email is on its way.`,
-      amountLabel: "Payment received:",
+      body: (reading) => fill(copy.outcomes.received.body, { reading }),
+      amountLabel: copy.outcomes.received.amountLabel,
     },
     pending: {
-      heading: "Your payment is going through",
-      body: () =>
-        "Your bank has it and has not finished with it yet, which some payment methods do. Nothing more is needed from you. We will email you as soon as it clears.",
-      amountLabel: "Being paid",
+      heading: copy.outcomes.pending.heading,
+      body: () => copy.outcomes.pending.body,
+      amountLabel: copy.outcomes.pending.amountLabel,
     },
     unpaid: {
-      heading: "No payment was taken",
-      body: () =>
-        "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again — a different card, or the same one a moment later.",
-      amountLabel: "Still to pay",
+      heading: copy.outcomes.unpaid.heading,
+      body: () => copy.outcomes.unpaid.body,
+      amountLabel: copy.outcomes.unpaid.amountLabel,
     },
     unfinished: {
-      heading: "Your payment is not finished",
-      body: () =>
-        "It has not been completed and nothing has been charged yet. If you were in the middle of confirming with your bank, go back to the reading and start the payment again.",
-      amountLabel: "To pay",
+      heading: copy.outcomes.unfinished.heading,
+      body: () => copy.outcomes.unfinished.body,
+      amountLabel: copy.outcomes.unfinished.amountLabel,
     },
   } satisfies Record<PaymentOutcome, OutcomeCopy>,
 
@@ -143,20 +166,19 @@ export const checkoutCompleteCopy = {
    * gift copy in `content/reading-pages.ts`.
    */
   giftReceived: {
-    heading: "Your gift is on its way",
+    heading: copy.giftReceived.heading,
     /*
       `recipient` is the address the buyer typed, not a name — the panel asks
       for no name for the recipient, only for the **gift signature** of the
       person sending it, and quoting an address back is what lets a typo be
       seen. `unnamedRecipient` below stands in where the record has none.
     */
-    body: (recipient) =>
-      `Thank you. We have sent your gift to ${recipient}, with a code to redeem it whenever they are ready. Your own confirmation email is on its way.`,
-    amountLabel: "Payment received:",
+    body: (recipient) => fill(copy.giftReceived.body, { recipient }),
+    amountLabel: copy.giftReceived.amountLabel,
   } satisfies OutcomeCopy,
 
   /** While Stripe is being asked. Not a claim about anything. */
-  checkingHeading: "Checking your payment",
+  checkingHeading: copy.checkingHeading,
 
   /**
    * Reached with nothing to read: no intent in the URL and none in this tab.
@@ -168,14 +190,12 @@ export const checkoutCompleteCopy = {
    * as a confirmation.** It says what is true (we cannot tell) and never that
    * anything was received.
    */
-  unknownHeading: "We cannot show you this payment",
-  unknownBody:
-    "There is nothing here for us to look up — this page shows a payment made in this tab, and that is not what brought you here. If you have just paid, your receipt will arrive by email and is the record that counts. If you were part-way through, go back to the reading and start again.",
+  unknownHeading: copy.unknownHeading,
+  unknownBody: copy.unknownBody,
 
   /** Stripe answered, but not with an intent. Nothing to report either way. */
-  errorHeading: "We could not check your payment",
-  errorBody:
-    "Something went wrong looking it up, which says nothing about whether you were charged. Your receipt will arrive by email if the payment went through. Reloading this page is safe.",
+  errorHeading: copy.errorHeading,
+  errorBody: copy.errorBody,
 
   /**
    * What `received.body` calls the thing that was bought when the record names
@@ -186,7 +206,7 @@ export const checkoutCompleteCopy = {
    * Month Ahead Reading has been received". A screen that could not name the
    * product says less rather than something else.
    */
-  unnamedReading: "reading",
+  unnamedReading: copy.unnamedReading,
 
   /**
    * What `giftReceived.body` calls the address when the record carries none.
@@ -202,7 +222,7 @@ export const checkoutCompleteCopy = {
    * exactly as much as the screen knows, and it is better than naming the wrong
    * one — which is the failure this whole field exists to avoid.
    */
-  unnamedRecipient: "the address you gave",
+  unnamedRecipient: copy.unnamedRecipient,
 
   /**
    * ~~"Back to the readings"~~, and set in the client's capitals from 30 August
@@ -213,7 +233,7 @@ export const checkoutCompleteCopy = {
    * there to render the old sentence-cased label in lower case, and left in
    * place it would have quietly swallowed every capital here.
    */
-  backLabel: "BACK TO READINGS",
+  backLabel: copy.backLabel,
   /**
    * ~~`/readings`~~ **Slashed 3 September 2026** (#82). `trailingSlash` exports
    * a directory of `index.html` files, so the unslashed form costs a 308 on the

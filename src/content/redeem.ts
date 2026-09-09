@@ -39,13 +39,40 @@
  * available — see `CONTEXT.md` on **Recipient** and **Querent**.
  */
 
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/redeem.json" with { type: "json" };
+import es from "./locales/es/redeem.json" with { type: "json" };
+
+/**
+ * The words on this page. `backHref` stays here, being an address.
+ *
+ * **Two sentences are built around values**, and they are the one shape in this
+ * catalogue that is not a finished string: they are stored with `{when}`,
+ * `{reading}` and `{email}` in them and substituted by `fill` below. A
+ * translator moves a placeholder to wherever the sentence needs it in their
+ * language and leaves the braces alone. See `locales/README.md`.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
+
+/**
+ * Substitutes `{name}` placeholders.
+ *
+ * **An unknown key is left visible rather than blanked.** A sentence missing
+ * the value it was built around reads as finished and is wrong; one still
+ * carrying `{when}` is obviously broken, which is the failure that gets fixed.
+ */
+function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (whole, key) => values[key] ?? whole);
+}
+
 export const redeemCopy = {
   /**
    * The route's `<title>`, and the one string that has to be true before a code
    * has resolved — which, on a static export, is every string in the exported
    * HTML.
    */
-  pageTitle: "Redeem a Gift",
+  pageTitle: copy.pageTitle,
 
   /**
    * The screen before a reading is known: no code in the address, or one that
@@ -56,23 +83,23 @@ export const redeemCopy = {
    * that reading's own, which is the whole of ADR 0003.
    */
   entry: {
-    heading: "Redeem a Gift",
+    heading: copy.entry.heading,
     /**
      * Two phrases, so the line breaks where it is written rather than where the
      * measure happens to fall. See the note at the top of `content/readings.ts`.
      */
-    body: ["Someone has given you a reading.", "Enter the code from your email to open it."],
-    label: "Your gift code",
-    placeholder: "Enter your gift code…",
-    submit: "FIND MY GIFT",
+    body: copy.entry.body,
+    label: copy.entry.label,
+    placeholder: copy.entry.placeholder,
+    submit: copy.entry.submit,
     /** While the code is being looked up. Not a claim that it is any good. */
-    looking: "Looking up your code…",
+    looking: copy.entry.looking,
     /**
      * Under the field, because a code typed off a printed mail is the case this
      * field exists for and the spacing is the first thing somebody worries
      * about. It is true: the backend normalises before it looks anything up.
      */
-    forgiving: "Capitals and spacing do not matter.",
+    forgiving: copy.entry.forgiving,
   },
 
   /**
@@ -83,8 +110,7 @@ export const redeemCopy = {
    * all three the same way — telling them apart is a way of asking whether a
    * guess got closer.
    */
-  unknown:
-    "We could not find a gift for that code. Check it against the one in your email and try again.",
+  unknown: copy.unknown,
 
   /**
    * The lookup could not be made at all: a 5xx, or no network.
@@ -93,8 +119,7 @@ export const redeemCopy = {
    * separate sentence. Telling somebody their present does not exist because a
    * server was down is the one thing this page must not do.
    */
-  unreachable:
-    "We could not check that code just now, which says nothing about whether it is good. Please try again in a moment.",
+  unreachable: copy.unreachable,
 
   /**
    * The backend's throttle, which is the tighter of its two on the lookup.
@@ -102,7 +127,7 @@ export const redeemCopy = {
    * Also not an answer about the code, and separated from the sentence above
    * because there is something the visitor can do about this one: wait.
    */
-  throttled: "That is a lot of tries in a short time. Please wait a minute and try again.",
+  throttled: copy.throttled,
 
   /**
    * The panel that replaces the commerce half: what a **querent** is asked for.
@@ -111,32 +136,32 @@ export const redeemCopy = {
    * page where a purchase would be, holding something that collects no money.
    */
   ask: {
-    heading: "Ask Your Question",
-    body: ["This reading is yours.", "Ask your question and it will be written for you."],
+    heading: copy.ask.heading,
+    body: copy.ask.body,
     /**
      * Shown so the visitor can see what was resolved from whatever they typed
      * or whatever the link carried. The printed form is the backend's answer,
      * not a rendering of the input.
      */
-    codeLabel: "Gift code",
+    codeLabel: copy.ask.codeLabel,
     /**
      * **Required here, where a buyer's question is optional.** This is the
      * asking: it is the moment the reading starts existing, and a reading
      * without a question is not one.
      */
-    question: { label: "Your question", placeholder: "Enter your question…" },
+    question: copy.ask.question,
     /**
      * **Asked for, never inherited from the address the gift was sent to.** A
      * forwarded gift is enough to part the **recipient** from the **querent**,
      * and inheriting silently would deliver the reading to whoever forwarded
      * it. See `CONTEXT.md`.
      */
-    email: { label: "Where to send your reading", placeholder: "Your email address…" },
+    email: copy.ask.email,
     /** Optional, exactly as a buyer's name is. */
-    name: { label: "Your name (optional)", placeholder: "Your name…" },
-    submit: "GET MY READING",
+    name: copy.ask.name,
+    submit: copy.ask.submit,
     /** Held across the round trip, because a button that looks idle is pressed twice. */
-    asking: "Asking for your reading…",
+    asking: copy.ask.asking,
     /**
      * **It says the code has not been used**, and that is the load-bearing half
      * of the sentence: a refusal that left somebody unsure whether they had
@@ -144,8 +169,7 @@ export const redeemCopy = {
      * failure it reports. Every arm that reaches this threw before the backend
      * spent anything, or threw because the backend refused to.
      */
-    failed:
-      "We could not ask for your reading, and your code has not been used. Please try again.",
+    failed: copy.ask.failed,
   },
 
   /**
@@ -153,7 +177,7 @@ export const redeemCopy = {
    * lost the race to another tab.
    */
   spent: {
-    heading: "Already Redeemed",
+    heading: copy.spent.heading,
     /**
      * `when` is the day it was spent, formatted against the site's locale.
      *
@@ -161,11 +185,9 @@ export const redeemCopy = {
      * whether it was them. What is not here is who redeemed it or what they
      * asked: this endpoint answers to anybody holding the code.
      */
-    body: (when: string) =>
-      `This gift was opened on ${when}, and the reading it carried has already been asked for. A gift code holds a single reading, so this one has done what it was sent to do.`,
+    body: (when: string) => fill(copy.spent.body, { when }),
     /** The same sentence for an answer that carried no date to read. */
-    undated:
-      "This gift has already been opened, and the reading it carried has already been asked for. A gift code holds a single reading.",
+    undated: copy.spent.undated,
     /**
      * **The way onward, which is the only thing this screen can offer.** The
      * code is spent and no sentence can unspend it, so the screen stops being
@@ -175,9 +197,9 @@ export const redeemCopy = {
      * It is an invitation and not a promise — it must not read as though the
      * spent gift entitles them to anything further.
      */
-    invitation: "The cards are always ready for another question.",
+    invitation: copy.spent.invitation,
     /** Sent to `backHref`, the same shelf every other way out of this page lands on. */
-    cta: "GET ANOTHER READING",
+    cta: copy.spent.cta,
   },
 
   /**
@@ -193,7 +215,7 @@ export const redeemCopy = {
    * `RedemptionRecord` in `lib/checkout-session.ts` for what carries it there.
    */
   asked: {
-    heading: "Your Reading Is On Its Way",
+    heading: copy.asked.heading,
     /**
      * **This screen may promise the reading**, and it is the one gift surface
      * that may: the querent has asked, the reading exists as a row, and
@@ -208,10 +230,9 @@ export const redeemCopy = {
      * the panel** because the panel stood inside that reading's own page, with
      * the name and the artwork above it; this screen has nothing above it.
      */
-    body: (reading: string, email: string) =>
-      `Thank you. Your ${reading} is being written, and it will be sent to ${email}. A confirmation email is on its way to you now.`,
+    body: (reading: string, email: string) => fill(copy.asked.body, { reading, email }),
     /** Above the question, so somebody can check it is the one they meant. */
-    asking: "You asked",
+    asking: copy.asked.asking,
   },
 
   /**
@@ -229,13 +250,12 @@ export const redeemCopy = {
    * nobody redeemed anything with, and a screen cannot tell the two apart.
    */
   lost: {
-    heading: "We Cannot Show You This Redemption",
-    body:
-      "There is nothing here for us to look up — this page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts.",
+    heading: copy.lost.heading,
+    body: copy.lost.body,
   },
 
   /** The way back, in the same capitals the rest of the site sets this control in. */
-  backLabel: "BACK TO READINGS",
+  backLabel: copy.backLabel,
   /**
    * Slashed, because `trailingSlash: true` exports a directory of `index.html`
    * files and the unslashed form costs a 308 on the way. `headerActions.cta`

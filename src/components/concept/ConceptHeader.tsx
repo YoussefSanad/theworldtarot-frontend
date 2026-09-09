@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { ButtonLink } from "@/components/ui/Button";
-import { headerActions, primaryNav, siteName } from "@/content/site";
+import { chrome, headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
@@ -112,7 +112,7 @@ export function ConceptHeader() {
               onClick={toggleMenu}
               aria-expanded={menuOpen}
               aria-controls={panelId}
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-label={menuOpen ? chrome.closeMenu : chrome.openMenu}
               className={cn(
                 "relative flex size-14 items-center justify-center rounded-full border-2 border-gold text-ink-deep",
                 "[background-image:var(--gradient-gold)] shadow-[var(--glow-gold-strong)]",
@@ -148,7 +148,7 @@ export function ConceptHeader() {
           <motion.button
             key="backdrop"
             type="button"
-            aria-label="Close menu"
+            aria-label={chrome.closeMenu}
             className="pointer-events-auto absolute inset-0 bg-night/55"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

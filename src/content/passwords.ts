@@ -1,3 +1,11 @@
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/passwords.json" with { type: "json" };
+import es from "./locales/es/passwords.json" with { type: "json" };
+
+/** The words on this screen, in whichever language it is being read. */
+const copy = pickCopy(en, { es }, currentLocale());
+
 /**
  * The words on the two password pages.
  *
@@ -36,39 +44,6 @@ export type PasswordPageCopy = {
   unknownFailure: string;
 };
 
-export const setPasswordCopy: PasswordPageCopy = {
-  title: "Set your password",
-  heading: "Set your password",
-  intro:
-    "Your account is made and your order is with it. Choose a password and it is yours to sign in with.",
-  passwordLabel: "Choose a password",
-  confirmLabel: "Type it again",
-  submitLabel: "Set my password",
-  busyLabel: "Setting…",
-  successHeading: "Your account is ready",
-  successBody: "You can sign in with your new password whenever you like.",
-  // Not "reset" and not "again": this link works once, and the way back is a
-  // sign in attempt rather than a second copy of the same mail.
-  linkFailure:
-    "This link is no longer valid. If you have already set a password, sign in with it. If not, ask for a new link from the sign in page.",
-  signInPrompt: "Go to the sign in page",
-  rateLimited: "That is a few too many tries. Wait a moment and try once more.",
-  unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
-};
+export const setPasswordCopy: PasswordPageCopy = copy.set;
 
-export const resetPasswordCopy: PasswordPageCopy = {
-  title: "Choose a new password",
-  heading: "Choose a new password",
-  intro: "Pick a new password for your account. The old one stops working as soon as you do.",
-  passwordLabel: "New password",
-  confirmLabel: "Type it again",
-  submitLabel: "Change my password",
-  busyLabel: "Changing…",
-  successHeading: "Your password has been changed",
-  successBody: "You can sign in with it now.",
-  linkFailure:
-    "This link is no longer valid. Reset links last an hour and work once. Ask for a new one from the sign in page.",
-  signInPrompt: "Go to the sign in page",
-  rateLimited: "That is a few too many tries. Wait a moment and try once more.",
-  unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
-};
+export const resetPasswordCopy: PasswordPageCopy = copy.reset;
