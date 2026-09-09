@@ -16,40 +16,61 @@ client, a designer rather than a developer, working from a PSD — can move to
 a CMS later without touching layout or JSX. If you're adding a new piece of
 homepage copy, it belongs in `home.ts`, not inlined in a component.
 
-## "A CMS later" has started, for prices
+## Where the words come from
 
-~~**`products` in `home.ts` is no longer where the tile copy comes from.** Name,
-description and price are read from `GET /api/v1/{locale}/products` at runtime
-and the bundled entries are the fallback for when the backend can't be reached.~~
+Every string this folder exports is read from
+[`locales/`](locales/README.md) — one JSON file per module, one folder per
+language. What stays in the `.ts` is everything that is *not* words: types,
+`href`s, artwork, `key`s, and all the argument in the doc comments. A module
+imports its own JSON, merges it with that structure, and exports the same shapes
+it always did, so no component knows this happened.
 
-**Half struck 6 September 2026.** The price still comes from
-`GET /api/v1/{locale}/products` at runtime, and the bundled price string is
-still only a fallback. **The name and description do not.** All translation is
-handled in this repository until the backend's own translation work is
-finished — see `docs/plans/seo-and-translations.md` §0.6 — so `resolveProducts`
-merges the price and nothing else, and every word on a tile comes from this
-file in every language.
+Two things follow, and both matter when you edit here:
+
+- **Add copy to the JSON, not the `.ts`.** A string typed into a `.ts` file is a
+  hole a translator cannot reach — invisible for an `aria-label`, which is how
+  six of them survived until they were swept up.
+- **A `href` never crosses over.** A translator who finds `/readings/month-ahead/`
+  in their file will eventually edit it, and the link breaks in one language
+  only. `site.test.ts` guards that boundary; the arrays of paths that stay in the
+  `.ts` are matched to their labels by position.
+
+## What the API supplies, and when
+
+**One rule: the price is always the backend's. A word is the backend's only
+while the backend is answering in the language being read.**
+
+`apiServesDisplayLocale()` in [`lib/locale.ts`](../lib/locale.ts) is that rule in
+one line — `apiLocale() === currentLocale()`. Today the backend is pinned to
+English while its own translation work is unfinished, so:
+
+| The visitor is reading | Tile names, reading names, card names | Prices |
+|---|---|---|
+| English | the API's, editable in the admin panel | the API's |
+| Spanish | this folder's, from `locales/es/` | the API's |
+
+`resolveProducts` in `lib/products.ts` and `resolveReadingName` in
+`lib/reading-prices.ts` both take that flag as a parameter so they stay pure and
+a test can drive both sides. The day the backend serves Spanish, `apiLocale()`
+follows the display language, the two match, and nothing else changes.
+
+**A price is never subject to it.** A number is the same in every language, and a
+stale one is money nobody is charging.
 
 The original wiring is still worth reading for the shape of the merge:
 [`docs/plans/products-api-wiring.md`](../../docs/plans/products-api-wiring.md).
 
-**A product renamed in the admin panel therefore no longer changes the site**,
-and whoever uses that panel has to be told. Prices edited there keep working
-exactly as before. That is the trade the decision above accepts, and it is the
-kind that is discovered by somebody wondering why their edit did nothing.
-
-What stayed here, and now more of it: `key`, `action`, `href` and `image` were
-never in the product contract, and `title` and `subtitle` have joined them. A
-tile can't render without its artwork, so **this list still decides which tiles
-exist and in what order** — the API decides only what they cost. Publishing a
-fifth product doesn't put it on the homepage; adding it here does.
+**This list still decides which tiles exist and in what order.** `key`, `action`,
+`href` and `image` were never in the product contract, and a tile cannot render
+without its artwork — so publishing a fifth product does not put it on the
+homepage; adding it here does.
 
 ~~**This copy is the source of truth for what the backend seeds.**~~ **Struck
-the same day.** That claim asked this file to stay verified character for
-character against `ProductKey::defaultName` and `defaultShortDescription`. It
-cannot drift into a visible fault any more, because nothing here reads those
-fields — so the two are free to disagree and the reconciliation is no longer
-owed. `defaultPrices` is the one that still matters.
+6 September 2026.** That claim asked this file to stay verified character for
+character against `ProductKey::defaultName` and `defaultShortDescription`. It is
+no longer owed: those fields are read only for a reader whose language the
+backend serves, and where they disagree with this file, the panel is the one that
+wins on screen. `defaultPrices` is the one that still matters.
 
 ## `cards.ts` and the one-card constraint
 
