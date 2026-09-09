@@ -16,21 +16,40 @@ client, a designer rather than a developer, working from a PSD — can move to
 a CMS later without touching layout or JSX. If you're adding a new piece of
 homepage copy, it belongs in `home.ts`, not inlined in a component.
 
-## "A CMS later" has started, for products
+## "A CMS later" has started, for prices
 
-**`products` in `home.ts` is no longer where the tile copy comes from.** Name,
+~~**`products` in `home.ts` is no longer where the tile copy comes from.** Name,
 description and price are read from `GET /api/v1/{locale}/products` at runtime
-and the bundled entries are the fallback for when the backend can't be reached.
-See [`docs/plans/products-api-wiring.md`](../../docs/plans/products-api-wiring.md).
+and the bundled entries are the fallback for when the backend can't be reached.~~
 
-What stayed here, because none of it is in the product contract and none of it
-is coming: `key`, `action`, `href` and `image`. A tile can't render without its
-artwork, so **this list still decides which tiles exist and in what order** —
-the API only decides what they say. Publishing a fifth product doesn't put it on
-the homepage; adding it here does.
+**Half struck 6 September 2026.** The price still comes from
+`GET /api/v1/{locale}/products` at runtime, and the bundled price string is
+still only a fallback. **The name and description do not.** All translation is
+handled in this repository until the backend's own translation work is
+finished — see `docs/plans/seo-and-translations.md` §0.6 — so `resolveProducts`
+merges the price and nothing else, and every word on a tile comes from this
+file in every language.
 
-Nothing else on the page is wired this way yet. The rest of `home.ts` is still
-the only source for its own copy.
+The original wiring is still worth reading for the shape of the merge:
+[`docs/plans/products-api-wiring.md`](../../docs/plans/products-api-wiring.md).
+
+**A product renamed in the admin panel therefore no longer changes the site**,
+and whoever uses that panel has to be told. Prices edited there keep working
+exactly as before. That is the trade the decision above accepts, and it is the
+kind that is discovered by somebody wondering why their edit did nothing.
+
+What stayed here, and now more of it: `key`, `action`, `href` and `image` were
+never in the product contract, and `title` and `subtitle` have joined them. A
+tile can't render without its artwork, so **this list still decides which tiles
+exist and in what order** — the API decides only what they cost. Publishing a
+fifth product doesn't put it on the homepage; adding it here does.
+
+~~**This copy is the source of truth for what the backend seeds.**~~ **Struck
+the same day.** That claim asked this file to stay verified character for
+character against `ProductKey::defaultName` and `defaultShortDescription`. It
+cannot drift into a visible fault any more, because nothing here reads those
+fields — so the two are free to disagree and the reconciliation is no longer
+owed. `defaultPrices` is the one that still matters.
 
 ## `cards.ts` and the one-card constraint
 

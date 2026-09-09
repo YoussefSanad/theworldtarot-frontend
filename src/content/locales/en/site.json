@@ -1,0 +1,66 @@
+{
+  "primaryNav": [
+    "WORLD TAROT",
+    "LIVING TAROT",
+    "READINGS",
+    "LIBRARY",
+    "FAQ"
+  ],
+  "readingsChildren": [
+    "OVERVIEW",
+    "1 CARD EXPERIENCE",
+    "3 CARD",
+    "MONTH AHEAD",
+    "IN DEPTH"
+  ],
+  "headerActions": {
+    "cta": "GET MY READING",
+    "account": "Sign in",
+    "signOut": "Sign out",
+    "bag": "Your bag"
+  },
+  "footerNav": [
+    "World Tarot",
+    "Living Tarot",
+    "Readings",
+    "Library",
+    "FAQ",
+    "Contact",
+    "Terms & Conditions",
+    "Privacy Policy",
+    "Refund Policy"
+  ],
+  "socialLinks": [
+    "Facebook",
+    "Instagram",
+    "TikTok"
+  ],
+  "newsletter": {
+    "heading": "STAY CONNECTED:",
+    "blurb": [
+      "Receive occasional reflections and",
+      "readings from sacred places around the world."
+    ],
+    "consent": "I agree to receive emails from The World Tarot and understand I can unsubscribe any time.",
+    "submitLabel": "stay connected",
+    "sendingLabel": "sending…",
+    "sentLabel": "thank you",
+    "success": [
+      "Thank you — we have your address."
+    ],
+    "errors": {
+      "address": "That address was not accepted. Please check it and try again.",
+      "rate-limited": "That was a few tries in quick succession. Please give it a minute.",
+      "unknown": "We could not reach the list just now. Please try again."
+    }
+  },
+  "chrome": {
+    "newsletterFirstName": "First name",
+    "newsletterEmail": "Email",
+    "scrollToTop": "Scroll to top",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "revealCard": "REVEAL YOUR CARD",
+    "revealQuestion": "Why has this card appeared for you today?"
+  }
+}

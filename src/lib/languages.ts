@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 import { type ApiLanguage, fetchLanguages } from "./api.ts";
-import { BUILT_LOCALES, type Locale } from "./locale.ts";
+import { OFFERED_LOCALES, type Locale } from "./locale.ts";
 
 /**
  * Which languages the site may be offered in, as the list the switcher draws
@@ -56,13 +56,52 @@ import { BUILT_LOCALES, type Locale } from "./locale.ts";
  */
 export function resolveLanguages(
   live: readonly ApiLanguage[] | null,
-  built: readonly Locale[] = BUILT_LOCALES,
+  built: readonly Locale[] = OFFERED_LOCALES,
 ): readonly ApiLanguage[] {
   if (!live) return [];
 
   const offered = live.filter((language) => built.includes(language.code));
 
   return offered.length < 2 ? [] : offered;
+}
+
+
+/**
+ * The languages this site can be read in, whether or not the backend has heard
+ * of them yet.
+ *
+ * **Spanish is here because the backend does not offer it and the site does.**
+ * `/api/v1/languages` answers `[{ code: "en" }]` — its own translation work is
+ * unfinished — but every Spanish word this site renders comes from
+ * `src/content/locales/es/`, which ships in the bundle. So the endpoint is not
+ * the authority on what a visitor can read; it is the authority on what the
+ * *backend* can serve, and `apiServesDisplayLocale()` in `lib/locale.ts` is
+ * where that difference is acted on.
+ *
+ * The intersection in `resolveLanguages` is unchanged and still does its job:
+ * a language the backend takes down still disappears from the switcher on the
+ * next request, with no deploy. This only adds languages that are ours.
+ *
+ * **`native_name` is filled in** because the endpoint does not send it yet
+ * (`YoussefSanad/TheWorldTarot#66`, ask 1). A language switcher is read by
+ * people who cannot read the language it is currently in, which is exactly when
+ * "Español" works and "Spanish" does not. It stops being needed the day that
+ * field ships, and `languageRows` already prefers the live value.
+ *
+ * English is here too, and that is not redundant: a failed or pending
+ * `/languages` publishes `[]`, and a switcher that vanishes whenever the API is
+ * unreachable is worse than one that offers what the bundle actually holds.
+ */
+const OURS: readonly ApiLanguage[] = [
+  { code: "en", label: "English", native_name: "English" },
+  { code: "es", label: "Spanish", native_name: "Español" },
+];
+
+function withOurLanguages(live: readonly ApiLanguage[] | null): readonly ApiLanguage[] {
+  const answered = live ?? [];
+  const missing = OURS.filter((ours) => !answered.some((language) => language.code === ours.code));
+
+  return [...answered, ...missing];
 }
 
 /** `null` until the endpoint answers, and after one that failed. */
@@ -144,7 +183,7 @@ export function useLanguageOptions(): readonly ApiLanguage[] {
     void askLanguages();
   }, []);
 
-  return resolveLanguages(live);
+  return resolveLanguages(withOurLanguages(live));
 }
 
 /**

@@ -1,0 +1,27 @@
+{
+  "title": "Sign in",
+  "heading": "Sign in",
+  "intro": "For the account your readings are kept with.",
+  "emailLabel": "Your email",
+  "passwordLabel": "Your password",
+  "submitLabel": "Sign in",
+  "busyLabel": "Signing in…",
+  "refused": "Those details do not sign you in. If you bought a reading and have not chosen a password yet, ask for a link below and choose one now.",
+  "rateLimited": "That is a few too many tries. Try again in {wait}.",
+  "rateLimitedBriefly": "That is a few too many tries. Wait a moment and try once more.",
+  "unknownFailure": "Something went wrong at our end. Try again in a moment.",
+  "forgotPrompt": "Forgotten your password?",
+  "forgot": {
+    "heading": "Ask for a link",
+    "intro": "Type the address you bought with. If we have an account for it, a link to choose a password is on its way. It lasts an hour and works once.",
+    "emailLabel": "Your email",
+    "submitLabel": "Send me a link",
+    "busyLabel": "Asking…",
+    "sent": "If we have an account for that address, a link is on its way. Look for it in the next few minutes.",
+    "invalidAddress": "That does not look like an email address. Check it and try again.",
+    "rateLimited": "That is a few too many asks. Try again in {wait}.",
+    "rateLimitedBriefly": "That is a few too many asks. Wait a moment and try once more.",
+    "unknownFailure": "Something went wrong at our end. No link has been sent. Try again in a moment.",
+    "backPrompt": "Back to sign in"
+  }
+}

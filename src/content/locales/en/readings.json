@@ -1,0 +1,53 @@
+{
+  "intro": {
+    "heading": "Readings",
+    "tagline": ["step into the parlor.", "leave the ordinary behind."],
+    "body": [
+      "Begin with our signature interactive experience, where the cards come to life and answer your question in real time. Or choose one of our",
+      "traditional written readings for a deeper exploration of your path."
+    ]
+  },
+  "signature": {
+    "eyebrow": ["The World Tarot", "Signature Experience"],
+    "title": "1 Card Reading",
+    "body": ["Ask your question.", "Reveal your card.", "Watch it come to life."],
+    "imageAlt": "A tarot card face down on a wooden table beside a lit candle"
+  },
+  "traditional": {
+    "heading": "Traditional Tarot Readings",
+    "body": "Thoughtfully written readings delivered after careful interpretation of your cards."
+  },
+  "readings": [
+    {
+      "title": "3 Card Reading",
+      "titleTail": "",
+      "subtitle": "past • present • future",
+      "body": ["Explore the deeper story", "behind your question", "through the wisdom of cards."],
+      "imageAlt": "Three tarot cards laid face down in a row on a wooden table"
+    },
+    {
+      "title": "Month Ahead",
+      "titleTail": " Reading",
+      "subtitle": "discover what lies ahead",
+      "body": ["Prepare for the month", "ahead with insight into", "what’s to come."],
+      "imageAlt": "A five card tarot spread beside a pocket watch and coins"
+    },
+    {
+      "title": "In-Depth",
+      "titleTail": " Reading",
+      "subtitle": "the full picture",
+      "body": ["Discover the complete picture", "through the Celtic Cross."],
+      "imageAlt": "A Celtic Cross tarot spread laid out across a wooden table"
+    }
+  ],
+  "readingAction": "BEGIN YOUR READING",
+  "gift": {
+    "title": "Gift a Reading",
+    "subtitle": ["a gift", "of insight"],
+    "body": ["Give a meaningful reading, accompanied", "by your personal message."],
+    "imageAlt": "A gold wrapped gift box tied with ribbon"
+  },
+  "closing": {
+    "saying": ["The future whispers long", "before it arrives"]
+  }
+}

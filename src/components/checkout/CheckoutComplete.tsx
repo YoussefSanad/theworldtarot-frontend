@@ -8,6 +8,9 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { checkoutCompleteCopy } from "@/content/checkout";
 import { readingPageFor } from "@/content/reading-pages";
+import type { ApiProduct } from "@/lib/api";
+import { useCatalogue } from "@/lib/catalogue";
+import { resolveReadingName } from "@/lib/reading-prices";
 import { redeemCopy } from "@/content/redeem";
 import {
   checkoutFor,
@@ -18,12 +21,9 @@ import {
   type RedemptionRecord,
   walletCheckoutFor,
 } from "@/lib/checkout-session";
-import type { ApiProduct } from "@/lib/api";
-import { useCatalogue } from "@/lib/catalogue";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { formatPrice, type Money } from "@/lib/price";
-import { resolveReadingName } from "@/lib/reading-prices";
 
 /**
  * The **confirmation**: where a paid-for checkout lands, by either road.
@@ -259,14 +259,14 @@ type Result =
    * field that appeared with it would be a second thing to remember to set at
    * each of the two places this is built.
    *
-   * **Held as the raw record rather than the resolved string**, unlike before
-   * `useReadingName` existed. A self-purchase's noun is a live product name
-   * once the catalogue answers, and that answer can land after this state is
-   * set — a string frozen at that moment could never pick it up, where
-   * `subjectOf` reading `subject` at render time can. `subjectOf` still
-   * decides, once, so the two builds below cannot disagree — and the six
-   * outcomes that are about unfinished money ignore it entirely, their `body`
-   * taking no argument.
+   * **Held as the raw record rather than the resolved string.** It was done
+   * this way because a self-purchase's noun was a live product name that could
+   * land after this state was set; ~~`useReadingName`~~ went on 8 September
+   * 2026 and the noun is bundled copy now, so that reason has expired. The
+   * shape stays because the other half of it has not: `subjectNameOf` decides
+   * once, at render, so the two places this state is built cannot disagree
+   * about what a gift is called — and the six outcomes that are about
+   * unfinished money ignore it entirely, their `body` taking no argument.
    */
   | {
       state: "known";
@@ -291,8 +291,8 @@ type Result =
 export function CheckoutComplete() {
   /*
     Named apart from the `let live` inside the effect below, which is an
-    unrelated "has this effect been cleaned up" flag and predates this one —
-    two `live`s in one function reads as one shadowing the other by mistake.
+    unrelated "has this effect been cleaned up" flag — two `live`s in one
+    function reads as one shadowing the other by mistake.
   */
   const catalogue = useCatalogue();
   const searchParams = useSearchParams();
@@ -588,8 +588,7 @@ function subjectOf(record: CheckoutRecord): { gift: boolean; productKey: string;
  * The one noun the received screen interpolates, which is a different thing on
  * each side of the gift flag.
  *
- * **A self-purchase names the reading**, live off `/products` once the
- * catalogue has answered and the bundled title before or without one — see
+ * **A self-purchase names the reading**, from `content/reading-pages.ts` — see
  * `titleOf`.
  *
  * **A gift names the address it went to**, because a gift has no reading to
@@ -611,9 +610,10 @@ function subjectNameOf(subject: { gift: boolean; productKey: string; giftRecipie
 }
 
 /**
- * What a **product key** is called on this screen, live off `/products` once
- * the catalogue has answered, or the word that stands in for a key this build
- * has drawn no page for.
+ * What a **product key** is called on this screen — live off `/products` once
+ * the catalogue has answered and the backend is answering in the language being
+ * read, the bundled title otherwise, or the word that stands in for a key this
+ * build has drawn no page for.
  *
  * Its own function because two roads name a reading now and they must name it
  * the same way: a self-purchase through `subjectNameOf`, and a redemption from

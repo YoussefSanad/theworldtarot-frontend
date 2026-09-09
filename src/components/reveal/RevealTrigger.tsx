@@ -8,6 +8,7 @@ import { brand } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
 import { useReveal } from "./reveal-context";
+import { chrome } from "@/content/site";
 
 const EXIT_SECONDS = 0.45;
 const ENTER_SECONDS = 1.5;
@@ -29,8 +30,8 @@ const ENTER_SECONDS = 1.5;
  * still shows the name immediately.
  */
 export function RevealTrigger({
-  label = "REVEAL YOUR CARD",
-  question = "Why has this card appeared for you today?",
+  label = chrome.revealCard,
+  question = chrome.revealQuestion,
   className,
 }: {
   label?: string;

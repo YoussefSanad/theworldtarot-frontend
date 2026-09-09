@@ -1,6 +1,6 @@
 import type { TarotCard } from "@/content/cards";
 
-import { DEFAULT_LOCALE, type Locale } from "./locale.ts";
+import { apiLocale, type Locale } from "./locale.ts";
 import type { Money } from "./price.ts";
 
 /**
@@ -127,7 +127,7 @@ function toTarotCard(card: ApiCard | CardWithoutVideo): TarotCard {
  * silently indistinguishable from an empty one.
  */
 export async function drawCard(
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+  { locale = apiLocale(), signal }: { locale?: Locale; signal?: AbortSignal } = {},
 ): Promise<TarotCard | null> {
   const response = await fetch(`${baseUrl()}/api/v1/${locale}/cards/draw`, {
     // The response is a credential with a timer. The server says no-store and
@@ -163,7 +163,7 @@ export async function drawCard(
  */
 export async function fetchCard(
   id: string,
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+  { locale = apiLocale(), signal }: { locale?: Locale; signal?: AbortSignal } = {},
 ): Promise<TarotCard | null> {
   const response = await fetch(`${baseUrl()}/api/v1/${locale}/cards/${id}`, {
     headers: { Accept: "application/json" },
@@ -255,7 +255,7 @@ export type ApiProduct = {
  */
 export async function fetchProducts(
   {
-    locale = DEFAULT_LOCALE,
+    locale = apiLocale(),
     currency,
     signal,
   }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},
@@ -297,7 +297,7 @@ export type ApiProductDetail = ApiProduct & { long_description: string };
 export async function fetchProduct(
   key: string,
   {
-    locale = DEFAULT_LOCALE,
+    locale = apiLocale(),
     currency,
     signal,
   }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},

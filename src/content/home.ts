@@ -1,4 +1,18 @@
-import { artwork, icons, type ImageAsset } from "@/lib/assets";
+import { artwork, icons, type ImageAsset } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/home.json" with { type: "json" };
+import es from "./locales/es/home.json" with { type: "json" };
+
+/**
+ * The words on this page, in whichever language it is being read.
+ *
+ * **Strings live in `locales/`, structure lives here** — `href`s, artwork and
+ * `key`s never cross over. Arrays stay arrays: each one is a set of rendered
+ * lines a designer chose, so a translator is choosing where Spanish breaks too.
+ * `home.test.ts` pins every line count for that reason.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
 
 /**
  * Homepage copy, kept out of the components so the wording can move to a CMS
@@ -8,60 +22,67 @@ import { artwork, icons, type ImageAsset } from "@/lib/assets";
 /** Anchor the reveal scrolls to once a visitor has seen their card. */
 export const PRODUCTS_SECTION_ID = "choose-your-journey";
 
+/** Where each hero button goes, and its mark. The words are in `locales/`. */
+const SECONDARY_ACTIONS = [
+  { href: "/living-tarot", icon: icons.book },
+  { href: "/readings", icon: icons.talk },
+];
+
 export const hero = {
-  titleTop: "Enter",
-  titleMain: "The Living Tarot",
-  tagline: "cinematic tarot, brought to life",
-  body: "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
+  titleTop: copy.hero.titleTop,
+  titleMain: copy.hero.titleMain,
+  tagline: copy.hero.tagline,
+  body: copy.hero.body,
   /** Shorter variant shown below `sm`, where the full line wraps too tall. */
-  bodyMobile: "Discover a cinematic interpretation of the Major Arcana. Experience a card's story.",
-  secondaryActions: [
-    {
-      label: ["explore the", "complete collection"],
-      /** Shorter variant shown below `sm`, so both buttons fit on one row on phones. */
-      labelMobile: ["explore the", "collection"],
-      href: "/living-tarot",
-      icon: icons.book,
-    },
-    {
-      label: ["ASK A QUESTION", "GET A PERSONAL READING"],
-      labelMobile: ["GET A PERSONAL", "READING"],
-      href: "/readings",
-      icon: icons.talk,
-    },
-  ],
+  bodyMobile: copy.hero.bodyMobile,
+  secondaryActions: SECONDARY_ACTIONS.map((action, index) => ({
+    label: copy.hero.secondaryActions[index].label,
+    /** Shorter variant shown below `sm`, so both buttons fit on one row on phones. */
+    labelMobile: copy.hero.secondaryActions[index].labelMobile,
+    ...action,
+  })),
   /** Shown under the secondary actions once the visit's one card has been revealed. */
-  returnPrompt: "Return another day to discover a new card.",
-  closing: {
-    lead: "ancient wisdom•timeless stories•endless discovery.",
-    question: "Where will The World Tarot take you?",
-  },
+  returnPrompt: copy.hero.returnPrompt,
+  closing: copy.hero.closing,
 };
 
 export const worldTarot = {
-  heading: "Tarot From Around the World",
-  subheading: "Join Serafina on a mystical journey around the world",
-  /** The badge is the Living Tarot wordmark, set inline where Figma places it. */
+  heading: copy.worldTarot.heading,
+  subheading: copy.worldTarot.subheading,
+  /**
+   * The badge is the Living Tarot wordmark, set inline where Figma places it.
+   *
+   * **The trailing space on `before` and the leading one on `after` are
+   * load-bearing** — they are the gaps either side of the badge. A translator
+   * who trims them closes the words up against it.
+   */
   body: {
-    before:
-      "Step into tarot readings like no other — a journey through hidden places and living symbols. From candlelit cafés to windswept shores, from sacred temples to mountain sanctuaries. As Serafina travels the globe, she is creating ",
-    after: " — a cinematic deck bringing each archetype to life in the landscape that inspired it.",
+    before: copy.worldTarot.body.before,
+    after: copy.worldTarot.body.after,
   },
 };
 
 /**
  * A Choose Your Journey tile.
  *
- * Half of this comes from the API at runtime and half never can, so the split
+ * One field comes from the API at runtime and the rest never can, so the split
  * is worth knowing before editing either:
  *
  * | Field | Owner |
  * |---|---|
- * | `title`, `subtitle`, `price` | **The API**, once it answers. What is written here is the fallback |
- * | `key`, `action`, `href`, `image` | **Here, always.** None of them are in the product contract |
+ * | `price` | **The API**, once it answers. What is written here is the fallback |
+ * | `title`, `subtitle`, `action` | **Here, always.** Copy, and copy is translated in this repository |
+ * | `key`, `href`, `image` | **Here, always.** None of them are in the product contract |
+ *
+ * ~~`title` and `subtitle` are the API's, once it answers.~~ **Struck
+ * 6 September 2026.** They were, and the row above is where a reader would have
+ * found that out; `docs/plans/seo-and-translations.md` §0.6 moved them here
+ * along with every other word on the site. `price` is the one thing that cannot
+ * live in this file, because a figure nobody is charging is worse than no
+ * figure at all.
  *
  * See `lib/products.ts` for the merge, and `docs/plans/products-api-wiring.md`
- * for why it is arranged this way.
+ * for the shape it had when the API still supplied copy.
  */
 export type Product = {
   /**
@@ -94,137 +115,95 @@ export type Product = {
  * The tiles, in the order they appear, with the copy to show before the API has
  * answered or when it cannot be reached.
  *
- * **This list decides which tiles exist.** The API decides what they say. A
- * tile cannot be rendered without artwork, and artwork ships in the bundle, so
+ * **This list decides which tiles exist, and what they say.** ~~The API decides
+ * what they say.~~ Struck 6 September 2026: all translation is handled in this
+ * repository until the backend's own translation work is finished, so
+ * `resolveProducts` merges the **price** and nothing else. See
+ * `docs/plans/seo-and-translations.md` §0.6.
+ *
+ * A tile cannot be rendered without artwork, and artwork ships in the bundle, so
  * publishing a fifth product does not put it on the homepage — adding it here
  * does. That is deliberate: it stops an edit in the admin panel rearranging a
- * hand-tuned four-column grid.
+ * hand-tuned four-column grid. **Renaming one there no longer changes the page
+ * either**, which is a smaller surprise to discover in this comment than on a
+ * call with whoever made the edit.
  *
- * **This copy is the source of truth for what the backend seeds.** Every title,
- * description and price below is reproduced exactly in the backend's
+ * ~~**This copy is the source of truth for what the backend seeds.** Every
+ * title, description and price below is reproduced exactly in the backend's
  * `ProductKey` defaults — verified character for character, curly apostrophe
- * included — so a freshly seeded database serves precisely what is written
- * here. Switching the section to live data therefore changes nothing on screen,
- * which is the whole point: the wiring is provable without the page moving.
+ * included.~~
  *
- * The two drift the first moment anything is edited in the admin panel, and
- * that is the intended direction of travel. What is below is only ever seen
- * when the backend cannot be reached at all.
+ * **Struck the same day, for `title` and `subtitle` only.** That claim asked
+ * this file to be kept character-identical to `ProductKey::defaultName` and
+ * `defaultShortDescription`, and the reason was that the tiles then read those
+ * fields — so a mismatch was a visible fault. Nothing reads them now, so the two
+ * are free to disagree and the reconciliation is no longer owed.
  *
- * If you change a word here, the backend's copy of it does not follow. Change
- * `ProductKey::defaultName` / `defaultShortDescription` / `defaultPrices` too,
- * or accept that a fresh database and this file now disagree.
+ * **`price` still is**, and for the same reason it always was: it is the string
+ * on screen until the backend answers, and a fallback that disagrees with
+ * `defaultPrices` advertises a figure nobody is charging. Change one, change the
+ * other.
  */
-export const products: Product[] = [
-  {
-    key: "one-card",
-    title: "1 CARD READING",
-    subtitle: "A Single Message from the Tarot",
-    price: "$12",
-    action: "BEGIN READING",
-    href: "/readings/one-card",
-    image: artwork.productOneCard,
-  },
-  {
-    key: "three-card",
-    title: "3 CARD READING",
-    subtitle: "One Question, Three Cards",
-    price: "$52",
-    action: "BEGIN READING",
-    href: "/readings/three-card",
-    image: artwork.productThreeCard,
-  },
-  {
-    key: "month-ahead",
-    title: "MONTH AHEAD",
-    subtitle: "What’s in Store? 5 Card Forecast",
-    price: "$75",
-    action: "BEGIN READING",
-    href: "/readings/month-ahead",
-    image: artwork.productMonthAhead,
-  },
+/**
+ * What is not copy: the join key, the price fallback, the link and the artwork.
+ * Titles, subtitles and actions are in `locales/`, matched by position.
+ *
+ * `price` stays here rather than in a translator's file because it is money —
+ * a number, the same in every language, and the string on screen only until the
+ * API answers. See `lib/products.ts`.
+ */
+const PRODUCT_STRUCTURE = [
+  { key: "one-card", price: "$12", href: "/readings/one-card", image: artwork.productOneCard },
+  { key: "three-card", price: "$52", href: "/readings/three-card", image: artwork.productThreeCard },
+  { key: "month-ahead", price: "$75", href: "/readings/month-ahead", image: artwork.productMonthAhead },
   {
     // `viewing-room-pass`, not `viewing-room`: this must be the backend's key
-    // for the merge to find it. The tile's own URL is `href` below and is
-    // unaffected.
+    // for the merge to find it. The tile's own URL is `href` and is unaffected.
     key: "viewing-room-pass",
-    title: "VIEWING ROOM",
-    subtitle: "Complete Cinematic Collection",
     price: "$29",
-    action: "ENTER",
     href: "/viewing-room",
     image: artwork.productViewingRoom,
   },
 ];
 
+export const products: Product[] = PRODUCT_STRUCTURE.map((product, index) => ({
+  title: copy.products[index].title,
+  subtitle: copy.products[index].subtitle,
+  action: copy.products[index].action,
+  ...product,
+}));
+
 export const journey = {
-  heading: "Choose Your Journey:",
-  subheading: ["Choose a personalized reading, or step inside the complete", "Living Tarot collection in the Viewing Room."],
+  heading: copy.journey.heading,
+  subheading: copy.journey.subheading,
   /**
    * Below `sm` the four tiles become a swipeable row. None of this is visible —
    * they are the names a screen reader reads out for the position dots. The row
    * itself is never announced as a carousel, because the same markup is a plain
    * grid above `sm`; see `components/home/ProductCarousel.tsx`.
    */
-  carousel: {
-    dotsLabel: "Choose a reading",
-    /** Prefixes each product title on its dot: “Show 1 CARD READING”. */
-    dotAction: "Show",
-  },
+  /** `dotAction` prefixes each product title on its dot: “Show 1 CARD READING”. */
+  carousel: copy.journey.carousel,
 };
 
-export const included = {
-  heading: "What’s Included",
-  columns: [
-    ["A personalized tarot interpretation tailored to your question", "Clear, thoughtful guidance", "Your reading, beautifully presented on original artwork and delivered by email."],
-    ["Prompt delivery based on your selected reading", "A beautifully formatted reading designed to be saved and revisited"],
-  ],
-};
+export const included = copy.included;
 
-export const placeStatement = ["A place where art, mysticism,", "and intention meet. A space between sky and stone."];
+export const placeStatement = copy.placeStatement;
 
-export const valueProps = [
-  { title: "Led by the Cards", body: "Each reading unfolds through the archetypes themselves" },
-  { title: "Composed with Intention", body: "Original artwork paired with thoughtful interpretation" },
-  { title: "Clarity in Motion", body: "Insight that illuminates your next chapter" },
-];
+export const valueProps = copy.valueProps;
 
 /**
  * Below `sm` the three props become a swipeable row, same pattern as
  * `journey.carousel` for the product tiles — see ProductCarousel.tsx.
  */
-export const valuePropsCarousel = {
-  dotsLabel: "The World Tarot's promise",
-  /** Prefixes each prop title on its dot: "Show Led by the Cards". */
-  dotAction: "Show",
-};
+export const valuePropsCarousel = copy.valuePropsCarousel;
 
-export const featuredTestimonial = {
-  quote: "“It didn’t just speak to me - it shimmered.  I’ve kept it like a piece of art.”",
-  attribution: "- Blake M., Big Sur, CA",
-};
+export const featuredTestimonial = copy.featuredTestimonial;
 
-export const artist = {
-  body: [
-    "Serafina is an artist whose work weaves together art, symbolism, and intuitive insight, drawing inspiration from sacred places around the world.",
-    "Her work is shaped by a lifelong study of tarot, myth, and visual storytelling — creating readings that feel intimate, thoughtful, and deeply personal.",
-  ],
-  /** Broken after “choice,” so the two lines read evenly rather than wrapping ragged. */
-  quote: [
-    "“Every reading, to me, is like standing before a living work of art - where fate, choice,",
-    "and reflection meet through the language of symbols.”",
-  ],
-};
+export const artist = copy.artist;
 
 export const closingCta = {
-  heading: "Ready to Receive Your Message?",
-  action: { label: "GET MY READING", href: "/readings" },
-  testimonial: {
-    /** Figma sets the quote on two lines rather than letting it wrap. */
-    quote: [
-      "“I felt like the reading was crafted just for me. The words,",
-      "the imagery, the clarity — it was beautiful and affirming.”",
-    ],
-    attribution: "- Sasha N., Charlottesville VA",
-  },
+  heading: copy.closingCta.heading,
+  action: { label: copy.closingCta.action, href: "/readings" },
+  testimonial: copy.closingCta.testimonial,
 };

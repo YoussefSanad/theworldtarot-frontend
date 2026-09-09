@@ -10,28 +10,27 @@ import { highlightedCurrency, useCurrency } from "@/lib/currency";
 import { useCurrencyOptions } from "@/lib/currencies";
 import { usePaymentInFlight } from "@/lib/payment-in-flight";
 import { useLanguageOptions } from "@/lib/languages";
-import { currentLocale } from "@/lib/locale";
+import { currentLocale, setLocale } from "@/lib/locale";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
 /**
  * The language and currency selectors.
  *
- * **Currency is wired and language is not.** That is the shape of the pair
- * rather than an unfinished edge — they were always going to be two different
- * mechanisms, and only one of them is a thing this app can do on its own:
+ * **Both are wired, and they are still two different mechanisms:**
  *
  * - **Currency is a preference**, sent as `?currency=` on the product fetch and
  *   kept in `localStorage`. Choosing one re-prices the homepage tiles and both
  *   readings-index surfaces from a single call, and survives a reload. The site
  *   never converts a price itself; the backend holds a real price per currency.
  *   `lib/currency.ts` holds the choice and `lib/catalogue.ts` re-asks on it
- * - **Language is a route**, so its options become `Link`s to a locale segment
- *   and the list comes from `GET /api/v1/languages`. A client-side toggle would
- *   leave `html lang` reading `en` over Spanish copy and would be invisible to
- *   crawlers, which is why it is not one. The segment itself is deferred to
- *   #69, so `setLanguage` does nothing today. See `lib/locale.ts` and
- *   `docs/adr/0004-language-is-a-path-segment.md`
+ * - **Language is a stored choice**, kept for the visit and applied by
+ *   reloading, because the copy catalogue resolves at module scope. Its list is
+ *   the backend's `GET /api/v1/languages` plus the languages whose copy ships in
+ *   this bundle — see `OURS` in `lib/languages.ts`. It is **not** a route and
+ *   Spanish has no URL of its own: search is English-only by decision, which is
+ *   what makes that acceptable. `docs/adr/0004-language-is-a-path-segment.md`
+ *   argued the opposite and is superseded on that point
  *
  * See `docs/plans/language-and-currency-selector.md` for the whole route.
  *
@@ -111,16 +110,6 @@ export type LocaleSelection = {
   choose: (code: string) => void;
 };
 
-/**
- * Language does not move yet, so this is where that is written down rather than
- * a `setLanguage` that silently does nothing.
- *
- * Unreachable in practice: the language group is drawn only at two entries or
- * more, and `/languages` answers one. It exists because `LocaleSelection` is
- * one shape for both halves, and because the day #69 lands this is the line
- * that becomes a navigation.
- */
-const LANGUAGE_DOES_NOT_MOVE_YET = (): void => {};
 
 /**
  * Where the choice lives.
@@ -144,7 +133,7 @@ export function useLocaleSelection(): LocaleSelection {
 
   return {
     language: currentLocale(),
-    setLanguage: LANGUAGE_DOES_NOT_MOVE_YET,
+    setLanguage: setLocale,
     highlighted: highlightedCurrency({ chosen, resolved }),
     choose,
   };

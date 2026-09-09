@@ -1,3 +1,5 @@
+"use client";
+
 import { Container, Section } from "@/components/layout/Section";
 import { ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";

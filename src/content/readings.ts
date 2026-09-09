@@ -1,4 +1,18 @@
-import { readingArtwork, type ImageAsset } from "@/lib/assets";
+import { readingArtwork, type ImageAsset } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/readings.json" with { type: "json" };
+import es from "./locales/es/readings.json" with { type: "json" };
+
+/**
+ * The words on this page. Structure — keys, prices, links, artwork — stays here.
+ *
+ * **`titleTail` is copy and moves with `title`**, because it is words. It is
+ * also load-bearing layout: `ReadingCard` renders it in a `hidden lg:inline`
+ * span so a phone-width card holds one line. A translator shortening a title
+ * should move the break, not delete the tail.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
 
 /**
  * Readings page copy, from the client's two frames — `300:68` (desktop) and
@@ -24,36 +38,30 @@ import { readingArtwork, type ImageAsset } from "@/lib/assets";
  */
 
 export const intro = {
-  heading: "Readings",
-  tagline: ["step into the parlor.", "leave the ordinary behind."],
+  heading: copy.intro.heading,
+  tagline: copy.intro.tagline,
   /**
    * Two blocks in the frame, broken mid-sentence before "traditional" so the
    * desktop measure lands on three even lines. Joined and balanced below `lg`
    * — see ReadingsIntro — so the phone rag does not finish on two words.
    */
-  body: [
-    "Begin with our signature interactive experience, where the cards come to life and answer your question in real time. Or choose one of our",
-    "traditional written readings for a deeper exploration of your path.",
-  ],
+  body: copy.intro.body,
 };
 
 export const signature = {
-  eyebrow: ["The World Tarot", "Signature Experience"],
-  title: "1 Card Reading",
+  eyebrow: copy.signature.eyebrow,
+  title: copy.signature.title,
   /** One desktop line, then two; three separate lines on the phone. */
-  body: ["Ask your question.", "Reveal your card.", "Watch it come to life."],
+  body: copy.signature.body,
   /** The backend's key for this reading, which is what its price is asked for by. */
   productKey: "one-card",
   price: "$12",
   href: "/readings/one-card",
   image: readingArtwork.signature,
-  imageAlt: "A tarot card face down on a wooden table beside a lit candle",
+  imageAlt: copy.signature.imageAlt,
 };
 
-export const traditional = {
-  heading: "Traditional Tarot Readings",
-  body: "Thoughtfully written readings delivered after careful interpretation of your cards.",
-};
+export const traditional = copy.traditional;
 
 export type Reading = {
   id: string;
@@ -91,58 +99,37 @@ export type Reading = {
   imageAlt: string;
 };
 
-export const readings: Reading[] = [
-  {
-    id: "three-card",
-    productKey: "three-card",
-    title: "3 Card Reading",
-    subtitle: "past • present • future",
-    body: ["Explore the deeper story", "behind your question", "through the wisdom of cards."],
-    price: "$52",
-    href: "/readings/three-card",
-    image: readingArtwork.threeCard,
-    imageAlt: "Three tarot cards laid face down in a row on a wooden table",
-  },
-  {
-    id: "month-ahead",
-    productKey: "month-ahead",
-    title: "Month Ahead",
-    titleTail: " Reading",
-    subtitle: "discover what lies ahead",
-    body: ["Prepare for the month", "ahead with insight into", "what’s to come."],
-    price: "$75",
-    href: "/readings/month-ahead",
-    image: readingArtwork.monthAhead,
-    imageAlt: "A five card tarot spread beside a pocket watch and coins",
-  },
-  {
-    id: "in-depth",
-    productKey: "in-depth",
-    title: "In-Depth",
-    titleTail: " Reading",
-    subtitle: "the full picture",
-    body: ["Discover the complete picture", "through the Celtic Cross."],
-    price: "$120",
-    href: "/readings/in-depth",
-    image: readingArtwork.inDepth,
-    imageAlt: "A Celtic Cross tarot spread laid out across a wooden table",
-  },
+/** What is not copy: the ids, the join keys, the prices, the links, the artwork. */
+const READING_STRUCTURE = [
+  { id: "three-card", productKey: "three-card", price: "$52", href: "/readings/three-card", image: readingArtwork.threeCard },
+  { id: "month-ahead", productKey: "month-ahead", price: "$75", href: "/readings/month-ahead", image: readingArtwork.monthAhead },
+  { id: "in-depth", productKey: "in-depth", price: "$120", href: "/readings/in-depth", image: readingArtwork.inDepth },
 ];
 
+export const readings: Reading[] = READING_STRUCTURE.map((reading, index) => ({
+  title: copy.readings[index].title,
+  /** Empty for Three Card, which has no tail. `ReadingCard` drops a tail on phones. */
+  titleTail: copy.readings[index].titleTail || undefined,
+  subtitle: copy.readings[index].subtitle,
+  body: copy.readings[index].body,
+  imageAlt: copy.readings[index].imageAlt,
+  ...reading,
+}));
+
 /** Every reading's call to action reads the same; only the price changes. */
-export const readingAction = "BEGIN YOUR READING";
+export const readingAction = copy.readingAction;
 
 export const gift = {
-  title: "Gift a Reading",
-  subtitle: ["a gift", "of insight"],
+  title: copy.gift.title,
+  subtitle: copy.gift.subtitle,
   /** Two lines in the desktop frame; the mobile frame drops this line entirely. */
-  body: ["Give a meaningful reading, accompanied", "by your personal message."],
+  body: copy.gift.body,
   href: "/readings/gift",
   image: readingArtwork.gift,
-  imageAlt: "A gold wrapped gift box tied with ribbon",
+  imageAlt: copy.gift.imageAlt,
 };
 
 export const closing = {
-  saying: ["The future whispers long", "before it arrives"],
+  saying: copy.closing.saying,
   action: { label: readingAction, href: "/readings/one-card" },
 };

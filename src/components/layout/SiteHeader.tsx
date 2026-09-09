@@ -9,7 +9,7 @@ import { AccountControl } from "@/components/account/AccountControl";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
-import { headerActions, primaryNav, siteName } from "@/content/site";
+import { chrome, headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 
@@ -161,7 +161,7 @@ export function SiteHeader() {
           onClick={toggleMenu}
           aria-expanded={menuOpen}
           aria-controls={panelId}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? chrome.closeMenu : chrome.openMenu}
           className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
         >
           {/*
@@ -237,7 +237,7 @@ export function SiteHeader() {
           <motion.button
             key="backdrop"
             type="button"
-            aria-label="Close menu"
+            aria-label={chrome.closeMenu}
             className="fixed inset-0 z-50 touch-none bg-night/55 lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

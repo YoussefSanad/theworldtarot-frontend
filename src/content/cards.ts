@@ -1,4 +1,12 @@
-import { cardFaces, videoPosters, videos } from "@/lib/assets";
+import { cardFaces, videoPosters, videos } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/cards.json" with { type: "json" };
+import es from "./locales/es/cards.json" with { type: "json" };
+
+/** The words on this screen, in whichever language it is being read. */
+const copy = pickCopy(en, { es }, currentLocale());
+
 
 /**
  * The Living Tarot cards available to the reveal.
@@ -49,7 +57,14 @@ export const cardBack = {
 };
 
 export const livingTarot: TarotCard[] = [
-  { id: "17-the-star", number: "XVII", name: "The Star", video: videos.theStar, image: cardFaces.theStar },
+  {
+    id: "17-the-star",
+    /** A Roman numeral, and the same in every language. Not copy. */
+    number: "XVII",
+    name: copy.livingTarot[0].name,
+    video: videos.theStar,
+    image: cardFaces.theStar,
+  },
 ];
 
 /**

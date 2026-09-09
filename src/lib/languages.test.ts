@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
 import { askLanguages, forgetLanguages, languageOptions, resolveLanguages } from "./languages.ts";
-import { BUILT_LOCALES } from "./locale.ts";
+import { BUILT_LOCALES, OFFERED_LOCALES } from "./locale.ts";
 
 const realFetch = globalThis.fetch;
 const realError = console.error;
@@ -83,10 +83,29 @@ test("native_name survives the resolver, being what the row has to read", () => 
   assert.equal(resolveLanguages([EN, ES], ["en", "es"])[1]?.native_name, "Español");
 });
 
-test("this export is built for English alone today, so a live Spanish still draws nothing", () => {
-  // The step's whole point: correct, and invisible until #69 ships a segment.
+/*
+  Two lists, and keeping them apart is the design. `BUILT_LOCALES` is "locales
+  with a URL of their own" and feeds `hreflang` and the sitemap; there is one URL
+  per page, so it is English alone and a `/es/` hreflang would be a lie.
+  `OFFERED_LOCALES` is "languages a visitor can read the site in", and Spanish is
+  one because its copy ships in the bundle.
+*/
+test("only English has an address, so only English is in the list SEO reads", () => {
   assert.deepEqual(BUILT_LOCALES, ["en"]);
   assert.deepEqual(resolveLanguages([EN, ES], BUILT_LOCALES), []);
+});
+
+test("but both are offered, because both are in the bundle", () => {
+  assert.deepEqual(OFFERED_LOCALES, ["en", "es"]);
+  assert.deepEqual(resolveLanguages([EN, ES]), [EN, ES]);
+});
+
+test("a language the backend takes down still disappears, which is the rule's whole point", () => {
+  // Spanish is ours and survives; a third language that is only the backend's
+  // does not, because it has no copy here to render.
+  const FR = { code: "fr", label: "French" };
+
+  assert.deepEqual(resolveLanguages([EN, ES, FR]), [EN, ES]);
 });
 
 test("the languages endpoint carries no locale segment, being the thing that says which exist", async () => {

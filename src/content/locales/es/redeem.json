@@ -1,0 +1,43 @@
+{
+  "pageTitle": "Redeem a Gift",
+  "entry": {
+    "heading": "Redeem a Gift",
+    "body": ["Someone has given you a reading.", "Enter the code from your email to open it."],
+    "label": "Your gift code",
+    "placeholder": "Enter your gift code…",
+    "submit": "FIND MY GIFT",
+    "looking": "Looking up your code…",
+    "forgiving": "Capitals and spacing do not matter."
+  },
+  "unknown": "We could not find a gift for that code. Check it against the one in your email and try again.",
+  "unreachable": "We could not check that code just now, which says nothing about whether it is good. Please try again in a moment.",
+  "throttled": "That is a lot of tries in a short time. Please wait a minute and try again.",
+  "ask": {
+    "heading": "Ask Your Question",
+    "body": ["This reading is yours.", "Ask your question and it will be written for you."],
+    "codeLabel": "Gift code",
+    "question": { "label": "Your question", "placeholder": "Enter your question…" },
+    "email": { "label": "Where to send your reading", "placeholder": "Your email address…" },
+    "name": { "label": "Your name (optional)", "placeholder": "Your name…" },
+    "submit": "GET MY READING",
+    "asking": "Asking for your reading…",
+    "failed": "We could not ask for your reading, and your code has not been used. Please try again."
+  },
+  "spent": {
+    "heading": "Already Redeemed",
+    "body": "This gift was opened on {when}, and the reading it carried has already been asked for. A gift code holds a single reading, so this one has done what it was sent to do.",
+    "undated": "This gift has already been opened, and the reading it carried has already been asked for. A gift code holds a single reading.",
+    "invitation": "The cards are always ready for another question.",
+    "cta": "GET ANOTHER READING"
+  },
+  "asked": {
+    "heading": "Your Reading Is On Its Way",
+    "body": "Thank you. Your {reading} is being written, and it will be sent to {email}. A confirmation email is on its way to you now.",
+    "asking": "You asked"
+  },
+  "lost": {
+    "heading": "We Cannot Show You This Redemption",
+    "body": "There is nothing here for us to look up — this page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts."
+  },
+  "backLabel": "BACK TO READINGS"
+}

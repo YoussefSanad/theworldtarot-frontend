@@ -45,18 +45,23 @@ test("a price that is not a whole unit keeps its decimals", () => {
   assert.equal(resolveReadingPrice([priced("in-depth", "USD", 12050)], "in-depth", "$120"), "$120.50");
 });
 
+
+/*
+  The one rule, from both sides. `useApiCopy` is the fourth argument so a test
+  can drive it; in the app it defaults to `apiServesDisplayLocale()`.
+*/
+test("the API's name wins while it is answering in the language being read", () => {
+  assert.equal(resolveReadingName(live, "in-depth", "In-Depth Reading", true), "IN-DEPTH");
+});
+
+test("and the bundled name stands when it is not, so English does not land in a Spanish page", () => {
+  assert.equal(resolveReadingName(live, "in-depth", "In-Depth Reading", false), "In-Depth Reading");
+});
+
+test("a key the catalogue answered without keeps the bundled name either way", () => {
+  assert.equal(resolveReadingName(live, "month-ahead", "Month Ahead Reading", true), "Month Ahead Reading");
+});
+
 test("before an answer, the bundled name stands", () => {
-  assert.equal(resolveReadingName(null, "in-depth", "In-Depth"), "In-Depth");
-});
-
-test("a live name replaces it", () => {
-  assert.equal(resolveReadingName(live, "in-depth", "In-Depth"), "IN-DEPTH");
-});
-
-test("a key the catalogue answered without keeps the bundled name", () => {
-  assert.equal(resolveReadingName(live, "month-ahead", "Month Ahead"), "Month Ahead");
-});
-
-test("an empty catalogue keeps the bundled name, same fault as the price", () => {
-  assert.equal(resolveReadingName([], "in-depth", "In-Depth"), "In-Depth");
+  assert.equal(resolveReadingName(null, "in-depth", "In-Depth Reading", true), "In-Depth Reading");
 });

@@ -47,7 +47,22 @@ import { useReadingName, useReadingPrice } from "@/lib/reading-prices";
 export function ReadingCard({ reading }: { reading: Reading }) {
   const price = useReadingPrice(reading.productKey, reading.price);
   const label = `${price} ${readingAction}`;
-  const fullTitle = useReadingName(reading.productKey, `${reading.title}${reading.titleTail ?? ""}`);
+
+  /*
+    The whole name, for the label a screen reader reads — which has no width to
+    run out of, so it takes the tail unconditionally. What is *drawn* splits it;
+    see the heading below.
+  */
+  const bundledTitle = `${reading.title}${reading.titleTail ?? ""}`;
+  const fullTitle = useReadingName(reading.productKey, bundledTitle);
+
+  /*
+    **The tail only exists in the bundled copy.** `titleTail` is how a phone
+    holds "Month Ahead" on one line and adds " Reading" at `lg`; the backend
+    sends one string with no seam in it, so there is nothing to hide. When the
+    live name is what is showing, the heading is that one string.
+  */
+  const live = fullTitle !== bundledTitle;
 
   return (
     <Link href={reading.href} aria-label={`${fullTitle} — ${label}`} className="reading-card panel-hover no-underline">
@@ -92,7 +107,15 @@ export function ReadingCard({ reading }: { reading: Reading }) {
       */}
       <div className="reading-card__copy flex flex-col items-center justify-center px-[2cqw] pt-[8.52cqw] pb-[4.59cqw] text-center lg:px-0 lg:justify-start lg:pt-[5.19cqw] lg:pb-0">
         <h3 className="font-display text-[7.87cqw] leading-none tracking-[-0.01em] text-cream lg:text-[9.96cqw]">
-          {fullTitle}
+          {live ? (
+            fullTitle
+          ) : (
+            <>
+              {reading.title}
+              {/* Added back at `lg`; the mobile card drops it so the title holds one line. */}
+              {reading.titleTail ? <span className="hidden lg:inline">{reading.titleTail}</span> : null}
+            </>
+          )}
         </h3>
 
         <Divider variant="hero" className="w-[52cqw] max-w-none lg:-mt-[1.66cqw] lg:w-[92.95cqw]" />

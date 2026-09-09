@@ -2,6 +2,7 @@
 
 import type { ApiProduct } from "./api.ts";
 import { useCatalogue } from "./catalogue.ts";
+import { apiServesDisplayLocale } from "./locale.ts";
 import { formatPrice } from "./price.ts";
 
 /**
@@ -46,25 +47,41 @@ export function useReadingPrice(productKey: string, bundled: string): string {
 }
 
 /**
- * What a reading is called, live once the backend has answered.
+ * What a reading is called.
  *
- * The same join as `resolveReadingPrice`, on the same key, for `name` instead
- * of `price` — see that function for the fallback rule this shares: a missing
- * or unmatched answer keeps the bundled copy rather than showing nothing.
+ * The same join as `resolveReadingPrice`, on the same key — but for `name`,
+ * which is copy rather than money, so it is subject to the one rule:
+ * **the API's word only while the API is answering in the language being read.**
+ * See `apiServesDisplayLocale` in `lib/locale.ts`; the homepage tiles and the
+ * reveal's card name apply it too.
+ *
+ * ~~Deleted on 8 September 2026.~~ Restored on 9 September behind that rule, so
+ * a rename in the admin panel reaches the site again rather than being a change
+ * nobody can make without a deploy.
+ *
+ * **It changes the casing of three headings, and that is known.** The backend
+ * answers `MONTH AHEAD` and `IN DEPTH READING`; the readings index and the
+ * reading pages are drawn in title case. So an English visitor sees the
+ * backend's capitals where the PSD drew `Month Ahead Reading`. Accepted
+ * deliberately: the panel is where that is fixed, and one editable source beats
+ * two that drift.
  */
 export function resolveReadingName(
   live: ApiProduct[] | null,
   productKey: string,
   bundled: string,
+  useApiCopy: boolean = apiServesDisplayLocale(),
 ): string {
+  if (!useApiCopy) return bundled;
+
   const match = live?.find((product) => product.key === productKey);
 
   return match ? match.name : bundled;
 }
 
 /**
- * The name for one reading, live once the backend has answered. Shares the
- * same `/products` call as `useReadingPrice`, via `lib/catalogue.ts`.
+ * The name for one reading. Shares the same `/products` call as
+ * `useReadingPrice`, via `lib/catalogue.ts`.
  */
 export function useReadingName(productKey: string, bundled: string): string {
   return resolveReadingName(useCatalogue(), productKey, bundled);
