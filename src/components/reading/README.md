@@ -201,7 +201,14 @@ and asks the catalogue what the reading costs.
 `useProduct(reading.productKey)` reads `GET /api/v1/{locale}/products/{key}` in
 the browser — **never at build time**, since prices resolve per visitor from
 their country and a baked response would ship one country's currency to
-everybody. The answer is a state rather than a number, and one sentence decides
+everybody.
+
+**`{locale}` is `apiLocale()`, not the language the visitor is reading.** The two
+are separate questions and today they have different answers: the site can be
+read in Spanish while the backend is still asked in English, because
+`/api/v1/es/products` answers 404 rather than English and an empty catalogue
+would show bundled price *strings* where live money belongs. See
+[`src/lib/locale.ts`](../../lib/locale.ts). The answer is a state rather than a number, and one sentence decides
 all of them: **where there is no live money there are no payment controls.**
 
 | State | Price line | Controls |

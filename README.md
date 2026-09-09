@@ -1,7 +1,8 @@
 # The World Tarot
 
 A Next.js implementation of the World Tarot site, built from the Figma designs
-converted from the client's PSDs. Three pages so far:
+converted from the client's PSDs. Five routes so far — the three below, plus
+`/login/` and `/redeem/`:
 
 - the **homepage** (`node 102:3`), together with the reusable card **Reveal**
   the rest of the site is built around;
@@ -99,7 +100,7 @@ provider takes a `card` prop.
 The layout was matched to Figma numerically rather than by eye.
 
 ```bash
-npm test        # 316 unit tests over the pure resolvers in src/lib
+npm test        # 381 unit tests: the pure resolvers in src/lib, and the copy catalogue
 ```
 
 **Node 22 is pinned in `package.json` and the pin is load-bearing.** On Node 20
@@ -156,9 +157,13 @@ the browser.
 
 **`hreflang` lives in the sitemap, not in each page's `<head>`.** It is
 reciprocal — an unanswered annotation is ignored — so per-page annotation would
-mean editing all six the day a second language ships. In the sitemap it is one
-file, and an English page's head never changes. It emits nothing at all while
-`BUILT_LOCALES` holds one locale, which is the state today.
+mean editing all six the day a language gets a URL. In the sitemap it is one
+file, and an English page's head never changes.
+
+**It emits nothing today, and that is right even though the site is bilingual.**
+It reads `BUILT_LOCALES`, which is locales with an *address*; Spanish is offered
+without one. See **Languages** below — an `hreflang` pointing at a `/es/` that
+does not exist would be a lie, and the sitemap would be advertising a 404.
 
 `robots.ts` and `sitemap.ts` both carry `export const dynamic = "force-static"`.
 That is not decoration: under `output: "export"` Next refuses to build a metadata
@@ -178,6 +183,60 @@ npm run assets:og   # recomposite public/og-image.jpg after artwork changes
 it — `https://theworldtarot.com` in production, `https://staging.theworldtarot.com`
 on staging. A production build with it unset is refused rather than allowed to
 emit canonicals and Open Graph URLs pointing at `localhost`.
+
+## Languages
+
+The site is read in English until a visitor picks otherwise from the globe in
+the masthead. Every word it says lives in
+[`src/content/locales/`](src/content/locales/README.md) — one JSON file per
+section, one folder per language — and ships in the bundle.
+
+```bash
+npm run check:translations   # what is still English, per language
+```
+
+**Language is a stored preference, not an address.** There is one URL per page
+and Spanish has none of its own. That is a decision rather than an omission:
+search is English-only here, so the thing an address buys — an indexable,
+linkable Spanish page — is not wanted, and
+`docs/adr/0004-language-is-a-path-segment.md` is superseded on that point.
+
+What it costs is worth knowing before you are surprised by it. The export is
+static, so the HTML for `/` is built in English; a visitor reading Spanish gets
+that markup and then the bundle re-renders over it. So there is a brief flash of
+English on first paint, `<html lang>` is corrected after mount rather than in the
+served markup (`components/layout/HtmlLang.tsx`), and a crawler only ever sees
+English. All three are the same fact wearing different clothes.
+
+It is also why **every component that renders copy is a client component**. A
+server component's HTML is written once at build time and never re-rendered, so
+it would keep its English through a switch — measured, not assumed, before the
+22 of them were converted.
+
+### The two lists, which are not the same list
+
+- **`BUILT_LOCALES`** — locales with a URL of their own. English alone.
+  `lib/seo.ts` writes `hreflang` from it and `lib/routes.ts` writes the sitemap
+  from it, so a `/es/` in here would advertise a page that does not exist.
+- **`OFFERED_LOCALES`** — languages a visitor can read the site in. Both.
+
+Keeping them apart is what lets Spanish be readable without being indexable.
+
+### What the backend supplies
+
+`GET /api/v1/languages` answers `[{ code: "en" }]` — its own translation work is
+unfinished — so `lib/languages.ts` adds the languages whose copy ships in this
+bundle. The endpoint stays the authority on what the *backend* can serve, and the
+intersection it exists for still works: a language it takes down still disappears
+from the switcher on the next request, with no deploy.
+
+Copy that comes from the API follows one rule, `apiServesDisplayLocale()` in
+[`src/lib/locale.ts`](src/lib/locale.ts): **the price is always the backend's; a
+word is the backend's only while the backend is answering in the language being
+read.** So an English visitor sees product and reading names edited in the admin
+panel, and a Spanish one sees this repository's copy. The day their `es`
+endpoints answer, `apiLocale()` follows the display language and nothing else
+changes.
 
 ## Scope
 
