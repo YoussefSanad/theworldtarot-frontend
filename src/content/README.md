@@ -78,12 +78,25 @@ begin before the whole file lands).
 
 `primaryNav` and `footerNav` point at paths from the client's navigation
 document (`/world-tarot`, `/living-tarot`, `/readings`, `/library`, `/faq`,
-etc.). None of those routes are built — only `/` exists under `src/app` (the
+etc.). Several are now built — `/readings/` and its three written readings,
+`/world-tarot/`, `/login/` and `/library/` — and the rest are not (the
 `/concept` sunrise-hero experiment route was removed; its components remain
 under `src/components/concept` for reference — see that folder's README).
 The links are intentionally live/correct now so that adding a route later is
 just adding a page under `src/app`, not also hunting down every place that
-linked to it.
+linked to it. **A built path carries a trailing slash and an unbuilt one does
+not** — the reasoning is in `site.ts`'s own header.
+
+## `library.ts`
+
+The Library's copy and its two rosters: the twenty-two Major Arcana and the four
+suits. The names are the client's, with her outright typos fixed and her deck's
+own naming kept, and the ordering is numerical where her mockup's is not — both
+decisions are argued in the file and in
+[`src/components/library/README.md`](../components/library/README.md).
+
+Alt text is *derived* from the name (`cardAlt`) rather than written out
+twenty-two times, so it cannot drift from what the plaque prints.
 
 ## Products (`home.ts`)
 
