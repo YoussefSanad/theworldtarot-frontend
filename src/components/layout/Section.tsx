@@ -17,7 +17,8 @@ export type ContainerWidth =
   | "readingsGift"
   | "reading"
   /** The props row on a reading page, which is wider than the rest of it below `lg`. */
-  | "readingProps";
+  | "readingProps"
+  | "worldTarot";
 
 const WIDTH_CLASS: Record<ContainerWidth, string> = {
   page: "shell--page",
@@ -28,6 +29,7 @@ const WIDTH_CLASS: Record<ContainerWidth, string> = {
   readingsGift: "shell--readings-gift",
   reading: "shell--reading",
   readingProps: "shell--reading-props",
+  worldTarot: "shell--world-tarot",
 };
 
 export function Container({

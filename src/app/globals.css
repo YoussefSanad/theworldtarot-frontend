@@ -100,6 +100,13 @@
     the PSD conversion rather than a design decision — the row centres here.
   */
   --container-reading: 1431px;
+  /**
+   * The World Tarot page. Figma's two panels measure 932px and 1029px and
+   * both centre on the page (see world-tarot/README.md) — the wider of the
+   * pair is the container, same reasoning as `--container-readings` above.
+   */
+  --container-world-tarot: 1029px;
+  /*
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -238,6 +245,7 @@
     --measure-readings: min(var(--container-readings), 78.229vw);
     --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
     --measure-reading: min(var(--container-reading), 74.531vw);
+    --measure-world-tarot: min(var(--container-world-tarot), 53.594vw);
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
     --measure-flourish: min(448px, 23.333vw);
@@ -443,6 +451,10 @@
 
   .shell--reading-props {
     --shell-width: var(--measure-reading-props);
+  }
+
+  .shell--world-tarot {
+    --shell-width: var(--measure-world-tarot);
   }
 
   /*
@@ -651,6 +663,203 @@
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     position: absolute;
+  }
+
+  /*
+    The World Tarot page's atmosphere: the moonlit garden path node 344:31
+    stacks behind the frame, standing on the floor of the page exactly as the
+    reading observatory and the readings parlour do — width-driven so it
+    scales with the screen, floor-anchored so a page taller than the 3298px
+    frame it was drawn at shows more flat colour above the art rather than
+    stretching it, and `--path-feather` fades its top edge into that colour
+    the same way theirs do.
+
+    Unlike those two, this photograph is opaque edge to edge at every height
+    Figma drew it — the canopy and the moon reach the frame's own top border,
+    there is no near-flat sky to dissolve into — so the feather here is only
+    for a page taller than 3298px at its own width, not a composition choice.
+    171.77vw is its height at full width, 3298/1919.
+
+    The client wants as much of this path on screen as the page allows, which
+    is a page-length decision rather than an atmosphere one: see the
+    generous `pb-` on the page wrapper in world-tarot/page.tsx, the same lever
+    `ClosingSaying` already pulls to show more of a reading's own room.
+
+    **The artwork overhangs its own box at the bottom, and has to.** The
+    readings parlour can end exactly on its wrapper's bottom edge because
+    that edge is the footer's top edge, and `SiteFooter`'s own
+    `mt-[clamp(0.5rem,0.73vw,0.875rem)]` is the one thing between them here:
+    a margin belongs to neither box, so the column's flat colour showed
+    through it as a band across the foot of the page. `--path-drop` is spent
+    downward across it.
+
+    **A second and much larger gap used to sit under that one, and the fix
+    for it is not here.** `main` is `flex-1` in a `min-h-screen` column, so
+    on a short page it stretches past its own content — and a plain block
+    child of it does not stretch, so this element, inset to the page
+    wrapper, stopped well above the footer by a distance that grew with the
+    viewport. No value here could have covered that, because it was never a
+    fixed distance. The page wrapper carries `min-h-full` for it; see the
+    note in `world-tarot/page.tsx`.
+
+    So the drop only has the margin to clear, and stays small on purpose:
+    `--veil-ink` is `rgba(15,26,39,0.77)`, so the footer's scrim is 77%
+    rather than opaque and a long overhang would tint it. `overflow-y-clip`
+    on the layout column keeps it from lengthening the document either way.
+
+    **`--path-rise` carries the artwork up behind the masthead.** This
+    element is `inset-0` on the page wrapper, which starts under the header,
+    so left alone the picture begins at the header's bottom edge and the
+    flat colour holds the whole masthead. The client wants the path to reach
+    up into it, so the box starts that much *above* its own top edge — a
+    negative `top` — and `overflow: clip` on the layout column stops the
+    overhang from lengthening the document.
+
+    `3rem` reaches into the masthead without going behind all of it — the
+    header runs about 90px on a desktop and 66px on a phone, so the path
+    climbs roughly half of it and the wordmark keeps flat colour behind its
+    own line. It was 6rem first, which cleared the whole header and read as
+    too high against the copy; this is that value tuned back down by eye
+    against the rendered page, which is the only way this particular number
+    can be settled. Anything that changes `SiteHeader`'s height wants
+    re-checking here.
+
+    The picture keeps its own aspect throughout: it is `cover` on a box whose
+    height is capped at `171.77vw`, so it scales on width and nothing is
+    stretched. What the rise buys is a taller box, and what fills the extra
+    is more of the top of the photograph — the canopy and the moon — rather
+    than a zoom.
+  */
+  .page-atmosphere-world-tarot {
+    /*
+      The footer's own top margin (14px at its clamp maximum) and a little
+      past it, so the crossing is not hairline-exact at any width. The
+      surplus lands under the footer's scrim, which is 77% rather than
+      opaque — hence "a little" and not "generous".
+    */
+    --path-drop: 2rem;
+    --path-rise: 3rem;
+    background-color: var(--color-ink);
+    /*
+      **No `overflow: clip` here, unlike the two blocks above**, and that is
+      the whole reason both overhangs work.
+
+      The readings parlour and the reading observatory clip because their
+      artwork is inset and can run taller than the page. This one is the
+      opposite: the picture is *meant* to escape its box at both ends — up
+      behind the masthead, down across the footer's margin — and a clip on
+      this element cuts exactly those two overhangs off, leaving the artwork
+      ending flush at the wrapper's edges. That is what put a flat band back
+      above the footer after `--path-drop` was supposedly covering it: the
+      drop was being clipped away, so no value would ever have shown.
+
+      Nothing is needed in its place. `overflow-y-clip` on the layout column
+      already stops the overhang lengthening the document, which is the only
+      thing the clip was protecting against.
+    */
+  }
+
+  .page-atmosphere-world-tarot::after {
+    background-image: url("/figma/world-tarot-path.webp");
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    /*
+      Pinned at both ends rather than given a height: `top` and `bottom`
+      together already state the box, and a `block-size` beside them would
+      be a third value for the same thing — the reason the readings blocks
+      above set one edge and a height, and this one sets two edges.
+
+      `cover` therefore fills a box that is the page plus both overhangs, and
+      on a page taller than the artwork's own aspect it crops from the top,
+      which is where the feather is. Nothing is ever stretched.
+    */
+    content: "";
+    inset: calc(-1 * var(--path-rise)) 0 calc(-1 * var(--path-drop)) 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
+    position: absolute;
+  }
+
+  /*
+    The World Tarot's mobile sky.
+
+    Same construction and the same asset as the readings index (see "The mobile
+    sky" above): the client's 375x850 night sky hung from the top edge at its
+    own scale, fading downwards into the flat colour the path fades up into.
+    226.67vw is its height at full width, 850/375.
+
+    **Why this page needs one at all, when its photograph is opaque to its own
+    top edge.** That opacity is what `world-tarot/README.md` records, and it is
+    true at the width the client drew — at 1920 the canopy and moon reach the
+    frame's top border and there is nothing above them to fill. It stops being
+    true on a phone. The path is width-driven, so at 375px it stands about
+    644px tall (171.77vw) at the bottom of a page several thousand pixels long,
+    and everything above it is flat `--color-ink`. The feather that "only
+    matters once the page runs taller than the frame" is exactly the case a
+    phone is always in.
+
+    So the opacity note is not wrong, it is a statement about the desktop
+    frame; below `lg` this page has the same screens of empty colour the
+    readings index had, and it gets the same answer.
+
+    **The path has to give the top of the page up first, and that is the real
+    change here — the sky alone does nothing.** On desktop this artwork is
+    pinned at *both* ends (`top` and `bottom`, no height) so `cover` fills the
+    whole page and crops from the top, which is exactly right at 1920 where the
+    frame and the page are near enough the same shape. It is also why a sky
+    added behind it was invisible: the path's box *is* the page, the photograph
+    is opaque edge to edge, and `::after` paints over `::before` — so the sky
+    was drawn and then covered by it, everywhere except the 4% the path's own
+    feather fades out.
+
+    So below `lg` the path stops being pinned at the top and takes the readings
+    parlour's construction instead: a height, and one edge. `block-size:
+    min(171.77vw, 100%)` is the artwork's own height at full width (3298/1919),
+    so at 375px it stands about 644px tall on the floor of the page and the
+    thousands of pixels above it are free for the sky. `inset: auto 0 …` drops
+    the top edge; the bottom keeps `--path-drop`, because the footer's margin
+    still needs covering at every width.
+
+    Nothing about the picture changes — same `cover`, same width-driven scale,
+    same floor anchor, same top feather dissolving into the colour above it.
+    What changes is only how much of the page the box claims.
+
+    **`--path-rise` is spent to zero with it.** The rise carries the path up
+    behind the masthead on desktop, which is the client's composition. Below
+    `lg` the path is nowhere near the masthead — the sky is what is up there —
+    so it has nothing left to lift, and against a floor-anchored box it would
+    only push the artwork down off its own floor. The header clearance moves to
+    the wrapper (`max-lg:-top-20` in world-tarot/page.tsx), the readings index's
+    arrangement exactly: the element moves, the artwork inside it does not.
+
+    **`overflow: clip` still must not be added to the parent**, for the reason
+    the base rule gives — `--path-drop` is an overhang and a clip would cut it
+    off. A height-capped box cannot overflow the top the way the parlour's can,
+    and the bottom overhang is deliberate, so there is nothing here to clip.
+  */
+  @media (width < 64rem) {
+    .page-atmosphere-world-tarot {
+      --path-rise: 0rem;
+    }
+
+    .page-atmosphere-world-tarot::after {
+      block-size: min(171.77vw, 100%);
+      inset: auto 0 calc(-1 * var(--path-drop)) 0;
+    }
+
+    .page-atmosphere-world-tarot::before {
+      background-image: url("/figma/readings-sky-mobile.webp");
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+      block-size: min(226.67vw, 100%);
+      content: "";
+      inset: 0 0 auto 0;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      position: absolute;
+    }
   }
 
   /*

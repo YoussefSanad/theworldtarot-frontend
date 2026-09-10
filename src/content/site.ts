@@ -12,8 +12,8 @@ import { icons } from "@/lib/assets";
  * `trailingSlash: true`, so a link without one costs a 308 on the way for a
  * route that exists — the same reasoning as `signInPath` in
  * `content/login.ts`. `/readings/`, `/readings/three-card/`,
- * `/readings/month-ahead/` and `/readings/in-depth/` are built and slashed;
- * `/readings/one-card` is not (see `signature` in `content/readings.ts`) and
+ * `/readings/month-ahead/`, `/readings/in-depth/` and `/world-tarot/` are
+ * built and slashed; `/readings/one-card` is not (see `signature` in `content/readings.ts`) and
  * stays bare, along with every other unbuilt path in this file — each answers
  * a 404 whichever way it is written, and slashing it now would say it had
  * been built.
@@ -42,7 +42,7 @@ export type NavGroup = { label: string; children: readonly NavGroupLink[] };
 export type NavItem = NavLink | NavGroup;
 
 export const primaryNav: NavItem[] = [
-  { label: "WORLD TAROT", href: "/world-tarot" },
+  { label: "WORLD TAROT", href: "/world-tarot/" },
   { label: "LIVING TAROT", href: "/living-tarot" },
   {
     label: "READINGS",
@@ -85,7 +85,7 @@ export const headerActions = {
 };
 
 export const footerNav: NavLink[] = [
-  { label: "World Tarot", href: "/world-tarot" },
+  { label: "World Tarot", href: "/world-tarot/" },
   { label: "Living Tarot", href: "/living-tarot" },
   { label: "Readings", href: "/readings/" },
   { label: "Library", href: "/library" },

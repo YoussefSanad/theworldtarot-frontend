@@ -27,6 +27,13 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
  * — the hero's sky layers are drawn wider than the page on purpose, and a
  * `visible` inline axis survives a `clip` block axis untouched (the value only
  * gets coerced when the other axis is scrollable, which `clip` is not).
+ *
+ * **`main` stays a block box.** Making it a flex column is the tempting way to
+ * let a page's own wrapper stretch to fill it — but most pages here return a
+ * fragment, so `main` holds nine siblings on the homepage rather than one
+ * wrapper, and flex would turn every section into a flex item and stop their
+ * margins collapsing. A page that needs its wrapper to reach the footer says
+ * so itself; see `world-tarot/page.tsx`.
  */
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
