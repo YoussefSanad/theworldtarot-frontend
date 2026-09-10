@@ -107,6 +107,11 @@
    */
   --container-world-tarot: 1029px;
   /*
+    The Library's card grid. Figma's `THE CARDS` block is 914px: four 205px
+    cards and three 28px gutters (233px column pitch, ~368px row pitch), which
+    is what `.library-grid` is built from.
+  */
+  --container-library: 914px;
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -246,6 +251,7 @@
     --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
     --measure-reading: min(var(--container-reading), 74.531vw);
     --measure-world-tarot: min(var(--container-world-tarot), 53.594vw);
+    --measure-library: min(var(--container-library), 47.604vw);
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
     --measure-flourish: min(448px, 23.333vw);
@@ -455,6 +461,10 @@
 
   .shell--world-tarot {
     --shell-width: var(--measure-world-tarot);
+  }
+
+  .shell--library {
+    --shell-width: var(--measure-library);
   }
 
   /*
@@ -757,6 +767,145 @@
       already stops the overhang lengthening the document, which is the only
       thing the clip was protecting against.
     */
+  }
+
+  /*
+    The Library's rotunda.
+
+    Built the way the World Tarot path is rather than the readings parlour —
+    width-driven, standing on the floor of the page — because this photograph
+    is **opaque to its own top edge**: the dome and its clouds reach the top of
+    the frame, so there is no near-flat sky for a feather to dissolve into and
+    a mask there would only fade the ceiling out. The check is the one
+    `world-tarot/README.md` describes; this artwork answers it the other way
+    from the observatory's.
+
+    It does keep `overflow: clip` and no overhang, which is where it parts from
+    the path: the client draws the room inside the frame rather than running it
+    up behind the masthead, and the page ends on the closing button rather than
+    on a stretch of artwork.
+
+    The layer Figma draws is 2137x4312 at (-124,-380) against a 1920x3772
+    frame — wider and taller than the page and meant to be cropped. Width
+    drives the size with `height: auto`'s equivalent (`cover` on a
+    floor-anchored box), for the reason `src/app/README.md` gives: a second
+    percentage would squash the room whenever the page runs taller or shorter
+    than the frame.
+  */
+  .page-atmosphere-library {
+    background-color: var(--color-night);
+    overflow: clip;
+  }
+
+  .page-atmosphere-library::after {
+    background-image: url("/figma/library-rotunda.webp");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    /*
+      The room is 1.965 tall for its width (1280x2515 as shipped). Past that the
+      photograph has run out and the page colour carries on alone.
+
+      **The fade at the bottom is not decoration, it is the fix for a visible
+      band**, and the numbers say why: the artwork's own bottom edge averages
+      `#1d242e` while the page under it is `--color-night`, `#081525`. Ending
+      the image on a hard line therefore butts a light grey-blue against a
+      darker navy, and that seam reads as a flat strip across the foot of the
+      page — the thing the client reported above the footer. Nothing about the
+      height was wrong; the edge was.
+
+      So the last stretch of the image dissolves into the colour beneath it
+      instead of stopping on it. `--room-sink` is where the fade begins, far
+      enough up that it lands on floor tiles rather than on anything with
+      detail in it. This is the readings observatory's `--room-feather` trick
+      turned upside down: that one fades the *top* edge into the sky, this one
+      fades the *bottom* edge into the floor.
+    */
+    --room-sink: 82%;
+    block-size: min(196.46vw, 100%);
+    content: "";
+    inset: 0 0 auto 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--room-sink), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 var(--room-sink), transparent 100%);
+    position: absolute;
+  }
+
+  /*
+    The Library's mobile sky, and the rotunda turning round to meet it.
+
+    This is the one page of the three where the sky is not simply an extra
+    layer: the rotunda hangs from the *top* of the page at every width above
+    `lg`, so there is no room above it to put a sky into. Below `lg` it turns
+    over — floor-anchored like the parlour, the observatory and the path — and
+    the sky takes the top edge it vacates.
+
+    **Why it hangs from the top on desktop in the first place, and why that
+    stops working on a phone.** The desktop rule is written out above: this
+    photograph is opaque to its own top edge, so it is anchored there and the
+    `--room-sink` fade is spent on its *bottom* edge instead, dissolving the
+    floor tiles into the page colour to kill the band that used to sit above
+    the footer. That is the right way round at 1920, where the room's 196.46vw
+    covers all but the last fifth of the frame.
+
+    On a phone the same width-driven scale puts the room's 737px (196.46vw at
+    375) at the *top* of a page several thousand pixels long — so the client's
+    dome sits behind the intro copy, the whole Major Arcana grid scrolls over
+    flat colour, and the page ends on empty `--color-night` under the closing
+    button. Exactly inverted from what she draws, where the room is the thing
+    the page ends on.
+
+    So below `lg` the three declarations that state which edge the artwork is
+    fixed to are re-stated, and nothing else about it changes — same asset,
+    same `cover`, same width-driven `block-size` cap, so the room is neither
+    cropped differently nor rescaled:
+
+      - `background-position` goes `center top` -> `center bottom`, so the
+        crop keeps the floor rather than the ceiling once the box is shorter
+        than the picture. This is the meaningful half of the change: at 375px
+        the cap is not binding (737px of artwork in a page thousands tall), so
+        what the position actually decides is which end of the *photograph*
+        the box holds.
+      - `inset` goes `0 0 auto 0` -> `auto 0 0 0`, standing the box on the
+        page's floor.
+      - the mask turns over with it. `--room-sink` fades the bottom edge into
+        the page colour and is exactly what must not happen now — that edge is
+        the floor the room stands on, and fading it would hollow the room out
+        from underneath. It is replaced by the parlour's own top feather, the
+        dome dissolving up into the sky above it, which is what every other
+        floor-anchored backdrop on this site does. 12% is the parlour's value;
+        the rotunda's apex is cloud rather than flat ceiling, so it has as much
+        to fade as the parlour's does.
+
+    `overflow: clip` on the parent is kept from the desktop rule and is now
+    doing the parlour's job rather than nothing: a floor-anchored box capped at
+    `min(196.46vw, 100%)` can run taller than a short page, and the clip keeps
+    that inside the wrapper.
+
+    The sky itself is the readings index's layer verbatim — same 375x850 asset
+    at its own scale, same downward fade. See "The mobile sky" above for why it
+    keeps its own scale instead of being stretched to meet the room, and for
+    the `--sky-feather` knob.
+  */
+  @media (width < 64rem) {
+    .page-atmosphere-library::after {
+      background-position: center bottom;
+      inset: auto 0 0 0;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
+    }
+
+    .page-atmosphere-library::before {
+      background-image: url("/figma/readings-sky-mobile.webp");
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+      block-size: min(226.67vw, 100%);
+      content: "";
+      inset: 0 0 auto 0;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
+      position: absolute;
+    }
   }
 
   .page-atmosphere-world-tarot::after {
@@ -2616,6 +2765,313 @@
     background-color: var(--color-gold);
     box-shadow: var(--glow-gold);
     opacity: 1;
+  }
+
+  /* The Library ------------------------------------------------------------ */
+
+  /*
+    Four cards across, 28px gutters, in a 914px measure (see
+    `--container-library`). The columns are `1fr` rather than a fixed 205px so
+    the grid keeps its proportions once the measure starts scaling with the
+    viewport, which is what makes the plaque's `cqw` type grow with it.
+
+    The gutter is the one number taken from Figma directly: 233px column pitch
+    less the 205px card.
+  */
+  .library-grid {
+    display: grid;
+    gap: clamp(0.75rem, 1.458vw, 1.75rem);
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .library-grid > li {
+    inline-size: 100%;
+  }
+
+  /*
+    Twenty-two into four leaves two, and the client centres them under the last
+    full row instead of leaving them at the left edge.
+
+    The first of the pair is pushed into the second column, which centres both
+    across four — `grid-column` on the 21st item rather than a wrapper, so the
+    markup stays one flat list. `:nth-last-child(2)` addresses it by position
+    from the end, so a deck that changes length does not need this rewritten.
+  */
+  .library-grid > li:nth-last-child(2) {
+    grid-column: 2;
+  }
+
+  @media (width < 64rem) {
+    .library-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Two columns divide the deck evenly, so nothing is left to centre. */
+    .library-grid > li:nth-last-child(2) {
+      grid-column: auto;
+    }
+  }
+
+  @media (width < 30rem) {
+    .library-grid {
+      grid-template-columns: 1fr;
+      /* One card wide, the cards would otherwise be nearly the viewport. */
+      margin-inline: auto;
+      max-inline-size: 20rem;
+    }
+  }
+
+  .library-card {
+    display: block;
+    /*
+      The whole tile is the link, so the focus ring belongs on the card rather
+      than on the image inside it.
+    */
+    border-radius: 2px;
+  }
+
+  .library-card__art {
+    display: block;
+    transition: filter 300ms var(--ease-veil);
+  }
+
+
+  /*
+    Light, not movement — `ProductCard`'s rule, and the grid needs it: the cards
+    sit 28px apart and anything that grew would climb over its neighbours.
+  */
+  .library-card:hover .library-card__art,
+  .library-card:focus-visible .library-card__art {
+    filter: brightness(1.06) drop-shadow(0 0 14px rgb(228 196 106 / 0.38));
+  }
+
+  /*
+    The name, set into the plaque the artwork already draws.
+
+    `2.62cqw` is the client's own size, measured off her mockup where "THE HIGH
+    PRIEST" fills about 85% of the plaque's interior. It is deliberately in
+    `cqw` off the card rather than the page's `clamp()` tokens — the plaque is a
+    fraction of the card, so the type has to be one too, the same reasoning
+    `ProductCard` is sized by (`src/app/README.md`, "Container queries").
+
+    `--color-ink-deep` is the token's own job: "label ink on gold". It is the
+    colour Figma sets on GET MY READING, which is the same dark-on-gold problem
+    one control over.
+  */
+  /*
+    **A `.stack` cell, not an absolutely positioned box.** It shares the image's
+    grid area — `.stack > *` puts every child in cell 1/1 — so it is already
+    exactly the card's box, and the plaque is found by pushing the line to the
+    bottom and giving it the plaque's own height.
+
+    It was `position: absolute` first and that was simply broken: `.stack` is
+    `display: grid` and sets no `position`, so the names resolved against the
+    page instead of the card and the plaques rendered empty. `src/app/README.md`
+    states the rule this file should have followed — reach for `.stack` before
+    `position: absolute` — and this is what it is for.
+
+    Laying it out as a column with the line pushed to the end means only two
+    numbers matter, both measured off the delivered art: the plaque's bottom
+    edge sits 1.18% of the card's *height* up from the card's own, and the
+    plaque is 4.72% of that height tall.
+
+    **The bottom inset is in `cqw`, not `%`.** A percentage padding resolves
+    against the inline size whichever axis it is on, so `1.18%` would be a share
+    of the card's width — 2.4px where 4px is wanted. `cqw` is the same mistake
+    made deliberately and corrected: 1.18% of the height is 1.18 x 1.656
+    (2120/1280) = 1.954% of the width, so `1.954cqw` is the real inset and stays
+    right as the card scales. The text box's own `height: 4.72%` needs no such
+    correction — percentage *heights* do resolve against the parent's height.
+  */
+  .library-card__name {
+    align-items: center;
+    box-sizing: border-box;
+    color: var(--color-ink-deep);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-serif);
+    font-size: 2.62cqw;
+    /*
+      Real bold, not synthesized: `next/font` loads Cinzel as a variable face
+      with a `400 900` weight axis (see the generated `@font-face`), so the
+      browser interpolates an actual 700 rather than smearing the 400.
+
+      It earns its place at this size. The plaque prints at about 7.4px on a
+      1920px frame — below where small caps stay comfortable — and the extra
+      stem weight is what keeps the engraving legible against the gold rather
+      than dissolving into it. The client's own lettering on the mockup is
+      heavier than a regular too.
+    */
+    font-weight: 700;
+    justify-content: flex-end;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    /* Clear of the plaque's lower bevel; see the note above on `cqw` vs `%`. */
+    padding-block-end: 1.954cqw;
+    /*
+      **The name paints over the artwork, and has to be told to.** Both are
+      cells of the same `.stack`, so paint order decides which is on top — and
+      the hover rule puts a `filter` on the image, which establishes a stacking
+      context and lifts it above its later sibling. The name vanished under the
+      artwork on hover, and only on hover, until this was here.
+    */
+    position: relative;
+    text-transform: uppercase;
+    z-index: 1;
+    /*
+      One line, always. The plaque is a fixed box in the artwork and a second
+      line would fall off it, so a name that cannot fit is squeezed by the rule
+      below rather than allowed to wrap.
+    */
+    white-space: nowrap;
+  }
+
+  /*
+    The plaque's own height, so the line centres on it rather than resting on
+    its lower edge. A percentage rather than `cqh`: this box's parent is the
+    stack cell, whose height is the card's and is definite, while a container
+    query unit would need the tile to declare `container-type: size` — which it
+    does not, and should not, since `@container` here is for the `cqw` type.
+  */
+  /*
+    Cinzel has no lowercase — it draws small capitals in their place — so the
+    `text-transform: uppercase` above is what makes the plaque read as engraved
+    caps rather than as small caps, and the content layer keeps the name in
+    title case for everything that is not this plaque.
+
+    **One rule, not two.** This selector was written twice for a while, and the
+    second — a bare `display: block` carrying this note — silently undid the
+    `display: flex` and the height that put the line on the plaque, so the name
+    sat below it. If this block ever needs adding to, add to it here.
+  */
+  .library-card__name-text {
+    align-items: center;
+    display: flex;
+    height: 4.72%;
+    justify-content: center;
+  }
+
+  /*
+    The long names.
+
+    Measured against the plaque's interior at the size above, every name in the
+    deck fits on one line but one: "THE HIGH PRIESTESS" comes to about 103%, and
+    "THE HIGH PRIEST" — the client's own reference, the longest she lettered
+    herself — to 85%. So the deck divides at fifteen characters, and
+    `TarotCardTile` sets this class from the name's own length rather than
+    naming a card here.
+
+    Tracking first, then a touch of size — and the split matters. -0.03em is
+    about as tight as this face takes before the capitals start to look cramped,
+    and it recovers roughly 5% of the line. Bold costs another 3-5% on top of
+    the 3% this name already overran by, so tracking alone would need about
+    -0.07em and would visibly squeeze the one name that is already the most
+    crowded.
+
+    The remainder comes off the size instead, where 4% is imperceptible beside a
+    neighbouring plaque but a further 0.04em of negative tracking would not be.
+    The row still reads as one engraving; only the longest name in the deck is
+    touched at all.
+  */
+  .library-card__name--long {
+    font-size: 2.52cqw;
+    letter-spacing: -0.03em;
+  }
+
+  /*
+    The mini navigation above the grid.
+
+    Figma sets it 101px under the standfirst at 30px Gill Sans in gold, with
+    pipes between the five items. The pipes are drawn here rather than typed
+    into the markup so they are never read aloud and never land inside a link.
+  */
+  /*
+    The widest gap in the masthead, and the one that separates the copy from the
+    controls: 75px between the standfirst's ink and the navigation's in her
+    render, less the ~3px of slack the navigation's own em box carries above its
+    capitals. 72/19.2 = 3.75vw.
+  */
+  .library-suit-nav {
+    margin-block-start: clamp(0.75rem, 3.75vw, 4.5rem);
+  }
+
+  /*
+    One row wherever it will fit.
+
+    Figma draws this line 797px wide, and the masthead it sits in shares the
+    grid's 914px measure — 117px of slack. It wrapped to two lines once, when
+    the masthead was briefly given the intro block's own 838px bounding box and
+    41px of slack with it (see the README): **the navigation is what decides how
+    narrow this masthead may be**, and it is a single row by design.
+
+    It is still allowed to wrap below `lg`, where the design stops scaling and
+    the gutter takes over — five items across a phone cannot be one line, and a
+    row that overflows its screen is worse than one that folds.
+  */
+  .library-suit-nav ul {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0 clamp(0.4rem, 0.9vw, 1.1rem);
+    justify-content: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  @media (width < 64rem) {
+    .library-suit-nav ul {
+      flex-wrap: wrap;
+      row-gap: 0.35em;
+    }
+  }
+
+  .library-suit-nav li + li::before {
+    color: var(--color-gold);
+    content: "|";
+    margin-inline-end: clamp(0.4rem, 0.9vw, 1.1rem);
+    opacity: 0.5;
+  }
+
+  .library-suit-nav li {
+    align-items: center;
+    display: flex;
+  }
+
+  .library-suit-nav__link {
+    color: var(--color-gold);
+    font-family: var(--font-sans);
+    font-size: clamp(0.75rem, 3.1vw, 1.875rem);
+    font-weight: 300;
+    letter-spacing: 0.025em;
+    line-height: 1;
+    opacity: 0.62;
+    text-decoration: none;
+    transition:
+      opacity 300ms var(--ease-veil),
+      text-shadow 300ms var(--ease-veil);
+  }
+
+  .library-suit-nav__link:hover,
+  .library-suit-nav__link:focus-visible {
+    opacity: 1;
+  }
+
+  /*
+    Where you are. Figma draws no active state — a static mockup has none to
+    draw — so this is an addition rather than a departure, in the same spirit as
+    the mobile menu button (`src/app/README.md`). It is full strength plus a
+    glow against dimmed siblings, and `aria-current` in the markup, so it never
+    rests on colour alone.
+  */
+  .library-suit-nav__link.is-current {
+    opacity: 1;
+    text-shadow: 0 0 12px rgb(228 196 106 / 0.45);
   }
 
   /* Surfaces --------------------------------------------------------------- */

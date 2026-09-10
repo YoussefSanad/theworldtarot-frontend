@@ -22,7 +22,7 @@ import { cn } from "@/lib/cn";
  * real scroll height, popping a scrollbar in and out for the animation's
  * duration.
  */
-export type AtmosphereVariant = "hero" | "readings" | "reading" | "world-tarot";
+export type AtmosphereVariant = "hero" | "readings" | "reading" | "world-tarot" | "library";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
@@ -31,6 +31,8 @@ const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   reading: { className: "page-atmosphere-reading" },
   /** The garden path behind The World Tarot's own page. */
   "world-tarot": { className: "page-atmosphere-world-tarot" },
+  /** The rotunda the Library's cards hang in. */
+  library: { className: "page-atmosphere-library" },
 };
 
 export function PageAtmosphere({ variant, className }: { variant: AtmosphereVariant; className?: string }) {

@@ -244,3 +244,55 @@ export const worldTarotSurfaces = {
 } as const;
 
 /**
+ * The Library's Major Arcana art (node 344:98).
+ *
+ * Unlike everything above, these are not Figma exports: they are the client's
+ * own delivery, re-encoded by `scripts/optimize-library-cards.mjs` from
+ * 1280x2120 JPEGs of 1-2.4MB each (35MB across the deck) to the 640x1060 webp
+ * the grid actually needs. `images.unoptimized` is on for the static export, so
+ * that conversion is the only thing standing between the page and the originals.
+ *
+ * **Each file carries the card's whole chrome** — gold border, the roundel
+ * holding the Roman numeral, and the plaque along the bottom — with the plaque
+ * left *empty*. The name is HTML text laid into it by `TarotCardTile`, which
+ * positions itself by percentages measured off these exact files. A re-cut at a
+ * different size would move the plaque out from under the name, which is why the
+ * script asserts on the source dimensions rather than trusting them.
+ *
+ * Addressed by slug so `content/library.ts` can look one up from the card it is
+ * already holding; the client's own filenames (`04-the-emporer`,
+ * `12-the-hangman`) are mapped to these slugs in the script and appear nowhere
+ * else.
+ */
+const libraryCard = (slug: string): ImageAsset => asset(`/figma/library-cards/${slug}.webp`, 640, 1060);
+
+export const libraryCards = {
+  "the-fool": libraryCard("the-fool"),
+  "the-magician": libraryCard("the-magician"),
+  "the-high-priestess": libraryCard("the-high-priestess"),
+  "the-empress": libraryCard("the-empress"),
+  "the-emperor": libraryCard("the-emperor"),
+  "the-high-priest": libraryCard("the-high-priest"),
+  "the-lovers": libraryCard("the-lovers"),
+  "the-chariot": libraryCard("the-chariot"),
+  strength: libraryCard("strength"),
+  "the-hermit": libraryCard("the-hermit"),
+  "the-wheel": libraryCard("the-wheel"),
+  justice: libraryCard("justice"),
+  "the-hanged-man": libraryCard("the-hanged-man"),
+  death: libraryCard("death"),
+  temperance: libraryCard("temperance"),
+  "the-devil": libraryCard("the-devil"),
+  "the-tower": libraryCard("the-tower"),
+  "the-star": libraryCard("the-star"),
+  "the-moon": libraryCard("the-moon"),
+  "the-sun": libraryCard("the-sun"),
+  judgement: libraryCard("judgement"),
+  "the-world": libraryCard("the-world"),
+} as const;
+
+/** Backgrounds referenced from CSS rather than markup, for the Library. */
+export const librarySurfaces = {
+  /** `.page-atmosphere-library` — the rotunda the cards hang in. */
+  rotunda: "/figma/library-rotunda.webp",
+} as const;
