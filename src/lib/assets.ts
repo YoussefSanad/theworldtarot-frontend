@@ -199,3 +199,48 @@ export const videoPosters = {
 export const cardFaces = {
   theStar: asset("/videos/17-the-star-last.png", 1280, 2120),
 } as const;
+
+/**
+ * The World Tarot page's own artwork (node 344:30). The mission and artist
+ * panels are `OrnateFrame`s rebuilt from tokens, like every other panel on the
+ * site — only the photograph, its frame ornament, the signature and the moth
+ * ship as bitmaps.
+ */
+export const worldTarotArtwork = {
+  /** Serafina at Angkor Wat, already cropped to the octagon Figma draws. */
+  artistPhoto: asset("/figma/world-tarot-artist-photo.webp", 294, 459),
+  /** The gold octagonal frame astride the photo, transparent inside. */
+  photoFrame: asset("/figma/world-tarot-photo-frame.webp", 359, 522),
+  /**
+   * The two halves of the artist panel's heading, both the client's own
+   * artwork from `asset dump/readings page/` rather than the Figma
+   * conversion's flattened exports — the same substitution the reading
+   * page makes for its beetle, and for the same reason: her originals carry
+   * clean alpha where the conversion bakes them onto the backdrop.
+   *
+   * They are pictures rather than type because neither can be set. "Between"
+   * is Malliya Signature, letterspaced and hand-adjusted past what the live
+   * face gives; "SKY & STONE" is a gradient fill with an outline that no font
+   * supplies at all.
+   *
+   * **The site therefore does not ship that font.** It was registered in
+   * `app/layout.tsx` while the heading was being set as live type, and was
+   * removed once both halves became artwork — nothing rendered from it, so it
+   * was a webfont downloaded for no glyphs. If a future heading wants it set
+   * rather than drawn, it comes back there and not as a straggling token.
+   */
+  between: asset("/figma/world-tarot-between.webp", 138, 57),
+  skyStone: asset("/figma/world-tarot-sky-stone.webp", 218, 37),
+  /** Her silver signature, not the conversion's black one. */
+  signature: asset("/figma/world-tarot-signature.webp", 153, 94),
+  /** The gold moth astride the mission panel's top edge, in place of a trio. */
+  moth: asset("/figma/world-tarot-moth.webp", 71, 67),
+} as const;
+
+/** Backgrounds referenced from CSS rather than markup, continued from `surfaces` above. */
+export const worldTarotSurfaces = {
+  /** `.page-atmosphere-world-tarot` — the garden path the page stands on. */
+  path: "/figma/world-tarot-path.webp",
+} as const;
+
+/**

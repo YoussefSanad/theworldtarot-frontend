@@ -1,6 +1,6 @@
 import { Container, Section, type ContainerWidth } from "@/components/layout/Section";
 import { ButtonLink } from "@/components/ui/Button";
-import { Divider } from "@/components/ui/Divider";
+import { Divider, type DividerVariant } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";
 import { closing } from "@/content/readings";
 import { cn } from "@/lib/cn";
@@ -37,6 +37,7 @@ export function ClosingSaying({
   action = closing.action,
   tone = "gold",
   width = "readings",
+  rule = "hero",
 }: {
   saying?: readonly string[];
   /**
@@ -52,11 +53,18 @@ export function ClosingSaying({
   /** Gold on the index; the warmer champagne on a reading's own page. */
   tone?: "gold" | "champagne";
   width?: ContainerWidth;
+  /**
+   * Both readings frames draw this rule at 448px and take the default. The
+   * World Tarot frame draws the same block at 538px — the wider of the two
+   * exports the site already has — so that page asks for `heroWide` rather
+   * than this block being copied to change one number.
+   */
+  rule?: DividerVariant;
 }) {
   return (
     <Section padding="none" className="pb-[clamp(4rem,10vw,12rem)] lg:pb-0">
       <Container width={width} className="flex flex-col items-center text-center">
-        <Divider variant="hero" />
+        <Divider variant={rule} />
 
         <p
           className={cn(
@@ -67,7 +75,7 @@ export function ClosingSaying({
           <Phrase parts={saying} />
         </p>
 
-        <Divider variant="hero" className="mt-[clamp(0.5rem,1.04vw,1.25rem)]" />
+        <Divider variant={rule} className="mt-[clamp(0.5rem,1.04vw,1.25rem)]" />
 
         {/*
           The box stays when the button does not. Its height is the room-space

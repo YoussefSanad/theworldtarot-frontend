@@ -22,13 +22,15 @@ import { cn } from "@/lib/cn";
  * real scroll height, popping a scrollbar in and out for the animation's
  * duration.
  */
-export type AtmosphereVariant = "hero" | "readings" | "reading";
+export type AtmosphereVariant = "hero" | "readings" | "reading" | "world-tarot";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
   readings: { className: "page-atmosphere-readings" },
   /** A single reading's page: the observatory, not the parlour. */
   reading: { className: "page-atmosphere-reading" },
+  /** The garden path behind The World Tarot's own page. */
+  "world-tarot": { className: "page-atmosphere-world-tarot" },
 };
 
 export function PageAtmosphere({ variant, className }: { variant: AtmosphereVariant; className?: string }) {
