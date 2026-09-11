@@ -5,7 +5,7 @@ import { Fragment } from "react";
 
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
 import { SocialIcon } from "@/components/ui/SocialIcon";
-import { chrome, copyright, footerNav, socialLinks } from "@/content/site";
+import { chrome, copyright, footerNav, socialHeading, socialLinks } from "@/content/site";
 import { surfaces } from "@/lib/assets";
 
 export function SiteFooter() {
@@ -24,7 +24,7 @@ export function SiteFooter() {
           <span aria-hidden className="hidden w-px self-stretch bg-ash lg:block" />
 
           <section className="flex flex-col items-center gap-[0.9em]">
-            <h2 className="font-display text-h2 text-ash">FOLLOW THE JOURNEY:</h2>
+            <h2 className="font-display text-h2 text-ash">{socialHeading}</h2>
             {/*
               Same gold as the newsletter's submit, so `.btn-gold` carries the
               gradient, the ink-deep glyph colour and the hover glow rather than

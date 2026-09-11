@@ -149,6 +149,9 @@ export const socialLinks: { label: string; href: string; icon: SocialIconName }[
   (social, index) => ({ label: copy.socialLinks[index], ...social }),
 );
 
+/** FOLLOW THE JOURNEY:, over the social links. A literal in `SiteFooter` until 11 September 2026. */
+export const socialHeading = copy.socialHeading;
+
 /**
  * The footer's STAY CONNECTED form, in every state it has.
  *
@@ -170,6 +173,14 @@ export const socialLinks: { label: string; href: string; icon: SocialIconName }[
  */
 export const newsletter = {
   heading: copy.newsletter.heading,
+  /*
+    The visible field labels, shown at `lg` and above. Below it they are
+    screen-reader only and the placeholders in `chrome` do the job, which is
+    why each field has two strings. Literals in `NewsletterForm` until
+    11 September 2026.
+  */
+  firstNameLabel: copy.newsletter.firstNameLabel,
+  emailLabel: copy.newsletter.emailLabel,
   blurb: copy.newsletter.blurb,
   consent: copy.newsletter.consent,
   submitLabel: copy.newsletter.submitLabel,

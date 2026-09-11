@@ -154,7 +154,7 @@ export function NewsletterForm() {
 
       <div className="grid w-full grid-cols-1 items-center gap-x-[0.5em] gap-y-[0.3em] lg:grid-cols-[auto_1fr]">
         <label htmlFor="newsletter-first-name" className="sr-only lg:not-sr-only lg:text-right lg:text-nav lg:text-ash">
-          FIRST NAME:
+          {newsletter.firstNameLabel}
         </label>
         <input
           id="newsletter-first-name"
@@ -170,7 +170,7 @@ export function NewsletterForm() {
         />
 
         <label htmlFor="newsletter-email" className="sr-only lg:not-sr-only lg:text-right lg:text-nav lg:text-ash">
-          EMAIL:
+          {newsletter.emailLabel}
         </label>
         <input
           id="newsletter-email"

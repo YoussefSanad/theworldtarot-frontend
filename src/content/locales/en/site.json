@@ -35,8 +35,11 @@
     "Instagram",
     "TikTok"
   ],
+  "socialHeading": "FOLLOW THE JOURNEY:",
   "newsletter": {
     "heading": "STAY CONNECTED:",
+    "firstNameLabel": "FIRST NAME:",
+    "emailLabel": "EMAIL:",
     "blurb": [
       "Receive occasional reflections and",
       "readings from sacred places around the world."

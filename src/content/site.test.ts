@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { footerNav, headerActions, newsletter, primaryNav, socialLinks } from "./site.ts";
+import { footerNav, headerActions, newsletter, primaryNav, socialHeading, socialLinks } from "./site.ts";
 
 /*
   The extraction's only claim is that nothing changed. These are the values as
@@ -74,6 +74,18 @@ test("the newsletter keeps every string a visitor can be shown", () => {
     "That was a few tries in quick succession. Please give it a minute.",
   );
   assert.equal(newsletter.errors.unknown, "We could not reach the list just now. Please try again.");
+});
+
+/*
+  Written into `SiteFooter` and `NewsletterForm` until 11 September 2026, so a
+  Spanish footer headed its social links and labelled both fields in English.
+  The labels show at `lg` and above, beside fields whose placeholders were
+  already translated.
+*/
+test("the footer's field labels and social heading are copy", () => {
+  assert.equal(newsletter.firstNameLabel, "FIRST NAME:");
+  assert.equal(newsletter.emailLabel, "EMAIL:");
+  assert.equal(socialHeading, "FOLLOW THE JOURNEY:");
 });
 
 /*
