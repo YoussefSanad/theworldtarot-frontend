@@ -11,8 +11,8 @@
         "labelMobile": ["explora la", "colección"]
       },
       {
-        "label": ["HAZ UNA PREGUNTA", "PIDE UNA LECTURA PERSONAL"],
-        "labelMobile": ["PIDE UNA LECTURA", "PERSONAL"]
+        "label": ["HAZ UNA PREGUNTA", "PIDE TU LECTURA"],
+        "labelMobile": ["PIDE TU", "LECTURA"]
       }
     ],
     "returnPrompt": "Vuelve otro día para descubrir una carta nueva.",
