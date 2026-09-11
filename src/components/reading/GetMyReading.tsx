@@ -343,10 +343,10 @@ function Price({
   }
 
   /*
-    `formatPrice` formats against the site's locale and never the browser's, so
-    a US visitor's price is not written `75,00 $` because their laptop is set to
-    German. The currency varies by visitor; the language it is written in does
-    not. The other branch is `reading.price`, which is already a display string
+    `formatPrice` writes a price the English way in every language and never
+    the browser's way, so a US visitor's price is not written `75,00 $` because
+    their laptop is set to German. The currency varies by visitor; how it is
+    written does not. The other branch is `reading.price`, which is already a display string
     and is copy rather than money — see its docblock.
   */
   return <p className={line}>{offer.status === "live" ? formatPrice(offer.money) : fallback}</p>;
