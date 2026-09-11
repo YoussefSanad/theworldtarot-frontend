@@ -1,115 +1,115 @@
 {
   "hero": {
-    "titleTop": "Enter",
+    "titleTop": "Entra en",
     "titleMain": "The Living Tarot",
-    "tagline": "cinematic tarot, brought to life",
-    "body": "Discover a cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
-    "bodyMobile": "Discover a cinematic interpretation of the Major Arcana. Experience a card's story.",
+    "tagline": "tarot cinematográfico, hecho vida",
+    "body": "Adéntrate en una interpretación cinematográfica de los Arcanos Mayores. Descubre una carta y vive The Living Tarot historia a historia.",
+    "bodyMobile": "Adéntrate en una interpretación cinematográfica de los Arcanos Mayores. Vive la historia de una carta.",
     "secondaryActions": [
       {
-        "label": ["explore the", "complete collection"],
-        "labelMobile": ["explore the", "collection"]
+        "label": ["explora la", "colección completa"],
+        "labelMobile": ["explora la", "colección"]
       },
       {
-        "label": ["ASK A QUESTION", "GET A PERSONAL READING"],
-        "labelMobile": ["GET A PERSONAL", "READING"]
+        "label": ["HAZ UNA PREGUNTA", "PIDE UNA LECTURA PERSONAL"],
+        "labelMobile": ["PIDE UNA LECTURA", "PERSONAL"]
       }
     ],
-    "returnPrompt": "Return another day to discover a new card.",
+    "returnPrompt": "Vuelve otro día para descubrir una carta nueva.",
     "closing": {
-      "lead": "ancient wisdom•timeless stories•endless discovery.",
-      "question": "Where will The World Tarot take you?"
+      "lead": "sabiduría antigua•historias eternas•descubrimiento sin fin.",
+      "question": "¿Adónde te llevará The World Tarot?"
     }
   },
   "worldTarot": {
-    "heading": "Tarot From Around the World",
-    "subheading": "Join Serafina on a mystical journey around the world",
+    "heading": "Tarot de Todo el Mundo",
+    "subheading": "Acompaña a Serafina en un viaje místico alrededor del mundo",
     "body": {
-      "before": "Step into tarot readings like no other — a journey through hidden places and living symbols. From candlelit cafés to windswept shores, from sacred temples to mountain sanctuaries. As Serafina travels the globe, she is creating ",
-      "after": " — a cinematic deck bringing each archetype to life in the landscape that inspired it."
+      "before": "Entra en lecturas de tarot como ninguna otra: un viaje por lugares escondidos y símbolos vivos. De cafés a la luz de las velas a costas batidas por el viento, de templos sagrados a santuarios de montaña. Mientras Serafina recorre el mundo, va creando ",
+      "after": ", una baraja cinematográfica que da vida a cada arquetipo en el paisaje que lo inspiró."
     }
   },
   "products": [
     {
-      "title": "1 CARD READING",
-      "subtitle": "A Single Message from the Tarot",
-      "action": "BEGIN READING"
+      "title": "LECTURA DE 1 CARTA",
+      "subtitle": "Un Solo Mensaje del Tarot",
+      "action": "EMPEZAR LECTURA"
     },
     {
-      "title": "3 CARD READING",
-      "subtitle": "One Question, Three Cards",
-      "action": "BEGIN READING"
+      "title": "LECTURA DE 3 CARTAS",
+      "subtitle": "Una Pregunta, Tres Cartas",
+      "action": "EMPEZAR LECTURA"
     },
     {
-      "title": "MONTH AHEAD",
-      "subtitle": "What’s in Store? 5 Card Forecast",
-      "action": "BEGIN READING"
+      "title": "EL MES QUE VIENE",
+      "subtitle": "¿Qué te Espera? Pronóstico de 5 Cartas",
+      "action": "EMPEZAR LECTURA"
     },
     {
-      "title": "VIEWING ROOM",
-      "subtitle": "Complete Cinematic Collection",
-      "action": "ENTER"
+      "title": "SALA DE PROYECCIÓN",
+      "subtitle": "Colección Cinematográfica Completa",
+      "action": "ENTRAR"
     }
   ],
   "journey": {
-    "heading": "Choose Your Journey:",
+    "heading": "Elige Tu Viaje:",
     "subheading": [
-      "Choose a personalized reading, or step inside the complete",
-      "Living Tarot collection in the Viewing Room."
+      "Elige una lectura personalizada, o entra en la colección",
+      "completa de Living Tarot en la Sala de Proyección."
     ],
     "carousel": {
-      "dotsLabel": "Choose a reading",
-      "dotAction": "Show"
+      "dotsLabel": "Elige una lectura",
+      "dotAction": "Mostrar"
     }
   },
   "included": {
-    "heading": "What’s Included",
+    "heading": "Qué Incluye",
     "columns": [
       [
-        "A personalized tarot interpretation tailored to your question",
-        "Clear, thoughtful guidance",
-        "Your reading, beautifully presented on original artwork and delivered by email."
+        "Una interpretación de tarot personalizada, ajustada a tu pregunta",
+        "Orientación clara y meditada",
+        "Tu lectura, presentada con cuidado sobre la ilustración original y entregada por correo electrónico."
       ],
       [
-        "Prompt delivery based on your selected reading",
-        "A beautifully formatted reading designed to be saved and revisited"
+        "Entrega puntual según la lectura que elijas",
+        "Una lectura bellamente maquetada, pensada para guardar y releer"
       ]
     ]
   },
   "placeStatement": [
-    "A place where art, mysticism,",
-    "and intention meet. A space between sky and stone."
+    "Un lugar donde el arte, el misticismo",
+    "y la intención se encuentran. Un espacio entre el cielo y la piedra."
   ],
   "valueProps": [
-    { "title": "Led by the Cards", "body": "Each reading unfolds through the archetypes themselves" },
-    { "title": "Composed with Intention", "body": "Original artwork paired with thoughtful interpretation" },
-    { "title": "Clarity in Motion", "body": "Insight that illuminates your next chapter" }
+    { "title": "Guiado por las Cartas", "body": "Cada lectura se despliega a través de los propios arquetipos" },
+    { "title": "Compuesto con Intención", "body": "Ilustración original unida a una interpretación meditada" },
+    { "title": "Claridad en Movimiento", "body": "Una mirada que ilumina tu próximo capítulo" }
   ],
   "valuePropsCarousel": {
-    "dotsLabel": "The World Tarot's promise",
-    "dotAction": "Show"
+    "dotsLabel": "La promesa de The World Tarot",
+    "dotAction": "Mostrar"
   },
   "featuredTestimonial": {
-    "quote": "“It didn’t just speak to me - it shimmered.  I’ve kept it like a piece of art.”",
+    "quote": "“No solo me habló: brilló.  La guardo como si fuera una obra de arte.”",
     "attribution": "- Blake M., Big Sur, CA"
   },
   "artist": {
     "body": [
-      "Serafina is an artist whose work weaves together art, symbolism, and intuitive insight, drawing inspiration from sacred places around the world.",
-      "Her work is shaped by a lifelong study of tarot, myth, and visual storytelling — creating readings that feel intimate, thoughtful, and deeply personal."
+      "Serafina es una artista cuyo trabajo entrelaza arte, simbolismo e intuición, inspirándose en lugares sagrados de todo el mundo.",
+      "Su obra está moldeada por toda una vida de estudio del tarot, el mito y la narración visual, y da lugar a lecturas íntimas, meditadas y profundamente personales."
     ],
     "quote": [
-      "“Every reading, to me, is like standing before a living work of art - where fate, choice,",
-      "and reflection meet through the language of symbols.”"
+      "“Para mí, cada lectura es como estar ante una obra de arte viva, donde el destino, la elección",
+      "y la reflexión se encuentran en el lenguaje de los símbolos.”"
     ]
   },
   "closingCta": {
-    "heading": "Ready to Receive Your Message?",
-    "action": "GET MY READING",
+    "heading": "¿Quieres Recibir Tu Mensaje?",
+    "action": "QUIERO MI LECTURA",
     "testimonial": {
       "quote": [
-        "“I felt like the reading was crafted just for me. The words,",
-        "the imagery, the clarity — it was beautiful and affirming.”"
+        "“Sentí que la lectura estaba hecha solo para mí. Las palabras,",
+        "las imágenes, la claridad: fue hermosa y reconfortante.”"
       ],
       "attribution": "- Sasha N., Charlottesville VA"
     }

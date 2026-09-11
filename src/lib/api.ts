@@ -425,12 +425,15 @@ export async function fetchCurrencies(
 /**
  * One entry from `/languages`.
  *
- * `native_name` is optional because the backend does not send it yet — the
- * column exists on its `Locale` and is unexposed, asked for in
- * `YoussefSanad/TheWorldTarot#66`. Render it over `label` when it arrives: a
- * language switcher is one of the few controls read by people who cannot read
- * the language it is currently in, which is exactly when "Español" works and
- * "Spanish" does not.
+ * `native_name` ships as of 9 September 2026 (`YoussefSanad/TheWorldTarot#66`)
+ * and `languageRows` renders it over `label`: a language switcher is one of the
+ * few controls read by people who cannot read the language it is currently in,
+ * which is exactly when "Español" works and "Spanish" does not.
+ *
+ * It stays **optional** so a frontend deploy that lands ahead of the backend's
+ * degrades to the English name rather than putting `undefined` on screen.
+ * Requiring it would buy nothing this type can enforce — the value crosses a
+ * network.
  */
 export type ApiLanguage = { code: string; label: string; native_name?: string };
 

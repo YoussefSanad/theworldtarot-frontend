@@ -93,10 +93,13 @@ const getServerHydrated = () => false;
  * A drawn card, named in the language being read.
  *
  * **The same rule the homepage tiles apply to a product name** — see
- * `apiServesDisplayLocale` in `lib/locale.ts`. The backend is asked in English
- * while its own translation work is unfinished, so on a Spanish page the `name`
- * that comes back is English text that would sit under Spanish chrome. The
- * local roster in `content/cards.ts` answers instead.
+ * `apiServesDisplayLocale` in `lib/locale.ts`. The backend has been asked in the
+ * language being read since 9 September 2026, so the `name` that comes back is
+ * already Spanish on a Spanish page and is the better answer — it is editable in
+ * the admin panel without a deploy. The local roster in `content/cards.ts`
+ * answers only when that rule says the API is not serving the display language,
+ * which is what it would say if the backend ever translated one endpoint ahead
+ * of another.
  *
  * **Only the name is substituted.** The film and its poster are the API's
  * whatever language the page is in — a signed URL is not copy — and a card the

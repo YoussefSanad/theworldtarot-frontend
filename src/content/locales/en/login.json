@@ -9,6 +9,12 @@
   "refused": "Those details do not sign you in. If you bought a reading and have not chosen a password yet, ask for a link below and choose one now.",
   "rateLimited": "That is a few too many tries. Try again in {wait}.",
   "rateLimitedBriefly": "That is a few too many tries. Wait a moment and try once more.",
+  "wait": {
+    "second": "a second",
+    "seconds": "{count} seconds",
+    "minute": "a minute",
+    "minutes": "{count} minutes"
+  },
   "unknownFailure": "Something went wrong at our end. Try again in a moment.",
   "forgotPrompt": "Forgotten your password?",
   "forgot": {

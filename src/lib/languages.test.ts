@@ -70,8 +70,8 @@ test("a language taken down at the backend leaves the switcher on the next reque
 });
 
 test("a language this export was never built for is not offered, however live it is", () => {
-  // The other half of the intersection. A static export cannot grow a route
-  // from a fetch, so offering Spanish here would be a link to a 404.
+  // The other half of the intersection. A static export cannot grow copy from
+  // a fetch, so offering French here would be English under `lang="fr"`.
   assert.deepEqual(resolveLanguages([EN, ES, FR], ["en", "es"]).map((l) => l.code), ["en", "es"]);
 });
 
@@ -131,4 +131,30 @@ test("a broken endpoint offers nothing rather than a hardcoded list with a 404 b
   await askLanguages();
 
   assert.deepEqual(resolveLanguages(languageOptions(), ["en", "es"]), []);
+});
+
+/*
+  `withOurLanguages` used to add `en` and `es` to whatever this answered, so the
+  site could offer Spanish before the backend served it. It was deleted on
+  9 September 2026 alongside unpinning `apiLocale()`, and these two pin why that
+  had to be one change and not two: `apiLocale()` now asks the backend in the
+  visitor's language, and a locale the panel has not published answers 404
+  rather than English. An offer this endpoint did not make is a 404 a visitor
+  can click on.
+*/
+test("a language the endpoint did not name is not offered, however much copy ships for it", async () => {
+  stubFetch(json([EN]));
+
+  await askLanguages();
+
+  assert.ok(OFFERED_LOCALES.includes("es"));
+  assert.deepEqual(resolveLanguages(languageOptions()), []);
+});
+
+test("and it is offered the moment the endpoint does name it, with no deploy", async () => {
+  stubFetch(json([EN, ES]));
+
+  await askLanguages();
+
+  assert.deepEqual(resolveLanguages(languageOptions()), [EN, ES]);
 });

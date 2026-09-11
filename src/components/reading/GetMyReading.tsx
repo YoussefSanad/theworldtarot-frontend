@@ -364,7 +364,7 @@ function Price({
 function DeliveryChoice() {
   return (
     <fieldset className="mt-[clamp(0.25rem,0.52vw,0.625rem)] flex flex-col items-start gap-[0.3em] text-note leading-none">
-      <legend className="sr-only">Delivery</legend>
+      <legend className="sr-only">{rushDelivery.legend}</legend>
 
       {/*
         Named rather than described. The product's own `delivery` line — "within

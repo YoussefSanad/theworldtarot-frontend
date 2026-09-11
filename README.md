@@ -224,19 +224,22 @@ Keeping them apart is what lets Spanish be readable without being indexable.
 
 ### What the backend supplies
 
-`GET /api/v1/languages` answers `[{ code: "en" }]` — its own translation work is
-unfinished — so `lib/languages.ts` adds the languages whose copy ships in this
-bundle. The endpoint stays the authority on what the *backend* can serve, and the
-intersection it exists for still works: a language it takes down still disappears
-from the switcher on the next request, with no deploy.
+`GET /api/v1/languages` is the only list the switcher is built from. It answers
+live languages only, so a language taken down in the admin panel disappears from
+the switcher on the next request with no deploy — and a visitor can never pick
+one the backend would 404 on.
+
+`lib/languages.ts` briefly added `en` and `es` to that answer, while the backend
+served neither in Spanish. **That is gone as of 9 September 2026**, and it had to
+go before `apiLocale()` could be unpinned: together they are what keep a Spanish
+visitor away from an endpoint that 404s.
 
 Copy that comes from the API follows one rule, `apiServesDisplayLocale()` in
 [`src/lib/locale.ts`](src/lib/locale.ts): **the price is always the backend's; a
 word is the backend's only while the backend is answering in the language being
-read.** So an English visitor sees product and reading names edited in the admin
-panel, and a Spanish one sees this repository's copy. The day their `es`
-endpoints answer, `apiLocale()` follows the display language and nothing else
-changes.
+read.** `apiLocale()` follows the display language, so that rule holds in every
+language today and starts biting again only if the backend translates one
+endpoint ahead of another.
 
 ## Scope
 

@@ -33,7 +33,8 @@
       "walletUnresolved": "We could not complete this payment. If you were charged, your receipt will arrive by email.",
       "walletNeedsGiftDetails": "Please check the gift's details before paying. Nothing has been charged.",
       "pricePending": "Fetching the price",
-      "secure": "Secure checkout powered by Stripe"
+      "secure": "Secure checkout powered by Stripe",
+      "walletLabel": "Pay {price} with a saved wallet"
     },
     "included": { "heading": "Your Reading" },
     "gate": {
@@ -51,7 +52,8 @@
   "rushDelivery": {
     "label": "24-Hour Rush",
     "surcharge": "+$25",
-    "standard": "Standard Delivery"
+    "standard": "Standard Delivery",
+    "legend": "Delivery"
   },
   "pages": {
     "three-card": {

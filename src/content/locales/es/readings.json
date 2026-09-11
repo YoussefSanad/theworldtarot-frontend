@@ -1,53 +1,53 @@
 {
   "intro": {
-    "heading": "Readings",
-    "tagline": ["step into the parlor.", "leave the ordinary behind."],
+    "heading": "Lecturas",
+    "tagline": ["entra en el salón.", "deja atrás lo ordinario."],
     "body": [
-      "Begin with our signature interactive experience, where the cards come to life and answer your question in real time. Or choose one of our",
-      "traditional written readings for a deeper exploration of your path."
+      "Empieza con nuestra experiencia interactiva más emblemática, donde las cartas cobran vida y responden a tu pregunta en tiempo real. O elige una de nuestras",
+      "lecturas escritas tradicionales para explorar tu camino con más calma."
     ]
   },
   "signature": {
-    "eyebrow": ["The World Tarot", "Signature Experience"],
-    "title": "1 Card Reading",
-    "body": ["Ask your question.", "Reveal your card.", "Watch it come to life."],
-    "imageAlt": "A tarot card face down on a wooden table beside a lit candle"
+    "eyebrow": ["The World Tarot", "Experiencia Emblemática"],
+    "title": "Lectura de 1 Carta",
+    "body": ["Haz tu pregunta.", "Descubre tu carta.", "Mírala cobrar vida."],
+    "imageAlt": "Una carta de tarot boca abajo sobre una mesa de madera junto a una vela encendida"
   },
   "traditional": {
-    "heading": "Traditional Tarot Readings",
-    "body": "Thoughtfully written readings delivered after careful interpretation of your cards."
+    "heading": "Lecturas de Tarot Tradicionales",
+    "body": "Lecturas escritas con cuidado y entregadas tras una interpretación atenta de tus cartas."
   },
   "readings": [
     {
-      "title": "3 Card Reading",
+      "title": "Lectura de 3 Cartas",
       "titleTail": "",
-      "subtitle": "past • present • future",
-      "body": ["Explore the deeper story", "behind your question", "through the wisdom of cards."],
-      "imageAlt": "Three tarot cards laid face down in a row on a wooden table"
+      "subtitle": "pasado • presente • futuro",
+      "body": ["Explora la historia profunda", "que hay tras tu pregunta", "con la sabiduría de las cartas."],
+      "imageAlt": "Tres cartas de tarot boca abajo en fila sobre una mesa de madera"
     },
     {
-      "title": "Month Ahead",
-      "titleTail": " Reading",
-      "subtitle": "discover what lies ahead",
-      "body": ["Prepare for the month", "ahead with insight into", "what’s to come."],
-      "imageAlt": "A five card tarot spread beside a pocket watch and coins"
+      "title": "Lectura del Mes",
+      "titleTail": " que Viene",
+      "subtitle": "descubre lo que está por llegar",
+      "body": ["Prepárate para el mes", "que viene con una mirada", "a lo que está por llegar."],
+      "imageAlt": "Una tirada de cinco cartas junto a un reloj de bolsillo y unas monedas"
     },
     {
-      "title": "In-Depth",
-      "titleTail": " Reading",
-      "subtitle": "the full picture",
-      "body": ["Discover the complete picture", "through the Celtic Cross."],
-      "imageAlt": "A Celtic Cross tarot spread laid out across a wooden table"
+      "title": "Lectura en Profundidad",
+      "titleTail": "",
+      "subtitle": "el panorama completo",
+      "body": ["Descubre el panorama completo", "con la Cruz Celta."],
+      "imageAlt": "Una tirada de la Cruz Celta extendida sobre una mesa de madera"
     }
   ],
-  "readingAction": "BEGIN YOUR READING",
+  "readingAction": "EMPIEZA TU LECTURA",
   "gift": {
-    "title": "Gift a Reading",
-    "subtitle": ["a gift", "of insight"],
-    "body": ["Give a meaningful reading, accompanied", "by your personal message."],
-    "imageAlt": "A gold wrapped gift box tied with ribbon"
+    "title": "Regala una Lectura",
+    "subtitle": ["un regalo", "de claridad"],
+    "body": ["Regala una lectura con sentido,", "acompañada de tu mensaje personal."],
+    "imageAlt": "Una caja de regalo dorada atada con un lazo"
   },
   "closing": {
-    "saying": ["The future whispers long", "before it arrives"]
+    "saying": ["El futuro susurra mucho antes", "de llegar"]
   }
 }

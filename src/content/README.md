@@ -41,18 +41,28 @@ Two things follow, and both matter when you edit here:
 while the backend is answering in the language being read.**
 
 `apiServesDisplayLocale()` in [`lib/locale.ts`](../lib/locale.ts) is that rule in
-one line — `apiLocale() === currentLocale()`. Today the backend is pinned to
-English while its own translation work is unfinished, so:
+one line — `apiLocale() === currentLocale()`. **`apiLocale()` has followed the
+display language since 9 September 2026**, so the two match in every language
+the switcher can offer:
 
 | The visitor is reading | Tile names, reading names, card names | Prices |
 |---|---|---|
 | English | the API's, editable in the admin panel | the API's |
-| Spanish | this folder's, from `locales/es/` | the API's |
+| Spanish | the API's, editable in the admin panel | the API's |
+
+That holds because the switcher is built from `GET /api/v1/languages`, which
+lists live languages only — a language the backend would 404 on is never
+offered, so the display language is always one it can answer in.
+
+This folder is still what a visitor reads **before the first answer lands, after
+one that failed, and for every word the API never supplied** — which is most of
+them. It becomes the fallback for names again if the backend ever translates one
+endpoint ahead of another; `apiLocale()` is written to grow an endpoint argument
+for exactly that.
 
 `resolveProducts` in `lib/products.ts` and `resolveReadingName` in
 `lib/reading-prices.ts` both take that flag as a parameter so they stay pure and
-a test can drive both sides. The day the backend serves Spanish, `apiLocale()`
-follows the display language, the two match, and nothing else changes.
+a test can drive both sides.
 
 **A price is never subject to it.** A number is the same in every language, and a
 stale one is money nobody is charging.

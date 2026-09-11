@@ -1,4 +1,5 @@
 import { HtmlLang } from "@/components/layout/HtmlLang";
+import { LanguageBoundary } from "@/components/layout/LanguageBoundary";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -35,15 +36,21 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
  * wrapper, and flex would turn every section into a flex item and stop their
  * margins collapsing. A page that needs its wrapper to reach the footer says
  * so itself; see `world-tarot/page.tsx`.
+ *
+ * **Everything inside is under `LanguageBoundary`**, which is what lets a
+ * visitor reading Spanish hydrate an English export without a hydration
+ * failure. It draws no box, so nothing above changes.
  */
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-y-clip">
-      <HtmlLang />
-      <SiteHeader />
-      <main className="flex-1">{children}</main>
-      <SiteFooter />
-      <ScrollToTop />
+      <LanguageBoundary>
+        <HtmlLang />
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
+        <ScrollToTop />
+      </LanguageBoundary>
     </div>
   );
 }

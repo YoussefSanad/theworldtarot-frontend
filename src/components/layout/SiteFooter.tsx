@@ -5,7 +5,7 @@ import { Fragment } from "react";
 
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
 import { SocialIcon } from "@/components/ui/SocialIcon";
-import { copyright, footerNav, socialLinks } from "@/content/site";
+import { chrome, copyright, footerNav, socialLinks } from "@/content/site";
 import { surfaces } from "@/lib/assets";
 
 export function SiteFooter() {
@@ -48,7 +48,7 @@ export function SiteFooter() {
 
         {/* Margin rather than a wider column gap, which also sets nav-to-copyright. */}
         <nav
-          aria-label="Footer"
+          aria-label={chrome.footerNavLabel}
           className="mt-[clamp(0.75rem,1.6vw,1.875rem)] flex flex-wrap items-center justify-center text-note text-ash"
         >
           {footerNav.map((link, index) => (

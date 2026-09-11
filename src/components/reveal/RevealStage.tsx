@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cardBack } from "@/content/cards";
+import { chrome } from "@/content/site";
 import { cn } from "@/lib/cn";
 import { attachVideoSource, type VideoSource } from "@/lib/video-source";
 
@@ -198,7 +199,7 @@ export function RevealStage({ className }: { className?: string }) {
           src={card.image.src}
           width={card.image.width}
           height={card.image.height}
-          alt={`${card.name}, your card`}
+          alt={chrome.yourCard.replace("{card}", () => card.name)}
           initial={{ opacity: 0 }}
           animate={{ opacity: showFace ? 1 : 0 }}
           transition={fade}
@@ -216,7 +217,7 @@ export function RevealStage({ className }: { className?: string }) {
         <motion.video
           ref={cardVideoRef}
           className="size-full object-cover"
-          aria-label={`${card.name}, your card`}
+          aria-label={chrome.yourCard.replace("{card}", () => card.name)}
           aria-hidden={!cardMounted}
           playsInline
           preload="auto"

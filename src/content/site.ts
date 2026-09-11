@@ -202,7 +202,25 @@ export const newsletter = {
  */
 export { SITE_NAME as siteName } from "../lib/seo.ts";
 
-export const copyright = "© 2026 The World Tarot • All rights reserved.";
+/**
+ * The line under the footer.
+ *
+ * **From `locales/` since 9 September 2026.** It was a literal here, which made
+ * it one of the handful of strings a translator could not reach — and unlike an
+ * `aria-label`, this one is visible, so a Spanish footer said "All rights
+ * reserved" in English. The year and the house name are inside the string
+ * because both are part of the sentence a translator is arranging.
+ */
+export const copyright = copy.copyright;
+
+/**
+ * The 404 page's three strings.
+ *
+ * `src/app/not-found.tsx` used to hold them inline, "a deliberate exception of
+ * exactly three strings" that was to end when the message catalogue landed. It
+ * landed.
+ */
+export const notFound = copy.notFound;
 
 /**
  * The handful of strings that were written into components rather than here.

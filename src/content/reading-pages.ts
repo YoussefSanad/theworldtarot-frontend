@@ -320,6 +320,12 @@ export const readingPageChrome = {
      */
     pricePending: copy.chrome.checkout.pricePending,
     secure: copy.chrome.checkout.secure,
+    /**
+     * The wallet frame's name for a screen reader, stored with `{price}` in it
+     * so a translator can put the amount where their sentence needs it.
+     * `ExpressCheckout` fills it.
+     */
+    walletLabel: copy.chrome.checkout.walletLabel,
   },
 
   included: copy.chrome.included,
@@ -350,7 +356,14 @@ export const readingPageChrome = {
  * to a constant, the branch that renders the choice would read as dead code to
  * everything that looks at this file.
  */
-export const rushDelivery: { enabled: boolean; label: string; surcharge: string; standard: string } = {
+export const rushDelivery: {
+  enabled: boolean;
+  label: string;
+  surcharge: string;
+  standard: string;
+  /** The choice's name, read by a screen reader and never drawn. */
+  legend: string;
+} = {
   enabled: false,
   ...copy.rushDelivery,
 };

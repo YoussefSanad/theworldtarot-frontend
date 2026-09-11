@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
+import { chrome } from "@/content/site";
 import { cn } from "@/lib/cn";
 import type { ApiCurrency, ApiLanguage } from "@/lib/api";
 import { highlightedCurrency, useCurrency } from "@/lib/currency";
@@ -26,8 +27,10 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  *   `lib/currency.ts` holds the choice and `lib/catalogue.ts` re-asks on it
  * - **Language is a stored choice**, kept for the visit and applied by
  *   reloading, because the copy catalogue resolves at module scope. Its list is
- *   the backend's `GET /api/v1/languages` plus the languages whose copy ships in
- *   this bundle — see `OURS` in `lib/languages.ts`. It is **not** a route and
+ *   the backend's `GET /api/v1/languages` and nothing else, so a language the
+ *   panel has not published never enters this control and one it takes down
+ *   leaves on the next request. That is what makes the choice safe now that
+ *   `apiLocale()` follows it. It is **not** a route and
  *   Spanish has no URL of its own: search is English-only by decision, which is
  *   what makes that acceptable. `docs/adr/0004-language-is-a-path-segment.md`
  *   argued the opposite and is superseded on that point
@@ -63,9 +66,10 @@ export type SelectOption = {
  *
  * **`native_name` over `label`.** A language switcher is one of the few
  * controls read by people who cannot read the language it is currently in,
- * which is exactly when "Español" works and "Spanish" does not. The backend
- * does not send the field yet — `YoussefSanad/TheWorldTarot#66` asks for it —
- * so this reads the English name until the day it ships, and then stops.
+ * which is exactly when "Español" works and "Spanish" does not. The backend has
+ * sent the field since 9 September 2026 (`YoussefSanad/TheWorldTarot#66`); the
+ * fallback to `label` stays for a frontend deploy that lands ahead of the
+ * backend's, where the English name beats `undefined` on screen.
  *
  * No flags, on purpose. A flag names a country and these name languages, which
  * are not the same set; and a colour bitmap would be the only saturated thing
@@ -125,8 +129,9 @@ export type LocaleSelection = {
  *   modules that are not the header's descendants. `highlightedCurrency` is the
  *   rule for which row is drawn as chosen, and it prefers what the backend
  *   resolved over what was asked for
- * - **Language** reads `currentLocale()`, which is `"en"` until #69 puts a
- *   segment in the path
+ * - **Language** reads `currentLocale()`, the visitor's stored choice, which is
+ *   `"en"` until they make one. There is no segment in the path to read it from,
+ *   by decision; see the superseding note on ADR 0004
  */
 export function useLocaleSelection(): LocaleSelection {
   const { chosen, resolved, choose } = useCurrency();
@@ -155,10 +160,15 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
       {/* Empty until there are two languages to choose between — see `lib/languages.ts`. */}
       {languages.length > 0 ? (
-        <SegmentRow label="Language" options={languageRows(languages)} value={language} onChange={setLanguage} />
+        <SegmentRow
+          label={chrome.languageHeading}
+          options={languageRows(languages)}
+          value={language}
+          onChange={setLanguage}
+        />
       ) : null}
       <SegmentRow
-        label="Currency"
+        label={chrome.currencyHeading}
         options={currencyRows(currencies)}
         value={highlighted}
         onChange={choose}
@@ -241,7 +251,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
       className={cn("relative flex h-[clamp(1.25rem,1.98vw,2.375rem)] items-center", className)}
     >
       <span id={labelId} className="sr-only">
-        Language and currency
+        {chrome.localeMenu}
       </span>
 
       <button
@@ -289,7 +299,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
             {hasLanguages ? (
               <>
                 <LocaleGroup
-                  label="Language"
+                  label={chrome.languageHeading}
                   options={languageRows(languages)}
                   value={language}
                   onChange={setLanguage}
@@ -299,7 +309,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
               </>
             ) : null}
             <LocaleGroup
-              label="Currency"
+              label={chrome.currencyHeading}
               options={currencyRows(currencies)}
               value={highlighted}
               onChange={choose}

@@ -1,3 +1,4 @@
+import { chrome } from "@/content/site";
 import { cn } from "@/lib/cn";
 
 /**
@@ -6,7 +7,7 @@ import { cn } from "@/lib/cn";
  */
 export function StarRating({ className }: { className?: string }) {
   return (
-    <p aria-label="Rated 5 out of 5" className={cn("glow-star tracking-[0.1em] text-gold", className)}>
+    <p aria-label={chrome.starRating} className={cn("glow-star tracking-[0.1em] text-gold", className)}>
       <span aria-hidden>★★★★★</span>
     </p>
   );

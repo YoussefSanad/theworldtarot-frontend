@@ -1,38 +1,38 @@
 {
-  "pageTitle": "Your payment",
+  "pageTitle": "Tu pago",
   "outcomes": {
     "received": {
-      "heading": "Your reading is on its way",
-      "body": "Thank you. Your {reading} has been received and will be delivered within 24 hours. A confirmation email is on its way.",
-      "amountLabel": "Payment received:"
+      "heading": "Tu lectura va de camino",
+      "body": "Gracias. Hemos recibido tu {reading} y se entregará en menos de 24 horas. El correo de confirmación ya va de camino.",
+      "amountLabel": "Pago recibido:"
     },
     "pending": {
-      "heading": "Your payment is going through",
-      "body": "Your bank has it and has not finished with it yet, which some payment methods do. Nothing more is needed from you. We will email you as soon as it clears.",
-      "amountLabel": "Being paid"
+      "heading": "Tu pago se está procesando",
+      "body": "Tu banco lo tiene y aún no ha terminado, como ocurre con algunos métodos de pago. No hace falta nada más por tu parte. Te escribiremos en cuanto se confirme.",
+      "amountLabel": "En proceso de pago"
     },
     "unpaid": {
-      "heading": "No payment was taken",
-      "body": "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again — a different card, or the same one a moment later.",
-      "amountLabel": "Still to pay"
+      "heading": "No se ha cobrado nada",
+      "body": "No se ha hecho ningún cargo. Tu pedido sigue esperando, así que puedes volver a la lectura e intentarlo otra vez: con otra tarjeta, o con la misma dentro de un momento.",
+      "amountLabel": "Pendiente de pago"
     },
     "unfinished": {
-      "heading": "Your payment is not finished",
-      "body": "It has not been completed and nothing has been charged yet. If you were in the middle of confirming with your bank, go back to the reading and start the payment again.",
-      "amountLabel": "To pay"
+      "heading": "Tu pago no está terminado",
+      "body": "No se ha completado y todavía no se ha hecho ningún cargo. Si estabas confirmándolo con tu banco, vuelve a la lectura y empieza el pago de nuevo.",
+      "amountLabel": "A pagar"
     }
   },
   "giftReceived": {
-    "heading": "Your gift is on its way",
-    "body": "Thank you. We have sent your gift to {recipient}, with a code to redeem it whenever they are ready. Your own confirmation email is on its way.",
-    "amountLabel": "Payment received:"
+    "heading": "Tu regalo va de camino",
+    "body": "Gracias. Hemos enviado tu regalo a {recipient}, con un código para canjearlo cuando quiera. Tu propio correo de confirmación ya va de camino.",
+    "amountLabel": "Pago recibido:"
   },
-  "checkingHeading": "Checking your payment",
-  "unknownHeading": "We cannot show you this payment",
-  "unknownBody": "There is nothing here for us to look up — this page shows a payment made in this tab, and that is not what brought you here. If you have just paid, your receipt will arrive by email and is the record that counts. If you were part-way through, go back to the reading and start again.",
-  "errorHeading": "We could not check your payment",
-  "errorBody": "Something went wrong looking it up, which says nothing about whether you were charged. Your receipt will arrive by email if the payment went through. Reloading this page is safe.",
-  "unnamedReading": "reading",
-  "unnamedRecipient": "the address you gave",
-  "backLabel": "BACK TO READINGS"
+  "checkingHeading": "Comprobando tu pago",
+  "unknownHeading": "No podemos mostrarte este pago",
+  "unknownBody": "Aquí no hay nada que podamos consultar: esta página muestra un pago hecho en esta pestaña, y no es eso lo que te ha traído hasta aquí. Si acabas de pagar, tu recibo llegará por correo y es el justificante que cuenta. Si te quedaste a medias, vuelve a la lectura y empieza de nuevo.",
+  "errorHeading": "No hemos podido comprobar tu pago",
+  "errorBody": "Algo ha fallado al consultarlo, lo cual no dice nada sobre si se te ha cobrado. Tu recibo llegará por correo si el pago se completó. Recargar esta página no tiene ningún riesgo.",
+  "unnamedReading": "lectura",
+  "unnamedRecipient": "la dirección que nos diste",
+  "backLabel": "VOLVER A LAS LECTURAS"
 }

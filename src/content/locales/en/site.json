@@ -61,6 +61,20 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "revealCard": "REVEAL YOUR CARD",
-    "revealQuestion": "Why has this card appeared for you today?"
+    "revealQuestion": "Why has this card appeared for you today?",
+    "starRating": "Rated 5 out of 5",
+    "primaryNavLabel": "Primary",
+    "footerNavLabel": "Footer",
+    "homeLink": "The World Tarot home",
+    "localeMenu": "Language and currency",
+    "languageHeading": "Language",
+    "currencyHeading": "Currency",
+    "yourCard": "{card}, your card"
+  },
+  "copyright": "© 2026 The World Tarot • All rights reserved.",
+  "notFound": {
+    "heading": "This path is unwritten",
+    "body": "The page you were looking for is not here. The cards are, though.",
+    "action": "GET MY READING"
   }
 }
