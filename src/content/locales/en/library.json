@@ -1,0 +1,46 @@
+{
+  "majorArcana": {
+    "the-fool": "The Fool",
+    "the-magician": "The Magician",
+    "the-high-priestess": "The High Priestess",
+    "the-empress": "The Empress",
+    "the-emperor": "The Emperor",
+    "the-high-priest": "The High Priest",
+    "the-lovers": "The Lovers",
+    "the-chariot": "The Chariot",
+    "strength": "Strength",
+    "the-hermit": "The Hermit",
+    "the-wheel": "The Wheel",
+    "justice": "Justice",
+    "the-hanged-man": "The Hanged Man",
+    "death": "Death",
+    "temperance": "Temperance",
+    "the-devil": "The Devil",
+    "the-tower": "The Tower",
+    "the-star": "The Star",
+    "the-moon": "The Moon",
+    "the-sun": "The Sun",
+    "judgement": "Judgement",
+    "the-world": "The World"
+  },
+  "cardAlt": "{card} tarot card from The World Tarot",
+  "majorArcanaNav": "MAJOR ARCANA",
+  "suits": {
+    "swords": { "label": "SWORDS", "title": "Swords" },
+    "cups": { "label": "CUPS", "title": "Cups" },
+    "wands": { "label": "WANDS", "title": "Wands" },
+    "pentacles": { "label": "PENTACLES", "title": "Pentacles" }
+  },
+  "sectionsLabel": "Library sections",
+  "library": {
+    "title": "The World Tarot Library",
+    "tagline": "AN ARCHIVE OF THE SYMBOL AND MEANING",
+    "blurb": "Explore the imagery, stories, and wisdom woven through the Tarot",
+    "closing": "The library - worlds without end"
+  },
+  "comingSoon": {
+    "card": "This card's full reference is being written.",
+    "suit": "This suit's reference is being written.",
+    "back": "Return to the Library"
+  }
+}

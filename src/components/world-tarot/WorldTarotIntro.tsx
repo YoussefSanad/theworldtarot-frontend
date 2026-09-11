@@ -1,3 +1,5 @@
+"use client";
+
 import { Container, Section } from "@/components/layout/Section";
 import { Divider } from "@/components/ui/Divider";
 import { Phrase } from "@/components/ui/Phrase";

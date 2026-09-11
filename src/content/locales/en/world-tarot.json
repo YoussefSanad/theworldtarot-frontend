@@ -1,0 +1,28 @@
+{
+  "intro": {
+    "heading": "The World Tarot",
+    "tagline": ["A studio devoted to the living language", "of archetypal symbols"]
+  },
+  "mission": {
+    "body": [
+      "Through art, writing, and cinematic interpretation, The World Tarot explores archetypes as living presences — moving between symbolism and story.",
+      "It extends tarot beyond the page through visual essays, symbolic libraries, and crafted readings designed to support clarity and perspective."
+    ]
+  },
+  "artistNote": {
+    "legend": "Between Sky & Stone",
+    "body": [
+      "Welcome to The World Tarot — a place between sky and stone.",
+      "I am a storyteller of symbols, shaped by a lifelong devotion to art, history, and the quiet mysteries between the seen and unseen.",
+      "I began as a designer, drawn to sacred geometry and the visual languages that echo across cultures and time. For more than twenty years, I have worked with tarot as a reflective language — one that reveals patterns, thresholds, and inner truth.",
+      "My work now lives at the intersection of art and intuition. I explore how symbols function not only as images, but as experiences — how a single card or form can focus attention, open perspective, and gently shift the way we move through the world.",
+      "Through The World Tarot, I share readings and creative work shaped by place, myth, and history. This is a contemplative studio where art, symbolism, and intention meet."
+    ],
+    "photoAlt": "Serafina standing among the temple towers of Angkor Wat at sunset.",
+    "signatureAlt": "Serafina"
+  },
+  "closing": {
+    "saying": ["Every journey is made", "one step at a time"],
+    "action": "GET MY READING"
+  }
+}

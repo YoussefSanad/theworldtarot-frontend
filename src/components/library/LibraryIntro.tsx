@@ -1,3 +1,5 @@
+"use client";
+
 import { SuitNav } from "@/components/library/SuitNav";
 import { Container, Section } from "@/components/layout/Section";
 import { Divider } from "@/components/ui/Divider";

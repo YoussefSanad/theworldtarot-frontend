@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
 
-import { majorArcanaNav, suits } from "@/content/library";
+import { majorArcanaNav, sectionsLabel, suits } from "@/content/library";
 import { cn } from "@/lib/cn";
 
 /**
@@ -26,7 +28,7 @@ export function SuitNav({ current }: { current?: string }) {
   const items = [majorArcanaNav, ...suits.map((suit) => ({ label: suit.label, href: suit.href, slug: suit.slug }))];
 
   return (
-    <nav aria-label="Library sections" className="library-suit-nav">
+    <nav aria-label={sectionsLabel} className="library-suit-nav">
       <ul>
         {items.map((item) => {
           const slug = "slug" in item ? item.slug : undefined;

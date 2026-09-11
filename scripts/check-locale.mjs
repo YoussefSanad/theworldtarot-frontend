@@ -33,20 +33,48 @@ const root = join(process.cwd(), "out");
 const PORT = 4324;
 
 /* `/404.html` is `not-found.tsx`, which sits outside `(site)` and draws its own chrome. */
-const PAGES = ["/", "/readings/", "/readings/in-depth/", "/login/", "/404.html"];
+const PAGES = [
+  "/",
+  "/readings/",
+  "/readings/in-depth/",
+  "/world-tarot/",
+  "/library/",
+  "/library/the-fool/",
+  "/login/",
+  "/404.html",
+];
 
 /** The drawer toggle's name, which every page's masthead carries. */
 const MENU = "header button[aria-controls]";
 const OPEN_MENU = { en: "Open menu", es: "Abrir menú" };
 
 /**
- * A line a page says itself, from `locales/*\/reading-pages.json`. The masthead
- * is chrome every client module resolves for itself, so it cannot catch copy a
+ * Lines a page says itself, from its own file in `locales/`. The masthead is
+ * chrome every client module resolves for itself, so it cannot catch copy a
  * server route resolved at build time and handed down as a prop: that is how
  * a reading page came to read "Tu Lectura" over English items.
+ *
+ * The World Tarot and Library lines include each page's closing saying and a
+ * card page's message, because those are exactly that case: a route passing
+ * copy to a client component.
  */
-const PAGE_LINE = {
-  "/readings/in-depth/": { en: "Delivered by email within 48 hours", es: "Entregada por correo en menos de 48 horas" },
+const PAGE_LINES = {
+  "/readings/in-depth/": {
+    en: ["Delivered by email within 48 hours"],
+    es: ["Entregada por correo en menos de 48 horas"],
+  },
+  "/world-tarot/": {
+    en: ["A studio devoted to the living language", "Every journey is made"],
+    es: ["Un estudio dedicado al lenguaje vivo", "Todo viaje se hace"],
+  },
+  "/library/": {
+    en: ["AN ARCHIVE OF THE SYMBOL AND MEANING", "The library - worlds without end"],
+    es: ["UN ARCHIVO DE SÍMBOLOS Y SIGNIFICADOS", "La biblioteca: mundos sin fin"],
+  },
+  "/library/the-fool/": {
+    en: ["This card's full reference is being written."],
+    es: ["Estamos escribiendo la ficha de esta carta."],
+  },
 };
 
 /** React's own words in development, and its error number in the export. */
@@ -114,9 +142,11 @@ async function visit(path, stored) {
   expect(state, "hydration errors", hydration.length, 0);
   expect(state, "<html lang>", await page.evaluate(() => document.documentElement.lang), language);
   expect(state, "menu button", await page.locator(MENU).first().getAttribute("aria-label"), OPEN_MENU[language]);
-  if (PAGE_LINE[path]) {
-    const line = PAGE_LINE[path][language];
-    expect(state, `page says "${line}"`, (await page.locator("main").innerText()).includes(line), true);
+  if (PAGE_LINES[path]) {
+    const text = await page.locator("main").innerText();
+    for (const line of PAGE_LINES[path][language]) {
+      expect(state, `page says "${line}"`, text.includes(line), true);
+    }
   }
 
   await context.close();
