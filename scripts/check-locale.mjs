@@ -39,6 +39,16 @@ const PAGES = ["/", "/readings/", "/readings/in-depth/", "/login/", "/404.html"]
 const MENU = "header button[aria-controls]";
 const OPEN_MENU = { en: "Open menu", es: "Abrir menú" };
 
+/**
+ * A line a page says itself, from `locales/*\/reading-pages.json`. The masthead
+ * is chrome every client module resolves for itself, so it cannot catch copy a
+ * server route resolved at build time and handed down as a prop: that is how
+ * a reading page came to read "Tu Lectura" over English items.
+ */
+const PAGE_LINE = {
+  "/readings/in-depth/": { en: "Delivered by email within 48 hours", es: "Entregada por correo en menos de 48 horas" },
+};
+
 /** React's own words in development, and its error number in the export. */
 const HYDRATION = /hydrat|#418|#423|#425/i;
 
@@ -104,6 +114,10 @@ async function visit(path, stored) {
   expect(state, "hydration errors", hydration.length, 0);
   expect(state, "<html lang>", await page.evaluate(() => document.documentElement.lang), language);
   expect(state, "menu button", await page.locator(MENU).first().getAttribute("aria-label"), OPEN_MENU[language]);
+  if (PAGE_LINE[path]) {
+    const line = PAGE_LINE[path][language];
+    expect(state, `page says "${line}"`, (await page.locator("main").innerText()).includes(line), true);
+  }
 
   await context.close();
 }

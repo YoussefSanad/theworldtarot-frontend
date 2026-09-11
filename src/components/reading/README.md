@@ -38,10 +38,13 @@ them — Three Card's price, In-Depth's card count — the entry in
 ### The composition is one file, and the commerce is a slot
 
 `ReadingPresentation` is the page — the backdrop, the two panels, the gate, the
-props and the closing line. A reading's route is a `ReadingPage`, a `<title>`
-and one line that puts `ReadingOrder` in its `commerce` slot, which is what the
-paragraph above has claimed since Three Card landed and what a hundred lines
-copied three times had stopped being.
+props and the closing line. A reading's route is a `<title>` and one line,
+`<ReadingForSale productKey=… />`, which puts `ReadingOrder` in its `commerce`
+slot. That is what the paragraph above has claimed since Three Card landed and
+what a hundred lines copied three times had stopped being. **The route passes
+a key, not the `ReadingPage`**: a route is a server component, so a
+`ReadingPage` it passed would reach a Spanish visitor in English; see
+`ReadingForSale`.
 
 **It was cut for `/redeem/`**, the gifting epic's F1
 ([#70](https://github.com/YoussefSanad/theworldtarot-frontend/issues/70)).

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
 import { JsonLd } from "@/components/seo/JsonLd";
-import { ReadingOrder } from "@/components/reading/ReadingOrder";
-import { ReadingPresentation } from "@/components/reading/ReadingPresentation";
+import { ReadingForSale } from "@/components/reading/ReadingForSale";
 import { threeCard } from "@/content/reading-pages";
 import { readingJsonLd } from "@/lib/structured-data";
 import { buildMetadata } from "@/lib/seo";
@@ -25,7 +24,7 @@ export default function ThreeCardReadingPage() {
           price: threeCard.price,
         })}
       />
-      <ReadingPresentation reading={threeCard} commerce={<ReadingOrder reading={threeCard} />} />
+      <ReadingForSale productKey={threeCard.productKey} />
     </>
   );
 }

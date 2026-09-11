@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
 import { JsonLd } from "@/components/seo/JsonLd";
-import { ReadingOrder } from "@/components/reading/ReadingOrder";
-import { ReadingPresentation } from "@/components/reading/ReadingPresentation";
+import { ReadingForSale } from "@/components/reading/ReadingForSale";
 import { monthAhead } from "@/content/reading-pages";
 import { readingJsonLd } from "@/lib/structured-data";
 import { buildMetadata } from "@/lib/seo";
@@ -25,7 +24,7 @@ export default function MonthAheadReadingPage() {
           price: monthAhead.price,
         })}
       />
-      <ReadingPresentation reading={monthAhead} commerce={<ReadingOrder reading={monthAhead} />} />
+      <ReadingForSale productKey={monthAhead.productKey} />
     </>
   );
 }

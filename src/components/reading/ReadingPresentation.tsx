@@ -18,9 +18,12 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  * and nothing about what it costs.
  *
  * The three routes under `app/(site)/readings/` are this composition with
- * `ReadingOrder` in the hole, and they differ from each other in a `ReadingPage`
- * and a `<title>` — which is what the README has claimed since the second page
- * landed, and what a hundred lines copied three times had stopped being.
+ * `ReadingOrder` in the hole, through `ReadingForSale`, and they differ from
+ * each other in a product key and a `<title>` — which is what the README has
+ * claimed since the second page landed, and what a hundred lines copied three
+ * times had stopped being. **A route must not pass a `ReadingPage` here
+ * itself**: it would arrive in English whatever the visitor reads; see
+ * `ReadingForSale`.
  *
  * The second caller is `/redeem/`, which puts `RedeemPanel` in the slot — the
  * code's state and the question, in commerce's place, collecting no money. See
