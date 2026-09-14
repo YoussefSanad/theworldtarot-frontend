@@ -22,7 +22,13 @@ import { cn } from "@/lib/cn";
  * real scroll height, popping a scrollbar in and out for the animation's
  * duration.
  */
-export type AtmosphereVariant = "hero" | "readings" | "reading" | "world-tarot" | "library";
+export type AtmosphereVariant =
+  | "hero"
+  | "readings"
+  | "reading"
+  | "world-tarot"
+  | "library"
+  | "card-reference";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
@@ -33,6 +39,11 @@ const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   "world-tarot": { className: "page-atmosphere-world-tarot" },
   /** The rotunda the Library's cards hang in. */
   library: { className: "page-atmosphere-library" },
+  /**
+   * The paper a card's reference page is printed on — the one light ground on
+   * the site, and the one that repeats rather than being cropped to fit.
+   */
+  "card-reference": { className: "page-atmosphere-card-reference" },
 };
 
 export function PageAtmosphere({ variant, className }: { variant: AtmosphereVariant; className?: string }) {

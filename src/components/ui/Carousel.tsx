@@ -1,9 +1,9 @@
 "use client";
 
-import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
+import type { EmblaCarouselType, EmblaOptionsType, EmblaPluginType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "motion/react";
-import { createContext, use, useCallback, useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef, type HTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -51,6 +51,7 @@ function useCarousel(component: string) {
 
 export function Carousel({
   options,
+  plugins,
   initialSnapCount = 0,
   slideCount,
   className,
@@ -58,6 +59,13 @@ export function Carousel({
   ...props
 }: {
   options?: EmblaOptionsType;
+  /**
+   * Embla plugins, e.g. auto-scroll on the meta strip's symbols. Keep the array
+   * referentially stable across renders — Embla tears the carousel down and
+   * rebuilds it whenever this identity changes, which on a fresh array every
+   * render is an infinite remount.
+   */
+  plugins?: EmblaPluginType[];
   /**
    * Dot count to render before Embla mounts, so the pre-hydration markup
    * already has its final dot count and none pop in afterwards. Pass the slide
@@ -78,7 +86,7 @@ export function Carousel({
   slideCount?: number;
   children: ReactNode;
 } & ComponentPropsWithoutRef<"div">) {
-  const [viewportRef, api] = useEmblaCarousel(options);
+  const [viewportRef, api] = useEmblaCarousel(options, plugins);
 
   /**
    * Embla owns the snap list and the selected index; this component only
@@ -154,8 +162,14 @@ export function CarouselViewport({ className, ...props }: ComponentPropsWithoutR
   return <div ref={viewportRef} data-carousel={api ? "" : undefined} className={cn("carousel-window", className)} {...props} />;
 }
 
-export function CarouselTrack({ className, ...props }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("carousel-track", className)} {...props} />;
+/**
+ * `as` covers the case where the track is also the semantic container for what
+ * it holds — the meta strip's `<dl>`, whose `<dt>`/`<dd>` pairs must stay inside
+ * a description list at every width rather than gaining a wrapper that only one
+ * layout needs.
+ */
+export function CarouselTrack({ as: Component = "div", className, ...props }: { as?: "div" | "dl" | "ul" } & HTMLAttributes<HTMLElement>) {
+  return <Component className={cn("carousel-track", className)} {...props} />;
 }
 
 export function CarouselSlide({ className, ...props }: ComponentPropsWithoutRef<"div">) {
@@ -194,5 +208,62 @@ export function CarouselDots({
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * Position as "7 / 22", for a carousel with too many slides to dot.
+ *
+ * Twenty-two dots is not a row of dots: at 2.75rem of target each it wraps into
+ * several lines on a phone and none of them are worth tapping. A counter says
+ * the same two things a dot row says — where you are, how much there is — in
+ * one line that does not grow with the deck. `CarouselDots` stays the right
+ * answer for a set small enough to choose between; this is for the set you
+ * swipe through.
+ *
+ * **`aria-live="off"`, deliberately.** This is a live region by shape, and on
+ * an autoplaying carousel a polite one would announce a new number every few
+ * seconds, forever, over whatever the reader was actually doing. The slides are
+ * links and carry their own names, so nothing is lost by keeping the count
+ * silent until it is asked for. The label is on the element rather than a
+ * visually hidden sentence so a screen reader reaching it reads "slide 7 of 22"
+ * rather than two bare numbers.
+ *
+ * Hidden entirely while there is nothing to count, matching `CarouselDots`.
+ */
+export function CarouselCounter({
+  label,
+  className,
+}: {
+  /**
+   * The accessible name's two halves, e.g. `["Card", "of"]` for "Card 7 of 22".
+   *
+   * A pair of strings rather than a `(current, total) => string` formatter,
+   * because the call site that owns this copy is a server component and **a
+   * function cannot cross that boundary** — React has nothing to serialise it
+   * into, and the page fails to prerender. `ProductCarousel` passes its dot
+   * labels as an array for the same reason.
+   */
+  label: readonly [string, string];
+  className?: string;
+}) {
+  const { snapCount, selectedIndex } = useCarousel("CarouselCounter");
+
+  if (snapCount < 2) return null;
+
+  const current = selectedIndex + 1;
+  const [noun, joiner] = label;
+
+  return (
+    <p aria-live="off" aria-label={`${noun} ${current} ${joiner} ${snapCount}`} className={cn("carousel-counter", className)}>
+      {/*
+        `aria-hidden` on the digits: the accessible name above already says the
+        whole thing, and without this a screen reader would read the label and
+        then the same two numbers again as text.
+      */}
+      <span aria-hidden="true">
+        {current} <span className="carousel-counter__rule" /> {snapCount}
+      </span>
+    </p>
   );
 }

@@ -1,3 +1,4 @@
+import { theFool, type MajorArcanaContent } from "@/content/card-content";
 import { libraryCards } from "@/lib/assets";
 import type { ImageAsset } from "@/lib/assets";
 
@@ -16,6 +17,15 @@ export type MajorArcanaCard = {
   readonly numeral: string;
   readonly name: string;
   readonly image: ImageAsset;
+  /**
+   * The card's reference page, when it has one.
+   *
+   * **Optional is the mechanism, not an oversight**: a card with content
+   * renders the template built from the client's Fool frame, and a card
+   * without keeps the `ComingSoonPage` placeholder. Twenty-one are waiting on
+   * her copy, and each one arrives as an object in `card-content.ts`.
+   */
+  readonly content?: MajorArcanaContent;
 };
 
 /**
@@ -41,7 +51,7 @@ export type MajorArcanaCard = {
  * `scripts/optimize-library-cards.mjs` and appear nowhere else.
  */
 export const majorArcana: readonly MajorArcanaCard[] = [
-  { slug: "the-fool", numeral: "0", name: "The Fool", image: libraryCards["the-fool"] },
+  { slug: "the-fool", numeral: "0", name: "The Fool", image: libraryCards["the-fool"], content: theFool },
   { slug: "the-magician", numeral: "I", name: "The Magician", image: libraryCards["the-magician"] },
   { slug: "the-high-priestess", numeral: "II", name: "The High Priestess", image: libraryCards["the-high-priestess"] },
   { slug: "the-empress", numeral: "III", name: "The Empress", image: libraryCards["the-empress"] },
@@ -82,6 +92,64 @@ export function findMajorArcana(slug: string): MajorArcanaCard | undefined {
   return majorArcana.find((card) => card.slug === slug);
 }
 
+/**
+ * A card page's title and description, in the shape the route turns into Next's
+ * `Metadata` — the same split `suitMeta` already keeps, so this module imports
+ * nothing from the framework.
+ *
+ * **The title carries the URL's intent.** The whole reason for
+ * `/library/the-fool-tarot-card-meaning/` is the phrase "tarot card meaning",
+ * and a title reading only "The Fool" would spend that work without collecting
+ * it. A card still awaiting the client's copy keeps a generic description
+ * rather than inventing one.
+ */
+export function cardMeta(card: MajorArcanaCard): { title: string; description: string } {
+  return {
+    title: `${card.name} Tarot Card Meaning`,
+    description:
+      card.content?.metaDescription ??
+      `${card.name} (${card.numeral}) in the Major Arcana of The World Tarot.`,
+  };
+}
+
+/**
+ * The suffixes the SEO URLs carry, and the reason `slug` stays short.
+ *
+ * The pattern is fixed: `/library/{card-name}-tarot-card-meaning`, and the
+ * equivalent `-tarot-suit-meaning` for a suit. Both are **derived** from `slug`
+ * rather than stored beside it — `slug` is already the card's identity, its
+ * image filename and its lookup key, and a second spelling of the same thing is
+ * a second thing to keep in step.
+ */
+const CARD_SUFFIX = "-tarot-card-meaning";
+const SUIT_SUFFIX = "-tarot-suit-meaning";
+
+/**
+ * What the pattern admits: lowercase words, hyphen-separated, nothing else.
+ *
+ * Exported so the test can *check* the brief's "lowercase, hyphenated, no
+ * special characters" rather than restate it.
+ */
+export const CARD_PATH_PATTERN = /^\/library\/[a-z]+(?:-[a-z]+)*-tarot-card-meaning\/$/;
+
+export function cardPath(card: MajorArcanaCard): string {
+  return `/library/${card.slug}${CARD_SUFFIX}/`;
+}
+
+/**
+ * The inverse of `cardPath`, for the dynamic segment to resolve.
+ *
+ * **A bare slug deliberately returns `undefined`**: the twenty-two SEO URLs are
+ * the whole route space, so `/library/the-fool/` is a 404 rather than a second
+ * URL serving the same page — which is the thing an SEO URL pattern exists to
+ * prevent.
+ */
+export function findMajorArcanaByPath(segment: string): MajorArcanaCard | undefined {
+  return segment.endsWith(CARD_SUFFIX)
+    ? findMajorArcana(segment.slice(0, -CARD_SUFFIX.length))
+    : undefined;
+}
+
 export type Suit = {
   readonly slug: string;
   /** As the navigation sets it — Gill Sans caps, per the frame. */
@@ -105,6 +173,18 @@ export const suits: readonly Suit[] = [
 
 export function findSuit(slug: string): Suit | undefined {
   return suits.find((suit) => suit.slug === slug);
+}
+
+/**
+ * A suit's SEO path — **confirmed, and not yet applied.**
+ *
+ * The four suit routes still answer at `/library/swords/` and keep their
+ * placeholder pages until their designs arrive. This lives here so the pattern
+ * is recorded in code rather than only in the ticket, and so the rename, when
+ * it comes, is this one line plus four directory moves.
+ */
+export function suitPath(suit: Suit): string {
+  return `/library/${suit.slug}${SUIT_SUFFIX}/`;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { MajorArcanaCarousel } from "@/components/library/MajorArcanaCarousel";
 import { TarotCardTile } from "@/components/library/TarotCardTile";
 import { majorArcana } from "@/content/library";
 
@@ -16,16 +17,35 @@ import { majorArcana } from "@/content/library";
  * the markup — see `.library-grid` in globals.css.
  *
  * A list, because that is what it is: twenty-two links to twenty-two pages, in
- * a deliberate order that a screen reader should announce the length of.
+ * a deliberate order that a screen reader should announce the length of. It
+ * stays one flat `<ul>` below `sm` too, where `MajorArcanaCarousel` swipes it
+ * instead of stacking it — the list is the carousel's track rather than
+ * something wrapped in one.
+ *
+ * This component stays on the server so `TarotCardTile` does, which is what
+ * keeps `next/image` and `next/link` out of the carousel's client bundle.
  */
 export function MajorArcanaGrid() {
   return (
-    <ul className="library-grid">
+    <MajorArcanaCarousel
+      slideCount={majorArcana.length}
+      /*
+        Written here rather than in the client component because it is copy, and
+        copy on this site is data the server owns. "Card 7 of 22" rather than
+        "slide": the reader is looking at a deck, and the word the page uses for
+        one of these everywhere else is card.
+
+        Two strings rather than a formatter function: this is a server
+        component, and a function passed across that boundary has nothing React
+        can serialise — it fails the prerender outright rather than degrading.
+      */
+      counterLabel={["Card", "of"]}
+    >
       {majorArcana.map((card) => (
-        <li key={card.slug}>
+        <li key={card.slug} className="carousel-slide">
           <TarotCardTile card={card} />
         </li>
       ))}
-    </ul>
+    </MajorArcanaCarousel>
   );
 }

@@ -295,4 +295,77 @@ export const libraryCards = {
 export const librarySurfaces = {
   /** `.page-atmosphere-library` — the rotunda the cards hang in. */
   rotunda: "/figma/library-rotunda.webp",
+  /**
+   * `.page-atmosphere-card-reference` — the three layers behind a card's page.
+   *
+   * Her PSD stacks them: an opaque ground, a forest wash over it that overhangs
+   * the frame slightly, and the torn sheet of paper the content sits on.
+   */
+  cardBase: "/figma/card-reference/page-base.webp",
+  cardWash: "/figma/card-reference/page-wash.webp",
+  /**
+   * Her paper, in three pieces.
+   *
+   * The sheet is a fixed 1337x2995 with a torn deckle at top and bottom, and
+   * the page it backs has no fixed height. So the two edges are their own
+   * strips and the flat middle tiles between them — see
+   * `scripts/optimize-card-assets.mjs`.
+   */
+  cardPaperTop: "/figma/card-reference/page-paper-top.webp",
+  cardPaperMid: "/figma/card-reference/page-paper-mid.webp",
+  cardPaperBottom: "/figma/card-reference/page-paper-bottom.webp",
+} as const;
+
+const cardRef = (name: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/${name}.webp`, width, height);
+
+/**
+ * The card reference page's artwork (Figma `357:261`).
+ *
+ * **These are the client's own PSD layers**, not Figma exports, and the
+ * distinction is load-bearing — see `scripts/optimize-card-assets.mjs` for what
+ * Figma returned instead and why it was unusable. The dimensions below are that
+ * script's output; read them off a run of it rather than off the Figma frame,
+ * which reports several of these at the size it *draws* them rather than the
+ * size the layer actually is.
+ *
+ * The three background layers live in `librarySurfaces` instead: CSS paints
+ * them, and nothing in the markup references them.
+ */
+export const cardReference = {
+  dividerGreen: cardRef("divider-green", 582, 14),
+  dividerGold: cardRef("divider-gold", 241, 5),
+  /** Her `DIVIDER 1` again in champagne, which is the rule the shadow panel draws. */
+  dividerChampagne: cardRef("divider-champagne", 582, 14),
+  dividerLookFor: cardRef("divider-look-for", 1203, 8),
+  /**
+   * Her `FRAME`: the gold ornament at the top of the sheet — flourished
+   * corners, three diamonds on its top edge, sides running down open-ended.
+   * **Not the reading panel's border**, which is a plain inset stroke; the
+   * first build put this around that panel.
+   */
+  frameOrnament: cardRef("frame-ornament", 1229, 604),
+  appearsIcon1: cardRef("appears-icon-1", 49, 50),
+  appearsIcon2: cardRef("appears-icon-2", 64, 73),
+  appearsIcon3: cardRef("appears-icon-3", 57, 57),
+  appearsIcon4: cardRef("appears-icon-4", 51, 51),
+  /**
+   * The three diamonds astride a sphere card's top edge, cropped from her
+   * `LOVE DIAMOND FRAME TOP`. **Only the trio**: the card's rounded outline is
+   * rebuilt from tokens by `OrnateFrame`, as every framed panel on this site
+   * is — see the "Framed panels" block in globals.css.
+   */
+  sphereCrest: cardRef("sphere-crest", 47, 22),
+  sphereLove: cardRef("sphere-love", 369, 455),
+  sphereCareer: cardRef("sphere-career", 369, 455),
+  sphereMoney: cardRef("sphere-money", 370, 455),
+  shadowGround: cardRef("shadow-ground", 1216, 229),
+  /** The figure on her cliff, standing over the shadow panel's left end. */
+  shadowSilhouette: cardRef("shadow-silhouette", 269, 239),
+  metaStripBg: cardRef("meta-strip-bg", 1205, 241),
+  symbolAir: cardRef("symbol-air", 58, 51),
+  symbolUranus: cardRef("symbol-uranus", 34, 54),
+  symbolAquarius: cardRef("symbol-aquarius", 51, 36),
+  symbolKey: cardRef("symbol-key", 80, 27),
+  symbolCompass: cardRef("symbol-compass", 87, 87),
 } as const;

@@ -38,6 +38,7 @@ export function ClosingSaying({
   tone = "gold",
   width = "readings",
   rule = "hero",
+  className,
 }: {
   saying?: readonly string[];
   /**
@@ -50,8 +51,12 @@ export function ClosingSaying({
    * call to action, which is what every caller that predates this wanted.
    */
   action?: { label: string; href: string } | null;
-  /** Gold on the index; the warmer champagne on a reading's own page. */
-  tone?: "gold" | "champagne";
+  /**
+   * Gold on the index; the warmer champagne on a reading's own page; `ink` on
+   * a card's reference page, the one page that closes on a light ground rather
+   * than a dark one.
+   */
+  tone?: "gold" | "champagne" | "ink";
   width?: ContainerWidth;
   /**
    * Both readings frames draw this rule at 448px and take the default. The
@@ -60,16 +65,34 @@ export function ClosingSaying({
    * than this block being copied to change one number.
    */
   rule?: DividerVariant;
+  /**
+   * Replaces this block's own room-space, for a page that owns the air under
+   * its closing line rather than leaving it to the artwork behind.
+   *
+   * The card reference page is that case: its closing sits on a sheet of paper
+   * with 305px of her own empty paper below it, so the readings pages' "show as
+   * much of the room as possible" padding would be room this page does not
+   * have. Passing it also collapses the button's room-space box, which is the
+   * same air measured a second way.
+   */
+  className?: string;
 }) {
   return (
-    <Section padding="none" className="pb-[clamp(4rem,10vw,12rem)] lg:pb-0">
+    <Section padding="none" className={cn(className ?? "pb-[clamp(4rem,10vw,12rem)] lg:pb-0")}>
       <Container width={width} className="flex flex-col items-center text-center">
         <Divider variant={rule} />
 
         <p
           className={cn(
-            "mt-[clamp(0.5rem,0.78vw,0.9375rem)] font-display text-h2-lg leading-[1.1]",
-            tone === "gold" ? "text-gold" : "text-champagne",
+            "mt-[clamp(0.5rem,0.78vw,0.9375rem)] font-display leading-[1.1]",
+            /*
+              The size travels with the tone, because on the page that asks for
+              `ink` they are one decision: the readings frames set this line at
+              50px and the card reference frame sets it at 42px, so an `ink`
+              caller at `text-h2-lg` would simply be wrong against her drawing.
+            */
+            tone === "ink" ? "text-h3" : "text-h2-lg",
+            tone === "gold" ? "text-gold" : tone === "ink" ? "text-card-ink" : "text-champagne",
           )}
         >
           <Phrase parts={saying} />
@@ -83,7 +106,13 @@ export function ClosingSaying({
           is another slice of the artwork on show — and a page without a call
           to action wants that air as much as one with it.
         */}
-        <div className="mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center lg:mt-0 lg:h-[clamp(6rem,14vw,16rem)]">
+        <div
+          className={cn(
+            "mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center lg:mt-0",
+            /* The room-space box is the readings pages' air; a caller that owns its own says so with `className`. */
+            className ? "lg:h-0" : "lg:h-[clamp(6rem,14vw,16rem)]",
+          )}
+        >
           {/* 68px tall at 30px type in Figma; the width is the label's own. */}
           {action === null ? null : (
             <ButtonLink
