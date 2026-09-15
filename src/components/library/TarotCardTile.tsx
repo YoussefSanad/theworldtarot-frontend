@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { cardAlt, type MajorArcanaCard } from "@/content/library";
+import { cardAlt, cardPath, type MajorArcanaCard } from "@/content/library";
 import { cn } from "@/lib/cn";
 
 /**
@@ -42,11 +42,11 @@ import { cn } from "@/lib/cn";
  * Fifteen is therefore the line, and `.library-card__name--long` closes the gap
  * with tracking rather than a smaller size — see globals.css.
  */
-const LONG_NAME = 15;
+export const LONG_NAME = 15;
 
 export function TarotCardTile({ card }: { card: MajorArcanaCard }) {
   return (
-    <Link href={`/library/${card.slug}/`} className="library-card group @container no-underline">
+    <Link href={cardPath(card)} className="library-card group @container no-underline">
       <span className="stack">
         {/*
           The alt text is the client's specified format. It repeats the name

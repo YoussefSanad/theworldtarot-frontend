@@ -1,55 +1,62 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { CardReferencePage } from "@/components/library/card/CardReferencePage";
 import { ComingSoonPage } from "@/components/library/ComingSoonPage";
-import { cardAlt, comingSoon, findMajorArcana, majorArcana } from "@/content/library";
+import { cardAlt, cardMeta, cardPath, comingSoon, findMajorArcanaByPath, majorArcana } from "@/content/library";
 import { siteName } from "@/content/site";
 
 /**
- * A Major Arcana card's own reference page — **a placeholder for now.**
+ * A Major Arcana card's own reference page.
  *
- * The Fool's page is the confirmed template for all twenty-two and is being
- * built under its own issue; the remaining twenty-one are waiting on the
- * client for their artwork and text. What this route does today is exist, so
- * that clicking a card in the grid goes somewhere, which is the behaviour the
- * ticket asks for (a page, not the modal that was discussed before it).
+ * **The segment is the SEO URL, not the slug** — `the-fool-tarot-card-meaning`.
+ * `content/library.ts` derives it from the slug and resolves it back; this file
+ * only ever hands it the segment it was routed with.
  *
  * The twenty-two are the whole route space, so the export is fully static and
- * anything else 404s rather than rendering an empty card.
+ * anything else 404s — including `/library/the-fool/`, which is deliberate:
+ * two URLs serving one page is the thing an SEO pattern exists to prevent.
+ *
+ * **The Fool renders the template and the other twenty-one do not**, because
+ * only her Fool content exists. That is the one `if` below, and it disappears
+ * for each card as its copy lands in `card-content.ts`.
  */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return majorArcana.map((card) => ({ card: card.slug }));
+  return majorArcana.map((card) => ({ card: cardPath(card).slice("/library/".length, -1) }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ card: string }> }): Promise<Metadata> {
-  const card = findMajorArcana((await params).card);
+  const card = findMajorArcanaByPath((await params).card);
 
   if (!card) {
     return {};
   }
 
-  return {
-    title: `${card.name} — ${siteName}`,
-    description: `${card.name} (${card.numeral}) in the Major Arcana of The World Tarot.`,
-  };
+  const { title, description } = cardMeta(card);
+
+  return { title: `${title} — ${siteName}`, description };
 }
 
 export default async function MajorArcanaCardPage({ params }: { params: Promise<{ card: string }> }) {
-  const card = findMajorArcana((await params).card);
+  const card = findMajorArcanaByPath((await params).card);
 
   if (!card) {
     notFound();
   }
 
-  return (
-    <ComingSoonPage
-      heading={card.name}
-      eyebrow={card.numeral}
-      message={comingSoon.card}
-      image={card.image}
-      imageAlt={cardAlt(card)}
-    />
-  );
+  if (!card.content) {
+    return (
+      <ComingSoonPage
+        heading={card.name}
+        eyebrow={card.numeral}
+        message={comingSoon.card}
+        image={card.image}
+        imageAlt={cardAlt(card)}
+      />
+    );
+  }
+
+  return <CardReferencePage card={card} content={card.content} />;
 }

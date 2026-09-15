@@ -75,6 +75,37 @@
   --text-fine: clamp(0.75rem, 0.9375vw, 1.125rem); /* 18px */
   --text-fine--line-height: 1.15;
 
+  /*
+    The card reference page's own steps (Figma `357:261`).
+
+    Same derivation as every step above — the Figma pixel value is the clamp's
+    maximum and the vw term is that value / 19.2. They live here rather than
+    scoped to the page because Tailwind generates the `text-*` utilities from
+    this block and from nowhere else; a scoped custom property would set a
+    variable no utility reads.
+  */
+  --text-card-name: clamp(1.75rem, 2.5vw, 3rem); /* 48px */
+  --text-card-name--line-height: 1;
+  --text-card-lead: clamp(1.375rem, 1.875vw, 2.25rem); /* 36px */
+  --text-card-lead--line-height: 1.1;
+  --text-card-label: clamp(1rem, 1.1458vw, 1.375rem); /* 22px */
+  --text-card-label--line-height: 1.2;
+  --text-card-body: clamp(1rem, 1.25vw, 1.5rem); /* 24px */
+  --text-card-body--line-height: 1.083;
+  --text-card-fine: clamp(0.9375rem, 0.9375vw, 1.125rem); /* 18px */
+  --text-card-fine--line-height: 1.111;
+
+  /*
+    That page's palette, and the one place on the site that is dark on light.
+    Named `card-*` because `--color-ink` above is already the brand blue the
+    header and footer are drawn in — this page's near-black is a different
+    colour with a similar name, and sharing one would move site chrome.
+  */
+  --color-card-ink: #050a17; /* her headings, near-black */
+  --color-card-ink-soft: #4f4a41; /* her body copy */
+  --color-card-forest: #174310; /* the rules, and the LOOK FOR prose */
+  --color-card-parchment: #f2e8d5;
+
   /* Layout rhythm */
   --spacing-gutter: clamp(1.25rem, 3.125vw, 3.75rem); /* 60px edge inset: header bleed, column gaps */
   --spacing-section: clamp(3rem, 7.2917vw, 8.75rem); /* 140px section padding */
@@ -112,6 +143,22 @@
     is what `.library-grid` is built from.
   */
   --container-library: 914px;
+  /*
+    A card's reference page draws two columns, and neither is a width the site
+    already has: her prose runs 1035px (SECTION 1, x=455) and her panels run
+    wider at 1234px (SECTION 2, x=341), so the artwork breaks out past the text
+    rather than the two sharing one measure.
+  */
+  --container-card: 1035px;
+  --container-card-wide: 1234px;
+  /* Her sheet of paper, `Layer 21`, which every block on that page sits inside. */
+  --container-card-paper: 1337px;
+  /*
+    The closing line's own box on that page, 513px in her frame — narrow enough
+    that "The invitation is not to know - / it is to begin" breaks where she
+    breaks it rather than running on one line in the 1035px column.
+  */
+  --container-card-closing: 513px;
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -237,6 +284,10 @@
   --measure-reading-props: 47.7rem; /* 763px */
   --measure-flourish: 448px;
   --measure-flourish-wide: 538px;
+  /* The card page's sheet fills the screen below `lg`, like every other measure. */
+  --measure-card-paper: 100%;
+  /* The card reference page's green rule, drawn at 582px in her frame. */
+  --measure-rule-green: 582px;
   --measure-hairline: min(12rem, 100%);
 }
 
@@ -252,10 +303,15 @@
     --measure-reading: min(var(--container-reading), 74.531vw);
     --measure-world-tarot: min(var(--container-world-tarot), 53.594vw);
     --measure-library: min(var(--container-library), 47.604vw);
+    --measure-card-paper: min(var(--container-card-paper), 69.635vw); /* 1337 / 19.2 */
+    --measure-card: min(var(--container-card), 53.906vw); /* 1035 / 19.2 */
+    --measure-card-closing: min(var(--container-card-closing), 26.719vw); /* 513 / 19.2 */
+    --measure-card-wide: min(var(--container-card-wide), 64.271vw); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
     --measure-flourish: min(448px, 23.333vw);
     --measure-flourish-wide: min(538px, 28.021vw);
+    --measure-rule-green: min(582px, 30.313vw); /* 582 / 19.2 */
     --measure-hairline: min(368px, 19.167vw);
   }
 }
@@ -465,6 +521,19 @@
 
   .shell--library {
     --shell-width: var(--measure-library);
+  }
+
+  /* A card's reference page: prose at 1035px, its panels wider at 1234px. */
+  .shell--card {
+    --shell-width: var(--measure-card);
+  }
+
+  .shell--card-closing {
+    --shell-width: var(--measure-card-closing);
+  }
+
+  .shell--card-wide {
+    --shell-width: var(--measure-card-wide);
   }
 
   /*
@@ -906,6 +975,116 @@
       mask-image: linear-gradient(to top, transparent 0%, #000 var(--sky-feather, 25%));
       position: absolute;
     }
+  }
+
+  /*
+    A card's reference page (Figma `357:261`).
+
+    The flat ground the artwork sits on and fades into; the artwork itself is
+    the `::after` below. **Nothing here repeats.** Her forest is a composition
+    rather than a texture — trees in particular places, light falling one way —
+    so tiling it restarts that composition partway down and draws a hard seam
+    where the copies meet. It is painted once from the top and the page carries
+    on beneath it in this colour.
+  */
+  .page-atmosphere-card-reference {
+    background-color: var(--color-card-parchment);
+    overflow: clip;
+  }
+
+  /*
+    The wash's bottom edge, dissolved rather than cut.
+
+    Measured on her `Layer 20`: the last rows average `#d2b287` against the
+    `#f2e8d5` the page carries on in. Ending the image on a hard line therefore
+    butts a tan against a much paler cream, and that join reads as a flat band
+    straight across the page — the same failure `components/library/README.md`
+    records above the Library's footer, where the fix was also a fade and not a
+    change of height.
+
+    So the artwork dissolves into the colour beneath it instead of stopping on
+    it. The layer is its own element rather than a background on the page,
+    because the mask has to measure **the artwork's height, not the page's**:
+    as a page background it would fade at a share of however tall the page
+    happened to be, which moves the fade every time a card's copy runs longer.
+
+    `block-size` is the artwork's own aspect — her 1949x3251 at 101.51% of the
+    page width — so the box is exactly as tall as the picture it carries, and
+    `--wash-sink` lands the fade in the same place on every card.
+  */
+  .page-atmosphere-card-reference::after {
+    --wash-sink: 76%;
+
+    background-image: url("/figma/card-reference/page-wash.webp"), url("/figma/card-reference/page-base.webp");
+    background-position:
+      -0.885% -0.093%,
+      center top;
+    background-repeat: no-repeat, no-repeat;
+    background-size:
+      101.51% auto,
+      100% auto;
+    block-size: 169.32vw; /* 3251 / 19.2 */
+    content: "";
+    inset: 0 0 auto 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 100%);
+    position: absolute;
+  }
+
+  /*
+    The sheet of paper, and **it is a container rather than a backdrop** — the
+    single most important thing about this page's layout.
+
+    Her `Layer 21` is 1337x2995 at x=302, y=171 of a 1920x3237 frame, and every
+    one of the page's eight content blocks sits inside those bounds (checked
+    against her own coordinates: the widest, the reading panel, runs x=341..1575
+    against the paper's 302..1639). The paper is what the page is written on,
+    not something drawn behind it.
+
+    The first build made it a share of the viewport painted into the atmosphere
+    layer, which put the content on top of the paper rather than inside it: the
+    sheet sat where the viewport said instead of where the content was, and a
+    page taller than her 2995px simply started a second sheet.
+
+    So it is an element that wraps the content and grows with it. Three layers
+    again, because the sheet has a torn deckle at each end and the middle has to
+    stretch: the two edges are `::before`/`::after` at their own aspect, and the
+    tiling middle is this element's own background.
+  */
+  .card-paper {
+    /* 1337 of her 1920. Centred: her margins are 302 and 281, 21px apart. */
+    --paper-deckle: calc(100% * 24 / 1337);
+
+    background-image: url("/figma/card-reference/page-paper-mid.webp");
+    background-position: center top;
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+    margin-inline: auto;
+    max-width: var(--measure-card-paper);
+    position: relative;
+    width: 100%;
+  }
+
+  .card-paper::before,
+  .card-paper::after {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    content: "";
+    inset-inline: 0;
+    /* Her deckle is 24px of a 1337-wide sheet; as a ratio it holds at any width. */
+    padding-block-start: var(--paper-deckle);
+    position: absolute;
+  }
+
+  .card-paper::before {
+    background-image: url("/figma/card-reference/page-paper-top.webp");
+    bottom: 100%;
+  }
+
+  .card-paper::after {
+    background-image: url("/figma/card-reference/page-paper-bottom.webp");
+    top: 100%;
   }
 
   .page-atmosphere-world-tarot::after {
@@ -1649,6 +1828,31 @@
   }
 
   /*
+    A card reference page's love/career/money cards. Her `LOVE DIAMOND FRAME
+    TOP` draws the corner at about 22px on a 373px card — 5.9% of its own
+    width, the same kind of container-relative value as the four above.
+  */
+  /*
+    A card reference page's love/career/money cards. Her `LOVE DIAMOND FRAME
+    TOP` draws the corner at about 22px on a 373px card — 5.9% of its own
+    width, the same kind of container-relative value as the four above.
+
+    **The line is her near-black, not the site's gold.** Every other frame on
+    the site rings gold content on a dark ground; these sit on parchment and
+    she draws them in the same ink as the card's own words, so the ring takes a
+    colour of its own rather than inheriting the one `.ornate-frame__ring`
+    hard-codes for the rest.
+  */
+  .ornate-frame--sphere {
+    --ornate-radius: 5.9cqw;
+    --ornate-line: 1px;
+  }
+
+  .ornate-frame--sphere .ornate-frame__ring {
+    border-color: color-mix(in srgb, var(--color-card-ink) 70%, transparent);
+  }
+
+  /*
     All four sides. The border is a ring of its own rather than on this box,
     so the glow can follow the line — see `.panel-hover__frame`. This box
     keeps the radius and the clip, which is what holds a photograph to the
@@ -1836,6 +2040,17 @@
   }
 
   /*
+    `.panel-marks` spaces a *pair* out at the fifths, which is what the reading
+    panels want; this card has one mark and wants it in the middle, so the
+    padding those fifths come from is dropped and the row centres instead.
+  */
+  .panel-marks--single {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+
+  /*
     The body starts on the line, so the heading's lower half hangs over it —
     that is what putting a heading on a border means. This is the room it needs
     to clear the artwork beneath: half a line of the legend's own type, which
@@ -2008,6 +2223,30 @@
       from escaping the panel.
     */
     z-index: 1;
+  }
+
+  /*
+    The sphere cards' trio, which is one mark centred on the top edge rather
+    than the pair `.panel-marks` spaces out at the fifths.
+
+    **Raised above the shared `.ornate-crest` by an extra class**, not merely by
+    order: that rule is restated inside the `lg` media query for the readings
+    cards' desktop crop, and a media query's declarations beat an unqualified
+    one whatever their position. Doubling the class is what carries this past
+    it without a `!important` or a copy of the breakpoint.
+
+    Her trio is 47px on a 373px card, so 12.6% of it — the container query does
+    resolve against the card, and an earlier reading of 7.47% was this rule
+    losing to the media query below rather than a container mismatch.
+
+    11 of the ornament's 22 rows sit above the line — her own border ran through
+    the two rows between them and is cropped out, the ring drawing that line now
+    — so the lift is half the rendered height. The readings trio's 7-of-16 split
+    is asymmetric; this one is not.
+  */
+  .ornate-crest--sphere.ornate-crest--sphere {
+    inline-size: 12.6cqw; /* 47px of her 373px card */
+    margin-block-start: -2.95cqw; /* half the ornament, so it centres on the line */
   }
 
   /*
@@ -2626,6 +2865,22 @@
   }
 
   /*
+    The card reference page's rule, which it draws three times — under the
+    card's name, around LOOK FOR, and above and below the closing line.
+
+    **A variant rather than a tone**, because every rule here is an image and an
+    image has no colour property to set. The green is baked into the asset: her
+    texture under her own `rgba(23,72,20,0.93)`, exported from the composed
+    render. `scripts/optimize-card-assets.mjs` says why that distinction is
+    load-bearing.
+  */
+  .divider--green {
+    aspect-ratio: 582 / 14;
+    background-image: url("/figma/card-reference/divider-green.webp");
+    max-width: var(--measure-rule-green);
+  }
+
+  /*
     Drawn rather than exported. Figma gave us the line's bounding box with its
     fill baked in — 736x10 with alpha 255 on 8 of its 10 rows — so it rendered
     as a solid ~5px bar, and the aspect ratio tied that thickness to the column
@@ -2689,11 +2944,17 @@
         The global focus ring is 2px at 3px offset (see `:focus-visible`) and a
         tile fills its slide top to bottom, so the clip would otherwise shave the
         ring off whichever card has keyboard focus. Overflow clips at the padding
-        box, so 5px is exactly the room the ring needs. Nothing inline may be
-        added here: Embla measures the track to size its viewport, and horizontal
+        box, so 5px is the room that ring needs. Nothing inline may be added
+        here: Embla measures the track to size its viewport, and horizontal
         padding would shift the alignment maths under it.
+
+        **`--carousel-lift` is for a slide that draws above its own box.** The
+        sphere cards hang their diamond trio over the top border, which is 8px
+        clear of the card at a phone's width — more than the ring's 5px — and
+        the clip took the top off it. A carousel whose slides stay inside their
+        boxes leaves this at 0 and keeps the 5px it always had.
       */
-      padding-block: 5px;
+      padding-block: calc(5px + var(--carousel-lift, 0px));
     }
 
     .carousel-window::-webkit-scrollbar {
@@ -2721,6 +2982,7 @@
       min-inline-size: 0;
       scroll-snap-align: center;
     }
+
   }
 
   /*
@@ -2742,13 +3004,24 @@
     justify-content: center;
   }
 
+  /*
+    **The dot's two colours are variables because the ground underneath changes.**
+
+    Gold on `--color-night` is the default and needs no help: the idle dot comes
+    to 2.79:1 against it and the current one to 10.84:1. On the card reference
+    page's parchment the same gold collapses — 1.23:1 idle, and 1.39:1 for the
+    *current* dot, which is fainter than the idle ones it is supposed to stand
+    out from. So the page overrides these two rather than this block hard-coding
+    a gold that only suits half the site; `.library-card-page` below is the one
+    override today.
+  */
   .carousel-dot::before {
-    background-color: var(--color-gold-soft);
+    background-color: var(--carousel-dot-color, var(--color-gold-soft));
     block-size: 0.75em;
     border-radius: 9999px;
     content: "";
     inline-size: 0.75em;
-    opacity: 0.45;
+    opacity: var(--carousel-dot-opacity, 0.45);
     transition:
       background-color 300ms var(--ease-veil),
       box-shadow 300ms var(--ease-veil),
@@ -2762,9 +3035,45 @@
 
   /* The tile in the middle answers with light, like every other gold control. */
   .carousel-dot[aria-current]::before {
-    background-color: var(--color-gold);
-    box-shadow: var(--glow-gold);
+    background-color: var(--carousel-dot-current, var(--color-gold));
+    box-shadow: var(--carousel-dot-glow, var(--glow-gold));
     opacity: 1;
+  }
+
+  /*
+    Position as a count, for a deck too long to dot — the Library's twenty-two
+    cards. Same job as `.carousel-dot`, same gold, same `--text-fine` step, so
+    the two read as one family rather than two ideas about where you are.
+
+    The numerals are `tabular-nums` because this is a counter that changes every
+    few seconds on its own: without it the line jogs sideways each time the
+    digits change width, which is exactly the fidget a self-advancing carousel
+    should not add. `letter-spacing` is the page's own small-caps tracking.
+  */
+  .carousel-counter {
+    align-items: center;
+    color: var(--color-gold-soft);
+    display: flex;
+    font-size: var(--text-fine);
+    font-variant-numeric: tabular-nums;
+    justify-content: center;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+
+  /*
+    A drawn rule between the numbers rather than a typed "/", so the divider is
+    the same hairline the rest of the page separates things with and does not
+    change weight with the font.
+  */
+  .carousel-counter__rule {
+    background-color: currentColor;
+    block-size: 1px;
+    display: inline-block;
+    inline-size: 1.5em;
+    margin-inline: 0.55em;
+    opacity: 0.45;
+    vertical-align: middle;
   }
 
   /* The Library ------------------------------------------------------------ */
@@ -2822,6 +3131,92 @@
       /* One card wide, the cards would otherwise be nearly the viewport. */
       margin-inline: auto;
       max-inline-size: 20rem;
+    }
+  }
+
+  /*
+    The Library's deck as a carousel, below `sm`.
+
+    **This block must stay after the two grid blocks above it.** They are plain
+    `.library-grid` rules at the same specificity, so the cascade is decided by
+    source order alone: written any earlier, `< 64rem`'s `grid-template-columns`
+    and `< 30rem`'s `max-inline-size: 20rem` would both land on top of these and
+    the track would be a one-column grid Embla could not move. This is also why
+    the rules live here rather than in the "Carousels" block with the mechanics
+    they belong to — that block is above the Library's.
+
+    40rem is the width `MajorArcanaCarousel` hands Embla in its `breakpoints`,
+    written identically in both places on purpose: a width where this block says
+    "row" but Embla has stood down is an overflowing flex row nothing can
+    scroll.
+  */
+  @media (width < 40rem) {
+    /*
+      The Library's deck, swiped instead of stacked.
+
+      **The track is still `.library-grid`** — the same `<ul>`, so nothing about
+      the markup changes at this width. What changes is that a grid cannot be a
+      carousel track: Embla lays slides out in a flex row and measures their
+      widths, and a `grid-template-columns` would size the cells itself and a
+      `max-inline-size` would cap the row at 20rem. Both are undone here rather
+      than in `.library-grid`, so the grid above `sm` is untouched by any of
+      this and stays the arrangement the client drew.
+
+      `display: flex` is set unconditionally, not only under `[data-carousel]`:
+      before Embla attaches — first paint, and with JS off — `.carousel-window`
+      is an ordinary scroll-snap container, and that needs a row to scroll just
+      as much as Embla does. Otherwise the deck would paint as a one-column
+      grid for a frame and jump.
+    */
+    .library-grid {
+      display: flex;
+      gap: 0;
+      grid-template-columns: none;
+      max-inline-size: none;
+    }
+
+    /*
+      A card and the shoulders of the two beside it, which is what says "this
+      moves sideways" without a second card ever being big enough to compete
+      with the one being read. `align: "center"` in the Embla options is the
+      other half of that.
+
+      The cards keep the 20rem cap the one-column grid gave them — at 78% of a
+      wide phone that is comfortably under it, but the `min()` is what stops a
+      tablet at 39rem from drawing one enormous card.
+
+      Set as `--carousel-slide`, which is the knob `.carousel-slide` already
+      reads, rather than a second `flex` declaration: the `<li>`s carry that
+      class, so redeclaring `flex` here would mean two rules setting the same
+      property on the same element and the answer resting on which block comes
+      last in the file. This sets the variable and lets the primitive do its
+      job, which is what it is for.
+    */
+    .library-grid > li {
+      --carousel-slide: min(78%, 20rem);
+      /* Overrides `.library-grid > li`'s `inline-size: 100%` from the grid. */
+      inline-size: auto;
+    }
+
+    /*
+      The gutter, as padding inside the slide rather than a flex `gap`. Embla
+      measures slide boxes to place its snap points, so spacing that lives
+      between them is spacing it does not know about; padding is inside the box
+      it measures and stays correct at every snap.
+    */
+    .library-grid > li > * {
+      display: block;
+      padding-inline: clamp(0.375rem, 2vw, 0.75rem);
+    }
+
+    /*
+      The centring rule for the twenty-first card belongs to the four-column
+      grid and means nothing in a row. Left in place it would put THE JUDGEMENT
+      in "column 2" of a flex container, which is not a thing, but the property
+      is cleared rather than relied upon to be inert.
+    */
+    .library-grid > li:nth-last-child(2) {
+      grid-column: auto;
     }
   }
 
@@ -2953,6 +3348,47 @@
     display: flex;
     height: 4.72%;
     justify-content: center;
+  }
+
+  /*
+    A card's reference page (Figma `357:261`).
+
+    **This page inverts the site**, and the class exists to say so in one
+    place: every other page is light type on `--color-night`, and this one is
+    near-black on parchment. Setting the ink here means the blocks inside it
+    inherit rather than each restating a colour.
+
+    The two dark panels — "When … Appears in a Reading" and SHADOW — are *not*
+    part of the inversion. They are the site's own gold and cream on
+    near-black, so they override what they inherit here and keep
+    `--color-gold` and `--color-cream`. That is deliberate: they are the same
+    colours the rest of the site uses, not new ones.
+  */
+  .library-card-page {
+    color: var(--color-card-ink-soft);
+  }
+
+  /*
+    **The carousel dots, re-tuned for parchment.** The shared gold is built for
+    `--color-night` and vanishes here: 1.23:1 for an idle dot on this ground, and
+    1.39:1 for the current one — *fainter* than the idle dots it marks itself out
+    from, which is the contrast complaint that prompted this.
+
+    Forest is the page's own accent, already carrying its rules and its LOOK FOR
+    prose, so the dots join that family rather than importing a third colour. At
+    0.5 the idle dot comes to 2.62:1 and the current one to 9.36:1 — the same
+    relationship the gold has on night (2.79 and 10.84), reproduced on the
+    opposite ground.
+
+    The glow goes to a plain shadow: `--glow-gold` is light thrown outward, which
+    reads on a dark page and does nothing on a pale one. A soft forest shadow
+    gives the current dot the same lift by the means this ground allows.
+  */
+  .library-card-page {
+    --carousel-dot-color: var(--color-card-forest);
+    --carousel-dot-opacity: 0.5;
+    --carousel-dot-current: var(--color-card-forest);
+    --carousel-dot-glow: 0 0 0 0.18em rgba(23, 67, 16, 0.22);
   }
 
   /*
