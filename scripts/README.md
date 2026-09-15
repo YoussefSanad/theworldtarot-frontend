@@ -1,7 +1,22 @@
 # Scripts
 
-Two different jobs live under this folder's `npm run` scripts, and they are
+Three different jobs live under this folder's `npm run` scripts, and they are
 not equally available in a fresh checkout.
+
+## Checks that need no browser
+
+These read files and exit. Nothing to serve, nothing to launch.
+
+- `check:translations` — walks `src/content/locales/`, reports every value in a
+  language still identical to its English counterpart, and fails on a key that
+  is missing or extra. **Untranslated is not a failure** — at handover every
+  string is, which is the correct state. See
+  [`../src/content/locales/README.md`](../src/content/locales/README.md).
+- `assets:og` — recomposites `public/og-image.jpg` from artwork already in
+  `public/figma`, with `sharp`. The output is **committed**, so a build never
+  depends on this having been run; the script exists for when the artwork
+  changes. It is deterministic — running it on unchanged sources produces a
+  byte-identical file, which is worth knowing when a diff looks alarming.
 
 ## QA scripts (committed, always available)
 
@@ -26,8 +41,23 @@ numerically, not by eye (see
   won't play without one — if this script errors on video playback, check
   which browser it actually launched in its first log line.
 
+Four more are Playwright too, but drive the **built export** rather than
+`next dev`, because what they exercise only exists after `npm run build`:
+
+- `check:panel` — the payment panel's four states and the wallet row. Silent
+  for about seven minutes; it is the user's to run, not something to reach for
+  casually.
+- `check:confirmation` — `/checkout/complete/` through every payment outcome.
+- `check:redeem` — `/redeem/` through every state a gift code can be in.
+- `check:login` — the sign-in road.
+- `check:currency` — the currency control, against stubbed endpoints.
+
 Run the relevant one after any change to hero layout, image assets, or the
 reveal state machine.
+
+**Two of `check:measure`'s selectors match nothing** and print `missing` rather
+than a box — `footer` and `productFrame`. Selector rot rather than layout
+faults; the root README has the detail.
 
 ## Asset pipeline scripts (local-only, not in this repo)
 

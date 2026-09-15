@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { chrome } from "@/content/site";
 
 const SCROLL_THRESHOLD = 64;
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
@@ -55,7 +56,7 @@ export function ScrollToTop() {
           key="scroll-to-top"
           type="button"
           onClick={scrollToTop}
-          aria-label="Scroll to top"
+          aria-label={chrome.scrollToTop}
           className={cn(
             "btn btn-ghost fixed z-40 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note",
             "right-[max(0.75rem,var(--spacing-gutter))] bottom-[max(0.75rem,calc(var(--spacing-gutter)+env(safe-area-inset-bottom,0px)))]",

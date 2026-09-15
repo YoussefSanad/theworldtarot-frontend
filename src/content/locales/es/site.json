@@ -1,0 +1,83 @@
+{
+  "primaryNav": [
+    "WORLD TAROT",
+    "LIVING TAROT",
+    "LECTURAS",
+    "BIBLIOTECA",
+    "PREGUNTAS"
+  ],
+  "readingsChildren": [
+    "RESUMEN",
+    "EXPERIENCIA DE 1 CARTA",
+    "3 CARTAS",
+    "EL MES QUE VIENE",
+    "EN PROFUNDIDAD"
+  ],
+  "headerActions": {
+    "cta": "QUIERO MI LECTURA",
+    "account": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "bag": "Tu bolsa"
+  },
+  "footerNav": [
+    "World Tarot",
+    "Living Tarot",
+    "Lecturas",
+    "Biblioteca",
+    "Preguntas frecuentes",
+    "Contacto",
+    "Términos y condiciones",
+    "Política de privacidad",
+    "Política de reembolsos"
+  ],
+  "socialLinks": [
+    "Facebook",
+    "Instagram",
+    "TikTok"
+  ],
+  "socialHeading": "ACOMPAÑA EL VIAJE:",
+  "newsletter": {
+    "heading": "SIGUE EN CONTACTO:",
+    "firstNameLabel": "NOMBRE:",
+    "emailLabel": "CORREO:",
+    "blurb": [
+      "Recibe reflexiones ocasionales y lecturas",
+      "desde lugares sagrados de todo el mundo."
+    ],
+    "consent": "Acepto recibir correos de The World Tarot y entiendo que puedo darme de baja cuando quiera.",
+    "submitLabel": "sigue en contacto",
+    "sendingLabel": "enviando…",
+    "sentLabel": "gracias",
+    "success": [
+      "Gracias, ya tenemos tu dirección."
+    ],
+    "errors": {
+      "address": "No se ha aceptado esa dirección. Compruébala e inténtalo de nuevo.",
+      "rate-limited": "Han sido varios intentos muy seguidos. Espera un minuto, por favor.",
+      "unknown": "No hemos podido conectar con la lista ahora mismo. Inténtalo de nuevo."
+    }
+  },
+  "chrome": {
+    "newsletterFirstName": "Nombre",
+    "newsletterEmail": "Correo electrónico",
+    "scrollToTop": "Volver arriba",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "revealCard": "DESCUBRE TU CARTA",
+    "revealQuestion": "¿Por qué ha aparecido hoy esta carta para ti?",
+    "starRating": "Valorado con 5 de 5",
+    "primaryNavLabel": "Principal",
+    "footerNavLabel": "Pie de página",
+    "homeLink": "Inicio de The World Tarot",
+    "localeMenu": "Idioma y moneda",
+    "languageHeading": "Idioma",
+    "currencyHeading": "Moneda",
+    "yourCard": "{card}, tu carta"
+  },
+  "copyright": "© 2026 The World Tarot • Todos los derechos reservados.",
+  "notFound": {
+    "heading": "Este camino está sin escribir",
+    "body": "La página que buscabas no está aquí. Las cartas sí.",
+    "action": "QUIERO MI LECTURA"
+  }
+}

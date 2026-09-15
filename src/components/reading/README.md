@@ -38,10 +38,13 @@ them — Three Card's price, In-Depth's card count — the entry in
 ### The composition is one file, and the commerce is a slot
 
 `ReadingPresentation` is the page — the backdrop, the two panels, the gate, the
-props and the closing line. A reading's route is a `ReadingPage`, a `<title>`
-and one line that puts `ReadingOrder` in its `commerce` slot, which is what the
-paragraph above has claimed since Three Card landed and what a hundred lines
-copied three times had stopped being.
+props and the closing line. A reading's route is a `<title>` and one line,
+`<ReadingForSale productKey=… />`, which puts `ReadingOrder` in its `commerce`
+slot. That is what the paragraph above has claimed since Three Card landed and
+what a hundred lines copied three times had stopped being. **The route passes
+a key, not the `ReadingPage`**: a route is a server component, so a
+`ReadingPage` it passed would reach a Spanish visitor in English; see
+`ReadingForSale`.
 
 **It was cut for `/redeem/`**, the gifting epic's F1
 ([#70](https://github.com/YoussefSanad/theworldtarot-frontend/issues/70)).
@@ -201,7 +204,14 @@ and asks the catalogue what the reading costs.
 `useProduct(reading.productKey)` reads `GET /api/v1/{locale}/products/{key}` in
 the browser — **never at build time**, since prices resolve per visitor from
 their country and a baked response would ship one country's currency to
-everybody. The answer is a state rather than a number, and one sentence decides
+everybody.
+
+**`{locale}` is `apiLocale()`, not the language the visitor is reading.** The two
+are separate questions and today they have different answers: the site can be
+read in Spanish while the backend is still asked in English, because
+`/api/v1/es/products` answers 404 rather than English and an empty catalogue
+would show bundled price *strings* where live money belongs. See
+[`src/lib/locale.ts`](../../lib/locale.ts). The answer is a state rather than a number, and one sentence decides
 all of them: **where there is no live money there are no payment controls.**
 
 | State | Price line | Controls |

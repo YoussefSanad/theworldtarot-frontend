@@ -1,6 +1,25 @@
 import type { SocialIconName } from "@/components/ui/SocialIcon";
-import { signInPath } from "@/content/login";
-import { icons } from "@/lib/assets";
+import { signInPath } from "./login.ts";
+import { icons } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/site.json" with { type: "json" };
+import es from "./locales/es/site.json" with { type: "json" };
+
+/**
+ * The words on this page, in whichever language it is being read.
+ *
+ * **Strings live in `locales/`, structure lives here.** A `href`, an icon and a
+ * social URL are not copy and never cross over — a translator who finds
+ * `/readings/month-ahead/` in their file will eventually edit it, and the link
+ * will break in one language only. `site.test.ts` guards that boundary.
+ *
+ * **Labels and their structure are matched by position.** Inserting a nav item
+ * means editing both the array below and its list in `locales/en/site.json`, and
+ * a mismatch is what `site.test.ts` catches. That is the cost of keeping URLs
+ * out of a translator's hands, and it is the smaller of the two risks.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
 
 /**
  * Site-wide navigation and identity. Routes beyond the homepage are not built
@@ -29,11 +48,16 @@ import { icons } from "@/lib/assets";
 export type NavLink = { label: string; href: string };
 
 /**
- * A row inside a `NavGroup`'s dropdown. `productKey` is the same key
- * `Reading.productKey` in `content/readings.ts` uses to ask `/products` for a
- * price — here it is asked for a name instead, via `useReadingName` in
- * `lib/reading-prices.ts`. `label` is what shows before that answer arrives
- * and whenever a row has no product to ask for, such as Overview.
+ * A row inside a `NavGroup`'s dropdown.
+ *
+ * `productKey` is the same key `Reading.productKey` uses to ask `/products` for
+ * a price; here it is asked for a name, through `useReadingName`, which hands
+ * back `label` whenever the backend is not answering in the language being read.
+ *
+ * **A row with a key gives up its own wording**, and one row minds: the API
+ * calls `one-card` "1 CARD READING", while the client's navigation document
+ * writes "1 CARD EXPERIENCE" to mark the interactive AI experience as not one
+ * of the three written readings. The panel is where that is now fixed.
  */
 export type NavGroupLink = NavLink & { productKey?: string };
 
@@ -42,23 +66,36 @@ export type NavGroup = { label: string; children: readonly NavGroupLink[] };
 
 export type NavItem = NavLink | NavGroup;
 
-export const primaryNav: NavItem[] = [
-  { label: "WORLD TAROT", href: "/world-tarot/" },
-  { label: "LIVING TAROT", href: "/living-tarot" },
-  {
-    label: "READINGS",
-    children: [
-      { label: "OVERVIEW", href: "/readings/" },
-      /** Dead until the AI One-Card Experience ships; see `signature` in `content/readings.ts`. */
-      { label: "1 CARD EXPERIENCE", href: "/readings/one-card", productKey: "one-card" },
-      { label: "3 CARD", href: "/readings/three-card/", productKey: "three-card" },
-      { label: "MONTH AHEAD", href: "/readings/month-ahead/", productKey: "month-ahead" },
-      { label: "IN DEPTH", href: "/readings/in-depth/", productKey: "in-depth" },
-    ],
-  },
-  { label: "LIBRARY", href: "/library/" },
-  { label: "FAQ", href: "/faq" },
+const PRIMARY_NAV_HREFS = ["/world-tarot/", "/living-tarot", null, "/library/", "/faq"] as const;
+
+/** `/readings/one-card` is dead until the AI One-Card Experience ships; see `signature` in `content/readings.ts`. */
+/**
+ * The dropdown's rows, by position against `readingsChildren` in `locales/`.
+ *
+ * `productKey` is what `useReadingName` asks `/products` for; Overview has none,
+ * naming a page rather than something sold.
+ */
+const READINGS_ROWS: readonly { href: string; productKey?: string }[] = [
+  { href: "/readings/" },
+  { href: "/readings/one-card", productKey: "one-card" },
+  { href: "/readings/three-card/", productKey: "three-card" },
+  { href: "/readings/month-ahead/", productKey: "month-ahead" },
+  { href: "/readings/in-depth/", productKey: "in-depth" },
 ];
+
+export const primaryNav: NavItem[] = PRIMARY_NAV_HREFS.map((href, index) => {
+  const label = copy.primaryNav[index];
+
+  return href === null
+    ? {
+        label,
+        children: READINGS_ROWS.map((row, child) => ({
+          label: copy.readingsChildren[child],
+          ...row,
+        })),
+      }
+    : { label, href };
+});
 
 /**
  * The masthead's own controls.
@@ -73,35 +110,47 @@ export const primaryNav: NavItem[] = [
  * always takes the second form.
  */
 export const headerActions = {
-  cta: { label: "GET MY READING", href: "/readings/" },
+  cta: { label: copy.headerActions.cta, href: "/readings/" },
   /**
    * The icon a visitor presses. `/login/` is a built route since #49 — it was
    * named here from the client's navigation document long before the page
    * existed, and pointed at a 404 for as long as it did.
    */
-  account: { label: "Sign in", href: signInPath, icon: icons.login },
+  account: { label: copy.headerActions.account, href: signInPath, icon: icons.login },
   /** The other half of that control, shown once somebody is signed in. */
-  signOut: { label: "Sign out" },
-  bag: { label: "Your bag", href: "/checkout", icon: icons.bag },
+  signOut: { label: copy.headerActions.signOut },
+  bag: { label: copy.headerActions.bag, href: "/checkout", icon: icons.bag },
 };
 
-export const footerNav: NavLink[] = [
-  { label: "World Tarot", href: "/world-tarot/" },
-  { label: "Living Tarot", href: "/living-tarot" },
-  { label: "Readings", href: "/readings/" },
-  { label: "Library", href: "/library/" },
-  { label: "FAQ", href: "/faq" },
-  { label: "Contact", href: "/contact" },
-  { label: "Terms & Conditions", href: "/terms" },
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Refund Policy", href: "/refunds" },
+const FOOTER_HREFS = [
+  "/world-tarot/",
+  "/living-tarot",
+  "/readings/",
+  "/library/",
+  "/faq",
+  "/contact",
+  "/terms",
+  "/privacy",
+  "/refunds",
+] as const;
+
+export const footerNav: NavLink[] = FOOTER_HREFS.map((href, index) => ({
+  label: copy.footerNav[index],
+  href,
+}));
+
+const SOCIALS: { href: string; icon: SocialIconName }[] = [
+  { href: "https://www.facebook.com/theworldtarotofficial/", icon: "facebook" },
+  { href: "https://www.instagram.com/theworldtarotofficial/", icon: "instagram" },
+  { href: "https://tiktok.com", icon: "tiktok" },
 ];
 
-export const socialLinks: { label: string; href: string; icon: SocialIconName }[] = [
-  { label: "Facebook", href: "https://www.facebook.com/theworldtarotofficial/", icon: "facebook" },
-  { label: "Instagram", href: "https://www.instagram.com/theworldtarotofficial/", icon: "instagram" },
-  { label: "TikTok", href: "https://tiktok.com", icon: "tiktok" },
-];
+export const socialLinks: { label: string; href: string; icon: SocialIconName }[] = SOCIALS.map(
+  (social, index) => ({ label: copy.socialLinks[index], ...social }),
+);
+
+/** FOLLOW THE JOURNEY:, over the social links. A literal in `SiteFooter` until 11 September 2026. */
+export const socialHeading = copy.socialHeading;
 
 /**
  * The footer's STAY CONNECTED form, in every state it has.
@@ -123,32 +172,74 @@ export const socialLinks: { label: string; href: string; icon: SocialIconName }[
  * identically, so that arm cannot be reached and must not be written.
  */
 export const newsletter = {
-  heading: "STAY CONNECTED:",
-  blurb: ["Receive occasional reflections and", "readings from sacred places around the world."],
-  consent: "I agree to receive emails from The World Tarot and understand I can unsubscribe any time.",
-  submitLabel: "stay connected",
+  heading: copy.newsletter.heading,
+  /*
+    The visible field labels, shown at `lg` and above. Below it they are
+    screen-reader only and the placeholders in `chrome` do the job, which is
+    why each field has two strings. Literals in `NewsletterForm` until
+    11 September 2026.
+  */
+  firstNameLabel: copy.newsletter.firstNameLabel,
+  emailLabel: copy.newsletter.emailLabel,
+  blurb: copy.newsletter.blurb,
+  consent: copy.newsletter.consent,
+  submitLabel: copy.newsletter.submitLabel,
   /*
    * The button's two other labels. Sending renames it because there is no
    * loader beside it — unlike the coming-soon form, which keeps its name and
    * spins — so the label is the only thing here that can say a press landed.
    */
-  sendingLabel: "sending…",
-  sentLabel: "thank you",
+  sendingLabel: copy.newsletter.sendingLabel,
+  sentLabel: copy.newsletter.sentLabel,
   /*
    * Takes the blurb's place once the request lands. One line where the blurb is
    * two, which costs nothing: the slot reserves the blurb's full height in
    * every state, so a shorter message moves nothing.
    */
-  success: ["Thank you — we have your address."],
-  errors: {
-    address: "That address was not accepted. Please check it and try again.",
-    /* The window really is a minute, and the limit counts presses from one
-       browser rather than attempts on one address. Neither the sentence nor the
-       failure it belongs to may say otherwise. */
-    "rate-limited": "That was a few tries in quick succession. Please give it a minute.",
-    unknown: "We could not reach the list just now. Please try again.",
-  },
+  success: copy.newsletter.success,
+  errors: copy.newsletter.errors,
 };
 
-export const siteName = "The World Tarot";
-export const copyright = "© 2026 The World Tarot • All rights reserved.";
+/**
+ * The house name.
+ *
+ * **Declared in `src/lib/seo.ts` since 5 September 2026** and re-exported here,
+ * which is the opposite of where a name like this belongs — copy lives in
+ * `content/`. It moved because `src/lib` cannot value-import through the `@/`
+ * alias without breaking `node --test`, and `seo.ts` is unit-tested while this
+ * file is not. Every consumer was a page title, and composing page titles is
+ * what `buildMetadata` does, so this export exists for anything that arrives
+ * later.
+ */
+export { SITE_NAME as siteName } from "../lib/seo.ts";
+
+/**
+ * The line under the footer.
+ *
+ * **From `locales/` since 9 September 2026.** It was a literal here, which made
+ * it one of the handful of strings a translator could not reach — and unlike an
+ * `aria-label`, this one is visible, so a Spanish footer said "All rights
+ * reserved" in English. The year and the house name are inside the string
+ * because both are part of the sentence a translator is arranging.
+ */
+export const copyright = copy.copyright;
+
+/**
+ * The 404 page's three strings.
+ *
+ * `src/app/not-found.tsx` used to hold them inline, "a deliberate exception of
+ * exactly three strings" that was to end when the message catalogue landed. It
+ * landed.
+ */
+export const notFound = copy.notFound;
+
+/**
+ * The handful of strings that were written into components rather than here.
+ *
+ * **Placeholders and `aria-label`s are copy**, and left inline they are holes a
+ * translator cannot reach — invisible ones, because nothing on screen shows a
+ * missing `aria-label`. They sit in `site.ts` rather than in a file of their own
+ * because every one of them belongs to the site's chrome, which is what this
+ * module already is.
+ */
+export const chrome = copy.chrome;

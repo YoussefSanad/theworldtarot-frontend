@@ -1,0 +1,120 @@
+{
+  "chrome": {
+    "heroAlt": "Tarot cards scattered around one lit from within by golden fire",
+    "question": {
+      "heading": "Ask a Question",
+      "body": ["Begin your reading by entering", "an optional question."],
+      "label": "Your question",
+      "placeholder": "Enter your question…"
+    },
+    "gift": {
+      "heading": "Recipient Details",
+      "body": ["Who should receive your gift?", "Add their email address and a personal message below."],
+      "enter": "Gift a Reading",
+      "leave": "A Reading for Myself",
+      "signature": { "label": "Who the gift is from", "placeholder": "Who the gift is from…" },
+      "email": { "label": "Recipient's email address", "placeholder": "Recipient’s email address…" },
+      "confirmation": {
+        "label": "Confirm the recipient's email address",
+        "placeholder": "Confirm the recipient’s email address…",
+        "mismatch": "These two email addresses do not match."
+      },
+      "message": { "label": "Personal message (optional)", "placeholder": "Write a personal message…" },
+      "note": "They will choose their own question when the reading reaches them."
+    },
+    "checkout": {
+      "heading": "Get My Reading",
+      "card": "Pay with Card",
+      "buy": "Pay Another Way",
+      "buying": "Taking you to checkout…",
+      "giftingComing": "Gifting is still being set up, so we will arrange delivery with you by email once you have paid.",
+      "buyFailed": "We could not start the checkout, and nothing has been charged. Please try again.",
+      "walletFailed": "We could not take this payment. Nothing has been charged.",
+      "walletUnresolved": "We could not complete this payment. If you were charged, your receipt will arrive by email.",
+      "walletNeedsGiftDetails": "Please check the gift's details before paying. Nothing has been charged.",
+      "pricePending": "Fetching the price",
+      "secure": "Secure checkout powered by Stripe",
+      "walletLabel": "Pay {price} with a saved wallet"
+    },
+    "included": { "heading": "Your Reading" },
+    "gate": {
+      "heading": "Beyond the Gate",
+      "subtitle": "Your Journey Begins Here",
+      "imageAlt": "A lantern-lit stone archway on a mossy woodland path"
+    },
+    "features": [
+      { "title": "Led by the Cards", "body": ["Each reading unfolds through the", "archetypes themselves"] },
+      { "title": "Composed with Intention", "body": ["Original artwork paired with", "thoughtful interpretation"] },
+      { "title": "Clarity in Motion", "body": ["Insight that illuminates your", "next chapter"] }
+    ],
+    "closingAction": "GET MY READING"
+  },
+  "rushDelivery": {
+    "label": "24-Hour Rush",
+    "surcharge": "+$25",
+    "standard": "Standard Delivery",
+    "legend": "Delivery"
+  },
+  "pages": {
+    "three-card": {
+      "title": "3 Card Reading",
+      "tagline": ["One Question. Three Cards.", "Your Path Illuminated."],
+      "delivery": "Delivery Time: within 24 hours",
+      "included": [
+        ["A Three Card Reading", "focused on your path forward"],
+        ["Prepare for the weeks ahead", "with insight"],
+        ["Thoughtful written interpretation"],
+        ["Presented on original", "World Tarot", "artwork"],
+        ["Delivered by email within 24 hours"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“The past was remarkably accurate. The present offered clarity.",
+          "Now I’m watching the future unfold with fresh eyes.”"
+        ],
+        "attribution": ["NIKKI M.", "BURLINGTON, VT"]
+      },
+      "closing": ["Every question has a story", "waiting to be told"]
+    },
+    "month-ahead": {
+      "title": "Month Ahead Reading",
+      "tagline": ["One Month. Five Cards.", "a clear path ahead."],
+      "delivery": "Delivery Time: within 24 hours",
+      "included": [
+        ["A Month-Ahead Reading", "focused on your path forward"],
+        ["Prepare for the weeks ahead", "with insight"],
+        ["Thoughtful written interpretation"],
+        ["Presented on original", "World Tarot", "artwork"],
+        ["Delivered by email within 24 hours"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“It gave me a clearer sense of what to expect over the month ahead.",
+          "By month’s end, I was amazed by how much had resonated.”"
+        ],
+        "attribution": ["RILEY S", "PORTLAND, ME"]
+      },
+      "closing": ["What is unfolding", "has already begun"]
+    },
+    "in-depth": {
+      "title": "In-Depth Reading",
+      "tagline": ["One Question. Twelve Cards.", "A Deeper Story Revealed."],
+      "delivery": "Delivery Time: within 48 hours",
+      "included": [
+        ["A twelve-card reading exploring your", "question in depth"],
+        ["Insight into deeper patterns and themes", "shaping your story"],
+        ["Clear guidance that brings perspective", "to complex situations"],
+        ["Presented on original", "World Tarot", "artwork"],
+        ["Delivered by email within 48 hours"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“This went so much deeper than I expected.",
+          "It connected things I hadn’t seen before and gave me real clarity about how I got here—and where to go next.”"
+        ],
+        "attribution": ["RACHEL T.", "SEDONA, AZ"]
+      },
+      "closing": ["The deeper the journey,", "the richer the story"]
+    }
+  }
+}

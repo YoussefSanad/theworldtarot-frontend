@@ -1,6 +1,6 @@
 import type { TarotCard } from "@/content/cards";
 
-import { DEFAULT_LOCALE, type Locale } from "./locale.ts";
+import { apiLocale, type Locale } from "./locale.ts";
 import type { Money } from "./price.ts";
 
 /**
@@ -127,7 +127,7 @@ function toTarotCard(card: ApiCard | CardWithoutVideo): TarotCard {
  * silently indistinguishable from an empty one.
  */
 export async function drawCard(
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+  { locale = apiLocale(), signal }: { locale?: Locale; signal?: AbortSignal } = {},
 ): Promise<TarotCard | null> {
   const response = await fetch(`${baseUrl()}/api/v1/${locale}/cards/draw`, {
     // The response is a credential with a timer. The server says no-store and
@@ -163,7 +163,7 @@ export async function drawCard(
  */
 export async function fetchCard(
   id: string,
-  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+  { locale = apiLocale(), signal }: { locale?: Locale; signal?: AbortSignal } = {},
 ): Promise<TarotCard | null> {
   const response = await fetch(`${baseUrl()}/api/v1/${locale}/cards/${id}`, {
     headers: { Accept: "application/json" },
@@ -255,7 +255,7 @@ export type ApiProduct = {
  */
 export async function fetchProducts(
   {
-    locale = DEFAULT_LOCALE,
+    locale = apiLocale(),
     currency,
     signal,
   }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},
@@ -297,7 +297,7 @@ export type ApiProductDetail = ApiProduct & { long_description: string };
 export async function fetchProduct(
   key: string,
   {
-    locale = DEFAULT_LOCALE,
+    locale = apiLocale(),
     currency,
     signal,
   }: { locale?: Locale; currency?: string; signal?: AbortSignal } = {},
@@ -425,12 +425,15 @@ export async function fetchCurrencies(
 /**
  * One entry from `/languages`.
  *
- * `native_name` is optional because the backend does not send it yet — the
- * column exists on its `Locale` and is unexposed, asked for in
- * `YoussefSanad/TheWorldTarot#66`. Render it over `label` when it arrives: a
- * language switcher is one of the few controls read by people who cannot read
- * the language it is currently in, which is exactly when "Español" works and
- * "Spanish" does not.
+ * `native_name` ships as of 9 September 2026 (`YoussefSanad/TheWorldTarot#66`)
+ * and `languageRows` renders it over `label`: a language switcher is one of the
+ * few controls read by people who cannot read the language it is currently in,
+ * which is exactly when "Español" works and "Spanish" does not.
+ *
+ * It stays **optional** so a frontend deploy that lands ahead of the backend's
+ * degrades to the English name rather than putting `undefined` on screen.
+ * Requiring it would buy nothing this type can enforce — the value crosses a
+ * network.
  */
 export type ApiLanguage = { code: string; label: string; native_name?: string };
 

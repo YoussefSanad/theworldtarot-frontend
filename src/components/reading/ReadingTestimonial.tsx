@@ -1,3 +1,5 @@
+"use client";
+
 import { Divider } from "@/components/ui/Divider";
 import { OrnateFrame } from "@/components/ui/OrnateFrame";
 import { StarRating } from "@/components/ui/StarRating";

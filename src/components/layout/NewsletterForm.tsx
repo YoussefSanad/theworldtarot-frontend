@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { newsletter } from "@/content/site";
+import { chrome, newsletter } from "@/content/site";
 import {
   type NewsletterFailure,
   readNewsletterFailure,
@@ -154,7 +154,7 @@ export function NewsletterForm() {
 
       <div className="grid w-full grid-cols-1 items-center gap-x-[0.5em] gap-y-[0.3em] lg:grid-cols-[auto_1fr]">
         <label htmlFor="newsletter-first-name" className="sr-only lg:not-sr-only lg:text-right lg:text-nav lg:text-ash">
-          FIRST NAME:
+          {newsletter.firstNameLabel}
         </label>
         <input
           id="newsletter-first-name"
@@ -165,12 +165,12 @@ export function NewsletterForm() {
           /* The backend's own limit on `name`, so a longer one cannot be typed
              here and then refused as a 422 nobody can see the cause of. */
           maxLength={40}
-          placeholder="First name"
+          placeholder={chrome.newsletterFirstName}
           className="field w-full px-3 py-2 text-note disabled:opacity-50 lg:placeholder:text-transparent"
         />
 
         <label htmlFor="newsletter-email" className="sr-only lg:not-sr-only lg:text-right lg:text-nav lg:text-ash">
-          EMAIL:
+          {newsletter.emailLabel}
         </label>
         <input
           id="newsletter-email"
@@ -182,7 +182,7 @@ export function NewsletterForm() {
           /* RFC 5321's maximum addressable length, and the number the backend's
              own validation uses. */
           maxLength={254}
-          placeholder="Email"
+          placeholder={chrome.newsletterEmail}
           className="field w-full px-3 py-2 text-note disabled:opacity-50 lg:placeholder:text-transparent"
         />
       </div>

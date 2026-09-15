@@ -195,13 +195,19 @@ function failureWording(failure: SignInFailure, asking: boolean): string {
   return loginCopy.refused;
 }
 
-/** Seconds as something a person would say. Rounded up: never early. */
+/**
+ * Seconds as something a person would say. Rounded up: never early.
+ *
+ * The words are `loginCopy.wait`'s, since they land inside a translated
+ * sentence; only the rounding is decided here.
+ */
 function describeWait(seconds: number): string {
+  const { wait } = loginCopy;
   const whole = Math.ceil(seconds);
 
-  if (whole < 60) return whole === 1 ? "a second" : `${whole} seconds`;
+  if (whole < 60) return whole === 1 ? wait.second : wait.seconds.replace("{count}", String(whole));
 
   const minutes = Math.ceil(whole / 60);
 
-  return minutes === 1 ? "a minute" : `${minutes} minutes`;
+  return minutes === 1 ? wait.minute : wait.minutes.replace("{count}", String(minutes));
 }

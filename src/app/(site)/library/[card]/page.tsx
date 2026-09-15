@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { ComingSoonPage } from "@/components/library/ComingSoonPage";
-import { cardAlt, comingSoon, findMajorArcana, majorArcana } from "@/content/library";
+import { CardPage } from "@/components/library/CardPage";
+import { findMajorArcana, majorArcana } from "@/content/library";
 import { siteName } from "@/content/site";
 
 /**
@@ -43,13 +43,5 @@ export default async function MajorArcanaCardPage({ params }: { params: Promise<
     notFound();
   }
 
-  return (
-    <ComingSoonPage
-      heading={card.name}
-      eyebrow={card.numeral}
-      message={comingSoon.card}
-      image={card.image}
-      imageAlt={cardAlt(card)}
-    />
-  );
+  return <CardPage slug={card.slug} />;
 }

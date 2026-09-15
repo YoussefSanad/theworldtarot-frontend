@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 import { type ApiLanguage, fetchLanguages } from "./api.ts";
-import { BUILT_LOCALES, type Locale } from "./locale.ts";
+import { forgetLocaleUnlessServed, OFFERED_LOCALES, type Locale } from "./locale.ts";
 
 /**
  * Which languages the site may be offered in, as the list the switcher draws
@@ -16,11 +16,13 @@ import { BUILT_LOCALES, type Locale } from "./locale.ts";
  * any moment, effective on the next request with no deploy on our side, and a
  * hardcoded switcher then offers a dead link with a 404 behind it.
  *
- * A static export cannot obey that literally — a route has to exist at build
+ * A static export cannot obey that literally — the copy has to ship at build
  * time. **So the switcher draws the intersection**: a language must be in
- * `BUILT_LOCALES` *and* in the live answer. That keeps the property the clause
+ * `OFFERED_LOCALES` *and* in the live answer. That keeps the property the clause
  * exists for, which is that taking a language down removes it everywhere
- * immediately. See `docs/adr/0004-language-is-a-path-segment.md`.
+ * immediately. ~~`BUILT_LOCALES`~~ was the built half until 9 September 2026,
+ * when language became a stored preference with no route of its own; see the
+ * superseding note on `docs/adr/0004-language-is-a-path-segment.md`.
  *
  * ## A failure takes the switcher away, unlike `currencies.ts`
  *
@@ -56,7 +58,7 @@ import { BUILT_LOCALES, type Locale } from "./locale.ts";
  */
 export function resolveLanguages(
   live: readonly ApiLanguage[] | null,
-  built: readonly Locale[] = BUILT_LOCALES,
+  built: readonly Locale[] = OFFERED_LOCALES,
 ): readonly ApiLanguage[] {
   if (!live) return [];
 
@@ -106,13 +108,22 @@ function languageOptionsOnServer(): readonly ApiLanguage[] | null {
  * asking again, which is a difference that lives only in development.
  *
  * Returns a promise so a test can await it. Nothing in the app waits on it.
+ *
+ * **It is also the only thing that can catch a stale language choice.** A
+ * preference lives in one browser's `localStorage` and outlives any takedown,
+ * so `forgetLocaleUnlessServed` reconciles it against this answer — see its own
+ * docblock for what goes wrong without that. Only on the success path: an
+ * unreachable endpoint says nothing about which languages are live.
  */
 export async function askLanguages(): Promise<void> {
   if (asked || asking) return;
 
   asking = fetchLanguages()
     .then(
-      (languages) => publish(languages),
+      (languages) => {
+        publish(languages);
+        forgetLocaleUnlessServed(languages.map((language) => language.code));
+      },
       (error: unknown) => {
         // Loud here and invisible on the page: no language group is drawn,
         // which is what one live language draws too. From the outside the two
@@ -134,8 +145,8 @@ export async function askLanguages(): Promise<void> {
  *
  * **Correct and invisible today**, which is the reason it ships now rather than
  * with #69: the switcher appears the day somebody flips a second language to
- * `Live` and this export has been built for it, and that property only exists
- * if the call is already in the bundle.
+ * `Live` and this export ships its copy (`OFFERED_LOCALES`), and that property
+ * only exists if the call is already in the bundle.
  */
 export function useLanguageOptions(): readonly ApiLanguage[] {
   const live = useSyncExternalStore(subscribe, languageOptions, languageOptionsOnServer);

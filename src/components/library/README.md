@@ -111,11 +111,18 @@ and `check:measure` is unaffected.
 
 ## The names are hers, with her typos fixed
 
-`content/library.ts` holds them, and the rule applied is **fix outright
-misspellings, keep deck-specific naming**: `THE EMPORER` and `THE HANGMAN` are
-corrected; `THE HIGH PRIEST` (not Hierophant), `THE WHEEL` (not Wheel of
-Fortune) and `JUDGEMENT` are hers and are kept. An official list from her later
-lands in that one array.
+`content/locales/en/library.json` holds them, keyed by slug, and the rule
+applied is **fix outright misspellings, keep deck-specific naming**:
+`THE EMPORER` and `THE HANGMAN` are corrected; `THE HIGH PRIEST` (not
+Hierophant), `THE WHEEL` (not Wheel of Fortune) and `JUDGEMENT` are hers and
+are kept. An official list from her later lands in that one file.
+
+**The Spanish follows her deck, not the backend's**: `EL SUMO SACERDOTE` and
+`LA RUEDA`, where the API's cards say `El Hierofante` and `La Rueda de la
+Fortuna`. `LA SACERDOTISA` rather than the API's `La Suma Sacerdotisa` is the
+plaque's call: measured on 11 September 2026, the longer name comes to 101% of
+the plaque even with `--long`'s tightening, against 90% for `THE HIGH
+PRIESTESS`.
 
 **Her mockup's grid order has a slip and is not followed.** Her first row runs
 The Fool, The Magician, *The Tower*, The Empress — The Tower in the slot

@@ -1,0 +1,33 @@
+{
+  "title": "Iniciar sesión",
+  "heading": "Iniciar sesión",
+  "intro": "Para la cuenta donde se guardan tus lecturas.",
+  "emailLabel": "Tu correo electrónico",
+  "passwordLabel": "Tu contraseña",
+  "submitLabel": "Iniciar sesión",
+  "busyLabel": "Iniciando sesión…",
+  "refused": "Esos datos no te dan acceso. Si compraste una lectura y aún no has elegido contraseña, pide un enlace abajo y elígela ahora.",
+  "rateLimited": "Han sido demasiados intentos. Vuelve a probar en {wait}.",
+  "rateLimitedBriefly": "Han sido demasiados intentos. Espera un momento y prueba otra vez.",
+  "wait": {
+    "second": "un segundo",
+    "seconds": "{count} segundos",
+    "minute": "un minuto",
+    "minutes": "{count} minutos"
+  },
+  "unknownFailure": "Algo ha fallado por nuestra parte. Inténtalo de nuevo en un momento.",
+  "forgotPrompt": "¿Has olvidado tu contraseña?",
+  "forgot": {
+    "heading": "Pide un enlace",
+    "intro": "Escribe la dirección con la que compraste. Si tenemos una cuenta para ella, te enviamos un enlace para elegir contraseña. Dura una hora y funciona una sola vez.",
+    "emailLabel": "Tu correo electrónico",
+    "submitLabel": "Envíame un enlace",
+    "busyLabel": "Pidiéndolo…",
+    "sent": "Si tenemos una cuenta para esa dirección, el enlace ya va de camino. Búscalo en los próximos minutos.",
+    "invalidAddress": "Eso no parece una dirección de correo. Compruébala e inténtalo de nuevo.",
+    "rateLimited": "Han sido demasiadas peticiones. Vuelve a probar en {wait}.",
+    "rateLimitedBriefly": "Han sido demasiadas peticiones. Espera un momento y prueba otra vez.",
+    "unknownFailure": "Algo ha fallado por nuestra parte. No se ha enviado ningún enlace. Inténtalo de nuevo en un momento.",
+    "backPrompt": "Volver a iniciar sesión"
+  }
+}

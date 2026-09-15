@@ -1,0 +1,46 @@
+{
+  "majorArcana": {
+    "the-fool": "El Loco",
+    "the-magician": "El Mago",
+    "the-high-priestess": "La Sacerdotisa",
+    "the-empress": "La Emperatriz",
+    "the-emperor": "El Emperador",
+    "the-high-priest": "El Sumo Sacerdote",
+    "the-lovers": "Los Enamorados",
+    "the-chariot": "El Carro",
+    "strength": "La Fuerza",
+    "the-hermit": "El Ermitaño",
+    "the-wheel": "La Rueda",
+    "justice": "La Justicia",
+    "the-hanged-man": "El Colgado",
+    "death": "La Muerte",
+    "temperance": "La Templanza",
+    "the-devil": "El Diablo",
+    "the-tower": "La Torre",
+    "the-star": "La Estrella",
+    "the-moon": "La Luna",
+    "the-sun": "El Sol",
+    "judgement": "El Juicio",
+    "the-world": "El Mundo"
+  },
+  "cardAlt": "{card}, carta del tarot de The World Tarot",
+  "majorArcanaNav": "ARCANOS MAYORES",
+  "suits": {
+    "swords": { "label": "ESPADAS", "title": "Espadas" },
+    "cups": { "label": "COPAS", "title": "Copas" },
+    "wands": { "label": "BASTOS", "title": "Bastos" },
+    "pentacles": { "label": "OROS", "title": "Oros" }
+  },
+  "sectionsLabel": "Secciones de la Biblioteca",
+  "library": {
+    "title": "La Biblioteca de The World Tarot",
+    "tagline": "UN ARCHIVO DE SÍMBOLOS Y SIGNIFICADOS",
+    "blurb": "Explora las imágenes, las historias y la sabiduría del Tarot",
+    "closing": "La biblioteca: mundos sin fin"
+  },
+  "comingSoon": {
+    "card": "Estamos escribiendo la ficha de esta carta.",
+    "suit": "Estamos escribiendo la ficha de este palo.",
+    "back": "Volver a la Biblioteca"
+  }
+}

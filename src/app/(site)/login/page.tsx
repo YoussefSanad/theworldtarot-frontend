@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { SignInForm } from "@/components/account/SignInForm";
 import { loginCopy } from "@/content/login";
-import { siteName } from "@/content/site";
+import { buildMetadata } from "@/lib/seo";
 
 /**
  * Where somebody signs in, and where they ask for a link when they cannot.
@@ -20,12 +20,13 @@ import { siteName } from "@/content/site";
  * "ask for a new link from the sign in page" was an instruction nobody could
  * follow.
  */
-export const metadata: Metadata = {
-  title: `${loginCopy.title} — ${siteName}`,
+export const metadata: Metadata = buildMetadata({
+  path: "/login/",
+  title: loginCopy.title,
   // A sign in form is not a landing page, and the two password pages beside it
   // are already out of the index for the same reason.
-  robots: { index: false, follow: false },
-};
+  index: false,
+});
 
 export default function LoginPage() {
   /*

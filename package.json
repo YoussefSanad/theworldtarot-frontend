@@ -12,6 +12,8 @@
     "assets:fetch": "node scripts/fetch-figma-assets.mjs",
     "assets:optimize": "node scripts/optimize-figma-assets.mjs",
     "assets:media": "node scripts/stage-media.mjs",
+    "check:translations": "node scripts/check-translations.mjs",
+    "check:locale": "node scripts/check-locale.mjs",
     "check:shoot": "node scripts/shoot.mjs",
     "check:measure": "node scripts/measure.mjs",
     "check:images": "node scripts/check-images.mjs",
@@ -43,5 +45,8 @@
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "volta": {
+    "node": "22.23.2"
   }
 }

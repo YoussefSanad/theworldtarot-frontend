@@ -1,4 +1,24 @@
-import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "@/lib/assets";
+import { readingPageArtwork, videoPosters, videos, type ImageAsset } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/reading-pages.json" with { type: "json" };
+import es from "./locales/es/reading-pages.json" with { type: "json" };
+
+/**
+ * The words on these three pages. Structure stays here: the join keys, the
+ * prices, the film, the artwork, and the two settings below.
+ *
+ * **Every array here is a set of rendered lines**, and `included` is a list of
+ * items each split into its own. The docblocks on the entries below say why
+ * particular breaks are where they are — a translator moving one is moving a
+ * typographic decision, which is the job, but the reasons are worth reading.
+ */
+const copy = pickCopy(en, { es }, currentLocale());
+
+/** One reading's words, by the key it is joined to the backend on. */
+function page(key: keyof typeof en.pages) {
+  return copy.pages[key];
+}
 
 /**
  * A written reading's own page — the template behind `/readings/month-ahead`,
@@ -49,16 +69,11 @@ export const readingPageChrome = {
     video: videos.readingCards,
     poster: videoPosters.readingCards,
     /** Read by anyone who gets the still rather than the film. */
-    alt: "Tarot cards scattered around one lit from within by golden fire",
+    alt: copy.chrome.heroAlt,
   },
 
-  question: {
-    heading: "Ask a Question",
-    body: ["Begin your reading by entering", "an optional question."],
-    /** The frame draws no label; screen readers get one. */
-    label: "Your question",
-    placeholder: "Enter your question…",
-  },
+  /** The frame draws no label for the field; screen readers get one. */
+  question: copy.chrome.question,
 
   /**
    * Buying the reading for somebody else, which the page does **as a mode
@@ -69,8 +84,8 @@ export const readingPageChrome = {
    * outright rather than sitting beside it.
    */
   gift: {
-    heading: "Recipient Details",
-    body: ["Who should receive your gift?", "Add their email address and a personal message below."],
+    heading: copy.chrome.gift.heading,
+    body: copy.chrome.gift.body,
     /**
      * Two states of one control; the second is how a visitor gets back.
      *
@@ -84,8 +99,8 @@ export const readingPageChrome = {
      * one lowercase label among three title-cased siblings is the worse of the
      * two mistakes.
      */
-    enter: "Gift a Reading",
-    leave: "A Reading for Myself",
+    enter: copy.chrome.gift.enter,
+    leave: copy.chrome.gift.leave,
     /**
      * The **gift signature** — the name the recipient is told the gift is from,
      * and the first field on the section from 3 September 2026 (#71).
@@ -103,8 +118,8 @@ export const readingPageChrome = {
      * signal that separates it from one, which is why this field cannot be
      * optional even though the message below it is. See `CONTEXT.md`.
      */
-    signature: { label: "Who the gift is from", placeholder: "Who the gift is from…" },
-    email: { label: "Recipient's email address", placeholder: "Recipient’s email address…" },
+    signature: copy.chrome.gift.signature,
+    email: copy.chrome.gift.email,
     /**
      * The address a second time, because **the buyer never receives the code**.
      *
@@ -124,12 +139,8 @@ export const readingPageChrome = {
      * `markGiftAddresses` in `lib/order-note.ts` for why that is load-bearing
      * on the wallet road.
      */
-    confirmation: {
-      label: "Confirm the recipient's email address",
-      placeholder: "Confirm the recipient’s email address…",
-      mismatch: "These two email addresses do not match.",
-    },
-    message: { label: "Personal message (optional)", placeholder: "Write a personal message…" },
+    confirmation: copy.chrome.gift.confirmation,
+    message: copy.chrome.gift.message,
     /**
      * Said once, under the fields, because the flow is not the obvious one:
      * nothing is asked of the reading until it reaches the person it is for.
@@ -142,11 +153,11 @@ export const readingPageChrome = {
      * the part that survives either model: the recipient is asked, not the
      * buyer, which is why there is no question field on this section.
      */
-    note: "They will choose their own question when the reading reaches them.",
+    note: copy.chrome.gift.note,
   },
 
   checkout: {
-    heading: "Get My Reading",
+    heading: copy.chrome.checkout.heading,
     /**
      * The anchor the page's closing call to action scrolls back to. The frame
      * draws the button and gives it nowhere to go; every other control on the
@@ -154,7 +165,7 @@ export const readingPageChrome = {
      */
     anchor: "get-my-reading",
     /** Apple Pay and Google Pay are marks, so only these two carry a label. */
-    card: "Pay with Card",
+    card: copy.chrome.checkout.card,
     /**
      * The one control on this panel that takes money, and the whole of what
      * three of the client's five frames became for the length of the interim.
@@ -196,13 +207,13 @@ export const readingPageChrome = {
      * customer reaches this frame, card is what is left. The *label* still
      * names no method, which is what keeps the paragraph above true.
      */
-    buy: "Pay Another Way",
+    buy: copy.chrome.checkout.buy,
     /**
      * Held across both round trips — the order, then the payment — because the
      * browser does not leave until the second one answers, and a button that
      * looks idle for a second and a half is a button pressed twice.
      */
-    buying: "Taking you to checkout…",
+    buying: copy.chrome.checkout.buying,
     /**
      * Under the button in gift mode, where **both controls now take money** and
      * what is not yet built is the delivery behind them.
@@ -239,15 +250,14 @@ export const readingPageChrome = {
      * Naming neither is true on both, and it is what lets one note stand for
      * whichever controls are drawn.
      */
-    giftingComing:
-      "Gifting is still being set up, so we will arrange delivery with you by email once you have paid.",
+    giftingComing: copy.chrome.checkout.giftingComing,
     /**
      * A refused order, a refused payment, or an instruction this build cannot
      * act on. **It says nothing has been charged**, because nothing has: an
      * order is a record, and the money is collected on Stripe's page which the
      * customer never reached.
      */
-    buyFailed: "We could not start the checkout, and nothing has been charged. Please try again.",
+    buyFailed: copy.chrome.checkout.buyFailed,
     /**
      * The wallet's "it did not happen" sentence, and **the one place two
      * channels share a form of words on purpose**.
@@ -259,7 +269,7 @@ export const readingPageChrome = {
      * may press again — so a second wording would be a difference that says
      * nothing.
      */
-    walletFailed: "We could not take this payment. Nothing has been charged.",
+    walletFailed: copy.chrome.checkout.walletFailed,
     /**
      * Written into the wallet sheet when the gift section refuses the press.
      *
@@ -284,8 +294,7 @@ export const readingPageChrome = {
      * marked and focused underneath by `orderFormAccepts`, for when Stripe
      * closes the sheet over it.
      */
-    walletNeedsGiftDetails:
-      "Please check the gift's details before paying. Nothing has been charged.",
+    walletNeedsGiftDetails: copy.chrome.checkout.walletNeedsGiftDetails,
     /**
      * Under the wallet row, after `stripe.confirmPayment` has already been
      * called and has come back wrong.
@@ -302,35 +311,36 @@ export const readingPageChrome = {
      * calling `paymentFailed()` after a confirmation is the defect this copy
      * was added for on 29 August 2026.
      */
-    walletUnresolved:
-      "We could not complete this payment. If you were charged, your receipt will arrive by email.",
+    walletUnresolved: copy.chrome.checkout.walletUnresolved,
     /**
      * Read out where the price will be while the catalogue is being asked for
      * it. The resting state itself is a shape rather than words — the panel
      * holds its height and says nothing it might have to take back — so this is
      * the only description of it a screen reader gets.
      */
-    pricePending: "Fetching the price",
-    secure: "Secure checkout powered by Stripe",
+    pricePending: copy.chrome.checkout.pricePending,
+    secure: copy.chrome.checkout.secure,
+    /**
+     * The wallet frame's name for a screen reader, stored with `{price}` in it
+     * so a translator can put the amount where their sentence needs it.
+     * `ExpressCheckout` fills it.
+     */
+    walletLabel: copy.chrome.checkout.walletLabel,
   },
 
-  included: { heading: "Your Reading" },
+  included: copy.chrome.included,
 
   gate: {
-    heading: "Beyond the Gate",
-    subtitle: "Your Journey Begins Here",
+    heading: copy.chrome.gate.heading,
+    subtitle: copy.chrome.gate.subtitle,
     image: readingPageArtwork.gate,
-    imageAlt: "A lantern-lit stone archway on a mossy woodland path",
+    imageAlt: copy.chrome.gate.imageAlt,
   },
 
   /** The three props under the panels, each opened by a compass. */
-  features: [
-    { title: "Led by the Cards", body: ["Each reading unfolds through the", "archetypes themselves"] },
-    { title: "Composed with Intention", body: ["Original artwork paired with", "thoughtful interpretation"] },
-    { title: "Clarity in Motion", body: ["Insight that illuminates your", "next chapter"] },
-  ],
+  features: copy.chrome.features,
 
-  closingAction: "GET MY READING",
+  closingAction: copy.chrome.closingAction,
 } as const;
 
 /**
@@ -346,11 +356,16 @@ export const readingPageChrome = {
  * to a constant, the branch that renders the choice would read as dead code to
  * everything that looks at this file.
  */
-export const rushDelivery: { enabled: boolean; label: string; surcharge: string; standard: string } = {
+export const rushDelivery: {
+  enabled: boolean;
+  label: string;
+  surcharge: string;
+  standard: string;
+  /** The choice's name, read by a screen reader and never drawn. */
+  legend: string;
+} = {
   enabled: false,
-  label: "24-Hour Rush",
-  surcharge: "+$25",
-  standard: "Standard Delivery",
+  ...copy.rushDelivery,
 };
 
 /**
@@ -421,69 +436,26 @@ export type { ImageAsset };
 export const threeCard: ReadingPage = {
   id: "three-card",
   productKey: "three-card",
-  title: "3 Card Reading",
-  tagline: ["One Question. Three Cards.", "Your Path Illuminated."],
+  title: page("three-card").title,
+  tagline: page("three-card").tagline,
   price: "$75",
-  delivery: "Delivery Time: within 24 hours",
-  included: [
-    ["A Three Card Reading", "focused on your path forward"],
-    ["Prepare for the weeks ahead", "with insight"],
-    ["Thoughtful written interpretation"],
-    /* Three phrases for two drawn lines; see the note on `monthAhead`. */
-    ["Presented on original", "World Tarot", "artwork"],
-    ["Delivered by email within 24 hours"],
-  ],
-  testimonial: {
-    /*
-      Split at a sentence, not at the frame's rag. `ReadingTestimonial` sets
-      each entry as its own block and balances it, so an entry is a chunk that
-      wraps rather than a finished line — her three short rows stored literally
-      would set three hard lines far inside a measure that holds more, and the
-      quote would rag down the frame. Month Ahead's is broken the same way.
-    */
-    quote: [
-      "“The past was remarkably accurate. The present offered clarity.",
-      "Now I’m watching the future unfold with fresh eyes.”",
-    ],
-    attribution: ["NIKKI M.", "BURLINGTON, VT"],
-  },
-  closing: ["Every question has a story", "waiting to be told"],
+  delivery: page("three-card").delivery,
+  included: page("three-card").included,
+  testimonial: page("three-card").testimonial,
+  closing: page("three-card").closing,
 };
 
 export const monthAhead: ReadingPage = {
   id: "month-ahead",
   productKey: "month-ahead",
-  title: "Month Ahead Reading",
+  title: page("month-ahead").title,
   /** One line in the frame; two phrases so it breaks where she breaks it. */
-  tagline: ["One Month. Five Cards.", "a clear path ahead."],
+  tagline: page("month-ahead").tagline,
   price: "$75",
-  delivery: "Delivery Time: within 24 hours",
-  included: [
-    ["A Month-Ahead Reading", "focused on your path forward"],
-    ["Prepare for the weeks ahead", "with insight"],
-    ["Thoughtful written interpretation"],
-    /*
-      The house name is set in the brand's own face here; see `<HouseName>`.
-
-      Three phrases for the two lines the frame draws, because at 1920 "artwork"
-      is what will not fit and the break falls after the name either way —
-      splitting a phrase only ever *adds* a place the line may break, it never
-      moves one. The extra place is the one a phone needs: the whole of
-      "Presented on original World Tarot" is wider than the measure a 375px
-      panel leaves, and without a break inside it the line wraps mid-name and
-      spills "artwork" onto a third row.
-    */
-    ["Presented on original", "World Tarot", "artwork"],
-    ["Delivered by email within 24 hours"],
-  ],
-  testimonial: {
-    quote: [
-      "“It gave me a clearer sense of what to expect over the month ahead.",
-      "By month’s end, I was amazed by how much had resonated.”",
-    ],
-    attribution: ["RILEY S", "PORTLAND, ME"],
-  },
-  closing: ["What is unfolding", "has already begun"],
+  delivery: page("month-ahead").delivery,
+  included: page("month-ahead").included,
+  testimonial: page("month-ahead").testimonial,
+  closing: page("month-ahead").closing,
 };
 
 /**
@@ -502,26 +474,13 @@ export const monthAhead: ReadingPage = {
 export const inDepth: ReadingPage = {
   id: "in-depth",
   productKey: "in-depth",
-  title: "In-Depth Reading",
-  tagline: ["One Question. Twelve Cards.", "A Deeper Story Revealed."],
-  price: "$125",
-  delivery: "Delivery Time: within 48 hours",
-  included: [
-    ["A twelve-card reading exploring your", "question in depth"],
-    ["Insight into deeper patterns and themes", "shaping your story"],
-    ["Clear guidance that brings perspective", "to complex situations"],
-    ["Presented on original", "World Tarot", "artwork"],
-    ["Delivered by email within 48 hours"],
-  ],
-  testimonial: {
-    /* Chunked at the sentence, as on the other two; see `threeCard`. */
-    quote: [
-      "“This went so much deeper than I expected.",
-      "It connected things I hadn’t seen before and gave me real clarity about how I got here—and where to go next.”",
-    ],
-    attribution: ["RACHEL T.", "SEDONA, AZ"],
-  },
-  closing: ["The deeper the journey,", "the richer the story"],
+  title: page("in-depth").title,
+  tagline: page("in-depth").tagline,
+  price: "$120",
+  delivery: page("in-depth").delivery,
+  included: page("in-depth").included,
+  testimonial: page("in-depth").testimonial,
+  closing: page("in-depth").closing,
 };
 
 /**

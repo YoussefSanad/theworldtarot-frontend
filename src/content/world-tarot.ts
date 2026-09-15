@@ -1,21 +1,23 @@
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/world-tarot.json" with { type: "json" };
+import es from "./locales/es/world-tarot.json" with { type: "json" };
+
 /**
  * The World Tarot page's own copy (Figma node 344:30, "THE WORLD TAROT_09_05_26"),
  * kept out of the components so the wording can move to a CMS later without
  * touching layout. There is no separate mobile mockup for this frame — see
  * `src/components/world-tarot/README.md`.
+ *
+ * **The words are in `locales/*\/world-tarot.json` since 11 September 2026**,
+ * and every component that renders them is a client component, so they arrive
+ * in the visitor's language rather than the build's. See `LanguageBoundary`.
  */
+const copy = pickCopy(en, { es }, currentLocale());
 
-export const intro = {
-  heading: "The World Tarot",
-  tagline: ["A studio devoted to the living language", "of archetypal symbols"],
-};
+export const intro = copy.intro;
 
-export const mission = {
-  body: [
-    "Through art, writing, and cinematic interpretation, The World Tarot explores archetypes as living presences — moving between symbolism and story.",
-    "It extends tarot beyond the page through visual essays, symbolic libraries, and crafted readings designed to support clarity and perspective.",
-  ],
-};
+export const mission = copy.mission;
 
 export const artistNote = {
   /**
@@ -24,20 +26,19 @@ export const artistNote = {
    * `legend` is what a screen reader is given for the pair; the script word
    * above it is decorative and carries no alt of its own, so this string is
    * the whole heading as it reads aloud.
+   *
+   * **In Spanish it reads aloud in Spanish while the artwork still says
+   * "Between Sky & Stone".** The pictures are hers and are English; a Spanish
+   * pair would have to be drawn. A screen reader in a Spanish page speaking the
+   * English words would mispronounce them, so the legend follows the page.
    */
-  legend: "Between Sky & Stone",
-  body: [
-    "Welcome to The World Tarot — a place between sky and stone.",
-    "I am a storyteller of symbols, shaped by a lifelong devotion to art, history, and the quiet mysteries between the seen and unseen.",
-    "I began as a designer, drawn to sacred geometry and the visual languages that echo across cultures and time. For more than twenty years, I have worked with tarot as a reflective language — one that reveals patterns, thresholds, and inner truth.",
-    "My work now lives at the intersection of art and intuition. I explore how symbols function not only as images, but as experiences — how a single card or form can focus attention, open perspective, and gently shift the way we move through the world.",
-    "Through The World Tarot, I share readings and creative work shaped by place, myth, and history. This is a contemplative studio where art, symbolism, and intention meet.",
-  ],
-  photoAlt: "Serafina standing among the temple towers of Angkor Wat at sunset.",
-  signatureAlt: "Serafina",
+  legend: copy.artistNote.legend,
+  body: copy.artistNote.body,
+  photoAlt: copy.artistNote.photoAlt,
+  signatureAlt: copy.artistNote.signatureAlt,
 };
 
 export const closing = {
-  saying: ["Every journey is made", "one step at a time"],
-  action: { label: "GET MY READING", href: "/readings/" },
+  saying: copy.closing.saying,
+  action: { label: copy.closing.action, href: "/readings/" },
 };

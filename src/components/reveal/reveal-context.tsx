@@ -13,6 +13,7 @@ import {
 
 import { defaultRevealCard, findCard, type TarotCard } from "@/content/cards";
 import { drawCard, fetchCard } from "@/lib/api";
+import { apiServesDisplayLocale } from "@/lib/locale";
 import { createSessionValue } from "@/lib/session-value";
 import { shouldWarm } from "@/lib/video-source";
 
@@ -88,6 +89,32 @@ const subscribeHydration = () => () => {};
 const getHydrated = () => true;
 const getServerHydrated = () => false;
 
+/**
+ * A drawn card, named in the language being read.
+ *
+ * **The same rule the homepage tiles apply to a product name** — see
+ * `apiServesDisplayLocale` in `lib/locale.ts`. The backend has been asked in the
+ * language being read since 9 September 2026, so the `name` that comes back is
+ * already Spanish on a Spanish page and is the better answer — it is editable in
+ * the admin panel without a deploy. The local roster in `content/cards.ts`
+ * answers only when that rule says the API is not serving the display language,
+ * which is what it would say if the backend ever translated one endpoint ahead
+ * of another.
+ *
+ * **Only the name is substituted.** The film and its poster are the API's
+ * whatever language the page is in — a signed URL is not copy — and a card the
+ * local roster has never heard of keeps the name it arrived with, because an
+ * English name is better than none. Only The Star is local today, so that is
+ * the common case rather than the edge.
+ */
+function named(card: TarotCard | null): TarotCard | null {
+  if (!card || apiServesDisplayLocale()) return card;
+
+  const local = findCard(card.id);
+
+  return local ? { ...card, name: local.name } : card;
+}
+
 export function RevealProvider({
   children,
   card = defaultRevealCard,
@@ -134,7 +161,7 @@ export function RevealProvider({
       const seen = oncePerVisit ? revealedCard.get() : null;
 
       if (!seen) {
-        const drawnCard = await drawCard({ signal: controller.signal });
+        const drawnCard = named(await drawCard({ signal: controller.signal }));
         setDrawn(drawnCard);
 
         // Null is the backend saying no card has both a finished film and a
@@ -147,7 +174,7 @@ export function RevealProvider({
         return;
       }
 
-      const found = await fetchCard(seen, { signal: controller.signal });
+      const found = named(await fetchCard(seen, { signal: controller.signal }));
       if (found) {
         setRestoredCard(found);
         return;
@@ -166,7 +193,7 @@ export function RevealProvider({
       // written. Skipping this write would mean every reload this session
       // 404s and redraws again, showing a different card each time.
       console.info(`Stored card ${seen} is no longer on the site, drawing a fresh one.`);
-      const drawnCard = await drawCard({ signal: controller.signal });
+      const drawnCard = named(await drawCard({ signal: controller.signal }));
       setRestoredCard(drawnCard);
       if (drawnCard) revealedCard.set(drawnCard.id);
       else console.info("No card has a film to draw yet, showing the bundled card.");

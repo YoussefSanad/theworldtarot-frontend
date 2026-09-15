@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import { ArtistPanel } from "@/components/world-tarot/ArtistPanel";
 import { MissionStatement } from "@/components/world-tarot/MissionStatement";
+import { WorldTarotClosing } from "@/components/world-tarot/WorldTarotClosing";
 import { WorldTarotIntro } from "@/components/world-tarot/WorldTarotIntro";
 import { siteName } from "@/content/site";
-import { closing } from "@/content/world-tarot";
 
 export const metadata: Metadata = {
   title: `The World Tarot — ${siteName}`,
@@ -69,18 +68,7 @@ export default function WorldTarotPage() {
       <WorldTarotIntro />
       <MissionStatement />
       <ArtistPanel />
-      {/*
-        Champagne, not the index's gold: the quote in her render measures
-        exactly `#fff3d7`, which is `--color-champagne` to the byte. Same
-        tone a reading's own page takes.
-      */}
-      <ClosingSaying
-        saying={closing.saying}
-        action={closing.action}
-        width="worldTarot"
-        rule="heroWide"
-        tone="champagne"
-      />
+      <WorldTarotClosing />
     </div>
   );
 }

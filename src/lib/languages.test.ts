@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
 import { askLanguages, forgetLanguages, languageOptions, resolveLanguages } from "./languages.ts";
-import { BUILT_LOCALES } from "./locale.ts";
+import { BUILT_LOCALES, OFFERED_LOCALES } from "./locale.ts";
 
 const realFetch = globalThis.fetch;
 const realError = console.error;
@@ -70,8 +70,8 @@ test("a language taken down at the backend leaves the switcher on the next reque
 });
 
 test("a language this export was never built for is not offered, however live it is", () => {
-  // The other half of the intersection. A static export cannot grow a route
-  // from a fetch, so offering Spanish here would be a link to a 404.
+  // The other half of the intersection. A static export cannot grow copy from
+  // a fetch, so offering French here would be English under `lang="fr"`.
   assert.deepEqual(resolveLanguages([EN, ES, FR], ["en", "es"]).map((l) => l.code), ["en", "es"]);
 });
 
@@ -83,10 +83,29 @@ test("native_name survives the resolver, being what the row has to read", () => 
   assert.equal(resolveLanguages([EN, ES], ["en", "es"])[1]?.native_name, "Español");
 });
 
-test("this export is built for English alone today, so a live Spanish still draws nothing", () => {
-  // The step's whole point: correct, and invisible until #69 ships a segment.
+/*
+  Two lists, and keeping them apart is the design. `BUILT_LOCALES` is "locales
+  with a URL of their own" and feeds `hreflang` and the sitemap; there is one URL
+  per page, so it is English alone and a `/es/` hreflang would be a lie.
+  `OFFERED_LOCALES` is "languages a visitor can read the site in", and Spanish is
+  one because its copy ships in the bundle.
+*/
+test("only English has an address, so only English is in the list SEO reads", () => {
   assert.deepEqual(BUILT_LOCALES, ["en"]);
   assert.deepEqual(resolveLanguages([EN, ES], BUILT_LOCALES), []);
+});
+
+test("but both are offered, because both are in the bundle", () => {
+  assert.deepEqual(OFFERED_LOCALES, ["en", "es"]);
+  assert.deepEqual(resolveLanguages([EN, ES]), [EN, ES]);
+});
+
+test("a language the backend takes down still disappears, which is the rule's whole point", () => {
+  // Spanish is ours and survives; a third language that is only the backend's
+  // does not, because it has no copy here to render.
+  const FR = { code: "fr", label: "French" };
+
+  assert.deepEqual(resolveLanguages([EN, ES, FR]), [EN, ES]);
 });
 
 test("the languages endpoint carries no locale segment, being the thing that says which exist", async () => {
@@ -112,4 +131,30 @@ test("a broken endpoint offers nothing rather than a hardcoded list with a 404 b
   await askLanguages();
 
   assert.deepEqual(resolveLanguages(languageOptions(), ["en", "es"]), []);
+});
+
+/*
+  `withOurLanguages` used to add `en` and `es` to whatever this answered, so the
+  site could offer Spanish before the backend served it. It was deleted on
+  9 September 2026 alongside unpinning `apiLocale()`, and these two pin why that
+  had to be one change and not two: `apiLocale()` now asks the backend in the
+  visitor's language, and a locale the panel has not published answers 404
+  rather than English. An offer this endpoint did not make is a 404 a visitor
+  can click on.
+*/
+test("a language the endpoint did not name is not offered, however much copy ships for it", async () => {
+  stubFetch(json([EN]));
+
+  await askLanguages();
+
+  assert.ok(OFFERED_LOCALES.includes("es"));
+  assert.deepEqual(resolveLanguages(languageOptions()), []);
+});
+
+test("and it is offered the moment the endpoint does name it, with no deploy", async () => {
+  stubFetch(json([EN, ES]));
+
+  await askLanguages();
+
+  assert.deepEqual(resolveLanguages(languageOptions()), [EN, ES]);
 });

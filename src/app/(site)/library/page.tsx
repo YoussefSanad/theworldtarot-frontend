@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
+import { LibraryClosing } from "@/components/library/LibraryClosing";
 import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { MajorArcanaGrid } from "@/components/library/MajorArcanaGrid";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import { library } from "@/content/library";
-import { headerActions, siteName } from "@/content/site";
+import { siteName } from "@/content/site";
 
 export const metadata: Metadata = {
   title: `Library — ${siteName}`,
@@ -19,12 +19,11 @@ export const metadata: Metadata = {
  * here on the cards, and MAJOR ARCANA in the suit navigation is the way back to
  * this page from a suit.
  *
- * The closing block is `ClosingSaying` with this page's words. It already takes
- * the 538px rule this frame draws (`heroWide`, added for World Tarot) and the
- * gold tone the index uses, so there is nothing here to define — the point of
- * that component's props. GET MY READING goes to the readings index because
- * this page sells nothing itself, which is the rule `content/site.ts` sets for
- * the whole site.
+ * The closing block is `ClosingSaying` with this page's words, through
+ * `LibraryClosing` so they are resolved in the visitor's language rather than
+ * the build's. It already takes the 538px rule this frame draws (`heroWide`,
+ * added for World Tarot) and the gold tone the index uses, so there is nothing
+ * here to define — the point of that component's props.
  */
 export default function LibraryPage() {
   return (
@@ -67,13 +66,7 @@ export default function LibraryPage() {
         </Container>
       </Section>
 
-      <ClosingSaying
-        saying={[library.closing]}
-        action={headerActions.cta}
-        width="library"
-        rule="heroWide"
-        tone="gold"
-      />
+      <LibraryClosing />
     </div>
   );
 }
