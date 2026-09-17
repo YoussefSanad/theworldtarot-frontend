@@ -313,7 +313,20 @@ export function SiteHeader() {
                 {primaryNav.map((item) =>
                   "children" in item ? (
                     <div key={item.label} className="flex flex-col gap-5">
-                      <span className="text-mist-dim tracking-[0.01em]">{item.label}</span>
+                      {/*
+                        A link here too, not the inert label it used to be —
+                        the drawer has no hover and no dropdown, so if the
+                        group's own page is not reachable from its label it is
+                        not reachable at all now that OVERVIEW has gone from
+                        the children. See `NavGroup` in `content/site.ts`.
+                      */}
+                      <Link
+                        href={item.href}
+                        className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                        onClick={closeMenu}
+                      >
+                        {item.label}
+                      </Link>
                       <div className="flex flex-col gap-5 border-l border-(--edge-gold) pl-5">
                         {item.children.map((child) => (
                           <Link
