@@ -1,4 +1,3 @@
-import { MajorArcanaCarousel } from "@/components/library/MajorArcanaCarousel";
 import { TarotCardTile } from "@/components/library/TarotCardTile";
 import { majorArcana } from "@/content/library";
 
@@ -17,35 +16,30 @@ import { majorArcana } from "@/content/library";
  * the markup — see `.library-grid` in globals.css.
  *
  * A list, because that is what it is: twenty-two links to twenty-two pages, in
- * a deliberate order that a screen reader should announce the length of. It
- * stays one flat `<ul>` below `sm` too, where `MajorArcanaCarousel` swipes it
- * instead of stacking it — the list is the carousel's track rather than
- * something wrapped in one.
+ * a deliberate order that a screen reader should announce the length of.
  *
- * This component stays on the server so `TarotCardTile` does, which is what
- * keeps `next/image` and `next/link` out of the carousel's client bundle.
+ * **It is a grid at every width, and that is the client's instruction.** This
+ * deck was a swipeable carousel below `sm` for a while, on the reasoning that
+ * twenty-two full-height cards is four screens of scrolling on a phone and a
+ * carousel turns that back into one card. She asked for it removed by name —
+ * "keep the responsive grid with two columns, rather than a horizontal
+ * carousel. No horizontal scrolling." — so the deck now folds to two columns
+ * and is simply long on a phone, which is the trade she has chosen. Two
+ * columns rather than one is what keeps that length in hand: it halves the
+ * scroll against the old one-card layout, and the narrower tiles are why
+ * `.library-card__name`'s `cqw` type had to grow with it.
+ *
+ * This component stays on the server, which is what keeps `next/image` and
+ * `next/link` off the client entirely now that nothing here needs JavaScript.
  */
 export function MajorArcanaGrid() {
   return (
-    <MajorArcanaCarousel
-      slideCount={majorArcana.length}
-      /*
-        Written here rather than in the client component because it is copy, and
-        copy on this site is data the server owns. "Card 7 of 22" rather than
-        "slide": the reader is looking at a deck, and the word the page uses for
-        one of these everywhere else is card.
-
-        Two strings rather than a formatter function: this is a server
-        component, and a function passed across that boundary has nothing React
-        can serialise — it fails the prerender outright rather than degrading.
-      */
-      counterLabel={["Card", "of"]}
-    >
+    <ul className="library-grid">
       {majorArcana.map((card) => (
-        <li key={card.slug} className="carousel-slide">
+        <li key={card.slug}>
           <TarotCardTile card={card} />
         </li>
       ))}
-    </MajorArcanaCarousel>
+    </ul>
   );
 }

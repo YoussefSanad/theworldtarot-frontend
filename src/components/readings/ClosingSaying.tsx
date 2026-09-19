@@ -35,7 +35,7 @@ import { cn } from "@/lib/cn";
 export function ClosingSaying({
   saying = closing.saying,
   action = closing.action,
-  tone = "gold",
+  tone = "champagne",
   width = "readings",
   rule = "hero",
   className,
@@ -52,9 +52,19 @@ export function ClosingSaying({
    */
   action?: { label: string; href: string } | null;
   /**
-   * Gold on the index; the warmer champagne on a reading's own page; `ink` on
-   * a card's reference page, the one page that closes on a light ground rather
-   * than a dark one.
+   * **Champagne is the site's closing colour**, which is why it is the default.
+   * The World Tarot page, a reading's own page and the Library all close in
+   * `--color-champagne`; the readings index was the last frame closing in gold,
+   * and the client read that as off against the rest of the site — the same
+   * note she gave on the Library, which moved for this reason first.
+   *
+   * `ink` is the exception that stays an exception: a card's reference page is
+   * the one page closing on a light ground rather than a dark one, so it needs
+   * a dark ink rather than either warm tone.
+   *
+   * `gold` is kept because the token and the treatment are still real, but no
+   * page uses it now. A new caller reaching for it is probably reaching for the
+   * default by mistake.
    */
   tone?: "gold" | "champagne" | "ink";
   width?: ContainerWidth;

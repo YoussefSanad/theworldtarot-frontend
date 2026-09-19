@@ -790,8 +790,39 @@
     without also masking the flat colour underneath it.
   */
   .page-atmosphere-readings {
+    /*
+      **The parlour crosses the footer's top margin.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither box
+      — so between this floor-anchored artwork's bottom edge and the footer's
+      own scrim there is a strip of the layout column with nothing painted in
+      it, showing flat colour as a thin bar across the foot of the page. It
+      measured 8–11px, which is exactly that clamp.
+
+      This is the World Tarot path's `--path-drop` and the Library rotunda's
+      `--room-drop` under a third name; see either for the full account. The
+      short version is that it is a **gap**, not an edge: no fade covers it,
+      because there is nothing there to fade — only reaching across it does.
+      (`--parlour-feather` is this artwork's edge treatment and is a separate
+      concern, at the opposite end.)
+
+      2rem is past the margin at every width so the crossing is never
+      hairline-exact, and no more than that because the surplus lands under a
+      scrim that is 77% rather than opaque.
+    */
+    --parlour-drop: 2rem;
     background-color: var(--color-ink);
-    overflow: clip; /* the artwork runs taller than the page on a narrow desktop */
+    /*
+      **No `overflow: clip`.** It said "the artwork runs taller than the page on
+      a narrow desktop", and that cannot happen: the `::after` is capped at
+      `min(171.51vw, 100%)` and the second term is this box, so it never
+      exceeds it. What the clip did do was cut off `--parlour-drop`, which is
+      the overhang that covers the margin above — the same trap the World Tarot
+      block records, where no value of the drop could appear to work while a
+      clip was eating it.
+
+      `overflow-y-clip` on the layout column is what stops an overhang
+      lengthening the document, and it is untouched.
+    */
   }
 
   .page-atmosphere-readings::after {
@@ -815,7 +846,8 @@
     */
     block-size: min(171.51vw, 100%);
     content: "";
-    inset: auto 0 0 0;
+    /* `--parlour-drop` below the page's floor, crossing the footer's top margin. */
+    inset: auto 0 calc(-1 * var(--parlour-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
     position: absolute;
@@ -887,8 +919,19 @@
     even at 1920, where the artwork fills the page exactly.
   */
   .page-atmosphere-reading {
+    /*
+      `--observatory-drop` is the parlour's `--parlour-drop`, carried here for
+      the same reason and with the same value: this artwork is floor-anchored
+      too, so the footer's top margin shows through as a bar between it and the
+      footer's scrim. See `.page-atmosphere-readings` above for the full note.
+    */
+    --observatory-drop: 2rem;
     background-color: var(--color-night);
-    overflow: clip;
+    /*
+      No `overflow: clip`, for the parlour's reason: the `::after` is capped at
+      `min(166.2vw, 100%)` so it cannot outrun this box, and the clip's only
+      real effect was to eat the drop.
+    */
   }
 
   .page-atmosphere-reading::after {
@@ -898,7 +941,8 @@
     background-size: cover;
     block-size: min(166.2vw, 100%);
     content: "";
-    inset: auto 0 0 0;
+    /* `--observatory-drop` below the page's floor; see the parlour's rule. */
+    inset: auto 0 calc(-1 * var(--observatory-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     position: absolute;
@@ -1009,10 +1053,11 @@
     `world-tarot/README.md` describes; this artwork answers it the other way
     from the observatory's.
 
-    It does keep `overflow: clip` and no overhang, which is where it parts from
-    the path: the client draws the room inside the frame rather than running it
-    up behind the masthead, and the page ends on the closing button rather than
-    on a stretch of artwork.
+    It takes no overhang at the *top*, which is where it parts from the path:
+    the client draws the room inside the frame rather than running it up behind
+    the masthead. At the bottom it now takes the path's other overhang,
+    `--room-drop`, for the path's own reason — the footer's top margin. See the
+    rule itself.
 
     The layer Figma draws is 2137x4312 at (-124,-380) against a 1920x3772
     frame — wider and taller than the page and meant to be cropped. Width
@@ -1022,8 +1067,42 @@
     than the frame.
   */
   .page-atmosphere-library {
+    /*
+      **`--room-drop` is the World Tarot path's `--path-drop`, and it is here
+      for the same band.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither
+      box — so between the artwork's bottom edge and the footer's own scrim
+      the layout column's flat colour shows straight through, as a thin strip
+      clean across the foot of the page. It is most visible below `lg`, where
+      the room stands on the floor and its floor tiles run right up to that
+      seam; above `lg` the artwork has already faded out into the page colour
+      by then (`--room-sink`), so there is nothing to butt against and nothing
+      to see.
+
+      The surplus past the margin lands under the footer's scrim, which is 77%
+      rather than opaque — hence 2rem and not a generous overhang.
+
+      **This is a different band from the one `--room-sink` fixes**, and the
+      distinction is worth keeping straight: `--room-sink` is the artwork's own
+      bottom *edge* seaming against the page colour, and it is cured by fading
+      the picture out. This one is a *gap* between two boxes with nothing
+      painted in it, and no amount of fading covers a gap — only reaching
+      across it does.
+    */
+    --room-drop: 2rem;
     background-color: var(--color-night);
-    overflow: clip;
+    /*
+      **No `overflow: clip`**, for the reason the World Tarot block above
+      spells out: the drop is an overhang, and a clip on this element cuts
+      exactly the overhang off, leaving the artwork flush at the wrapper's
+      edge and the band back where it started.
+
+      It was here when the room took no overhang at all. Both things it was
+      guarding are already covered elsewhere: `overflow-y-clip` on the layout
+      column stops an overhang lengthening the document, and the `block-size`
+      cap below — `min(..., 100%)`, the second term being this box — is what
+      keeps the artwork from outrunning a short page.
+    */
   }
 
   .page-atmosphere-library::after {
@@ -1032,16 +1111,23 @@
     background-repeat: no-repeat;
     background-size: cover;
     /*
-      The room is 1.965 tall for its width (1280x2515 as shipped). Past that the
-      photograph has run out and the page colour carries on alone.
+      The room is 1.965 tall for its width (1920x3772 as shipped — the client's
+      re-export, her frame at full size; it was a 1280x2515 crop before, same
+      aspect and so the same number here). Past that the photograph has run out
+      and the page colour carries on alone.
 
       **The fade at the bottom is not decoration, it is the fix for a visible
-      band**, and the numbers say why: the artwork's own bottom edge averages
+      band**, and the numbers said why: the *first* crop's bottom edge averaged
       `#1d242e` while the page under it is `--color-night`, `#081525`. Ending
-      the image on a hard line therefore butts a light grey-blue against a
-      darker navy, and that seam reads as a flat strip across the foot of the
-      page — the thing the client reported above the footer. Nothing about the
-      height was wrong; the edge was.
+      the image on a hard line therefore butted a light grey-blue against a
+      darker navy, and that seam read as a flat strip across the foot of the
+      page. Nothing about the height was wrong; the edge was.
+
+      **The re-export mostly fixes that in the picture** — its own last rows
+      measure about `#0c121b`, near enough to the page colour that the seam no
+      longer carries. The fade is kept anyway: it costs nothing (it lands on
+      empty floor, past where the last button ends), it is what makes the edge
+      insensitive to the *next* export, and `near enough` is not `exact`.
 
       So the last stretch of the image dissolves into the colour beneath it
       instead of stopping on it. `--room-sink` is where the fade begins, far
@@ -1105,10 +1191,13 @@
         the rotunda's apex is cloud rather than flat ceiling, so it has as much
         to fade as the parlour's does.
 
-    `overflow: clip` on the parent is kept from the desktop rule and is now
-    doing the parlour's job rather than nothing: a floor-anchored box capped at
-    `min(196.46vw, 100%)` can run taller than a short page, and the clip keeps
-    that inside the wrapper.
+    **There is no `overflow: clip` on the parent any more.** What it was
+    thought to be guarding — a floor-anchored box outrunning a short page — the
+    `min(196.46vw, 100%)` cap already handles, because the cap's second term is
+    the box itself. What the clip actually did was eat `--room-drop`, the
+    deliberate overhang that covers the footer's top margin; see the parent
+    rule. The document cannot grow either way: `overflow-y-clip` on the layout
+    column is what stops that, and it is still there.
 
     The sky itself is the readings index's layer verbatim — same 375x850 asset
     at its own scale, same downward fade. See "The mobile sky" above for why it
@@ -1118,7 +1207,17 @@
   @media (width < 64rem) {
     .page-atmosphere-library::after {
       background-position: center bottom;
-      inset: auto 0 0 0;
+      /*
+        `--room-drop` below the wrapper's own floor, so the room reaches across
+        the footer's top margin instead of stopping on the near side of it.
+        See `--room-drop` on the parent for why that margin shows as a band and
+        why this is not the same fault `--room-sink` cures.
+
+        The bottom inset is where it goes because this is the edge the artwork
+        stands on below `lg`; above `lg` the room hangs from the top and the
+        drop has nothing to do, which is why it is not in the base rule.
+      */
+      inset: auto 0 calc(-1 * var(--room-drop)) 0;
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
       mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
     }
@@ -3358,98 +3457,24 @@
     }
   }
 
+  /*
+    **Two columns all the way down, at the client's instruction.**
+
+    This was one column below `30rem` with a 20rem cap, and below `40rem` the
+    deck became a swipeable carousel on top of that — twenty-two full-height
+    cards being four screens of scrolling on a phone. She asked for both gone:
+    "keep the responsive grid with two columns, rather than a horizontal
+    carousel. No horizontal scrolling."
+
+    So `< 64rem`'s two columns simply carry on down, and there is no narrower
+    breakpoint. The tiles get small on a phone — about 42% of the viewport each
+    — which is the cost of the arrangement she has chosen, and the reason the
+    plaque type above is set to fill the brass rather than sit politely inside
+    it. The gutter tightens here so the pair keeps as much width as it can.
+  */
   @media (width < 30rem) {
     .library-grid {
-      grid-template-columns: 1fr;
-      /* One card wide, the cards would otherwise be nearly the viewport. */
-      margin-inline: auto;
-      max-inline-size: 20rem;
-    }
-  }
-
-  /*
-    The Library's deck as a carousel, below `sm`.
-
-    **This block must stay after the two grid blocks above it.** They are plain
-    `.library-grid` rules at the same specificity, so the cascade is decided by
-    source order alone: written any earlier, `< 64rem`'s `grid-template-columns`
-    and `< 30rem`'s `max-inline-size: 20rem` would both land on top of these and
-    the track would be a one-column grid Embla could not move. This is also why
-    the rules live here rather than in the "Carousels" block with the mechanics
-    they belong to — that block is above the Library's.
-
-    40rem is the width `MajorArcanaCarousel` hands Embla in its `breakpoints`,
-    written identically in both places on purpose: a width where this block says
-    "row" but Embla has stood down is an overflowing flex row nothing can
-    scroll.
-  */
-  @media (width < 40rem) {
-    /*
-      The Library's deck, swiped instead of stacked.
-
-      **The track is still `.library-grid`** — the same `<ul>`, so nothing about
-      the markup changes at this width. What changes is that a grid cannot be a
-      carousel track: Embla lays slides out in a flex row and measures their
-      widths, and a `grid-template-columns` would size the cells itself and a
-      `max-inline-size` would cap the row at 20rem. Both are undone here rather
-      than in `.library-grid`, so the grid above `sm` is untouched by any of
-      this and stays the arrangement the client drew.
-
-      `display: flex` is set unconditionally, not only under `[data-carousel]`:
-      before Embla attaches — first paint, and with JS off — `.carousel-window`
-      is an ordinary scroll-snap container, and that needs a row to scroll just
-      as much as Embla does. Otherwise the deck would paint as a one-column
-      grid for a frame and jump.
-    */
-    .library-grid {
-      display: flex;
-      gap: 0;
-      grid-template-columns: none;
-      max-inline-size: none;
-    }
-
-    /*
-      A card and the shoulders of the two beside it, which is what says "this
-      moves sideways" without a second card ever being big enough to compete
-      with the one being read. `align: "center"` in the Embla options is the
-      other half of that.
-
-      The cards keep the 20rem cap the one-column grid gave them — at 78% of a
-      wide phone that is comfortably under it, but the `min()` is what stops a
-      tablet at 39rem from drawing one enormous card.
-
-      Set as `--carousel-slide`, which is the knob `.carousel-slide` already
-      reads, rather than a second `flex` declaration: the `<li>`s carry that
-      class, so redeclaring `flex` here would mean two rules setting the same
-      property on the same element and the answer resting on which block comes
-      last in the file. This sets the variable and lets the primitive do its
-      job, which is what it is for.
-    */
-    .library-grid > li {
-      --carousel-slide: min(78%, 20rem);
-      /* Overrides `.library-grid > li`'s `inline-size: 100%` from the grid. */
-      inline-size: auto;
-    }
-
-    /*
-      The gutter, as padding inside the slide rather than a flex `gap`. Embla
-      measures slide boxes to place its snap points, so spacing that lives
-      between them is spacing it does not know about; padding is inside the box
-      it measures and stays correct at every snap.
-    */
-    .library-grid > li > * {
-      display: block;
-      padding-inline: clamp(0.375rem, 2vw, 0.75rem);
-    }
-
-    /*
-      The centring rule for the twenty-first card belongs to the four-column
-      grid and means nothing in a row. Left in place it would put THE JUDGEMENT
-      in "column 2" of a flex container, which is not a thing, but the property
-      is cleared rather than relied upon to be inert.
-    */
-    .library-grid > li:nth-last-child(2) {
-      grid-column: auto;
+      gap: clamp(0.5rem, 2.5vw, 0.75rem);
     }
   }
 
@@ -3522,7 +3547,37 @@
     display: flex;
     flex-direction: column;
     font-family: var(--font-serif);
-    font-size: 2.62cqw;
+    /*
+      **The rivets are the constraint, not the brass.** Measured off the
+      delivered art at 640x1060: the plaque's brass spans x=186..458 (42.5% of
+      the card) and its four rivets sit at x≈193 and x≈446, so the clear
+      interior a name may cross is 243px — 37.97% of the card's width.
+
+      The size is derived from that rather than fitted by eye. Cinzel's own
+      metrics (`wght` 700, 1000 upem) put the widest standard-tier name, "THE
+      HANGED MAN", at 10.216em including this rule's 0.02em tracking, so the
+      ceiling is 243/10.216 = 23.8px, or 3.717cqw. This sets 3.70cqw and keeps
+      the last tenth as the margin for hinting and subpixel rounding.
+
+      **The history matters, because the number moved twice.** 2.62cqw was the
+      client's own mockup size, at which the longest name fills about 85% of the
+      interior; she called it too small to read, twice. 3.05cqw answered that by
+      filling the interior, and she asked for larger again — "as large as
+      possible for the best readability". This is that limit: one more step and
+      "THE HANGED MAN" crosses the rivets, which is a thing the artwork draws
+      and the type must not sit on top of.
+
+      **Vertical is not the limit and never was.** The brass is 51px tall while
+      these caps are 16.6px — a third of it — so the headroom is real but
+      unspendable: the line is bounded by the rivets either side, not by the
+      plaque's height.
+
+      `CardEssay` renders the same plaque through the same class, so the
+      reference page's card grows with this one; both are `@container` boxes
+      sized in `cqw`, which is what lets one number serve two very different
+      render widths.
+    */
+    font-size: 3.7cqw;
     /*
       Real bold, not synthesized: `next/font` loads Cinzel as a variable face
       with a `400 900` weight axis (see the generated `@font-face`), so the
@@ -3646,8 +3701,20 @@
     The row still reads as one engraving; only the longest name in the deck is
     touched at all.
   */
+  /*
+    "THE HIGH PRIESTESS" is the one name that will not take the size above.
+
+    At -0.03em — about as tight as this face goes before the capitals look
+    cramped — it measures 10.523em against the 243px interior, so its own
+    ceiling is 23.1px = 3.608cqw. That is only 2.5% under the standard tier,
+    which is why the split is now almost invisible: the tracking does nearly all
+    the work and the size gives up a rounding's worth.
+
+    `TarotCardTile` picks this tier by the name's own length rather than naming
+    the card, so a renamed or added card sorts itself.
+  */
   .library-card__name--long {
-    font-size: 2.52cqw;
+    font-size: 3.6cqw;
     letter-spacing: -0.03em;
   }
 
@@ -3712,10 +3779,27 @@
     display: flex;
   }
 
+  /*
+    **The nav rides the masthead's own ramp, not a flat `vw` of its own.**
+
+    The client called this line oversized against her PSD, and the ceiling was
+    never the problem: both this and the tagline above it top out at the 30px
+    she draws. What differed is the slope. `3.1vw` reached 30px at about 968px
+    of viewport and then sat there, while `--text-nav`'s `1.5625vw` — which the
+    tagline, the standfirst and the rest of the masthead all follow — does not
+    reach it until 1920. Between those two widths the nav was the only line in
+    the block still at full size: 30px beside a 22.5px tagline at 1440, which
+    is the mismatch she was reading as "too large".
+
+    So this is `--text-nav` itself rather than a clamp restating it. At 1920 it
+    is the 30px the PSD draws, and at every width below it scales with the type
+    it sits under instead of against it. The floor is the token's 15px, which
+    is the size the sitewide subheading rule settles on.
+  */
   .library-suit-nav__link {
     color: var(--color-gold);
     font-family: var(--font-sans);
-    font-size: clamp(0.75rem, 3.1vw, 1.875rem);
+    font-size: var(--text-nav);
     font-weight: 300;
     letter-spacing: 0.025em;
     line-height: 1;

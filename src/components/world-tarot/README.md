@@ -202,9 +202,11 @@ its own, rather than a screen reader hearing the two halves separately.
 Every piece of copy on the page was measured against the token palette from
 her render. All six land exactly: the title, mission body and bio are
 `--color-cream`, the tagline is `--color-gold`, and **the closing quote is
-`--color-champagne` at distance 0.0** — not the readings index's gold, which
-is what `ClosingSaying` gives by default. That page passes `tone="champagne"`
-for it, the same tone a reading's own page takes.
+`--color-champagne` at distance 0.0** — which at the time was not what
+`ClosingSaying` gave by default, so this page passes `tone="champagne"` for it,
+the same tone a reading's own page takes. Champagne has since become that
+component's default, the readings index having been the last frame closing in
+gold; the explicit prop here is now belt and braces rather than a correction.
 
 ## The artist panel's photo is two images, not a clip
 

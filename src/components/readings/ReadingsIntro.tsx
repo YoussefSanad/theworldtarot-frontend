@@ -21,7 +21,17 @@ export function ReadingsIntro() {
         {/* The one place Figma draws this rule at 538px rather than 448px. */}
         <Divider variant="heroWide" className="mt-[clamp(0.375rem,0.94vw,1.125rem)]" />
 
-        <p className="mt-[clamp(0.5rem,1.25vw,1.5rem)] font-serif text-h3 text-gold">
+        {/*
+          **`text-nav`, which is the site's subheading size.** The client picked
+          the Library's "An Archive of the Symbol and Meaning" as her reference
+          — "I prefer the font and smaller size used for [it] ... please use
+          this as the reference for consistent subheadings across the site" —
+          so this gold line follows it rather than the 42px the frame drew here.
+
+          Same family and colour as before; only the ramp changes. See
+          `LibraryIntro` for the line this is matching.
+        */}
+        <p className="mt-[clamp(0.5rem,1.25vw,1.5rem)] font-serif text-nav text-gold">
           <Phrase parts={intro.tagline} />
         </p>
 
