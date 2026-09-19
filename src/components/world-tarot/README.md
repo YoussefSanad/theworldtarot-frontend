@@ -110,6 +110,14 @@ all worth knowing before someone "corrects" them back:
   look wrong. That comes to a panel ~18px taller than the 543 she draws.
 - **The masthead gap** keeps the frame's full 107px lead-in rather than
   discounting it for our header — see below.
+- **The tagline's gap to the first panel** is 56px (`2.92vw`) where the frame
+  draws 22px, so the gold tagline and the mission panel are not crowded. The
+  frame's own number is kept in the comment in `WorldTarotIntro`.
+- **"SKY & STONE" is recoloured** to `--color-gold`, the gold the site's other
+  headings use, rather than the pale wash her own export carries. It is
+  artwork, so this is pixels and not a token — see the note on
+  `worldTarotArtwork.skyStone` in `src/lib/assets.ts` for what was changed and
+  why re-exporting from `asset dump/` would undo it.
 - **The backdrop's two overhangs**, `--path-rise` and `--path-drop`, which
   the frame cannot describe because it draws no site chrome.
 - **The closing block's rule** is the 538px `heroWide`, where both readings
@@ -237,21 +245,36 @@ fill it.
 does nothing visible, and the reason is worth writing down because the desktop
 rule reads as though it were already floor-anchored:
 
-Above `lg` the path is pinned at **both** ends — `inset` sets `top` and
-`bottom`, and there is no height — so `cover` fills the whole page and crops
-from the top. That is right at 1920, where the frame and the page are near
-enough the same shape. But it means the path's box *is* the page; the
-photograph is opaque edge to edge; and `::after` paints over `::before`. A sky
-added behind it is therefore drawn and then immediately covered, everywhere
-except the 4% its own feather fades out.
+The path *was* pinned at **both** ends — `inset` set `top` and `bottom` with no
+height — so `cover` filled the whole page. That meant the path's box *was* the
+page; the photograph is opaque edge to edge; and `::after` paints over
+`::before`. A sky added behind it was therefore drawn and then immediately
+covered, everywhere except the 4% its own feather fades out.
 
-So below `lg` the path takes the readings parlour's construction instead — a
-height and one edge, rather than two edges:
+So the path takes the readings parlour's construction instead — a height and
+one edge, rather than two edges.
 
-| | `lg`+ | below `lg` |
-| --- | --- | --- |
-| `inset` | `calc(-1 * --path-rise) 0 calc(-1 * --path-drop) 0` | `auto 0 calc(-1 * --path-drop) 0` |
-| `block-size` | *none* — both edges pinned | `min(171.77vw, 100%)` |
+**That construction is now used at every width, and the two-pinned-edges
+version is gone.** It began as a `< lg` override, on the reading that pinning
+both edges was right at 1920 "where the frame and the page are near enough the
+same shape". They are not near enough: the page runs taller than 3298px once
+the copy is in, so `cover` was sizing the picture to the box's *height* and
+pushing its sides off-screen — about 29% of the image's width at a 1440px
+viewport, and worse the narrower the screen. The client reported it as the
+background being scaled too large and cut off at the sides.
+
+So "width-driven" was true below `lg` and false above it, while every comment
+here and in globals.css said it was true throughout. It is now true throughout:
+
+| | every width |
+| --- | --- |
+| `inset` | `auto 0 calc(-1 * --path-drop) 0` |
+| `block-size` | `min(171.77vw + rise + drop, 100% + rise + drop)` |
+
+`--path-rise` moves onto `block-size`, because a box hanging off the floor has
+to lengthen upwards to still reach behind the masthead; `--path-drop` stays on
+`bottom`. Below `lg` the rise is still spent to zero, which is all that `@media`
+block does now.
 
 171.77vw is the artwork's own height at full width (3298/1919), so at 375px it
 stands about 644px tall on the floor of the page and everything above it is

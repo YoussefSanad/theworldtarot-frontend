@@ -230,6 +230,29 @@ export const worldTarotArtwork = {
    * rather than drawn, it comes back there and not as a straggling token.
    */
   between: asset("/figma/world-tarot-between.webp", 138, 57),
+  /**
+   * **Recoloured to `--color-gold` (#e4c46a), and the pixels are no longer
+   * the client's own.** She asked for this heading to match the gold the
+   * rest of the site's headings use, and being artwork it could not simply
+   * be re-tokened.
+   *
+   * Two things were wrong with the original, and only fixing both matched it:
+   * its hue was already 44.3° — exactly the token's — but its saturation ran
+   * 41.6% against the token's 53.5%, *and* her export is capped at alpha 140,
+   * so the letter body painted at 55% over a near-black panel and composited
+   * to about #6A5C34. Lifting the saturation alone still left it dark; the
+   * flat 140 plateau (the glyph bodies, 2410px) is rescaled to 255 with it.
+   *
+   * The gradient and the outline survive because the shift is multiplicative
+   * in HSV about the existing values rather than a flat fill — the body now
+   * spans luminance 188..200 around the token's 195. The antialiased rim
+   * keeps its own lower alpha and stays a rim.
+   *
+   * `asset dump/readings page/SKY & STONE.png` is the untouched original and
+   * measures the same pale #EACF83 at alpha 140, so the wash is hers rather
+   * than something the webp conversion introduced — re-exporting from the
+   * dump will undo this. Dimensions are unchanged, so nothing below moves.
+   */
   skyStone: asset("/figma/world-tarot-sky-stone.webp", 218, 37),
   /** Her silver signature, not the conversion's black one. */
   signature: asset("/figma/world-tarot-signature.webp", 153, 94),

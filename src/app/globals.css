@@ -1253,17 +1253,33 @@
     background-repeat: no-repeat;
     background-size: cover;
     /*
-      Pinned at both ends rather than given a height: `top` and `bottom`
-      together already state the box, and a `block-size` beside them would
-      be a third value for the same thing — the reason the readings blocks
-      above set one edge and a height, and this one sets two edges.
+      **Floor-anchored with a height, not pinned at both ends** — the same
+      construction the `< lg` block below already uses, now at every width.
 
-      `cover` therefore fills a box that is the page plus both overhangs, and
-      on a page taller than the artwork's own aspect it crops from the top,
-      which is where the feather is. Nothing is ever stretched.
+      This was two pinned edges (`top` and `bottom`, no height) on the
+      reasoning that they "already state the box". They do, and that is the
+      problem: `cover` then has to fill a box whose aspect is the *page's*,
+      not the artwork's, and this page is far taller than 1919x3298 is. So
+      `cover` scaled the picture to the box's **height** and the sides went
+      off-screen — 29% of the image's width at a 1440px viewport, and worse
+      the narrower the screen. The client saw it as the background being
+      "scaled too large, cutting off the sides", which is exactly what it was.
+
+      That also made "width-driven" false on desktop while every comment here
+      — and the README — said it was. `block-size` restores it: 171.77vw is
+      the artwork's own height at full width (3298/1919), so the picture is
+      sized by the viewport's width, shows its full width at every one, and
+      is never stretched. `min(…, 100%)` keeps it from outgrowing a page
+      shorter than that, which is the only case the old box handled for free.
+
+      `--path-rise` moves onto `block-size` rather than staying on `top`: the
+      box hangs off the floor now, so the rise has to lengthen it upwards to
+      still reach behind the masthead. `--path-drop` stays on `bottom`, where
+      it always was.
     */
+    block-size: min(calc(171.77vw + var(--path-rise) + var(--path-drop)), calc(100% + var(--path-rise) + var(--path-drop)));
     content: "";
-    inset: calc(-1 * var(--path-rise)) 0 calc(-1 * var(--path-drop)) 0;
+    inset: auto 0 calc(-1 * var(--path-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
     position: absolute;
@@ -1291,19 +1307,19 @@
     frame; below `lg` this page has the same screens of empty colour the
     readings index had, and it gets the same answer.
 
-    **The path has to give the top of the page up first, and that is the real
-    change here — the sky alone does nothing.** On desktop this artwork is
-    pinned at *both* ends (`top` and `bottom`, no height) so `cover` fills the
-    whole page and crops from the top, which is exactly right at 1920 where the
-    frame and the page are near enough the same shape. It is also why a sky
-    added behind it was invisible: the path's box *is* the page, the photograph
-    is opaque edge to edge, and `::after` paints over `::before` — so the sky
-    was drawn and then covered by it, everywhere except the 4% the path's own
-    feather fades out.
+    **The path had to give the top of the page up first, and that was the real
+    change here — the sky alone does nothing.** This artwork *was* pinned at
+    *both* ends (`top` and `bottom`, no height) so `cover` filled the whole
+    page. That is also why a sky added behind it was invisible: the path's box
+    *was* the page, the photograph is opaque edge to edge, and `::after` paints
+    over `::before` — so the sky was drawn and then covered by it, everywhere
+    except the 4% the path's own feather fades out.
 
-    So below `lg` the path stops being pinned at the top and takes the readings
-    parlour's construction instead: a height, and one edge. `block-size:
-    min(171.77vw, 100%)` is the artwork's own height at full width (3298/1919),
+    The base rule now carries the height-and-one-edge construction at every
+    width (see the note on `::after` above, and why two pinned edges were also
+    cropping the picture's sides), so the top of the page is free here for
+    free. `block-size: min(171.77vw, …)` is the artwork's own height at full
+    width (3298/1919),
     so at 375px it stands about 644px tall on the floor of the page and the
     thousands of pixels above it are free for the sky. `inset: auto 0 …` drops
     the top edge; the bottom keeps `--path-drop`, because the footer's margin
@@ -1331,10 +1347,13 @@
       --path-rise: 0rem;
     }
 
-    .page-atmosphere-world-tarot::after {
-      block-size: min(171.77vw, 100%);
-      inset: auto 0 calc(-1 * var(--path-drop)) 0;
-    }
+    /*
+      The base rule now uses this same floor-anchored construction at every
+      width (see the note there), so all this block still has to do is spend
+      the rise — which `--path-rise: 0rem` above already does, and which the
+      base `block-size` reads. The `block-size`/`inset` pair that used to be
+      repeated here is gone because it is no longer an override.
+    */
 
     .page-atmosphere-world-tarot::before {
       background-image: url("/figma/readings-sky-mobile.webp");

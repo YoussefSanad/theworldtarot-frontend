@@ -23,8 +23,17 @@ import { intro } from "@/content/world-tarot";
  */
 export function WorldTarotIntro() {
   return (
-    /* 107px of a 1920px frame, above; 22px below, to the first panel. */
-    <Section padding="none" className="pt-[clamp(2rem,5.57vw,6.6875rem)] pb-[clamp(0.75rem,1.15vw,1.375rem)]">
+    /*
+      107px of a 1920px frame, above.
+
+      Below, the frame's own gap to the first panel is 22px (1.15vw) — and it
+      is deliberately **not** what ships. The client asked for more breathing
+      room between the gold tagline and the framed section, so this is 56px at
+      1920 (2.92vw), with the floor lifted to match. That is a departure from
+      the frame at her own request, like the four `README.md` already lists;
+      the frame's number is kept here so the original is one edit away.
+    */
+    <Section padding="none" className="pt-[clamp(2rem,5.57vw,6.6875rem)] pb-[clamp(1.75rem,2.92vw,3.5rem)]">
       <Container width="measure" className="flex flex-col items-center text-center">
         <h1 className="font-display text-h1 leading-none tracking-[0.01em] text-cream">{intro.heading}</h1>
 
