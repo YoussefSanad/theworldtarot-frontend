@@ -167,6 +167,24 @@
 }
 
 /*
+  The two knobs the sitewide content scale turns. Both are neutral here, at
+  every width: below `lg` the page is the tablet and phone layout the client
+  signed off and nothing scales. The desktop values live in the
+  `@media (width >= 64rem)` block further down, which is the one place to
+  retune this — see the long note there for why it is a token scale rather
+  than a transform.
+*/
+:root {
+  /* 1 = the page exactly as drawn in Figma. Desktop overrides this to 0.85. */
+  --content-scale: 1;
+  /*
+    The Library deck's multiplier on top of `--content-scale`, so the cards can
+    go up while the rest of the site comes down. 1 everywhere but desktop.
+  */
+  --library-scale: 1;
+}
+
+/*
   Brand chrome that recurs across the page. Sampled from the Figma exports and
   rebuilt as gradients so buttons and fields stay crisp at any size instead of
   stretching a fixed-size bitmap.
@@ -291,29 +309,171 @@
   --measure-hairline: min(12rem, 100%);
 }
 
+/*
+  Sitewide content scale, desktop only.
+
+  The client asked for the whole page to sit about 15% smaller inside the
+  viewport, with more of the artwork showing around it. Every measure below and
+  every type step further down is multiplied by this one number, so the change
+  is a single global adjustment rather than a per-page tweak and the
+  proportions the design was drawn at survive intact.
+
+  **Why this is a scale on the tokens and not a `transform: scale()` on the
+  page.** A transform would scale rendered pixels: text and the gold hairlines
+  go soft at a fractional factor, the scaled box becomes a containing block and
+  takes the sticky masthead with it, and the page atmosphere is pinned to the
+  raw viewport (`--atmosphere-width`, and the hand-computed offsets past
+  1920px) so the artwork would stop lining up with the content it frames.
+  Scaling the tokens keeps the layout real — the type stays selectable and
+  zoomable, the background stays exactly where it was, and the extra room
+  simply becomes visible artwork, which is the point.
+
+  **Desktop only.** This block is already the `>= 64rem` half of the measures,
+  and the type steps below are overridden in the same query, so the tablet and
+  phone layouts are untouched: their clamp floors are what carry those widths
+  and nothing here reaches them.
+
+  One knob: change `--content-scale` alone to retune the whole site.
+*/
 @media (width >= 64rem) {
   :root {
-    --measure-page: min(var(--container-page), 81.667vw);
-    --measure-hero: min(var(--container-hero), 80.052vw);
-    --measure-narrow: min(var(--container-measure), 60.052vw);
-    --measure-copy: min(var(--container-copy), 83.333vw);
-    --measure-value-props: min(var(--container-value-props), 65.99vw);
-    --measure-readings: min(var(--container-readings), 78.229vw);
-    --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
-    --measure-reading: min(var(--container-reading), 74.531vw);
-    --measure-world-tarot: min(var(--container-world-tarot), 53.594vw);
-    --measure-library: min(var(--container-library), 47.604vw);
-    --measure-card-paper: min(var(--container-card-paper), 69.635vw); /* 1337 / 19.2 */
-    --measure-card: min(var(--container-card), 53.906vw); /* 1035 / 19.2 */
-    --measure-card-closing: min(var(--container-card-closing), 26.719vw); /* 513 / 19.2 */
-    --measure-card-wide: min(var(--container-card-wide), 64.271vw); /* 1234 / 19.2 */
+    --content-scale: 0.85;
+    /*
+      The Library's deck goes the other way, per the client.
+
+      **This factor is against the shrunken page, not against the original
+      deck, and the two are very different numbers.** A first pass set it to
+      1.2 on the reading "20% larger", which is 20% larger than the page around
+      it — but `--content-scale` had already taken the deck down 15%, so the
+      two nearly cancelled and the deck came out just 2% over where it started
+      (0.85 × 1.2 = 1.02). Against a 15%-smaller page that is a real contrast,
+      but nobody sees the page twice: the eye compares the deck to the deck it
+      remembers, and at +2% it reads as unchanged.
+
+      1.4 is what "20% larger" means measured the way it is actually seen —
+      0.85 × 1.4 = 1.19, so the deck sits 19% above its original width while
+      the rest of the page sits 15% below. At 1920px that is 914px → 1088px,
+      with 416px of artwork still clear on either side.
+    */
+    --library-scale: 1.4;
+
+    /*
+      Both halves of each measure scale: the `vw` term so the column tracks the
+      viewport at the new proportion, and the `--container-*` cap so it still
+      freezes at the right width on a very wide screen. Multiplying the whole
+      `min()` does both at once and leaves the Figma numbers above readable as
+      the source of truth.
+    */
+    --measure-page: calc(min(var(--container-page), 81.667vw) * var(--content-scale));
+    --measure-hero: calc(min(var(--container-hero), 80.052vw) * var(--content-scale));
+    --measure-narrow: calc(min(var(--container-measure), 60.052vw) * var(--content-scale));
+    --measure-copy: calc(min(var(--container-copy), 83.333vw) * var(--content-scale));
+    --measure-value-props: calc(min(var(--container-value-props), 65.99vw) * var(--content-scale));
+    --measure-readings: calc(min(var(--container-readings), 78.229vw) * var(--content-scale));
+    --measure-readings-gift: calc(min(var(--container-readings-gift), 62.031vw) * var(--content-scale));
+    --measure-reading: calc(min(var(--container-reading), 74.531vw) * var(--content-scale));
+    --measure-world-tarot: calc(min(var(--container-world-tarot), 53.594vw) * var(--content-scale));
+    /*
+      The Library's deck is the one exception the client asked for: against a
+      page that has come down 15%, the cards are to read *larger*, so the deck
+      takes a 1.2 of its own on top of the sitewide scale. Written as the two
+      factors rather than a single collapsed number so the intent stays legible
+      — this is "sitewide, then up again", not a measure that opted out.
+    */
+    --measure-library: calc(min(var(--container-library), 47.604vw) * var(--content-scale) * var(--library-scale));
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale)); /* 1337 / 19.2 */
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale)); /* 1035 / 19.2 */
+    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale)); /* 513 / 19.2 */
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale)); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
-    --measure-flourish: min(448px, 23.333vw);
-    --measure-flourish-wide: min(538px, 28.021vw);
-    --measure-rule-green: min(582px, 30.313vw); /* 582 / 19.2 */
-    --measure-hairline: min(368px, 19.167vw);
+    --measure-flourish: calc(min(448px, 23.333vw) * var(--content-scale));
+    --measure-flourish-wide: calc(min(538px, 28.021vw) * var(--content-scale));
+    --measure-rule-green: calc(min(582px, 30.313vw) * var(--content-scale)); /* 582 / 19.2 */
+    --measure-hairline: calc(min(368px, 19.167vw) * var(--content-scale));
   }
+
+  /*
+    The type and rhythm steps, scaled by the same number.
+
+    Tailwind compiles `text-h1` to `font-size: var(--text-h1)` and emits the
+    `@theme` values into `@layer theme` on `:root`, so redefining them here
+    lands on the same custom property the utilities already read — no utility
+    changes anywhere, and no component touched. This rule is unlayered, which
+    outranks `@layer theme` regardless of source order, so it wins wherever it
+    applies and stays inert below `lg`.
+
+    **The whole clamp scales — floor included — and the floor is the subtle
+    part.** Each step is `clamp(floor, vw, max)`, and those floors are the
+    phone values. It is tempting to leave them alone on the grounds that they
+    are "for mobile", but nothing scopes a floor to a screen size: it binds
+    wherever the `vw` term falls below it. At the `lg` breakpoint itself the
+    `vw` term has only just overtaken the floor, so multiplying it by 0.85
+    pushes most steps back under — and the floor, unscaled, wins. Measured at
+    1024px, 17 of the 20 steps below would have stopped scaling, several of
+    them (`text-fine`, `text-caption`, every `text-card-*`) not moving at all,
+    while the measures around them came down the full 15%. Full-size text in a
+    15%-narrower column is precisely the disproportion this block exists to
+    avoid, so the floors come down with everything else and every step holds
+    its ratio from 1024px up.
+
+    Scaling the floors is safe here because this rule is inside the desktop
+    query: below `lg` the tokens in `@theme` are untouched and the phone floors
+    are still the originals.
+  */
+  :root {
+    --text-hero: clamp(calc(2.75rem * var(--content-scale)), calc(5.2083vw * var(--content-scale)), calc(6.25rem * var(--content-scale)));
+    --text-hero-sm: clamp(calc(2rem * var(--content-scale)), calc(3.75vw * var(--content-scale)), calc(4.5rem * var(--content-scale)));
+    --text-h1: clamp(calc(1.875rem * var(--content-scale)), calc(3.125vw * var(--content-scale)), calc(3.75rem * var(--content-scale)));
+    --text-h1-sm: clamp(calc(1.75rem * var(--content-scale)), calc(2.9167vw * var(--content-scale)), calc(3.5rem * var(--content-scale)));
+    --text-h2-lg: clamp(calc(1.5625rem * var(--content-scale)), calc(2.6042vw * var(--content-scale)), calc(3.125rem * var(--content-scale)));
+    --text-h2-md: clamp(calc(1.5rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
+    --text-h2: clamp(calc(1.5rem * var(--content-scale)), calc(2.2917vw * var(--content-scale)), calc(2.75rem * var(--content-scale)));
+    --text-h3: clamp(calc(1.375rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+    --text-lead: clamp(calc(1.125rem * var(--content-scale)), calc(2.0833vw * var(--content-scale)), calc(2.5rem * var(--content-scale)));
+    --text-body: clamp(calc(1.0625rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
+    --text-nav: clamp(calc(0.9375rem * var(--content-scale)), calc(1.5625vw * var(--content-scale)), calc(1.875rem * var(--content-scale)));
+    /* Already 17.5% under the Figma nav size (see the token); this scales that. */
+    --text-nav-sm: clamp(calc(0.875rem * var(--content-scale)), calc(1.2891vw * var(--content-scale)), calc(1.5469rem * var(--content-scale)));
+    --text-caption: clamp(calc(0.8125rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
+    --text-note: clamp(calc(0.875rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
+    --text-fine: clamp(calc(0.75rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+
+    /*
+      The card reference page's own steps. They sit inside `--measure-card`,
+      which has already come down, so they scale with everything else rather
+      than growing relative to the column that holds them.
+    */
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
+    --text-card-label: clamp(calc(1rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
+    --text-card-body: clamp(calc(1rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
+    --text-card-fine: clamp(calc(0.9375rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+
+    /*
+      Layout rhythm. `--spacing-section` and `--spacing-stack` carry the
+      vertical rhythm between sections, so they scale with the type to keep the
+      page's proportions; shrinking the content but not the gaps between it is
+      what makes a reduced page read as sparse rather than smaller.
+
+      `--spacing-gutter` is deliberately NOT scaled — see the note below.
+    */
+    --spacing-section: clamp(calc(3rem * var(--content-scale)), calc(7.2917vw * var(--content-scale)), calc(8.75rem * var(--content-scale)));
+    --spacing-stack: clamp(calc(1rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+  }
+
+  /*
+    `--spacing-gutter` is left at full size on purpose.
+
+    It is not content — it is the floor on the empty margin at the edge of the
+    screen, and `.shell` spends it as `100% - 2 * gutter`, a *cap* that only
+    binds when a measure is wider than the screen allows. Every measure above
+    has just come down 15%, so on desktop that cap no longer binds at all and
+    scaling it would change nothing visible. Where it would matter is the one
+    place we do not want it to: shrinking the edge inset works against the
+    thing this whole block is for, which is more artwork showing around the
+    content, not less.
+  */
 }
 
 /*
@@ -1465,7 +1625,13 @@
     disagreed, which was the same desync again, ~19px by 2560px.
   */
   #hero-sky {
-    --hero-sky-top: calc(5.9% - 4.48972vw);
+    /*
+      `--hero-sky-lift` is a desktop-only nudge, 0 by default so this expression
+      is the approved one everywhere it has not been asked for. See the block
+      below the mobile rule for why desktop needs it.
+    */
+    --hero-sky-lift: 0px;
+    --hero-sky-top: calc(5.9% - 4.48972vw - var(--hero-sky-lift));
   }
 
   /*
@@ -1498,6 +1664,39 @@
     }
   }
 
+  /*
+    The composition sits higher on desktop, because the sitewide content scale
+    moved the hero out from under it.
+
+    `--hero-sky-top` is a share of the *document* height, which is the property
+    that makes the comp ride with the page — and the content scale shortened
+    the page, so the anchor already came up about 61px at 1920px on its own.
+    That was not enough: the masthead and the hero copy above the card took the
+    full 0.85 directly, so the card itself rose further than the sky beneath it
+    did, and the glint ended up sitting low against it.
+
+    Expressed as a lift on the shared anchor rather than as a smaller
+    percentage, for two reasons. The percentage is the approved placement and
+    stays readable as such — this is visibly a departure from it, not a
+    silent re-tune. And it is `vw`, so the lift tracks the same width the
+    artwork is sized in: a page-height share would make the correction drift
+    with content edits, which is the exact failure the comment above this
+    block describes.
+
+    `--hero-sky-top` is still the only thing either layer reads, so the
+    11.13vw weld between sun and earth is untouched and the two travel
+    together, as that comment requires.
+
+    **Tuned by eye — this is the number to change if the sun wants to sit
+    higher or lower on desktop, and the only one.** 1.6vw is about 31px at
+    1920px, on top of the ~61px the shorter page already gave back.
+  */
+  @media (width >= 64rem) {
+    #hero-sky {
+      --hero-sky-lift: 8vw;
+    }
+  }
+
   .hero-sky-shine {
     position: absolute;
     max-width: none;
@@ -1516,7 +1715,15 @@
 
   @media (width >= 120rem) {
     #hero-sky {
-      --hero-sky-top: calc(320.6px - (100vw - 1920px) * 0.28156);
+      /*
+        Past 1920px the anchor stops being a page-height share and becomes the
+        globe's own pinning expression, so the desktop lift has to be carried
+        across explicitly: this declaration replaces the one that subtracts it,
+        and without the term here the sun would drop back down the moment a
+        window crossed 1920px. Same `--hero-sky-lift`, so there is still one
+        number to tune.
+      */
+      --hero-sky-top: calc(320.6px - (100vw - 1920px) * 0.28156 - var(--hero-sky-lift));
     }
   }
 
@@ -3089,7 +3296,14 @@
   */
   .library-grid {
     display: grid;
-    gap: clamp(0.75rem, 1.458vw, 1.75rem);
+    /*
+      The gutter rides the same two scales the measure does. The columns are
+      `1fr`, so a gutter left at its own size would let the cards absorb the
+      whole of the deck's `--library-scale` on their own and the 233:205 pitch
+      the client drew would tighten as the deck grew. Both knobs are 1 below
+      `lg`, so this is the original clamp everywhere but desktop.
+    */
+    gap: calc(clamp(0.75rem, 1.458vw, 1.75rem) * var(--content-scale) * var(--library-scale));
     grid-template-columns: repeat(4, 1fr);
     justify-items: center;
     list-style: none;
