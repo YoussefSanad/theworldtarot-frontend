@@ -231,7 +231,8 @@ export const worldTarotArtwork = {
    */
   between: asset("/figma/world-tarot-between.webp", 138, 57),
   /**
-   * **Recoloured to `--color-gold` (#e4c46a), and the pixels are no longer
+   * **Recoloured to the then-current `--color-gold` (#e4c46a), and the pixels
+   * are no longer
    * the client's own.** She asked for this heading to match the gold the
    * rest of the site's headings use, and being artwork it could not simply
    * be re-tokened.
@@ -252,6 +253,12 @@ export const worldTarotArtwork = {
    * measures the same pale #EACF83 at alpha 140, so the wash is hers rather
    * than something the webp conversion introduced — re-exporting from the
    * dump will undo this. Dimensions are unchanged, so nothing below moves.
+   *
+   * **The token has since moved to the antique gold #dfc894 (19 Sep 2026) and
+   * these baked pixels did not follow.** Being artwork, this heading still
+   * carries the old, more saturated gold and now runs warmer than the live
+   * type around it. Matching it means re-running the recolour above against
+   * the new token, not a CSS change.
    */
   skyStone: asset("/figma/world-tarot-sky-stone.webp", 218, 37),
   /** Her silver signature, not the conversion's black one. */

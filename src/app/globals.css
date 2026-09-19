@@ -15,7 +15,7 @@
   --color-ink-deep: #101b2e; /* label ink on gold */
   --color-ghost: #0b1626; /* fill of every bordered control, and of the menus they open */
   --color-slate: #40484f; /* label ink on the product tile buttons */
-  --color-gold: #e4c46a;
+  --color-gold: #dfc894;
   --color-gold-deep: #d4af37;
   --color-gold-soft: #c9b87c;
   --color-champagne: #fff3d7;
@@ -196,19 +196,19 @@
 :root {
   --gradient-gold: linear-gradient(
     45deg,
-    #d6b661 0%,
-    #f5dc84 13%,
-    #f7e19c 25%,
-    #fae7b4 38%,
-    #fae7b7 50%,
-    #f7e29e 63%,
-    #f5db84 75%,
-    #e2c56f 88%,
-    #b18f49 100%
+    #c9ac6e 0%,
+    #e8d191 13%,
+    #edd9a6 25%,
+    #f2e1bc 38%,
+    #f3e1be 50%,
+    #eddaa8 63%,
+    #e8d091 75%,
+    #d5bb7c 88%,
+    #a58755 100%
   );
   --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
   --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
-  --edge-gold: rgba(228, 196, 106, 0.55); /* resting border of a bordered control */
+  --edge-gold: rgba(223, 200, 148, 0.55); /* resting border of a bordered control */
   /*
     The same light as `--glow-gold`, tuned for `drop-shadow` on a 2px line
     rather than `box-shadow` around a filled box: far less source to spread,
@@ -1929,7 +1929,7 @@
     0%,
     100% {
       border-color: var(--edge-gold);
-      box-shadow: 0 0 0 rgba(228, 196, 106, 0);
+      box-shadow: 0 0 0 rgba(223, 200, 148, 0);
     }
     50% {
       border-color: var(--color-gold);
@@ -1992,7 +1992,7 @@
 
   .menu-option:hover,
   .menu-option:focus-visible {
-    background-color: rgba(228, 196, 106, 0.08);
+    background-color: rgba(223, 200, 148, 0.08);
     color: var(--color-champagne);
   }
 
@@ -2749,7 +2749,7 @@
   }
 
   .flanked__rule {
-    border-block-start: var(--flanked-rule, 2px solid rgba(228, 196, 106, 0.75));
+    border-block-start: var(--flanked-rule, 2px solid rgba(223, 200, 148, 0.75));
     flex: 1;
     min-inline-size: 0;
   }
@@ -2758,7 +2758,7 @@
     The same row, ruled the way a reading page's four section headings are:
     a hairline at full strength rather than a 2px line at 75%, and no mark
     closing it. Figma ships each of those as a 626x1 bitmap that is solid
-    `#e4c46a` up to the heading and transparent behind it — which is a rule
+    the old `#e4c46a` up to the heading and transparent behind it — which is a rule
     with a gap in it, so the gap is the heading's own width here and there is
     no measurement to keep in sync as the type scales.
   */
@@ -3139,7 +3139,7 @@
     frame under a pointer is the wash *and* the glow — on, and being pointed at.
   */
   .checkout-option[aria-pressed="true"] {
-    background-color: rgba(228, 196, 106, 0.14);
+    background-color: rgba(223, 200, 148, 0.14);
     border-color: var(--color-gold);
     color: var(--color-champagne);
   }

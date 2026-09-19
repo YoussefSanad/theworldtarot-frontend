@@ -33,7 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
         className="flex w-full flex-col items-center gap-[4.2cqw] no-underline"
         aria-label={label}
       >
-        <div className="stack aspect-[392/779] w-full transition-[filter] duration-300 group-hover:drop-shadow-[0_0_18px_rgba(228,196,106,0.35)]">
+        <div className="stack aspect-[392/779] w-full transition-[filter] duration-300 group-hover:drop-shadow-[0_0_18px_rgba(223,200,148,0.35)]">
           <div className="flex items-end justify-center pb-[4.85%]">
             <Image
               src={product.image.src}
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
           */}
           <span
             aria-hidden
-            className="tile-frame z-10 bg-[#dfc089] transition-[background-color,filter] duration-300 group-hover:bg-[#fae7b7] group-hover:drop-shadow-[0_0_6px_rgba(228,196,106,0.6)]"
+            className="tile-frame z-10 bg-[#dfc089] transition-[background-color,filter] duration-300 group-hover:bg-[#fae7b7] group-hover:drop-shadow-[0_0_6px_rgba(223,200,148,0.6)]"
           />
 
           <div className="z-10 flex flex-col items-center px-[3%] pt-[12%]">
