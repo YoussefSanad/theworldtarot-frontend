@@ -141,8 +141,8 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
         <Link
           href={group.href}
           className={cn(
-            "text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold",
-            open && "text-gold",
+            "text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)",
+            open && "text-(--header-accent)",
           )}
           onClick={() => {
             cancelClose();
@@ -172,7 +172,7 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
           aria-expanded={open}
           aria-controls={open ? panelId : undefined}
           aria-label={`${group.label} menu`}
-          className="inline-flex cursor-pointer items-center text-mist-dim transition-colors hover:text-gold focus-visible:text-gold"
+          className="inline-flex cursor-pointer items-center text-(--header-ink) transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
         >
           <ChevronIcon className={cn("size-[0.55em] transition-transform duration-300 ease-(--ease-veil)", open && "-rotate-180")} />
         </button>

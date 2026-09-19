@@ -125,14 +125,29 @@ export const theFool: MajorArcanaContent = {
     "creative leaps • new relationships • a change in direction",
   ],
   spheres: {
-    love: "A fresh emotional start. You or someone new may be stepping into your life. Stay open to connection without expecting it to look a certain way.",
-    career: "A new path, project, or opportunity is emerging. It may feel risky, but it aligns with your growth.",
-    money: "Financial beginnings or a shift in direction. Take inspired action, but avoid impulsive or careless decisions.",
+    /*
+      **Each of these three strings contains literal U+00A0 characters, and
+      they are load-bearing.** The client asked that no box end on a lone word
+      — she named "growth" under career and "decisions" under money — so the
+      last two or three words of each paragraph are joined by non-breaking
+      spaces and travel to the next line together as a phrase.
+
+      **They are invisible in an editor: they look exactly like ordinary
+      spaces.** Retyping one of these lines, or letting a tool "clean up"
+      whitespace, silently undoes the fix and the orphan comes back. Check with
+      `grep -P '\xc2\xa0'` before assuming a wrap bug is a CSS problem.
+
+      `SpheresCarousel` also sets `text-pretty`, which handles the general case
+      — these three pin the ones she actually pointed at.
+    */
+    love: "A fresh emotional start. You or someone new may be stepping into your life. Stay open to connection without expecting it to look a certain way.",
+    career: "A new path, project, or opportunity is emerging. It may feel risky, but it aligns with your growth.",
+    money: "Financial beginnings or a shift in direction. Take inspired action, but avoid impulsive or careless decisions.",
   },
   shadow: [
-    "Recklessness • impulsivity • ignoring important details",
-    "Avoiding responsibility • unrealistic expectations • acting before thinking",
-    "Ground enthusiasm with awareness and preparation",
+    "recklessness • impulsivity • ignoring important details",
+    "avoiding responsibility • unrealistic expectations • acting before thinking",
+    "ground enthusiasm with awareness and preparation",
   ],
   meta: {
     element: { symbol: cardReference.symbolAir, value: "air" },

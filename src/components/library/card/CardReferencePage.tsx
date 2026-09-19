@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { AppearsPanel } from "@/components/library/card/AppearsPanel";
 import { CardEssay } from "@/components/library/card/CardEssay";
@@ -12,7 +11,7 @@ import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
-import { comingSoon, libraryPath, type MajorArcanaCard } from "@/content/library";
+import type { MajorArcanaCard } from "@/content/library";
 import { cardReference } from "@/lib/assets";
 
 /**
@@ -29,9 +28,9 @@ import { cardReference } from "@/lib/assets";
  * **The masthead and footer are additions**, in the sense that her frame draws
  * neither: it begins at the paper's torn top edge. They stay because a visitor
  * arriving here from a search must be able to leave, the same reasoning behind
- * the mobile menu button. The back link under the meta strip is the other half
- * of that, and it is the only navigation this page adds — prev/next would point
- * at twenty-one placeholders today.
+ * the mobile menu button. They are now the only way off this page: the back
+ * link that used to sit under the closing line was removed at the client's
+ * request, and there is still deliberately no prev/next.
  */
 export function CardReferencePage({
   card,
@@ -41,7 +40,28 @@ export function CardReferencePage({
   content: MajorArcanaContent;
 }) {
   return (
-    <div className="library-card-page relative isolate min-h-full pb-[clamp(3rem,8.9vw,10.7rem)]">
+    <div className="library-card-page min-h-full pb-[clamp(3rem,8.9vw,10.7rem)]">
+      {/*
+        **This wrapper is deliberately not `relative`**, which is what lets the
+        artwork reach up behind the transparent masthead.
+
+        `PageAtmosphere` is `absolute inset-0`, so it resolves against the
+        nearest positioned ancestor. With `relative` here that was this div —
+        which begins *below* the header, so no amount of lifting could ever
+        reach the top of the window; every attempt just dragged the picture
+        away from the page and left a band of `body`'s night above it. Without
+        it the atmosphere resolves against the layout column instead, which is
+        exactly what `(site)/layout.tsx` is positioned for: it "spans header,
+        main and footer", in that file's own words.
+
+        `isolate` is gone for the same reason — the layout already establishes
+        the stacking context the `-z-10` needs, and a second one here would
+        trap this layer inside the page again.
+
+        The remaining lift in globals.css is small and does a different job:
+        it covers the masthead's own height. See
+        `.page-atmosphere-card-reference`.
+      */}
       <PageAtmosphere variant="card-reference" />
 
       {/*
@@ -49,8 +69,33 @@ export function CardReferencePage({
         rather than its decoration — see `.card-paper` in globals.css. Her paper
         runs y=171..3166 of a 3237 frame, so the space above it is the top
         margin here and the page's own bottom padding is the space below.
+
+        **The top margin is hers again**, 171px of her 1920 frame. It briefly
+        carried the masthead's height as well, from a period when this page's
+        wrapper was positioned and the artwork could not reach up behind the
+        nav — the paper had to start below the header by itself. The atmosphere
+        spans the layout column now (see the note above it), so the header sits
+        over the page's own artwork and this margin is back to being what she
+        drew: the space between the top of the page and the torn edge of the
+        sheet.
       */}
-      <div className="card-paper mt-[clamp(1.5rem,5.28vw,6.34rem)]">
+      {/*
+        **The room under the closing line is padding on the sheet**, not a
+        spacer element after it. Her paper runs 305px past that line — empty
+        paper, the same "let the artwork breathe" the Library page records —
+        and `.card-paper` is sized by its content with its torn bottom edge
+        pinned at `top: 100%`, so with nothing holding that room open the
+        deckle closes up against the saying.
+
+        A spacer div was the wrong way to hold it: it grows the sheet the same
+        as any other content, and the sheet is already taller than both things
+        drawn behind it. The paper's middle is a 2947px tile on `repeat-y` and
+        the atmosphere's wash is a fixed 169.32vw, so every pixel added here
+        walks the tile's seam further up the page and pushes the bottom deckle
+        past the end of the wash onto flat parchment. Padding puts the room
+        *inside* the box that was already there rather than adding to it.
+      */}
+      <div className="card-paper mt-[clamp(1.5rem,5.28vw,6.34rem)] pb-[clamp(3.813rem,12.708vw,15.25rem)]">
         {/*
           Her gold ornament (`FRAME`, 1229x604 at x=345, y=228) frames the top
           of the sheet: flourished corners, three diamonds centred on its top
@@ -102,8 +147,8 @@ export function CardReferencePage({
           produce them. Each is the Figma gap as the clamp's maximum and that
           gap / 19.2 as its vw term, the conversion `src/app/README.md` requires.
 
-          Two are tighter than her frame: the gap above this panel and the one
-          above the closing line. Her numbers measure to a *text box* whose
+          Three are tighter than her frame: the gap above this panel, the one
+          above the meta strip and the one above the closing line. Her numbers measure to a *text box* whose
           empty tail is part of the gap, and the same value applied to a box
           that ends at its last line reads as far more air.
 
@@ -139,7 +184,14 @@ export function CardReferencePage({
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(1.078rem,3.594vw,4.313rem)]">
+        {/*
+          **Tighter than her 69px**, which is the same correction as the two
+          gaps noted above: hers measures from the shadow panel's text box,
+          whose empty tail is part of the number, so the drawn value reads as
+          far more air than she shows. 28px sets the strip close under the
+          shadow panel, so the two dark blocks and the strip read as one run.
+        */}
+        <Section padding="none" className="mt-[clamp(0.438rem,1.458vw,1.75rem)]">
           <Container width="cardWide">
             <MetaStrip meta={content.meta} />
           </Container>
@@ -152,7 +204,7 @@ export function CardReferencePage({
           the saying between two rules and no button under it.
         */}
         <ClosingSaying
-          className="mt-[clamp(0.875rem,2.917vw,3.5rem)]"
+          className="mt-[clamp(0.313rem,1.042vw,1.25rem)]"
           saying={content.closing}
           action={null}
           width="cardClosing"
@@ -160,22 +212,6 @@ export function CardReferencePage({
           tone="ink"
         />
 
-        {/*
-          Her sheet runs 305px past the closing line — empty paper, which is
-          the same "let the artwork breathe" the Library page records. The back
-          link sits in that room rather than below the sheet, because a visitor
-          who has read to the end is still on the page.
-        */}
-        <Section padding="none" className="pb-[clamp(2.375rem,7.917vw,9.5rem)] pt-[clamp(1.875rem,6.25vw,7.5rem)]">
-          <Container width="card" className="flex justify-center">
-            <Link
-              href={libraryPath}
-              className="font-sans text-nav tracking-wide text-card-forest underline-offset-4 hover:underline"
-            >
-              {comingSoon.back}
-            </Link>
-          </Container>
-        </Section>
       </div>
     </div>
   );

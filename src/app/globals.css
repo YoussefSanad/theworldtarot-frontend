@@ -25,6 +25,32 @@
   --color-ash: #cac8c8;
   --color-snow: #fffcf6;
 
+  /*
+    **The masthead's own palette, as tokens rather than fixed utilities.**
+
+    The header is shared chrome drawn once and rendered above every page, so it
+    cannot know what it sits on — but one page needs it in different colours.
+    A card's reference page is the site's only light ground, and the client's
+    note is that the masthead has to stay legible there. These three are what
+    the nav, the CTA and the account row actually resolve to; the default is
+    the site's existing cream-on-dark, and `.library-card-page` below is the
+    one place that rebinds them.
+
+    Why tokens and not a `.library-card-page &` override per component: the
+    colours are spread across `SiteHeader`, `NavDropdown`, `LocaleControls` and
+    `AccountControl` as `text-mist-dim` / `hover:text-gold` utilities, so an
+    override would have to be repeated in four files and re-found every time
+    someone adds a control. Rebinding a variable once catches all of them,
+    including anything added later.
+
+    **`-accent` is hover, focus and open state in one.** They are the same
+    colour everywhere in the masthead today, and keeping them one token is what
+    stops a future page rebinding three-quarters of a state.
+  */
+  --header-ink: var(--color-mist-dim); /* resting nav, account row */
+  --header-accent: var(--color-gold); /* hover, focus-visible, open */
+  --header-cta: var(--color-champagne); /* the CTA's label */
+
   /* Type families */
   --font-display: var(--font-magically), var(--font-cinzel), serif;
   --font-serif: var(--font-cinzel), serif;
@@ -1246,6 +1272,29 @@
     where the copies meet. It is painted once from the top and the page carries
     on beneath it in this colour.
   */
+  /*
+    **This one spans the whole layout column**, header included, because the
+    masthead on this page is transparent — see the `:has()` block below — and
+    what would otherwise sit behind the nav is `body`'s own night.
+
+    It needs no lift to do that. `PageAtmosphere` is `absolute inset-0`, and
+    `CardReferencePage`'s wrapper is deliberately *not* positioned, so this
+    resolves against the layout column — which `(site)/layout.tsx` positions
+    precisely so an atmosphere "spans header, main and footer". The box
+    therefore already starts at the top of the window.
+
+    **Several rounds of negative `top` were tried here first and all of them
+    were treating a symptom.** While that wrapper was `relative` this layer
+    was trapped below the header, so no lift could reach the top: a bare
+    negative `top` against `inset: 0` shifts the box rather than growing it,
+    pulling the artwork off the foot of the page, and pairing it with a
+    `100% + rise` height only moved the same gap around. Removing the
+    positioning is the fix; the lift was never one.
+
+    There is no masthead offset left anywhere in here. The artwork starts at
+    the top of the box and the box starts at the top of the window, so the nav
+    sits on her forest directly.
+  */
   .page-atmosphere-card-reference {
     background-color: var(--color-card-parchment);
     overflow: clip;
@@ -1267,12 +1316,24 @@
     as a page background it would fade at a share of however tall the page
     happened to be, which moves the fade every time a card's copy runs longer.
 
-    `block-size` is the artwork's own aspect — her 1949x3251 at 101.51% of the
-    page width — so the box is exactly as tall as the picture it carries, and
-    `--wash-sink` lands the fade in the same place on every card.
+    **It starts flush with the top of the column**, which is the top of the
+    window, so her forest is what the transparent masthead sits on. The parent
+    box's own fill is `--color-card-parchment` (`#f2e8d5`) while the wash
+    begins nearer `#e2c38d`, so any offset here shows as a pale band between
+    the nav and the picture. Her composition therefore rides about a
+    masthead's height above the Figma frame, which costs nothing visible: the
+    top of the wash is open sky and canopy with the drawn detail far below.
   */
   .page-atmosphere-card-reference::after {
-    --wash-sink: 76%;
+    /*
+      The fade's distance down the *artwork*, not down the box. It was 76% of
+      a box that was always the artwork's height, so the two were the same
+      thing; now that the box can grow past the artwork (see `block-size`
+      below) they are not, and a percentage would walk the fade down the page
+      on any card whose copy runs long. 76% of 169.32vw, stated absolutely, so
+      it lands in the same place whatever the page does.
+    */
+    --wash-sink: 128.68vw; /* 169.32 * 0.76 */
 
     background-image: url("/figma/card-reference/page-wash.webp"), url("/figma/card-reference/page-base.webp");
     background-position:
@@ -1282,11 +1343,34 @@
     background-size:
       101.51% auto,
       100% auto;
-    block-size: 169.32vw; /* 3251 / 19.2 */
+    /*
+      **At least the artwork's own height, and taller if the page is.** This
+      was a flat `169.32vw` — the picture's aspect, so the box was exactly as
+      tall as the image and `--wash-sink` landed the fade in the same place on
+      every card, which is what the note above describes.
+
+      That holds only while the page fits inside it. This one does not: past
+      169.32vw the wash simply ended, and the paper's torn bottom edge came
+      down on flat `--color-card-parchment` with no wash behind it. `max()`
+      against the page's own height guarantees the layer reaches the bottom of
+      whatever it has to cover. Both images are `no-repeat` at their own
+      aspect, so the added height carries no picture and nothing is stretched
+      — it is empty, fully-faded box below the artwork, which is exactly the
+      transparent tail the mask was already producing.
+    */
+    block-size: max(169.32vw, 100%); /* 3251 / 19.2, floored at the page */
     content: "";
     inset: 0 0 auto 0;
-    -webkit-mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 100%);
+    /*
+      Both stops are absolute for the same reason `--wash-sink` is: the box
+      can now outgrow the artwork, and `transparent 100%` would spread the
+      dissolve over that whole extra height instead of finishing where the
+      picture does. `169.32vw` is the artwork's own foot, so the fade runs
+      from the sink to the bottom of the image and everything past it is
+      simply transparent.
+    */
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 169.32vw);
+    mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 169.32vw);
     position: absolute;
   }
 
@@ -1314,10 +1398,47 @@
     /* 1337 of her 1920. Centred: her margins are 302 and 281, 21px apart. */
     --paper-deckle: calc(100% * 24 / 1337);
 
-    background-image: url("/figma/card-reference/page-paper-mid.webp");
-    background-position: center top;
-    background-repeat: repeat-y;
-    background-size: 100% auto;
+    /*
+      **The sheet stretches rather than tiles.** This was `repeat-y` at the
+      tile's own aspect, which is right only while the page is shorter than
+      one tile — her middle is 1337x2947 and this page is taller than that, so
+      the tile wrapped and the wrap read as a hard line straight across the
+      paper. It is not a subtle seam: the tile's first row averages
+      #e8dac1 and its last #d1cab0, so every repeat butts a light cream
+      against a distinctly greyer tan.
+
+      `100% 100%` stretches the one tile over whatever height the content
+      needs. That is normally the wrong instinct — it distorts the texture —
+      but this layer is a paper grain with no figure in it and no horizon to
+      skew, so a vertical stretch of a few percent is invisible where a seam
+      never is.
+
+      **The floor behind it is inset, not a full-box fill.** This was a flat
+      `background-color`, which paints the element's whole rectangle — and the
+      sheet is not a rectangle. Its sides are a torn deckle drawn into the
+      tile's own alpha (the first and last ~1.5% of the image fade to
+      transparent) and its ends are the `::before`/`::after` below, which sit
+      entirely outside this box. A flat fill therefore squared off the ragged
+      sides and read as a pale halo around the paper against the wash.
+
+      A gradient inset past the deckle keeps the floor where it is useful —
+      under the opaque middle, so a page that outgrows the stretch has no bare
+      ground — while leaving the torn edges to the artwork. 2% rather than the
+      measured 1.5%, so the fill ends inside the last fully-opaque column
+      rather than exactly on it.
+    */
+    background-image:
+      url("/figma/card-reference/page-paper-mid.webp"),
+      linear-gradient(to right, transparent 0 2%, #ebe2cf 2% 98%, transparent 98%);
+    background-position:
+      center top,
+      center top;
+    background-repeat:
+      no-repeat,
+      no-repeat;
+    background-size:
+      100% 100%,
+      100% 100%;
     margin-inline: auto;
     max-width: var(--measure-card-paper);
     position: relative;
@@ -1957,7 +2078,20 @@
     button growing rather than as a second surface arriving over the page. The
     only thing it adds is a shadow, because unlike the button it floats.
   */
+  /*
+    **A floating panel carries the site's dark palette regardless of the page.**
+    It paints `--color-ghost` and shadows itself off the page, so it is an
+    overlay rather than part of the masthead — which matters on a card's
+    reference page, where `.library-card-page` rebinds `--header-*` to dark ink
+    for the nav. Without this reset a panel opening off that nav would inherit
+    the dark ink onto its own dark ground. The mobile drawer does the same
+    thing in `SiteHeader` for the same reason.
+  */
   .menu-panel {
+    --header-ink: var(--color-mist-dim);
+    --header-accent: var(--color-gold);
+    --header-cta: var(--color-champagne);
+
     background-color: var(--color-ghost);
     border: 1px solid var(--edge-gold);
     border-radius: var(--radius-button-lg);
@@ -3654,6 +3788,105 @@
   */
   .library-card-page {
     color: var(--color-card-ink-soft);
+  }
+
+  /*
+    **The masthead, inverted for the one light page on the site.**
+
+    This is the client's note — the nav has to read against the parchment —
+    answered by recolouring the type rather than by putting a ground behind it.
+    An earlier fix did the opposite: a dark umber band filling upward from the
+    page wrapper, legible but reading as a slab laid across the top. Parchment
+    runs clean to the top of the window now.
+
+    **Three separate problems, and each needs its own selector.**
+
+    1. *The header has no idea what page it is above.* `SiteHeader` is rendered
+       by `(site)/layout.tsx` as a sibling **before** `main`, so no React
+       context or prop from the page reaches it — context flows down and the
+       header is not below the page. Matching the URL inside the header fails
+       too: `/library/*-tarot-card-meaning/` serves two different pages, since
+       only The Fool has copy and the other twenty-one render `ComingSoonPage`
+       on the dark `library` ground. So the layout column asks, in CSS, whether
+       the light page is somewhere inside it.
+
+       **The selector cannot be `.isolate:has(...)`.** `.library-card-page`
+       carries `isolate` itself, so that pattern reads as "an isolate whose
+       child main contains the page" and quietly matches the wrong element —
+       or nothing. It is `#__next > div` in shape, so it is spelled as the
+       structure it actually is: a `div` that directly owns both `header` and
+       `main`.
+
+    2. *`body` is `bg-night`.* The page's own `PageAtmosphere` is
+       `absolute inset-0` against `.library-card-page`, which lives inside
+       `main` — so it never covers the strip the header sits in, and removing
+       the band exposed the navy behind it. The layout column takes the
+       parchment instead, which puts it behind header, main and footer alike.
+
+    3. *Utilities beat components.* These rules live in `@layer components`,
+       and Tailwind's `utilities` layer always wins regardless of specificity —
+       so `hidden` on the ink logo beat a `display: block` written here and hid
+       both cuts of the wordmark. Anything here that has to override a utility
+       is marked `!important` for that reason; the custom properties do not
+       need it, because nothing else sets them.
+
+    Resting ink is her body colour and the accent is her forest — the page's
+    own two, already carrying its prose and its rules, so nothing new enters
+    the palette. Gold could not stay: it measures about 1.2:1 here, the same
+    failure the carousel dots on this page already had to fix.
+
+    **Measured against her artwork, which is what the type now sits on.** The
+    wash's top rows run about `#e2c38d` at their darkest under the nav and
+    `#edd4a0` at their lightest: resting nav 5.20-6.08:1, hover 6.73-7.86:1,
+    the wordmark's ink 9.49-11.08:1. All clear AA, and the hover is *brighter*
+    than the resting state, which is the relationship the dark pages have.
+
+    The margins of her wash are darker than that — nearer `#be843c` at the far
+    left — but they fall outside the logo and the nav at every width the clamp
+    covers. Re-measure if the masthead's contents ever reach further out.
+
+    The floating panels and the mobile drawer opt back out — see `.menu-panel`
+    and `SiteHeader` — because they paint their own dark grounds above the page.
+  */
+  div:has(> header):has(> main > .library-card-page) {
+    --header-ink: var(--color-card-ink-soft);
+    --header-accent: var(--color-card-forest);
+  }
+
+  /*
+    **The masthead carries no ground of its own here, which is the point.**
+
+    Three fills were tried behind it and every one read as a slab with a seam:
+    the page's parchment, then her wash's averaged top row, then that row
+    reproduced as a gradient. The last came closest and still showed, because
+    her first row is only the *first* row — the picture goes on changing below
+    it, and a strip that matches one line of a photograph is still a strip.
+
+    So there is no fill. `PageAtmosphere` is lifted clear of the header instead
+    (see `CardReferencePage`), which puts her actual artwork behind the nav and
+    leaves nothing to match. It is also what the layout was built for: that
+    column is positioned so an `absolute inset-0` atmosphere spans header, main
+    and footer, and `readings`, `library` and the single reading already lift
+    theirs the same way below `lg`.
+
+    All that is left here is `color`, for the burger's `bg-current` bars.
+  */
+  div:has(> header):has(> main > .library-card-page) > header {
+    color: var(--color-card-ink-soft);
+  }
+
+  /*
+    The wordmark swaps files rather than colour: the letters are `fill` inside
+    the SVG's own `<style>`, and `images.unoptimized` makes it a plain `<img>`,
+    which the page's CSS cannot reach into. `!important` because `hidden` on
+    the ink cut is a utility — see note 3 above.
+  */
+  div:has(> header):has(> main > .library-card-page) .logo-night {
+    display: none !important;
+  }
+
+  div:has(> header):has(> main > .library-card-page) .logo-ink {
+    display: block !important;
   }
 
   /*

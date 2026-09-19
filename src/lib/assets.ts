@@ -37,6 +37,24 @@ export const brand = {
    * come with it — is in play.
    */
   logo: asset("/wt-logo.svg", 426, 77),
+  /**
+   * The same wordmark in this site's one dark ink, for its one light page.
+   *
+   * **A second file rather than a CSS recolour, because neither route exists
+   * here.** The letters are `<path fill>` inside a `<style>` block, so a page
+   * cannot reach them: `images.unoptimized` makes `next/image` emit a plain
+   * `<img>`, and an `<img>` is a replaced element whose document is closed to
+   * the parent's CSS — `currentColor` and `fill` from outside both stop at its
+   * border. Inlining the SVG as a component would open it, at the cost of
+   * shipping the wordmark in every page's HTML rather than in one cached file.
+   *
+   * So it is the one file duplicated, and the duplication is one declaration
+   * wide: `fill` in the `<style>` block, `#fcf4da` there and `#1b2415` here.
+   * **Edit the shapes in both** — they are the same drawing and nothing checks
+   * that they match. Used by `SiteHeader` on `.library-card-page`; see
+   * `headerTheme` in `content/site.ts`.
+   */
+  logoInk: asset("/wt-logo-ink.svg", 426, 77),
   livingTarotBadge: asset("/figma/living-tarot-badge.webp", 271, 33),
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),
