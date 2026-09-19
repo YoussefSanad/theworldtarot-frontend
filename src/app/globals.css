@@ -114,12 +114,25 @@
   --text-card-name--line-height: 1;
   --text-card-lead: clamp(1.375rem, 1.875vw, 2.25rem); /* 36px */
   --text-card-lead--line-height: 1.1;
-  --text-card-label: clamp(1rem, 1.1458vw, 1.375rem); /* 22px */
-  --text-card-label--line-height: 1.2;
-  --text-card-body: clamp(1rem, 1.25vw, 1.5rem); /* 24px */
-  --text-card-body--line-height: 1.083;
-  --text-card-fine: clamp(0.9375rem, 0.9375vw, 1.125rem); /* 18px */
-  --text-card-fine--line-height: 1.111;
+  /*
+    **The floors are the client's 18px/22px, not her frame's.** Each of these
+    still tops out at the size she drew — the maxima are untouched — but the
+    small ends were 15-16px, which is where the page actually renders on a
+    phone and a narrow laptop, and she asked for 18/22 as the readable floor
+    for body copy sitewide on this page.
+
+    22/18 is 1.222, so the line heights that were tuned tighter than that are
+    raised to meet it: a floor on the size alone would hit the target for type
+    and miss it for leading. `--text-card-label` was 1.2 and is now 1.222;
+    `--text-card-body` was 1.083, which is very tight for running prose and is
+    the one the client is reading in the panels.
+  */
+  --text-card-label: clamp(1.125rem, 1.1458vw, 1.375rem); /* 18px floor, 22px */
+  --text-card-label--line-height: 1.222;
+  --text-card-body: clamp(1.125rem, 1.25vw, 1.5rem); /* 18px floor, 24px */
+  --text-card-body--line-height: 1.222;
+  --text-card-fine: clamp(1.125rem, 0.9375vw, 1.125rem); /* 18px, flat */
+  --text-card-fine--line-height: 1.222;
 
   /*
     That page's palette, and the one place on the site that is dark on light.
@@ -472,9 +485,9 @@
     */
     --text-card-name: clamp(calc(1.75rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
     --text-card-lead: clamp(calc(1.375rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
-    --text-card-label: clamp(calc(1rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
-    --text-card-body: clamp(calc(1rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
-    --text-card-fine: clamp(calc(0.9375rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
 
     /*
       Layout rhythm. `--spacing-section` and `--spacing-stack` carry the
@@ -1465,6 +1478,34 @@
   .card-paper::after {
     background-image: url("/figma/card-reference/page-paper-bottom.webp");
     top: 100%;
+  }
+
+  /*
+    **Below `sm` the sheet is gone and the page sits on the wash directly.**
+
+    The client's note is that the mobile version "does not need to float within
+    the background like desktop/tablet". That floating is the whole point of
+    the sheet on a wide screen — her paper is a 1337px object with margins
+    either side and torn edges you can see. On a phone the sheet is already
+    edge to edge (`--measure-card-paper` is `100%` there), so those edges are
+    off-screen and all it contributes is a second pale layer over a wash that
+    is already parchment-coloured, plus two deckle images that cost bandwidth
+    to draw a line nobody sees.
+
+    So it drops out and the ground shows through. The content keeps its own
+    padding, which is why this is `background` and the deckles rather than the
+    element: `.card-paper` is a *container* — see the note above — and hiding
+    it would take the page's layout with it.
+  */
+  @media (width < 40rem) {
+    .card-paper {
+      background-image: none;
+    }
+
+    .card-paper::before,
+    .card-paper::after {
+      content: none;
+    }
   }
 
   .page-atmosphere-world-tarot::after {

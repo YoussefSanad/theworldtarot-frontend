@@ -47,7 +47,25 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         that overruns; it cannot bite here, where the card is drawn four times
         the grid's size, but it is applied for consistency with that tile.
       */}
-      <span className="library-card @container block w-full max-w-[min(16.25rem,25.1vw)] shrink-0">
+      {/*
+        **The `25.1vw` cap only applies from `lg`**, where the card sits beside
+        the prose and has to leave it a measure. Below that it stacks above the
+        prose with the whole column to itself, and the cap was making it far
+        smaller than it needed to be — the client's note that the plaque name
+        is unreadable on mobile is this, not the lettering.
+
+        The name cannot answer it on its own: `.library-card__name` is already
+        at `3.7cqw`, which the note on that rule derives from the rivets in the
+        artwork and which the client has twice asked to raise. It is a ceiling,
+        not a preference. Since the letters are a share of the card, the only
+        lever left is the card, and at `25.1vw` a 390px phone was drawing a
+        98px card and a 3.6px capital. At 80% of the column it is 312px and
+        11.5px — the same plaque, legible.
+
+        `sizes` follows, or the browser keeps fetching the small candidate for
+        a box three times the width.
+      */}
+      <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 lg:max-w-[min(16.25rem,25.1vw)]">
         <span className="stack">
           <Image
             src={card.image.src}
@@ -55,7 +73,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
             width={card.image.width}
             height={card.image.height}
             className="h-auto w-full"
-            sizes="(width >= 64rem) 16.25rem, 80vw"
+            sizes="(width >= 64rem) 16.25rem, min(20rem, 80vw)"
             priority
           />
 
@@ -88,7 +106,16 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           set `leading-none`, so the drawn values open a hole between two lines
           that belong together as one heading.
         */}
-        <p className="whitespace-nowrap text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink">
+        {/*
+          `nowrap` only from `sm`. It is one line in her drawing and the bullets
+          separate rather than break, which the docblock above records — but on
+          the narrowest phones "WONDER • TRUST • BEGINNING" is wider than the
+          column at the 22px floor these tokens now carry, and `nowrap` there
+          overflows the sheet rather than keeping a promise. Below `sm` it may
+          wrap at a bullet; `text-balance` keeps the two lines even when it
+          does.
+        */}
+        <p className="text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink sm:whitespace-nowrap">
           {content.keywords}
         </p>
 
@@ -96,11 +123,26 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           {content.subtitle}
         </p>
 
+        {/*
+          **`text-pretty` on the paragraphs, not `text-balance`.** The client's
+          note is that single words sit alone on a line. `text-balance` is the
+          tempting answer and the wrong one here: it evens out a *whole* block
+          and browsers cap it at a few lines (Chrome stops at four), so on
+          three paragraphs of running prose it either does nothing or squares
+          off the whole shape. `text-pretty` targets exactly the reported
+          fault — it forbids the last line being a single short word — and has
+          no line cap.
+
+          The leading is the token's now, rather than the 1.273 that used to be
+          set here. `--text-card-label` carries 1.222 to meet the client's
+          22/18, and a local override would have quietly kept the old ratio on
+          the longest-running copy on the page.
+        */}
         <div className="mt-[clamp(0.625rem,1.146vw,1.375rem)] flex flex-col gap-[clamp(0.75rem,1.46vw,1.75rem)]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
-              className="font-light text-card-label leading-[1.273] tracking-[0.01em] text-card-ink-soft lg:text-left"
+              className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft lg:text-left"
             >
               {paragraph}
             </p>

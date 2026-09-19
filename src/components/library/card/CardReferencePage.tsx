@@ -166,7 +166,18 @@ export function CardReferencePage({
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(0.531rem,1.771vw,2.125rem)]">
+        {/*
+          **Wider than her 35px, at the client's request.** Every other gap on
+          this page is her frame's own figure (see the note above), and this one
+          was `clamp(0.531rem, 1.771vw, 2.125rem)` — 34px at the top end.
+
+          The panel above it is a dark, hard-edged block and LOOK FOR is a rule
+          with words in it, so at her spacing the rule read as though it
+          belonged to the panel rather than to the section it introduces.
+          Doubling it detaches the two. It is the one gap on the page that is
+          deliberately not hers; the rest of the rhythm is untouched.
+        */}
+        <Section padding="none" className="mt-[clamp(1.25rem,3.6vw,4.25rem)]">
           <Container width="cardWide">
             <LookFor lines={content.lookFor} />
           </Container>
