@@ -270,8 +270,16 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
         aria-controls={open ? panelId : undefined}
         aria-labelledby={labelId}
         className={cn(
-          "inline-flex h-full cursor-pointer items-center justify-center p-0 opacity-90 transition-[opacity,color] duration-300 ease-(--ease-veil) hover:opacity-100 focus-visible:opacity-100",
-          open && "text-gold opacity-100",
+          /*
+            `text-(--header-ink)` explicitly, rather than letting the globe's
+            `currentColor` inherit from whatever encloses it. The icon is drawn
+            as a disc filled with `currentColor`, so without a colour here it
+            took the header's own — which is `--color-mist-dim` on every dark
+            page but the page's dark ink on the light one, leaving it a
+            different weight from the sibling controls that do set it.
+          */
+          "inline-flex h-full cursor-pointer items-center justify-center p-0 text-(--header-ink) opacity-90 transition-[opacity,color] duration-300 ease-(--ease-veil) hover:text-(--header-accent) hover:opacity-100 focus-visible:opacity-100",
+          open && "text-(--header-accent) opacity-100",
         )}
       >
         <GlobeIcon className="size-[clamp(1.25rem,1.98vw,2.375rem)]" />
@@ -384,6 +392,12 @@ function LocaleGroup({
 
   return (
     <div role="listbox" aria-label={label}>
+      {/*
+        Panel content, not masthead content — so it keeps `--color-mist-dim`
+        rather than `--header-ink`. The panel paints its own dark ground and
+        floats above whatever page is beneath, which is why it is unaffected by
+        a page that recolours the masthead. See the `--header-*` tokens.
+      */}
       <div aria-hidden className="px-[1.1em] pt-[0.5em] pb-[0.2em] text-fine tracking-[0.08em] text-mist-dim">
         {label.toUpperCase()}
       </div>
@@ -426,12 +440,17 @@ function LocaleGroup({
  * a person icon and a bag icon also manage without one.
  */
 /**
- * `login-icon.webp` and `bag-icon.webp` are solid filled silhouettes, not line
- * art, so a thin stroked circle reads noticeably lighter next to them at the
- * same box height — same height, far less ink. This is a solid disc instead,
- * with the meridian and equator cut out through a mask rather than drawn in a
- * paint colour, so the cutout stays transparent against whatever the header's
- * own backdrop happens to be at that scroll position, not a fixed guess at it.
+ * A solid disc, with the meridian and equator cut out through a mask rather
+ * than drawn in a paint colour, so the cutout stays transparent against
+ * whatever the header's own backdrop happens to be at that scroll position
+ * rather than a fixed guess at it.
+ *
+ * **The reason it is solid was the raster pair beside it** — `login-icon.webp`
+ * and `bag-icon.webp` are filled silhouettes, and a thin stroked circle reads
+ * noticeably lighter next to them at the same box height. In the masthead that
+ * pairing no longer holds: `AccountControl` draws a stroked `AccountIcon` now,
+ * so this disc is the heavier of the two. See the note there. `ConceptHeader`
+ * still uses the rasters, where the original reasoning applies unchanged.
  */
 function GlobeIcon({ className }: { className?: string }) {
   const maskId = useId();
@@ -479,6 +498,7 @@ function SegmentRow({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      {/* Drawer row, on the drawer's own veil — dark ground, so not `--header-ink`. */}
       <span className="text-mist-dim tracking-[0.01em]">{label.toUpperCase()}</span>
 
       <div role="group" aria-label={label} className="flex flex-wrap items-center gap-[0.4em]">

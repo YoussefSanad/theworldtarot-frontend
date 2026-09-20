@@ -39,7 +39,11 @@ import { cardReference } from "@/lib/assets";
  *
  * Each card is itself a `.stack`: the watercolour, the frame and the text share
  * one grid cell, so the tallest sets the height and nothing is positioned
- * absolutely. Inside it the type is sized in `cqw` against the card's own box —
+ * absolutely. **In practice the watercolour is always the tallest** — it is
+ * given an explicit `aspect-369/420` and the copy has never reached it, which
+ * is what keeps the three cards the same height as each other and is where
+ * the card's height is actually set; see the note on the `<Image>` below.
+ * Inside it the type is sized in `cqw` against the card's own box —
  * the `ProductCard` pattern — because these proportions are the frame's at the
  * card's 369px width, whatever width the column happens to give it.
  */
@@ -123,19 +127,84 @@ export function SpheresCarousel({
                   />
                 }
               >
+              {/*
+                **This picture is what makes the card tall, not the words
+                beside it.** Both share one `.stack` cell, and the text block
+                is the shorter of the two at every width — so the row is sized
+                by the image's own aspect, and the copy simply sits in front of
+                it. Measured: all three cards render exactly 455/369 of their
+                width, identical to each other, though love runs five lines and
+                the other two run four.
+
+                Which is why the client's "make them 15–20% shorter" is solved
+                *here* rather than by trimming the padding below. Cutting the
+                text block's padding moves the words up inside a box whose
+                height never changes — the first attempt at this did exactly
+                that, and the cards stayed 316px while the headings ended up in
+                the diamonds.
+
+                So the box is given an aspect of its own, shorter than the
+                asset's, and `object-position: bottom` decides which end of the
+                art the crop takes. Her watercolour is empty parchment for its
+                top ~60% (measured: love 64.8%, career 59.6%, money 58.2%) with
+                the landscape painted below, so anchoring the bottom spends the
+                crop on that dead parchment and carries the mountains up under
+                the text — the "move the illustration up and close the gap"
+                half of her note, which was a 74px band of blank paper.
+
+                **369/420 against her 369/455 is 7.5% off the card.** An
+                earlier pass took 17.6% at `369/375`, which was inside the
+                client's stated band but cropped so far that the wash came up
+                under the last line of copy — measured, the first visible ink
+                *overlapped* the text by 3px on love and 12px on money. She
+                asked for the height back, so the ratio is the looser one and
+                the gap is the thing being protected rather than the
+                percentage.
+
+                **The three knobs fight each other, which is why they are
+                tuned as a set.** Widening `px` narrows the measure, and past
+                `10.5cqw` love's paragraph wraps to a sixth line and drops
+                straight back into the paint — so the side padding is capped
+                there, not by taste. Re-tune all three together and re-measure
+                the gap; do not raise one alone.
+
+                `aspect-369/420` needs `h-auto` to beat the `size-full` this
+                used to carry: a fixed `height:100%` resolves against the cell
+                and the ratio never applies.
+              */}
                 <Image
                   src={card.art.src}
                   alt=""
                   width={card.art.width}
                   height={card.art.height}
-                  className="size-full object-cover"
+                  className="aspect-369/420 h-auto w-full object-cover object-bottom"
                   sizes="(width >= 64rem) 19.2vw, 82vw"
                 />
 
-                <div className="flex flex-col items-center px-[8.6cqw] pb-[6cqw] pt-[9cqw] text-center">
+                {/*
+                  `9.5cqw` top clears `.ornate-crest--sphere`, which hangs half
+                  its trio 2.95cqw *inside* the card — under about 4cqw the
+                  heading's capitals run into the diamonds. It is well past
+                  that floor because the client wanted more air over the
+                  heading, not because the crest needs it.
+
+                  **`10.5cqw` is a ceiling on the sides**: at `11cqw` love
+                  wraps to six lines and the copy lands back in the
+                  watercolour. See the note on the `<Image>` above.
+                */}
+                <div className="flex flex-col items-center px-[10.5cqw] pb-[5cqw] pt-[9.5cqw] text-center">
                   <h3 className="font-serif text-h3 leading-none tracking-[0.01em] text-card-ink">{card.label}</h3>
 
-                  <p className="mt-[3.8cqw] font-light text-card-body leading-[1.083] tracking-[0.01em] text-black">
+                  {/*
+                    **`text-pretty` and the hard-spaced tails together.** The
+                    client's note was specific: "growth" alone under career,
+                    "decisions" alone under money. `text-pretty` asks the
+                    browser to avoid a short last line generally; the non-
+                    breaking spaces in `card-content.ts` are what guarantee the
+                    two she named, since `text-wrap: pretty` is a preference a
+                    narrow column can still overrule.
+                  */}
+                  <p className="mt-[4.5cqw] text-pretty font-light text-card-body leading-[1.083] tracking-[0.01em] text-black">
                     {card.body}
                   </p>
                 </div>

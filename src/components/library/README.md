@@ -235,7 +235,7 @@ so the line and its box stop moving together and an unwrappable line is pushed
 out of its column. If this copy ever changes, re-check it at `lg` as well as at
 1920 — the failure shows up at the narrow end, not the wide one.
 
-## The room below the button is the client's, and it is measured
+## The room below the button, and why her number is not spent in full
 
 Her frame ends the last call to action at y=3032 of 3772, so **740px — 19.62% of
 the page — is rotunda and nothing else.** This is the same "show as much of the
@@ -243,8 +243,45 @@ background as possible" that `world-tarot/README.md` records for the garden
 path, and it is carried the same way: extra `pb-` on the page wrapper, on top of
 what `ClosingSaying`'s own room-space already gives.
 
-740/1920 = 38.54vw, and that padding is the number to move if she wants more of
-it or less — not the backdrop's sizing, which is width-driven.
+740/1920 = 38.54vw, and that is what the wrapper carried at first. **It reads as
+a hole in the page**, which the client reported as too large a gap on desktop
+and tablet.
+
+The reason is the thing `world-tarot/README.md` says in passing and is worth
+promoting here: **her frames draw neither a header nor a footer.** So 740px is
+the air between the button and the bottom of her *artboard* — and the real page
+then adds a 522px footer (at 1920) underneath it that she never drew. Spent
+literally, the page ends on 740px of empty rotunda *and then* half a thousand
+pixels of footer.
+
+So this page departs from the frame where the World Tarot page does not, and the
+departure is deliberate. The wrapper is tuned by eye against the rendered page
+to about **290px between the button and the footer at 1920**. Two things
+contribute to that gap besides this padding, and both have to come off before
+the number is written down:
+
+- **Half of `ClosingSaying`'s room-space box**, 94px at 1920. The box is
+  `justify-center` with the button inside it, so it is air above *and* below —
+  only half of it falls under the button. (The first attempt at this fix
+  subtracted the whole box, which is the same mistake in the other direction.)
+- **`SiteFooter`'s top margin**, 14px at its clamp maximum.
+
+290 - 94 - 14 = 182px, and 182/1920 = **9.48vw**. **That is the knob** — move it,
+not the closing block (which is shared with the readings pages) and not the
+backdrop's sizing, which is width-driven.
+
+Below `lg` nothing changes: the vw term only overtakes the `3rem` floor above
+about 506px wide, so phones keep the padding they had, and the mobile page ends
+on the room by the backdrop's floor anchor rather than by this padding.
+
+The trim only became safe once the backdrop was re-exported. The old 1280x2515
+crop ran out of photograph partway down a desktop page, so a shorter column
+would have ended on bare colour; the 1920x3772 export is her frame at full
+height, and the shorter column still ends on rotunda.
+
+For reference, the rendered gap across the three pages that close this way:
+`/library` 290px, `/world-tarot` 1017px (its frame's 904 spent in full, 26% of
+the page), `/readings` 113px.
 
 ## The backdrop
 
@@ -255,8 +292,10 @@ on the floor. The reason is that this photograph is **opaque to its own top
 edge**: the dome and its clouds reach the top of the frame, so there is no
 near-flat sky to dissolve into and a feather there would only fade the ceiling
 out. The fade is spent on the bottom edge instead (`--room-sink`, below). It
-keeps `overflow: clip` and takes no overhang, which is where it parts from the
-path: the client draws the room inside the frame.
+takes no overhang at the top, which is where it parts from the path: the client
+draws the room inside the frame. At the bottom it takes the path's own
+`--path-drop` under the name `--room-drop`; see "The footer's margin was a gap,
+not an edge" below.
 
 ### Below `lg` the room turns over, and a sky opens above it
 
@@ -286,9 +325,11 @@ from underneath. It is replaced by the parlour's own top feather, the dome
 dissolving up into the sky above it. (`--room-sink` is still inherited below
 `lg`, but the mask that read it is gone, so it is inert there.)
 
-`overflow: clip` is kept from the desktop rule and is now doing the parlour's
-job rather than nothing: a floor-anchored box capped at `min(196.46vw, 100%)`
-can run taller than a short page.
+There is no `overflow: clip` any more. A floor-anchored box capped at
+`min(196.46vw, 100%)` cannot outrun a short page — the cap's second term is the
+box itself — and the clip's real effect here was to eat `--room-drop`. The
+document is kept from growing by `overflow-y-clip` on the layout column, which
+is untouched.
 
 The sky itself is the readings index's layer verbatim — the client's 375x850
 night sky at its own scale, fading downwards. It keeps its own scale rather than
@@ -304,10 +345,12 @@ Reported after the first build: a thin flat strip where the artwork stopped,
 above the footer's own dark pane. The instinct is to reach for the layer's
 height or its position; both were fine.
 
-The cause was a **colour seam**. The rotunda's own bottom edge averages
+The cause was a **colour seam**. The first crop's bottom edge averaged
 `#1d242e`, and the page beneath it is `--color-night`, `#081525` — so ending the
 image on a hard line butted a light grey-blue against a darker navy, and that
-join read as a band clean across the page.
+join read as a band clean across the page. (The client's re-export ends at about
+`#0c121b` and no longer has this problem in the picture; the fade is kept
+because it costs nothing and makes the edge safe against the next export.)
 
 The fix is `--room-sink`: the last 18% of the image dissolves into the colour
 under it rather than stopping on it, so there is no line to see at any page
@@ -319,6 +362,37 @@ button ends (3032), so it lands on empty floor rather than over content.
 **If a band ever appears again here, sample the artwork's edge colour against
 the page colour before adjusting any geometry.**
 
+### The footer's margin was a gap, not an edge
+
+A band reported a second time, below `lg` and after the re-export — and *not*
+the same fault, which is why the advice above did not find it. Sampling the
+artwork's edge is the right first move and it came back clean: the new export
+ends at about `#0c121b` against a `#081525` page, so there was no seam left to
+see.
+
+The band was not the artwork's edge at all. `SiteFooter` carries
+`mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and **a margin belongs to neither box** —
+so between the backdrop's bottom and the footer's own scrim there is a strip of
+the layout column with nothing painted in it, showing flat colour. No fade
+covers that, because there is nothing there to fade; only reaching across it
+does.
+
+This is verbatim the World Tarot path's `--path-drop`, and it is carried here
+under the name `--room-drop` (2rem — past the margin so the crossing is not
+hairline-exact at any width, but not generous, because the surplus lands under a
+scrim that is 77% rather than opaque). Two notes:
+
+- It goes on the **mobile** rule's bottom inset. Above `lg` the room hangs from
+  the top and has already faded into the page colour long before the footer, so
+  there is nothing there to reach with.
+- **It cost the parent its `overflow: clip`**, and that is the same trap the
+  World Tarot block records: a clip on the element cuts off exactly the overhang
+  the drop creates, so the band survives and no value ever appears to work.
+
+So the page now has two different bands on its record, with two different cures:
+an *edge* (cure: fade it, `--room-sink`) and a *gap* (cure: reach across it,
+`--room-drop`). Check which one you have before reaching for either.
+
 **The artwork came from the composed frame, not from Figma's raw fills**, and
 this is the World Tarot README's warning repeating itself. `download_assets` on
 the BACKGROUND node returns three raw images: a 1920x3772 one that is exactly
@@ -328,3 +402,54 @@ blending in the PSD — and a 240x472 thumbnail. None is what the page shows. Th
 node's own *render* is, and that is what `public/figma/library-rotunda.webp` is
 cropped from. Check a raw image's pixels against what the frame actually looks
 like before shipping it.
+
+## The client's revision round (LIBRARY.FEEDBACK.pdf)
+
+Four of her notes land on this page, and three of them undo something that was
+built deliberately. That is the point of recording them here: each was a
+considered decision, and each is now overruled by the person whose page it is.
+
+**The suit navigation rides `--text-nav`, not a flat `vw` of its own.** She
+asked for it "much smaller … see the PSD for the intended size", and the
+ceiling was never wrong — both it and the tagline above it top out at the 30px
+she draws. The *slope* differed: `3.1vw` reached 30px at about 968px of
+viewport and then sat there, while `--text-nav`'s `1.5625vw` does not arrive
+until 1920. Between those widths the nav was the only line in the masthead
+still at full size — 30px beside a 22.5px tagline at 1440. **A clamp that
+agrees with the drawing at 1920 can still be wrong at every width below it;
+match the ramp, not just the maximum.**
+
+**The plaque type fills the brass now.** "Much, much larger so they're easy to
+read", for the second time. The plaque is 42% of the card (x=188..456 of 640,
+measured off the delivered art) and `2.62cqw` was her own mockup's size, at
+which the longest name occupies about a third of the card's width. It was
+faithful to her lettering, and her lettering was never sized to be read at grid
+scale. `3.05cqw` puts "THE HIGH PRIEST" hard against the rivets, which is as
+far as the geometry goes — the rest of the legibility had to come from the
+cards being drawn larger, which the mobile grid change below supplies.
+
+**The deck is a grid at every width.** It was a swipeable carousel below `40rem`
+(and one column below `30rem`), on the reasoning that twenty-two full-height
+cards is four screens of scrolling on a phone. She asked for it gone by name:
+"keep the responsive grid with two columns, rather than a horizontal carousel.
+No horizontal scrolling." So `MajorArcanaCarousel` is deleted, `MajorArcanaGrid`
+is a plain `<ul>` that needs no client JavaScript at all, and `< 64rem`'s two
+columns simply carry on down. The page is long on a phone; that is the trade she
+has chosen, and it should not be re-solved with a carousel.
+
+**The closing line is champagne.** She called it "the wrong color — please match
+it to the corresponding text on the other pages", and she is right about which
+way round it was: World Tarot and a reading's own page both close in
+`--color-champagne`, and only this page and the readings index closed in gold.
+So this joins the majority rather than the frame it was copied from.
+
+She later gave the same note on the readings index, which was the last gold
+holdout. **Champagne is now `ClosingSaying`'s default** rather than something
+each page asks for; see that component for the current rule.
+
+Two notes in that PDF are **not** implemented here and remain open: the
+**background replacement** (she has supplied a toned-down rotunda so the artwork
+competes less with the cards — `asset dump/LIBRARY_BACKGROUND.REPLACEMENT.jpg.zip`,
+which needs the `library-rotunda.webp` pipeline above run over it), and the
+**Love/Career/Money card height** reduction of 15–20%, which is the homepage's
+and not this page's.

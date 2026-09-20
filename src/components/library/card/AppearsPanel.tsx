@@ -94,7 +94,14 @@ export function AppearsPanel({
                 className="mt-[clamp(0.5rem,0.78vw,0.9375rem)] h-auto w-full max-w-[12.552vw] lg:max-w-60.25"
               />
 
-              <p className="mt-[clamp(0.5rem,0.83vw,1rem)] font-light text-card-fine leading-[1.111] tracking-[0.01em] text-cream/62">
+              {/*
+                `text-pretty` for the same reason the sphere cards carry it:
+                the client does not want a box ending on a lone word, and these
+                four columns are narrow enough to strand one. No hard-spaced
+                tails here — she named the two in `spheres`, and those are
+                pinned in `card-content.ts`; this is the general case.
+              */}
+              <p className="mt-[clamp(0.5rem,0.83vw,1rem)] text-pretty font-light text-card-fine leading-[1.111] tracking-[0.01em] text-cream/62">
                 {column.body}
               </p>
             </li>

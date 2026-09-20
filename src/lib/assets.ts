@@ -37,6 +37,24 @@ export const brand = {
    * come with it — is in play.
    */
   logo: asset("/wt-logo.svg", 426, 77),
+  /**
+   * The same wordmark in this site's one dark ink, for its one light page.
+   *
+   * **A second file rather than a CSS recolour, because neither route exists
+   * here.** The letters are `<path fill>` inside a `<style>` block, so a page
+   * cannot reach them: `images.unoptimized` makes `next/image` emit a plain
+   * `<img>`, and an `<img>` is a replaced element whose document is closed to
+   * the parent's CSS — `currentColor` and `fill` from outside both stop at its
+   * border. Inlining the SVG as a component would open it, at the cost of
+   * shipping the wordmark in every page's HTML rather than in one cached file.
+   *
+   * So it is the one file duplicated, and the duplication is one declaration
+   * wide: `fill` in the `<style>` block, `#fcf4da` there and `#1b2415` here.
+   * **Edit the shapes in both** — they are the same drawing and nothing checks
+   * that they match. Used by `SiteHeader` on `.library-card-page`; see
+   * `headerTheme` in `content/site.ts`.
+   */
+  logoInk: asset("/wt-logo-ink.svg", 426, 77),
   livingTarotBadge: asset("/figma/living-tarot-badge.webp", 271, 33),
   compass: asset("/figma/compass-icon.webp", 190, 215),
   bulletStar: asset("/figma/bullet-star.webp", 19, 19),
@@ -230,6 +248,36 @@ export const worldTarotArtwork = {
    * rather than drawn, it comes back there and not as a straggling token.
    */
   between: asset("/figma/world-tarot-between.webp", 138, 57),
+  /**
+   * **Recoloured to the then-current `--color-gold` (#e4c46a), and the pixels
+   * are no longer
+   * the client's own.** She asked for this heading to match the gold the
+   * rest of the site's headings use, and being artwork it could not simply
+   * be re-tokened.
+   *
+   * Two things were wrong with the original, and only fixing both matched it:
+   * its hue was already 44.3° — exactly the token's — but its saturation ran
+   * 41.6% against the token's 53.5%, *and* her export is capped at alpha 140,
+   * so the letter body painted at 55% over a near-black panel and composited
+   * to about #6A5C34. Lifting the saturation alone still left it dark; the
+   * flat 140 plateau (the glyph bodies, 2410px) is rescaled to 255 with it.
+   *
+   * The gradient and the outline survive because the shift is multiplicative
+   * in HSV about the existing values rather than a flat fill — the body now
+   * spans luminance 188..200 around the token's 195. The antialiased rim
+   * keeps its own lower alpha and stays a rim.
+   *
+   * `asset dump/readings page/SKY & STONE.png` is the untouched original and
+   * measures the same pale #EACF83 at alpha 140, so the wash is hers rather
+   * than something the webp conversion introduced — re-exporting from the
+   * dump will undo this. Dimensions are unchanged, so nothing below moves.
+   *
+   * **The token has since moved to the antique gold #dfc894 (19 Sep 2026) and
+   * these baked pixels did not follow.** Being artwork, this heading still
+   * carries the old, more saturated gold and now runs warmer than the live
+   * type around it. Matching it means re-running the recolour above against
+   * the new token, not a CSS change.
+   */
   skyStone: asset("/figma/world-tarot-sky-stone.webp", 218, 37),
   /** Her silver signature, not the conversion's black one. */
   signature: asset("/figma/world-tarot-signature.webp", 153, 94),

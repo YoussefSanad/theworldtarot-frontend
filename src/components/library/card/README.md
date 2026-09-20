@@ -133,7 +133,7 @@ does the work (`src/app/README.md`), and every rearrangement here is an
 
 | Block | Below `lg` |
 |---|---|
-| `CardEssay` | artwork above the prose, centred — a 359px picture beside a 603px column has no honest narrow form |
+| `CardEssay` | artwork above the prose, centred — a 260px picture beside the prose column has no honest narrow form |
 | `AppearsPanel` | four columns to two, then one; the vertical rules turn horizontal, because a vertical rule between stacked blocks separates nothing |
 | `SpheresCarousel` | an Embla strip below `sm` — three cards stacked is three screens of scrolling |
 | `ShadowPanel` | the silhouette drops out below `sm`; it bleeds off the left edge by design and would sit under the text at phone width |
@@ -158,12 +158,15 @@ fix outright misspellings, keep deck-specific naming:
 
 Both are worth mentioning to the client rather than silently absorbing.
 
-## The masthead, the footer and the back link are additions
+## The masthead and the footer are additions
 
-Her frame draws none of them — it begins at the paper's torn top edge. They
-stay because a visitor arriving from a search has to be able to leave.
+Her frame draws neither — it begins at the paper's torn top edge. They stay
+because a visitor arriving from a search has to be able to leave, and they are
+now the only way off this page: **the "Return to the Library" link** that sat
+in the empty paper under the closing line **was removed at the client's
+request**. The string stays in `content/library.ts` because `ComingSoonPage`
+still uses it.
 
-The back link under the meta strip is the only navigation this page adds.
-**There is deliberately no prev/next**: twenty-one of twenty-two destinations
-are placeholders today, and arrows that mostly lead to "being written" are
-worse than no arrows.
+**There is deliberately no prev/next** either: twenty-one of twenty-two
+destinations are placeholders today, and arrows that mostly lead to "being
+written" are worse than no arrows.

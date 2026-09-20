@@ -37,8 +37,15 @@ export type NavLink = { label: string; href: string };
  */
 export type NavGroupLink = NavLink & { productKey?: string };
 
-/** A nav item that opens a dropdown of links instead of navigating itself. */
-export type NavGroup = { label: string; children: readonly NavGroupLink[] };
+/**
+ * A nav item that carries a dropdown of links. The label is itself a
+ * destination — `href` is the group's own page, the one its children sit
+ * under — so the group navigates *and* opens, rather than only opening. That
+ * is why READINGS no longer lists an OVERVIEW child: the label is the
+ * overview link, and a row repeating it under the same label was the same
+ * destination offered twice.
+ */
+export type NavGroup = { label: string; href: string; children: readonly NavGroupLink[] };
 
 export type NavItem = NavLink | NavGroup;
 
@@ -47,8 +54,8 @@ export const primaryNav: NavItem[] = [
   { label: "LIVING TAROT", href: "/living-tarot" },
   {
     label: "READINGS",
+    href: "/readings/",
     children: [
-      { label: "OVERVIEW", href: "/readings/" },
       /** Dead until the AI One-Card Experience ships; see `signature` in `content/readings.ts`. */
       { label: "1 CARD EXPERIENCE", href: "/readings/one-card", productKey: "one-card" },
       { label: "3 CARD", href: "/readings/three-card/", productKey: "three-card" },

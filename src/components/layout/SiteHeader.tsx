@@ -144,14 +144,43 @@ export function SiteHeader() {
     */
     <header className="relative z-50">
       <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
+        {/*
+          **Both cuts of the wordmark ship, and CSS picks one.**
+
+          The letters are `fill` inside the SVG's own `<style>`, and
+          `images.unoptimized` makes this a plain `<img>` — a replaced element
+          the page's CSS cannot reach into — so the dark page needs a different
+          *file*, not a different colour. Swapping `src` in JS would mean this
+          shared header knowing which page it is above, which it cannot: it is
+          a sibling rendered *before* `main`, so no context or prop from the
+          page reaches it. The same `:has()` that recolours the nav hides one
+          of these instead. See `brand.logoInk` and globals.css.
+
+          `.logo-night` / `.logo-ink` are the hooks the `:has()` rule flips;
+          the night cut shows by default so every other page needs no rule at
+          all. The second file is ~8KB and both are fetched, which is the cost
+          of keeping the header page-agnostic. `aria-hidden` on both plus one
+          label on the link means a screen reader hears the name once rather
+          than twice.
+        */}
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
+            aria-hidden
             src={brand.logo.src}
-            alt={siteName}
+            alt=""
             width={brand.logo.width}
             height={brand.logo.height}
             priority
-            className="w-[clamp(8.5rem,14.64vw,17.5625rem)]"
+            className="logo-night w-[clamp(8.5rem,14.64vw,17.5625rem)]"
+          />
+          <Image
+            aria-hidden
+            src={brand.logoInk.src}
+            alt=""
+            width={brand.logoInk.width}
+            height={brand.logoInk.height}
+            priority
+            className="logo-ink hidden w-[clamp(8.5rem,14.64vw,17.5625rem)]"
           />
         </Link>
 
@@ -199,7 +228,7 @@ export function SiteHeader() {
               href={headerActions.cta.href}
               variant="ghost"
               size="fluid"
-              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
+              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
             >
               {headerActions.cta.label}
             </ButtonLink>
@@ -222,7 +251,7 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                  className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                 >
                   {item.label}
                 </Link>
@@ -278,7 +307,23 @@ export function SiteHeader() {
               the foot of the drawer bare over the page. An unscrolling panel
               keeps the veil pinned to the full height of the screen.
             */}
-            <div className="relative flex flex-1 flex-col gap-10 overflow-y-auto overscroll-contain px-gutter py-[max(1.25rem,var(--spacing-gutter))]">
+            {/*
+              **The drawer resets the masthead palette to the site's own.** The
+              `--header-*` tokens exist so a light page can recolour the nav
+              (see globals.css), but this panel is not the masthead — it paints
+              its own dark veil above the page, so its contents want the
+              cream-on-dark they have everywhere. Rebinding here rather than
+              reverting each utility means anything added to the drawer later
+              is right by default.
+            */}
+            <div
+              className="relative flex flex-1 flex-col gap-10 overflow-y-auto overscroll-contain px-gutter py-[max(1.25rem,var(--spacing-gutter))]"
+              style={{
+                ["--header-ink" as string]: "var(--color-mist-dim)",
+                ["--header-accent" as string]: "var(--color-gold)",
+                ["--header-cta" as string]: "var(--color-champagne)",
+              }}
+            >
               <Link
                 href="/"
                 id={labelId}
@@ -300,7 +345,7 @@ export function SiteHeader() {
                   href={headerActions.cta.href}
                   variant="ghost"
                   size="fluid"
-                  className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
+                  className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
                   onClick={closeMenu}
                 >
                   {headerActions.cta.label}
@@ -313,13 +358,26 @@ export function SiteHeader() {
                 {primaryNav.map((item) =>
                   "children" in item ? (
                     <div key={item.label} className="flex flex-col gap-5">
-                      <span className="text-mist-dim tracking-[0.01em]">{item.label}</span>
+                      {/*
+                        A link here too, not the inert label it used to be —
+                        the drawer has no hover and no dropdown, so if the
+                        group's own page is not reachable from its label it is
+                        not reachable at all now that OVERVIEW has gone from
+                        the children. See `NavGroup` in `content/site.ts`.
+                      */}
+                      <Link
+                        href={item.href}
+                        className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                        onClick={closeMenu}
+                      >
+                        {item.label}
+                      </Link>
                       <div className="flex flex-col gap-5 border-l border-(--edge-gold) pl-5">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                            className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                             onClick={closeMenu}
                           >
                             <NavGroupLinkLabel link={child} />
@@ -331,7 +389,7 @@ export function SiteHeader() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                      className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                       onClick={closeMenu}
                     >
                       {item.label}
