@@ -8,8 +8,13 @@ import { cn } from "@/lib/cn";
  * The dark panel: "When The Fool Appears in a Reading", and its four columns.
  *
  * **This panel is not part of the page's inversion.** The rest of the page is
- * near-black on parchment; this is the site's own gold and cream on navy, so it
+ * black on parchment; this is the site's own gold and cream on navy, so it
  * overrides the ink it inherits from `.library-card-page`.
+ *
+ * Its ground is `--color-card-panel` rather than `--color-card-ink`. The two
+ * held the same value until the client took the page's type to pure black —
+ * which would have flattened this panel to `#000` had it still been reading
+ * the ink token. See the note beside them in globals.css.
  *
  * **The gold border belongs to a child holding the columns, and its top edge
  * runs behind the heading.** Her drawing has the stroke pass *under* the words
@@ -44,7 +49,7 @@ export function AppearsPanel({
   columns: MajorArcanaContent["appears"];
 }) {
   return (
-    <div className="stack rounded-[clamp(0.75rem,1.25vw,1.5rem)] bg-card-ink p-[clamp(0.625rem,1.04vw,1.25rem)]">
+    <div className="stack rounded-[clamp(0.75rem,1.25vw,1.5rem)] bg-card-panel p-[clamp(0.625rem,1.04vw,1.25rem)]">
       {/*
         The bordered box holds the columns and nothing else, and its top edge
         runs **behind** the heading above it — her drawing has the stroke pass
@@ -56,7 +61,22 @@ export function AppearsPanel({
         what holds them apart.
       */}
       <div className="mt-[0.72em] w-full self-start rounded-[clamp(0.5rem,0.94vw,1.125rem)] border border-gold/55 px-[clamp(0.75rem,2.08vw,2.5rem)] pb-[clamp(1rem,1.46vw,1.75rem)] pt-[clamp(1.5rem,2.08vw,2.5rem)]">
-        <ul className="grid w-full list-none grid-cols-1 gap-y-[clamp(1.5rem,2vw,2.4rem)] p-0 sm:grid-cols-2 lg:grid-cols-4">
+        {/*
+          **`minmax(0, 1fr)` explicitly, which is what makes the four equal.**
+
+          The client's note is that the column widths are inconsistent. They
+          were already `grid-cols-4`, and Tailwind writes that as
+          `repeat(4, minmax(0, 1fr))` — but a grid item's default `min-width`
+          is `auto`, so a track still refuses to shrink below its longest
+          unbreakable word. "relationship," in the first column and
+          "uncertainty." in the third are long enough to push their tracks past
+          a quarter and take the width off the other two.
+
+          `[&>li]:min-w-0` releases that floor, so the four tracks resolve to a
+          true quarter each and the text wraps inside them instead of setting
+          them. The rule below does the other half of the job.
+        */}
+        <ul className="grid w-full list-none grid-cols-1 gap-y-[clamp(1.5rem,2vw,2.4rem)] p-0 [&>li]:min-w-0 sm:grid-cols-2 lg:grid-cols-4">
           {columns.map((column, index) => (
             <li
               key={column.label}
@@ -85,13 +105,25 @@ export function AppearsPanel({
                 {column.label}
               </p>
 
-              {/* Her `DIVIDER 2`, drawn under every label rather than between columns. */}
+              {/*
+                Her `DIVIDER 2`, drawn under every label rather than between
+                columns.
+
+                **The width caps are gone**, and they were the visible half of
+                the client's "inconsistent widths". `max-w-[12.552vw]` measures
+                against the *viewport* while the column it sits in measures
+                against the panel, so the two drifted apart at every width
+                between the breakpoints — four rules of the same drawn length
+                reading as four different lengths. Plain `w-full` ties each
+                rule to its own column, which is the thing it is meant to
+                underline.
+              */}
               <Image
                 src={cardReference.dividerGold.src}
                 alt=""
                 width={cardReference.dividerGold.width}
                 height={cardReference.dividerGold.height}
-                className="mt-[clamp(0.5rem,0.78vw,0.9375rem)] h-auto w-full max-w-[12.552vw] lg:max-w-60.25"
+                className="mt-[clamp(0.5rem,0.78vw,0.9375rem)] h-auto w-full"
               />
 
               {/*
@@ -101,7 +133,7 @@ export function AppearsPanel({
                 tails here — she named the two in `spheres`, and those are
                 pinned in `card-content.ts`; this is the general case.
               */}
-              <p className="mt-[clamp(0.5rem,0.83vw,1rem)] text-pretty font-light text-card-fine leading-[1.111] tracking-[0.01em] text-cream/62">
+              <p className="mt-[clamp(0.5rem,0.83vw,1rem)] text-pretty font-light text-card-fine tracking-[0.01em] text-cream">
                 {column.body}
               </p>
             </li>
@@ -110,11 +142,11 @@ export function AppearsPanel({
       </div>
 
       {/*
-        The heading, laid over the border's top edge. `bg-card-ink` is what
+        The heading, laid over the border's top edge. `bg-card-panel` is what
         hides the stroke behind the words — load-bearing rather than
         decorative: without it the rule runs straight through the letters.
       */}
-      <h2 className="justify-self-center self-start bg-card-ink px-[clamp(0.75rem,1.56vw,1.875rem)] text-center font-serif text-nav leading-none tracking-[0.01em] text-gold">
+      <h2 className="justify-self-center self-start bg-card-panel px-[clamp(0.75rem,1.56vw,1.875rem)] text-center font-serif text-nav leading-none tracking-[0.01em] text-gold">
         When {cardName} Appears in a Reading
       </h2>
     </div>

@@ -109,7 +109,7 @@ export function MetaStrip({ meta }: { meta: CardMeta }) {
                 the widths the ratio was chosen to fix. The strip is capped at
                 1234px by its own measure, which is what bounds this in the end.
               */}
-              <dt className="whitespace-nowrap font-serif text-card-label sm:text-[1.65cqw] leading-none tracking-[0.01em] text-card-ink">
+              <dt className="whitespace-nowrap font-serif text-card-label uppercase sm:text-[1.65cqw] leading-none tracking-[0.01em] text-card-ink">
                 {label}
               </dt>
 
@@ -123,8 +123,18 @@ export function MetaStrip({ meta }: { meta: CardMeta }) {
                 />
               </div>
 
-              {/* Sized with the label above it, so the pair stays one scale. */}
-              <dd className="m-0 whitespace-nowrap font-serif text-card-label sm:text-[1.65cqw] leading-none tracking-[0.01em] text-card-ink">
+              {/*
+                Sized with the label above it, so the pair stays one scale.
+
+                **`uppercase` rather than capitals in the copy.** The client
+                asks that this bar always reads in caps, and the content is
+                inconsistent about it — The Fool ships "air" beside "URANUS"
+                and "AQUARIUS". Casing here means the rule holds for the
+                twenty-one cards whose copy has not landed yet, whatever case
+                it arrives in, rather than relying on each entry being typed
+                correctly in `card-content.ts`.
+              */}
+              <dd className="m-0 whitespace-nowrap font-serif text-card-label uppercase sm:text-[1.65cqw] leading-none tracking-[0.01em] text-card-ink">
                 {entry.value}
               </dd>
             </CarouselSlide>

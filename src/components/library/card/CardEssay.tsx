@@ -12,16 +12,30 @@ import { cn } from "@/lib/cn";
  * column on the right, both inside the page's 1035px measure.
  *
  * **The gutter is tighter than her frame too**, 28px rather than 58, and only
- * at `lg` and up: below that the same `gap` is the vertical space between the
+ * at `xl` and up: below that the same `gap` is the vertical space between the
  * stacked picture and the prose, where the drawn value is right.
  *
- * **The artwork is drawn narrower than her frame**, at 260px rather than 359.
+ * **The artwork is drawn narrower than her frame**, at 232px rather than 359.
  * Hers leaves the prose a measure that runs long for its type size; giving the
- * picture back ~99px widens the text column without touching the page's own
- * measure, and the card stays legible at that size because it is still over
- * three times the Library grid's tile.
+ * picture back widens the text column without touching the page's own measure,
+ * and the card stays legible at that size because it is still nearly three
+ * times the Library grid's tile.
  *
- * **Below `lg` the artwork goes above the prose**, which is an addition — she
+ * **The row starts at `xl`, not `lg`, and that is a fix rather than a
+ * preference.** At 1024 the page's measure is 552px and the card was taking
+ * 257 of it, which left the prose 280px — about 31 characters, where running
+ * prose wants 45 or more. The keywords line is `nowrap` and needs roughly 340,
+ * so it broke out of the sheet, which is how the fault was reported. Stacked
+ * through that range the prose has the whole measure instead: 46 characters at
+ * 768px rising to 72 by 1200.
+ *
+ * The card's own cap came down with it, from 16.25rem to 14.5rem, so the row
+ * opens at about 49 characters rather than 46 and widens from there. Both
+ * numbers are a trade against the plaque, which is a share of the card — see
+ * `.library-card__name`, whose size the client has twice asked to raise. 232px
+ * holds its capitals at 8.6px.
+ *
+ * **Below `xl` the artwork goes above the prose**, which is an addition — she
  * drew no mobile frame, and a 359px picture beside a 603px column has no honest
  * narrow form. See this folder's README for the full list of what was added
  * below `lg` and why.
@@ -32,7 +46,7 @@ import { cn } from "@/lib/cn";
  */
 export function CardEssay({ card, content }: { card: MajorArcanaCard; content: MajorArcanaContent }) {
   return (
-    <div className="flex flex-col items-center gap-[clamp(1.5rem,3.02vw,3.625rem)] lg:flex-row lg:items-start lg:gap-[clamp(0.75rem,1.458vw,1.75rem)]">
+    <div className="flex flex-col items-center gap-[clamp(1.5rem,3.02vw,3.625rem)] xl:flex-row xl:items-start xl:gap-[clamp(0.75rem,1.458vw,1.75rem)]">
       {/*
         **The name is laid into the plaque here exactly as the grid does it**,
         and for the same reasons: her artwork ships the plaque empty ("NO PLAQUE
@@ -48,7 +62,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         the grid's size, but it is applied for consistency with that tile.
       */}
       {/*
-        **The `25.1vw` cap only applies from `lg`**, where the card sits beside
+        **The `25.1vw` cap only applies from `xl`**, where the card sits beside
         the prose and has to leave it a measure. Below that it stacks above the
         prose with the whole column to itself, and the cap was making it far
         smaller than it needed to be — the client's note that the plaque name
@@ -63,9 +77,10 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         11.5px — the same plaque, legible.
 
         `sizes` follows, or the browser keeps fetching the small candidate for
-        a box three times the width.
+        a box three times the width. Its breakpoint is `80rem` to match the
+        `xl` the layout now switches at.
       */}
-      <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 lg:max-w-[min(16.25rem,25.1vw)]">
+      <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 xl:max-w-[min(14.5rem,25.1vw)]">
         <span className="stack">
           <Image
             src={card.image.src}
@@ -73,7 +88,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
             width={card.image.width}
             height={card.image.height}
             className="h-auto w-full"
-            sizes="(width >= 64rem) 16.25rem, min(20rem, 80vw)"
+            sizes="(width >= 80rem) 14.5rem, min(20rem, 80vw)"
             priority
           />
 
@@ -88,7 +103,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         </span>
       </span>
 
-      <div className="flex flex-col items-center text-center lg:items-stretch">
+      <div className="flex flex-col items-center text-center xl:items-stretch">
         {/*
           **Centred over the prose, and on one line.** Her frame sets both above
           the essay rather than beside it, so they stay centred where the
@@ -142,7 +157,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
-              className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft lg:text-left"
+              className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft xl:text-left"
             >
               {paragraph}
             </p>

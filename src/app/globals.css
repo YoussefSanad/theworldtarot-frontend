@@ -140,9 +140,37 @@
     header and footer are drawn in — this page's near-black is a different
     colour with a similar name, and sharing one would move site chrome.
   */
-  --color-card-ink: #050a17; /* her headings, near-black */
-  --color-card-ink-soft: #4f4a41; /* her body copy */
-  --color-card-forest: #174310; /* the rules, and the LOOK FOR prose */
+  /*
+    **All three are pure black at the client's instruction.** They were
+    `#050a17` for headings, `#4f4a41` for body copy and `#174310` for the rules
+    and LOOK FOR prose — sampled from her PSD, where they read as a near-black,
+    a warm grey and a forest green. She has since called those a mistake in the
+    original design rather than an intention: the softened ink was costing
+    legibility on the page's pale sheet, and the dividers now ship black too
+    (see `cardReference.dividerGreen`).
+
+    They stay three separate names rather than collapsing into one. Each marks
+    a different job — heading, body, accent — and the page reads them in
+    different places; if any of the three is ever pulled back off black, it can
+    move on its own.
+  */
+  --color-card-ink: #000000; /* her headings */
+  --color-card-ink-soft: #000000; /* her body copy */
+  --color-card-forest: #000000; /* the rules, and the LOOK FOR prose */
+  /*
+    **The dark panels' ground, which is not the ink above.**
+
+    `--color-card-ink` was doing two jobs: the page's dark *type* on the sheet,
+    and the near-black *surface* the "When … Appears in a Reading" and SHADOW
+    panels are drawn on. Taking the ink to pure black at the client's request
+    took those panels with it, and a flat `#000` panel is not what she drew —
+    her navy has a blue cast that reads as a deep night beside the gold, where
+    black reads as a hole.
+
+    So the surface keeps her original `#050a17` under its own name. The two
+    were only ever the same value by coincidence.
+  */
+  --color-card-panel: #050a17;
   --color-card-parchment: #f2e8d5;
 
   /* Layout rhythm */
@@ -1308,82 +1336,56 @@
     the top of the box and the box starts at the top of the window, so the nav
     sits on her forest directly.
   */
+  /*
+    **Her clouds, and the page is dark behind the sheet now.**
+
+    This was `--color-card-parchment` under a forest wash — a warm, pale ground
+    that the paper floated on. The client replaced the artwork with a night sky
+    (`ref-page-clouds-bg.png`, delivered 1920x3620), so the flat colour under it
+    is a deep navy rather than a cream: what shows past the image at the foot of
+    a long page has to belong to the same picture.
+
+    `#091828` is the sky's own top row, sampled across its width. It is within a
+    step or two of `--color-night` but is deliberately its own value — it
+    answers to her image, and re-sampling it is the right move if that image is
+    ever re-exported, where following the site token would not be.
+
+    This is also why the masthead went back to the site's blue: the ground under
+    it stopped being pale, so the light nav this page briefly carried had
+    nothing left to justify it.
+  */
   .page-atmosphere-card-reference {
-    background-color: var(--color-card-parchment);
+    background-color: #091828;
     overflow: clip;
   }
 
   /*
-    The wash's bottom edge, dissolved rather than cut.
+    **The sky, which replaced her forest wash.**
 
-    Measured on her `Layer 20`: the last rows average `#d2b287` against the
-    `#f2e8d5` the page carries on in. Ending the image on a hard line therefore
-    butts a tan against a much paler cream, and that join reads as a flat band
-    straight across the page — the same failure `components/library/README.md`
-    records above the Library's footer, where the fix was also a fade and not a
-    change of height.
+    Her delivered file is 1920x3620, so 188.54vw rather than the wash's
+    169.32vw, and it is a night sky rather than a warm forest — see the ground
+    colour on the rule above.
 
-    So the artwork dissolves into the colour beneath it instead of stopping on
-    it. The layer is its own element rather than a background on the page,
-    because the mask has to measure **the artwork's height, not the page's**:
-    as a page background it would fade at a share of however tall the page
-    happened to be, which moves the fade every time a card's copy runs longer.
+    **No mask, and that is the change of kind.** The wash was a picture with a
+    *bottom*: it ended on `#d2b287` against a much paler page and had to be
+    dissolved into it, which is what `--wash-sink` and the two mask stops were
+    for. The sky ends on `#08192b` against a ground sampled from its own top
+    row, so there is nothing to hide — the image simply stops and the same
+    colour carries on. A fade here would only wash out the lowest clouds.
 
-    **It starts flush with the top of the column**, which is the top of the
-    window, so her forest is what the transparent masthead sits on. The parent
-    box's own fill is `--color-card-parchment` (`#f2e8d5`) while the wash
-    begins nearer `#e2c38d`, so any offset here shows as a pale band between
-    the nav and the picture. Her composition therefore rides about a
-    masthead's height above the Figma frame, which costs nothing visible: the
-    top of the wash is open sky and canopy with the drawn detail far below.
+    `100% auto` and `no-repeat`: the sky spans the page's width at its own
+    aspect and does not tile, for the reason the forest did not either — it is
+    a composition with light falling one way, so a second copy would restart it
+    mid-page. Below its own height the ground colour takes over.
   */
   .page-atmosphere-card-reference::after {
-    /*
-      The fade's distance down the *artwork*, not down the box. It was 76% of
-      a box that was always the artwork's height, so the two were the same
-      thing; now that the box can grow past the artwork (see `block-size`
-      below) they are not, and a percentage would walk the fade down the page
-      on any card whose copy runs long. 76% of 169.32vw, stated absolutely, so
-      it lands in the same place whatever the page does.
-    */
-    --wash-sink: 128.68vw; /* 169.32 * 0.76 */
-
-    background-image: url("/figma/card-reference/page-wash.webp"), url("/figma/card-reference/page-base.webp");
-    background-position:
-      -0.885% -0.093%,
-      center top;
-    background-repeat: no-repeat, no-repeat;
-    background-size:
-      101.51% auto,
-      100% auto;
-    /*
-      **At least the artwork's own height, and taller if the page is.** This
-      was a flat `169.32vw` — the picture's aspect, so the box was exactly as
-      tall as the image and `--wash-sink` landed the fade in the same place on
-      every card, which is what the note above describes.
-
-      That holds only while the page fits inside it. This one does not: past
-      169.32vw the wash simply ended, and the paper's torn bottom edge came
-      down on flat `--color-card-parchment` with no wash behind it. `max()`
-      against the page's own height guarantees the layer reaches the bottom of
-      whatever it has to cover. Both images are `no-repeat` at their own
-      aspect, so the added height carries no picture and nothing is stretched
-      — it is empty, fully-faded box below the artwork, which is exactly the
-      transparent tail the mask was already producing.
-    */
-    block-size: max(169.32vw, 100%); /* 3251 / 19.2, floored at the page */
+    background-image: url("/figma/card-reference/page-clouds.webp");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: 100% auto;
+    block-size: 188.54vw; /* 3620 / 19.2 */
     content: "";
     inset: 0 0 auto 0;
-    /*
-      Both stops are absolute for the same reason `--wash-sink` is: the box
-      can now outgrow the artwork, and `transparent 100%` would spread the
-      dissolve over that whole extra height instead of finishing where the
-      picture does. `169.32vw` is the artwork's own foot, so the fade runs
-      from the sink to the bottom of the image and everything past it is
-      simply transparent.
-    */
-    -webkit-mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 169.32vw);
-    mask-image: linear-gradient(to bottom, #000 var(--wash-sink), transparent 169.32vw);
     position: absolute;
   }
 
@@ -1497,16 +1499,19 @@
     element: `.card-paper` is a *container* — see the note above — and hiding
     it would take the page's layout with it.
   */
-  @media (width < 40rem) {
-    .card-paper {
-      background-image: none;
-    }
+  /*
+    **The sheet stays on mobile, and that reverses an earlier change.**
 
-    .card-paper::before,
-    .card-paper::after {
-      content: none;
-    }
-  }
+    It was dropped below `sm` on the client's note that the phone version
+    "does not need to float within the background like desktop/tablet" — sound
+    while the ground behind it was her warm parchment, where losing the sheet
+    cost only a pale layer over a pale wash.
+
+    The ground is a night sky now, and the page's ink is pure black. Hiding the
+    sheet would put black type straight onto `#091828`, which is not a styling
+    regression but an unreadable page. If the client still wants the sheet gone
+    on a phone, the ink has to change with it.
+  */
 
   .page-atmosphere-world-tarot::after {
     background-image: url("/figma/world-tarot-path.webp");
@@ -3369,10 +3374,16 @@
     card's name, around LOOK FOR, and above and below the closing line.
 
     **A variant rather than a tone**, because every rule here is an image and an
-    image has no colour property to set. The green is baked into the asset: her
-    texture under her own `rgba(23,72,20,0.93)`, exported from the composed
-    render. `scripts/optimize-card-assets.mjs` says why that distinction is
-    load-bearing.
+    image has no colour property to set. The colour is baked into the asset.
+
+    **It is black now, and the name is a leftover.** This rule was her forest
+    green — her texture under `rgba(23,72,20,0.93)` — and the client has since
+    delivered black replacements under the same filenames, alongside taking the
+    page's ink to `#000`. The variant is still called `green` because that is
+    what the asset, the token and every caller are called, and renaming the set
+    for a colour that may change again buys nothing.
+    `scripts/optimize-card-assets.mjs` says why the image-not-tone distinction
+    is load-bearing.
   */
   .divider--green {
     aspect-ratio: 582 / 14;
@@ -3832,102 +3843,30 @@
   }
 
   /*
-    **The masthead, inverted for the one light page on the site.**
+    **The masthead is the site's own here, and that is a reversal.**
 
-    This is the client's note — the nav has to read against the parchment —
-    answered by recolouring the type rather than by putting a ground behind it.
-    An earlier fix did the opposite: a dark umber band filling upward from the
-    page wrapper, legible but reading as a slab laid across the top. Parchment
-    runs clean to the top of the window now.
+    This page spent a while with a light nav — dark ink on her parchment, a
+    dark cut of the wordmark, forest hovers — because the header sat on a pale
+    ground and the brief was legibility against it. The client has since asked
+    for the standard blue back: one masthead everywhere, and this page no
+    longer the exception. `--color-night` behind it does that, so nothing here
+    rebinds `--header-*` and the nav keeps its cream and gold.
 
-    **Three separate problems, and each needs its own selector.**
+    What is left is only the ground. `body` is `bg-night` already, but this
+    page's atmosphere spans the layout column (it has to, so the clouds reach
+    the top), and it would otherwise paint its own sky behind the nav. The
+    header takes the blue back explicitly rather than relying on what is
+    beneath it.
 
-    1. *The header has no idea what page it is above.* `SiteHeader` is rendered
-       by `(site)/layout.tsx` as a sibling **before** `main`, so no React
-       context or prop from the page reaches it — context flows down and the
-       header is not below the page. Matching the URL inside the header fails
-       too: `/library/*-tarot-card-meaning/` serves two different pages, since
-       only The Fool has copy and the other twenty-one render `ComingSoonPage`
-       on the dark `library` ground. So the layout column asks, in CSS, whether
-       the light page is somewhere inside it.
-
-       **The selector cannot be `.isolate:has(...)`.** `.library-card-page`
-       carries `isolate` itself, so that pattern reads as "an isolate whose
-       child main contains the page" and quietly matches the wrong element —
-       or nothing. It is `#__next > div` in shape, so it is spelled as the
-       structure it actually is: a `div` that directly owns both `header` and
-       `main`.
-
-    2. *`body` is `bg-night`.* The page's own `PageAtmosphere` is
-       `absolute inset-0` against `.library-card-page`, which lives inside
-       `main` — so it never covers the strip the header sits in, and removing
-       the band exposed the navy behind it. The layout column takes the
-       parchment instead, which puts it behind header, main and footer alike.
-
-    3. *Utilities beat components.* These rules live in `@layer components`,
-       and Tailwind's `utilities` layer always wins regardless of specificity —
-       so `hidden` on the ink logo beat a `display: block` written here and hid
-       both cuts of the wordmark. Anything here that has to override a utility
-       is marked `!important` for that reason; the custom properties do not
-       need it, because nothing else sets them.
-
-    Resting ink is her body colour and the accent is her forest — the page's
-    own two, already carrying its prose and its rules, so nothing new enters
-    the palette. Gold could not stay: it measures about 1.2:1 here, the same
-    failure the carousel dots on this page already had to fix.
-
-    **Measured against her artwork, which is what the type now sits on.** The
-    wash's top rows run about `#e2c38d` at their darkest under the nav and
-    `#edd4a0` at their lightest: resting nav 5.20-6.08:1, hover 6.73-7.86:1,
-    the wordmark's ink 9.49-11.08:1. All clear AA, and the hover is *brighter*
-    than the resting state, which is the relationship the dark pages have.
-
-    The margins of her wash are darker than that — nearer `#be843c` at the far
-    left — but they fall outside the logo and the nav at every width the clamp
-    covers. Re-measure if the masthead's contents ever reach further out.
-
-    The floating panels and the mobile drawer opt back out — see `.menu-panel`
-    and `SiteHeader` — because they paint their own dark grounds above the page.
-  */
-  div:has(> header):has(> main > .library-card-page) {
-    --header-ink: var(--color-card-ink-soft);
-    --header-accent: var(--color-card-forest);
-  }
-
-  /*
-    **The masthead carries no ground of its own here, which is the point.**
-
-    Three fills were tried behind it and every one read as a slab with a seam:
-    the page's parchment, then her wash's averaged top row, then that row
-    reproduced as a gradient. The last came closest and still showed, because
-    her first row is only the *first* row — the picture goes on changing below
-    it, and a strip that matches one line of a photograph is still a strip.
-
-    So there is no fill. `PageAtmosphere` is lifted clear of the header instead
-    (see `CardReferencePage`), which puts her actual artwork behind the nav and
-    leaves nothing to match. It is also what the layout was built for: that
-    column is positioned so an `absolute inset-0` atmosphere spans header, main
-    and footer, and `readings`, `library` and the single reading already lift
-    theirs the same way below `lg`.
-
-    All that is left here is `color`, for the burger's `bg-current` bars.
+    **`:has()` rather than a prop, because the header cannot be told.** It is
+    rendered by `(site)/layout.tsx` as a sibling *before* `main`, so no context
+    or prop from the page reaches it, and the URL cannot stand in either:
+    `/library/*-tarot-card-meaning/` serves two different pages, since only The
+    Fool has copy and the other twenty-one render `ComingSoonPage`. The class
+    can tell them apart, because only `CardReferencePage` sets it.
   */
   div:has(> header):has(> main > .library-card-page) > header {
-    color: var(--color-card-ink-soft);
-  }
-
-  /*
-    The wordmark swaps files rather than colour: the letters are `fill` inside
-    the SVG's own `<style>`, and `images.unoptimized` makes it a plain `<img>`,
-    which the page's CSS cannot reach into. `!important` because `hidden` on
-    the ink cut is a utility — see note 3 above.
-  */
-  div:has(> header):has(> main > .library-card-page) .logo-night {
-    display: none !important;
-  }
-
-  div:has(> header):has(> main > .library-card-page) .logo-ink {
-    display: block !important;
+    background-color: var(--color-night);
   }
 
   /*
@@ -3947,10 +3886,18 @@
     gives the current dot the same lift by the means this ground allows.
   */
   .library-card-page {
+    /*
+      The idle dots keep an opacity, and that is not the reduced-opacity *text*
+      the client asked to be taken to full — it is how a carousel says which
+      slide is current. The shared gold does the same on every dark page (2.79
+      idle against 10.84 current); this is that relationship on a pale ground.
+      The glow follows the ink to black now that `--color-card-forest` is no
+      longer green.
+    */
     --carousel-dot-color: var(--color-card-forest);
-    --carousel-dot-opacity: 0.5;
+    --carousel-dot-opacity: 0.45;
     --carousel-dot-current: var(--color-card-forest);
-    --carousel-dot-glow: 0 0 0 0.18em rgba(23, 67, 16, 0.22);
+    --carousel-dot-glow: 0 0 0 0.18em rgba(0, 0, 0, 0.18);
   }
 
   /*

@@ -144,43 +144,14 @@ export function SiteHeader() {
     */
     <header className="relative z-50">
       <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
-        {/*
-          **Both cuts of the wordmark ship, and CSS picks one.**
-
-          The letters are `fill` inside the SVG's own `<style>`, and
-          `images.unoptimized` makes this a plain `<img>` — a replaced element
-          the page's CSS cannot reach into — so the dark page needs a different
-          *file*, not a different colour. Swapping `src` in JS would mean this
-          shared header knowing which page it is above, which it cannot: it is
-          a sibling rendered *before* `main`, so no context or prop from the
-          page reaches it. The same `:has()` that recolours the nav hides one
-          of these instead. See `brand.logoInk` and globals.css.
-
-          `.logo-night` / `.logo-ink` are the hooks the `:has()` rule flips;
-          the night cut shows by default so every other page needs no rule at
-          all. The second file is ~8KB and both are fetched, which is the cost
-          of keeping the header page-agnostic. `aria-hidden` on both plus one
-          label on the link means a screen reader hears the name once rather
-          than twice.
-        */}
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
-            aria-hidden
             src={brand.logo.src}
-            alt=""
+            alt={siteName}
             width={brand.logo.width}
             height={brand.logo.height}
             priority
-            className="logo-night w-[clamp(8.5rem,14.64vw,17.5625rem)]"
-          />
-          <Image
-            aria-hidden
-            src={brand.logoInk.src}
-            alt=""
-            width={brand.logoInk.width}
-            height={brand.logoInk.height}
-            priority
-            className="logo-ink hidden w-[clamp(8.5rem,14.64vw,17.5625rem)]"
+            className="w-[clamp(8.5rem,14.64vw,17.5625rem)]"
           />
         </Link>
 
