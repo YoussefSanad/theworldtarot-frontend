@@ -31,6 +31,13 @@ import { cn } from "@/lib/cn";
  * under the rule the way the mobile mockup draws it. At `lg` the same clamp
  * becomes the button's own box instead, so the button centres in the space
  * rather than hugging the rule above it.
+ *
+ * **That centring is right only where this block owns the room.** On a page
+ * that carries its own air below the closing line — World Tarot and the
+ * Library both do, on their wrappers — the two are spent one on top of the
+ * other and the button drifts a long way under the quote. Those pages pass
+ * `hugRule`, which collapses the box so the button stays with the line; each
+ * one's wrapper then carries the share the box used to contribute.
  */
 export function ClosingSaying({
   saying = closing.saying,
@@ -39,6 +46,7 @@ export function ClosingSaying({
   width = "readings",
   rule = "hero",
   className,
+  hugRule = false,
 }: {
   saying?: readonly string[];
   /**
@@ -82,10 +90,28 @@ export function ClosingSaying({
    * The card reference page is that case: its closing sits on a sheet of paper
    * with 305px of her own empty paper below it, so the readings pages' "show as
    * much of the room as possible" padding would be room this page does not
-   * have. Passing it also collapses the button's room-space box, which is the
-   * same air measured a second way.
+   * have.
    */
   className?: string;
+  /**
+   * Collapses the box the button is centred in, so it sits under the rule
+   * instead of floating in the middle of up to 256px of air.
+   *
+   * **A page that owns the room below its closing line wants this**, because
+   * otherwise that air is spent twice — once on the page's own bottom padding
+   * and again on this box — and the button drifts away from the quote it
+   * belongs under. The World Tarot and Library pages both ask for it, and both
+   * carry the box's share on their own wrapper instead; each says so where its
+   * padding is set.
+   *
+   * ~~It used to ride on `className`~~, which conflated two unrelated things:
+   * a caller that only wanted different padding also silently moved the
+   * button, and a caller that only wanted the button moved had to restate the
+   * default padding to avoid losing it. `CardReferencePage` is the caller that
+   * proves they are separate — it passes `className` and `action={null}`, so
+   * it has padding of its own and no button to place.
+   */
+  hugRule?: boolean;
 }) {
   return (
     <Section padding="none" className={cn(className ?? "pb-[clamp(4rem,10vw,12rem)] lg:pb-0")}>
@@ -118,9 +144,19 @@ export function ClosingSaying({
         */}
         <div
           className={cn(
-            "mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center lg:mt-0",
-            /* The room-space box is the readings pages' air; a caller that owns its own says so with `className`. */
-            className ? "lg:h-0" : "lg:h-[clamp(6rem,14vw,16rem)]",
+            "mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center",
+            /*
+              The room-space box is the readings pages' air; a caller that owns
+              its own asks for `hugRule`.
+
+              **Which one it is also decides where the button sits.** With the
+              box, the button centres in up to 256px and `lg:mt-0` hands the
+              spacing to that centring. With the box collapsed there is nothing
+              to centre in, so the margin above has to stay at `lg` or the
+              button lands flush against the rule — that is the World Tarot
+              frame's own 17px, near enough the 2.19vw this already sets.
+            */
+            hugRule ? "lg:h-0" : "lg:mt-0 lg:h-[clamp(6rem,14vw,16rem)]",
           )}
         >
           {/* 68px tall at 30px type in Figma; the width is the label's own. */}
