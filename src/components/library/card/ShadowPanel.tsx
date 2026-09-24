@@ -113,7 +113,7 @@ export function ShadowPanel({ lines }: { lines: readonly string[] }) {
 
         <div className="mt-[clamp(0.75rem,1.04vw,1.25rem)] flex flex-col">
           {lines.map((line) => (
-            <p key={line} className="font-light text-card-body leading-[1.2] tracking-wide text-cream/50">
+            <p key={line} className="font-light text-card-body tracking-wide text-cream">
               {line}
             </p>
           ))}

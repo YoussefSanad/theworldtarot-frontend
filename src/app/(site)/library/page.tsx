@@ -45,12 +45,24 @@ export default function LibraryPage() {
       footer and read as a hole in the page rather than as room.
 
       Trimmed by eye against the rendered page to roughly 290px between the
-      button and the footer at 1920, which is this value plus the two things
-      that are not this value's to give: half of `ClosingSaying`'s centred
-      room-space box falls below the button (94px at 1920 — the box is
-      `justify-center` with the button inside it, so only half of it is air
-      underneath), and `SiteFooter`'s own top margin adds 14px. 290 - 94 - 14 =
-      182px, and 182/1920 = 9.48vw.
+      button and the footer at 1920. **That 290 is the tuned number; the
+      padding below it is only whatever is left once the other contributors
+      are counted**, and which contributors exist changed when the button
+      moved up to meet the quote.
+
+      The room-space box used to supply 94px of it: `ClosingSaying` centred the
+      button in a `lg:h-[clamp(6rem,14vw,16rem)]` box, so half that box fell
+      below the button. `hugRule` collapses that box to `lg:h-0`, so
+      those 94px are gone and this padding has to carry them instead —
+      290 - 14 (`SiteFooter`'s own top margin) = 276px, and 276/1920 = 14.37vw.
+      It was 9.48vw while the box was doing the other half.
+
+      **The rise is `lg`-only, and has to be.** `lg:h-0` and the box it
+      replaces are both `lg`-prefixed, so below `lg` the button never sat in a
+      centred box and nothing about its placement has changed — raising the
+      shared clamp there would have added up to 50px of padding at 1023px to
+      compensate for a box that was never in play. The base clamp is untouched
+      and the phone page is byte-identical.
 
       **So this is the knob, and 290px at 1920 is what it was tuned to.** Like
       the World Tarot page's two overhangs, it cannot be read off the frame,
@@ -67,7 +79,7 @@ export default function LibraryPage() {
       mobile page ends on the room by the backdrop's own floor anchor rather
       than by this padding.
     */
-    <div className="relative isolate min-h-full pb-[clamp(3rem,9.48vw,11.375rem)]">
+    <div className="relative isolate min-h-full pb-[clamp(3rem,9.48vw,11.375rem)] lg:pb-[clamp(3rem,14.37vw,17.25rem)]">
       {/*
         `max-lg:-top-20` is the readings index's arrangement, carried here for
         the mobile sky that now opens this page below `lg` (see
@@ -104,6 +116,14 @@ export default function LibraryPage() {
         the same note, and champagne is now `ClosingSaying`'s default rather
         than a thing each page asks for. `tone` is still passed here to keep the
         call explicit alongside the other three props.
+
+        `hugRule` collapses this block's centred room-space box, so GET MY
+        READING sits under the rule instead of floating in the middle of up to
+        256px of air — the same move the World Tarot page makes, and for the
+        same reason: this page owns the room below its closing line on the
+        wrapper above, so spending it twice pushed the button away from the
+        line it belongs to. The wrapper's `lg:pb-` absorbs the 94px that box
+        used to contribute; see the note up there.
       */}
       <ClosingSaying
         saying={[library.closing]}
@@ -111,6 +131,7 @@ export default function LibraryPage() {
         width="library"
         rule="heroWide"
         tone="champagne"
+        hugRule
       />
     </div>
   );

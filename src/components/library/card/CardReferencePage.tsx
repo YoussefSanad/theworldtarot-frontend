@@ -213,6 +213,13 @@ export function CardReferencePage({
           nowhere to send the reader — `/redeem/` uses it — and it is right here
           for the same reason the Library index sells nothing: her frame draws
           the saying between two rules and no button under it.
+
+          `hugRule` because there is no button, so the box that would centre
+          one is pure empty height — up to 256px of it under a closing line
+          that her frame ends on. It used to come free with `className`, back
+          when that prop did both jobs; the two were separated so a caller
+          could ask for one without the other, and this is the caller that
+          wants both.
         */}
         <ClosingSaying
           className="mt-[clamp(0.313rem,1.042vw,1.25rem)]"
@@ -221,6 +228,7 @@ export function CardReferencePage({
           width="cardClosing"
           rule="green"
           tone="ink"
+          hugRule
         />
 
       </div>
