@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { AppearsPanel } from "@/components/library/card/AppearsPanel";
 import { CardEssay } from "@/components/library/card/CardEssay";
 import { CardHeader } from "@/components/library/card/CardHeader";
@@ -12,7 +10,6 @@ import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
-import { cardReference } from "@/lib/assets";
 
 /**
  * A Major Arcana card's reference page (Figma `357:261`).
@@ -97,47 +94,33 @@ export function CardReferencePage({
       */}
       <div className="card-paper mt-[clamp(1.5rem,5.28vw,6.34rem)] pb-[clamp(3.813rem,12.708vw,15.25rem)]">
         {/*
-          Her gold ornament (`FRAME`, 1229x604 at x=345, y=228) frames the top
-          of the sheet: flourished corners, three diamonds centred on its top
-          edge, and sides that run down and simply stop. It is drawn, not
-          stretched — a 604px-tall ornament on a page of unknown height would
-          smear — so it keeps its own aspect and the content sits over it.
+          **Her gold `FRAME` ornament is gone at the client's request** — the
+          1229x604 flourish that used to hang 57px below the torn top edge, with
+          the numeral and the essay stacked over it. Its asset is deleted too,
+          so there is nothing to restore it from.
 
-          Her sheet starts at y=171 and this at y=228, so it hangs 57px below
-          the paper's top edge rather than sitting flush with it: 57/1920 as a
-          vw term, with the Figma pixel as the maximum.
+          What it leaves behind is this: the heading's top padding was measured
+          to her frame, not to the ornament, so it is unchanged. The `.stack`
+          that layered the two is gone with it — with one child there is
+          nothing left to layer — and this is a plain column again.
+
+          Her numeral starts at y=297 against a sheet that begins at y=171, so
+          126px down to the heading and 176 more to the essay. Explicit here for
+          the same reason the gaps below are: a shared `Section` padding gives
+          every block the same air, and hers are all different.
         */}
-        <div className="stack">
-          <Image
-            src={cardReference.frameOrnament.src}
-            alt=""
-            width={cardReference.frameOrnament.width}
-            height={cardReference.frameOrnament.height}
-            className="mt-[clamp(1.125rem,2.969vw,3.563rem)] h-auto w-[91.92%] justify-self-center self-start"
-            sizes="(width >= 64rem) 64.01vw, 92vw"
-            priority
-          />
+        <div className="flex flex-col">
+          <Section padding="none" className="pt-[clamp(1.969rem,6.563vw,7.875rem)]">
+            <Container width="card">
+              <CardHeader card={card} />
+            </Container>
+          </Section>
 
-          {/*
-            Her numeral starts at y=297 and the artwork beside the essay at
-            y=473, both against a sheet that begins at y=171 — so 126px down to
-            the heading and 176 more to the essay. Explicit here for the same
-            reason the gaps below are: a shared `Section` padding gives every
-            block the same air, and hers are all different.
-          */}
-          <div className="flex flex-col">
-            <Section padding="none" className="pt-[clamp(1.969rem,6.563vw,7.875rem)]">
-              <Container width="card">
-                <CardHeader card={card} />
-              </Container>
-            </Section>
-
-            <Section padding="none" className="pt-[clamp(0.875rem,2.917vw,3.5rem)]">
-              <Container width="card">
-                <CardEssay card={card} content={content} />
-              </Container>
-            </Section>
-          </div>
+          <Section padding="none" className="pt-[clamp(0.875rem,2.917vw,3.5rem)]">
+            <Container width="card">
+              <CardEssay card={card} content={content} />
+            </Container>
+          </Section>
         </div>
 
         {/*

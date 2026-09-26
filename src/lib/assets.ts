@@ -373,13 +373,6 @@ export const cardReference = {
   /** Her `DIVIDER 1` again in champagne, which is the rule the shadow panel draws. */
   dividerChampagne: cardRef("divider-champagne", 582, 14),
   dividerLookFor: cardRef("divider-look-for", 1203, 8),
-  /**
-   * Her `FRAME`: the gold ornament at the top of the sheet — flourished
-   * corners, three diamonds on its top edge, sides running down open-ended.
-   * **Not the reading panel's border**, which is a plain inset stroke; the
-   * first build put this around that panel.
-   */
-  frameOrnament: cardRef("frame-ornament", 1229, 604),
   appearsIcon1: cardRef("appears-icon-1", 49, 50),
   appearsIcon2: cardRef("appears-icon-2", 64, 73),
   appearsIcon3: cardRef("appears-icon-3", 57, 57),
