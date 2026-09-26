@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function ThreeCardReadingPage() {
-  return <ReadingPresentation reading={threeCard} commerce={<ReadingOrder reading={threeCard} />} />;
+  return <ReadingPresentation scaled reading={threeCard} commerce={<ReadingOrder reading={threeCard} />} />;
 }

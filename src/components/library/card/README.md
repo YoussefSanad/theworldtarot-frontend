@@ -151,7 +151,8 @@ The same judgement `content/library.ts` already records for the deck's names —
 fix outright misspellings, keep deck-specific naming:
 
 - **`the unkown`** (node 357:336) is corrected to "the unknown", the rule that
-  fixed `THE EMPORER` and `THE HANGMAN`.
+  fixed `THE EMPORER`. (`THE HANGMAN` was corrected alongside it until she
+  confirmed it is the deck's name; it is hers and is kept.)
 - **A stray `MONEY`** (node 357:292) sits behind the real `money` heading at a
   different size and position. A leftover layer, the same class of slip as The
   Tower appearing twice in the grid, and it is not drawn.

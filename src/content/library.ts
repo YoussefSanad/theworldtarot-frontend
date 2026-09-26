@@ -33,11 +33,16 @@ export type MajorArcanaCard = {
  *
  * **The names are the client's, with her outright typos corrected and her
  * deck's own naming kept.** Her mockup letters every plaque, so this is a
- * reading of her art rather than a convention applied over it: `THE EMPORER`
- * and `THE HANGMAN` are misspellings and are fixed; `THE HIGH PRIEST` (for the
- * Hierophant) and `THE WHEEL` (for the Wheel of Fortune) are hers to choose and
- * are kept, as is `JUDGEMENT` over the American spelling. If an official list
- * arrives from her later, this array is the only place it lands.
+ * reading of her art rather than a convention applied over it: `THE EMPORER` is
+ * a misspelling and is fixed; `THE HANGMAN` (for the Hanged Man), `THE HIGH
+ * PRIEST` (for the Hierophant) and `THE WHEEL` (for the Wheel of Fortune) are
+ * hers to choose and are kept, as is `JUDGEMENT` over the American spelling. If
+ * an official list arrives from her later, this array is the only place it
+ * lands.
+ *
+ * `THE HANGMAN` was read as a typo and corrected to "The Hanged Man" when this
+ * array was first written; she confirmed on 26 September 2026 that it is the
+ * deck's name, so it moved to the kept column along with her other renamings.
  *
  * **The order is numerical, and her mockup's is not.** Her first row runs The
  * Fool, The Magician, *The Tower*, The Empress — The Tower standing in the slot
@@ -63,7 +68,7 @@ export const majorArcana: readonly MajorArcanaCard[] = [
   { slug: "the-hermit", numeral: "IX", name: "The Hermit", image: libraryCards["the-hermit"] },
   { slug: "the-wheel", numeral: "X", name: "The Wheel", image: libraryCards["the-wheel"] },
   { slug: "justice", numeral: "XI", name: "Justice", image: libraryCards.justice },
-  { slug: "the-hanged-man", numeral: "XII", name: "The Hanged Man", image: libraryCards["the-hanged-man"] },
+  { slug: "the-hangman", numeral: "XII", name: "The Hangman", image: libraryCards["the-hangman"] },
   { slug: "death", numeral: "XIII", name: "Death", image: libraryCards.death },
   { slug: "temperance", numeral: "XIV", name: "Temperance", image: libraryCards.temperance },
   { slug: "the-devil", numeral: "XV", name: "The Devil", image: libraryCards["the-devil"] },

@@ -42,14 +42,14 @@ export function ReadingHero({ reading }: { reading: ReadingPage }) {
       <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">{title}</h1>
 
       {/* 448px, which is the cap `.divider--hero` already carries. */}
-      <Divider variant="hero" className="mt-[clamp(0.125rem,0.16vw,0.1875rem)]" />
+      <Divider variant="hero" className="mt-[clamp(calc(0.125rem*var(--reading-rhythm)),calc(0.16vw*var(--reading-rhythm)),calc(0.1875rem*var(--reading-rhythm)))]" />
 
-      <p className="mt-[clamp(0.25rem,0.31vw,0.375rem)] font-serif text-body leading-[1.19] tracking-[-0.01em] text-gold">
+      <p className="mt-[clamp(calc(0.25rem*var(--reading-rhythm)),calc(0.31vw*var(--reading-rhythm)),calc(0.375rem*var(--reading-rhythm)))] font-serif text-body leading-[1.19] tracking-[-0.01em] text-gold">
         <Phrase parts={reading.tagline} />
       </p>
 
       {/* 606px of the 687px panel, at the frame's own 606x406. */}
-      <div className="stack mt-[clamp(1rem,2.66vw,3.1875rem)] aspect-606/406 w-[88.21cqw]">
+      <div className="stack mt-[clamp(calc(1rem*var(--reading-rhythm)),calc(2.66vw*var(--reading-rhythm)),calc(3.1875rem*var(--reading-rhythm)))] aspect-606/406 w-[88.21cqw]">
         <Image
           src={hero.poster.src}
           alt={hero.alt}

@@ -44,11 +44,16 @@ const DEST = join(root, "public", "figma", "card-reference");
  * `THE FOOL 2 FLAT` is the flattened reference render of the whole frame. It is
  * deliberately **not** converted: it is what the page should look like, not
  * something the page draws.
+ *
+ * **Her `FRAME` layer is in the same position now**, though for a different
+ * reason: the gold ornament it holds was dropped from the page at the client's
+ * request, so a run should leave it in the PSD rather than write an asset
+ * nothing imports. Both entries go together if it ever comes back — the slug
+ * here and its width below — because a source with no width throws.
  */
 const SLUGS = {
   "Layer 3": "page-base", // the opaque ground, full bleed
   "Layer 20": "page-wash", // the forest wash over it, slight overhang
-  FRAME: "frame-ornament", // the gold ornament at the top of the sheet
   "BACKGROUND TO ELEMENTS": "meta-strip-bg", // the pale strip behind the meta row
   "DIVIDER 1": "divider-green", // her green rule, drawn three times
   "DIVIDER 2": "divider-gold", // the gold rule under each column label
@@ -98,7 +103,6 @@ const IGNORE = new Set([
 const WIDTHS = {
   "page-base": 1920, // full frame, 1x — see above
   "page-wash": 1920,
-  "frame-ornament": 1229,
   "meta-strip-bg": 1205,
   "divider-green": 582,
   "divider-gold": 241,

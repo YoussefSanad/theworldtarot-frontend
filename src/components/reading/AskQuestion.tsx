@@ -43,7 +43,7 @@ export function AskQuestion({ question }: { question?: string }) {
         two lines she draws at every width. Same trap as the reading cards'
         seven-pixel window; see `src/content/readings.ts`.
       */}
-      <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
+      <p className="mt-[clamp(calc(0.5rem*var(--reading-rhythm)),calc(1.46vw*var(--reading-rhythm)),calc(1.75rem*var(--reading-rhythm)))] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
         <Phrase parts={copy.body} />
       </p>
 
@@ -53,7 +53,7 @@ export function AskQuestion({ question }: { question?: string }) {
         component and not a number written out here. It wraps the counter too,
         so that lines up on the field's own right edge rather than the column's.
       */}
-      <FieldBox className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
+      <FieldBox className="mt-[clamp(calc(0.75rem*var(--reading-rhythm)),calc(1.56vw*var(--reading-rhythm)),calc(1.875rem*var(--reading-rhythm)))]">
         <CountedField
           name="question"
           label={copy.label}
@@ -61,7 +61,7 @@ export function AskQuestion({ question }: { question?: string }) {
           limit={questionLimit}
           rows={5}
           defaultValue={question}
-          className="min-h-[clamp(7rem,11.98vw,14.375rem)]"
+          className="min-h-[clamp(calc(7rem*var(--reading-scale)),calc(11.98vw*var(--reading-scale)),calc(14.375rem*var(--reading-scale)))]"
         />
       </FieldBox>
     </section>

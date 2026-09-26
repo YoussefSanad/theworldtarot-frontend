@@ -136,7 +136,7 @@ export function ReadingOrder({ reading }: { reading: ReadingPage }) {
           data, and naming them now is what makes wiring the checkout a matter
           of adding an endpoint rather than restructuring the panel.
         */
-        <form className="mt-[clamp(2rem,5.63vw,6.75rem)]">
+        <form className="mt-[clamp(calc(2rem*var(--reading-rhythm)),calc(5.63vw*var(--reading-rhythm)),calc(6.75rem*var(--reading-rhythm)))]">
           {gifting ? (
             <RecipientDetails />
           ) : (

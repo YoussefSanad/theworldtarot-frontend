@@ -73,7 +73,7 @@ export function MetaStrip({ meta }: { meta: CardMeta }) {
         sets this block's height and the row belongs in the middle of it, not
         hanging from its floor.
       */}
-      <div className="@container w-full place-self-center px-[clamp(1rem,2.03vw,2.4375rem)] pb-[calc(clamp(1rem,1.56vw,1.875rem)+1.46cqw)] pt-[clamp(1rem,1.56vw,1.875rem)]">
+      <div className="@container w-full place-self-center px-[clamp(calc(1rem*var(--card-scale)),calc(2.03vw*var(--card-scale)),calc(2.4375rem*var(--card-scale)))] pb-[calc(clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))+1.46cqw)] pt-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))]">
         <MetaStripCarousel>
           {entries.map(({ label, entry }) => (
             // The cell stays a real box at every width: below `sm` it is the
@@ -113,7 +113,7 @@ export function MetaStrip({ meta }: { meta: CardMeta }) {
                 {label}
               </dt>
 
-              <div className="my-[clamp(0.5rem,0.83vw,1rem)] flex h-[clamp(1.75rem,3.44vw,4.125rem)] w-[clamp(2.75rem,4.53vw,5.4375rem)] items-center justify-center">
+              <div className="my-[clamp(calc(0.5rem*var(--card-scale)),calc(0.83vw*var(--card-scale)),calc(1rem*var(--card-scale)))] flex h-[clamp(calc(1.75rem*var(--card-scale)),calc(3.44vw*var(--card-scale)),calc(4.125rem*var(--card-scale)))] w-[clamp(calc(2.75rem*var(--card-scale)),calc(4.53vw*var(--card-scale)),calc(5.4375rem*var(--card-scale)))] items-center justify-center">
                 <Image
                   src={entry.symbol.src}
                   alt=""

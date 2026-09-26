@@ -39,7 +39,7 @@ export function LookFor({ lines }: { lines: readonly string[] }) {
           sizes="(width >= 64rem) 62.66vw, 100vw"
         />
 
-        <p className="justify-self-center bg-card-parchment px-[clamp(0.75rem,1.04vw,1.25rem)] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
+        <p className="justify-self-center bg-card-parchment px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
           LOOK FOR:
         </p>
       </div>
@@ -62,7 +62,7 @@ export function LookFor({ lines }: { lines: readonly string[] }) {
         `PHRASE_SEPARATOR` is the same bullet the content uses; a line with no
         bullet simply yields one span and behaves as before.
       */}
-      <div className="mt-[clamp(0.5rem,0.83vw,1rem)] flex flex-col">
+      <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.83vw*var(--card-scale)),calc(1rem*var(--card-scale)))] flex flex-col">
         {lines.map((line) => (
           <p key={line} className="text-pretty font-display text-card-lead leading-[1.444] tracking-[0.01em] text-card-forest">
             {line.split(PHRASE_SEPARATOR).map((phrase, index) => (

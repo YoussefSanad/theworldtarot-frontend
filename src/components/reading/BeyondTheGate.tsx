@@ -32,7 +32,7 @@ const { gate } = readingPageChrome;
 export function BeyondTheGate() {
   return (
     /* 97px under the last line of Your Reading. */
-    <section className="mt-[clamp(1.5rem,5.05vw,6.0625rem)] flex flex-col items-center text-center">
+    <section className="mt-[clamp(calc(1.5rem*var(--reading-rhythm)),calc(5.05vw*var(--reading-rhythm)),calc(6.0625rem*var(--reading-rhythm)))] flex flex-col items-center text-center">
       <Image
         src={readingPageArtwork.bug.src}
         alt=""
@@ -41,14 +41,14 @@ export function BeyondTheGate() {
         className="h-auto w-[10.79cqw] max-w-none"
       />
 
-      <PanelHeading className="mt-[clamp(0.5rem,1.51vw,1.8125rem)] text-h3">{gate.heading}</PanelHeading>
+      <PanelHeading className="mt-[clamp(calc(0.5rem*var(--reading-rhythm)),calc(1.51vw*var(--reading-rhythm)),calc(1.8125rem*var(--reading-rhythm)))] text-h3">{gate.heading}</PanelHeading>
 
-      <p className="mt-[clamp(0.125rem,0.31vw,0.375rem)] text-nav leading-none tracking-[0.01em] font-light text-gold">
+      <p className="mt-[clamp(calc(0.125rem*var(--reading-rhythm)),calc(0.31vw*var(--reading-rhythm)),calc(0.375rem*var(--reading-rhythm)))] text-nav leading-none tracking-[0.01em] font-light text-gold">
         {gate.subtitle}
       </p>
 
       {/* 616px of the 686px panel. */}
-      <OrnateFrame variant="inset" className="mt-[clamp(0.75rem,1.93vw,2.3125rem)] w-[89.8cqw]">
+      <OrnateFrame variant="inset" className="mt-[clamp(calc(0.75rem*var(--reading-rhythm)),calc(1.93vw*var(--reading-rhythm)),calc(2.3125rem*var(--reading-rhythm)))] w-[89.8cqw]">
         {/*
           The artwork's own 609x453, stated. The picture would set that box
           anyway, but the flames are anchored in percentages measured off the

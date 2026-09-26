@@ -41,12 +41,23 @@ import type { ReadingPage } from "@/content/reading-pages";
  */
 export function ReadingTestimonial({ reading }: { reading: ReadingPage }) {
   return (
-    /* 75px under the gate. */
-    <section className="mt-[clamp(1.5rem,3.91vw,4.6875rem)] flex flex-col items-center">
+    /*
+      **Tighter than her 75px above the rule and 70px below it, at the client's
+      request**: less margin around this panel's last divider.
+
+      Both sides come in together, because the ask is about the air around the
+      ornament rather than where it sits between the two blocks — cutting only
+      one would slide the rule toward a neighbour instead of tightening it. 48px
+      and 44px keep it nearer the middle of the two.
+
+      Her own figures are kept in this note; the rule's 47px box is the artwork's
+      448x55 aspect and not margin, so it is not part of this.
+    */
+    <section className="mt-[clamp(calc(1rem*var(--reading-rhythm)),calc(2.5vw*var(--reading-rhythm)),calc(3rem*var(--reading-rhythm)))] flex flex-col items-center">
       <Divider variant="hero" />
 
-      {/* 616px of the 686px panel. */}
-      <OrnateFrame variant="inset" className="mt-[clamp(1.5rem,3.65vw,4.375rem)] w-[89.8cqw]">
+      {/* 616px of the 686px panel. 44px under the rule; see the note above. */}
+      <OrnateFrame variant="inset" className="mt-[clamp(calc(1rem*var(--reading-rhythm)),calc(2.29vw*var(--reading-rhythm)),calc(2.75rem*var(--reading-rhythm)))] w-[89.8cqw]">
         <figure className="flex flex-col items-center px-[9.5cqw] pt-[1.95cqw] pb-[5.5cqw] text-center text-nav">
           <p aria-hidden className="h-[0.61em] pt-[0.16em] font-serif text-[5em] leading-none tracking-[0.01em] text-gold">
             “
@@ -60,9 +71,9 @@ export function ReadingTestimonial({ reading }: { reading: ReadingPage }) {
             ))}
           </blockquote>
 
-          <StarRating className="mt-[clamp(0.375rem,0.99vw,1.1875rem)] text-h3" />
+          <StarRating className="mt-[clamp(calc(0.375rem*var(--reading-rhythm)),calc(0.99vw*var(--reading-rhythm)),calc(1.1875rem*var(--reading-rhythm)))] text-h3" />
 
-          <figcaption className="mt-[clamp(0.25rem,0.68vw,0.8125rem)] text-fine leading-[1.2] tracking-[0.01em] font-light text-mist">
+          <figcaption className="mt-[clamp(calc(0.25rem*var(--reading-rhythm)),calc(0.68vw*var(--reading-rhythm)),calc(0.8125rem*var(--reading-rhythm)))] text-fine leading-[1.2] tracking-[0.01em] font-light text-mist">
             {reading.testimonial.attribution.map((line) => (
               <span key={line} className="block">
                 {line}

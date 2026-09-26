@@ -290,9 +290,9 @@ export const worldTarotSurfaces = {
  * script asserts on the source dimensions rather than trusting them.
  *
  * Addressed by slug so `content/library.ts` can look one up from the card it is
- * already holding; the client's own filenames (`04-the-emporer`,
- * `12-the-hangman`) are mapped to these slugs in the script and appear nowhere
- * else.
+ * already holding; the client's own filenames (`04-the-emporer`, `0-the-fool`
+ * beside `01-the-magician`) carry her spellings and inconsistent zero-padding,
+ * and are mapped to these slugs in the script and appear nowhere else.
  */
 const libraryCard = (slug: string): ImageAsset => asset(`/figma/library-cards/${slug}.webp`, 640, 1060);
 
@@ -309,7 +309,7 @@ export const libraryCards = {
   "the-hermit": libraryCard("the-hermit"),
   "the-wheel": libraryCard("the-wheel"),
   justice: libraryCard("justice"),
-  "the-hanged-man": libraryCard("the-hanged-man"),
+  "the-hangman": libraryCard("the-hangman"),
   death: libraryCard("death"),
   temperance: libraryCard("temperance"),
   "the-devil": libraryCard("the-devil"),
@@ -373,13 +373,6 @@ export const cardReference = {
   /** Her `DIVIDER 1` again in champagne, which is the rule the shadow panel draws. */
   dividerChampagne: cardRef("divider-champagne", 582, 14),
   dividerLookFor: cardRef("divider-look-for", 1203, 8),
-  /**
-   * Her `FRAME`: the gold ornament at the top of the sheet — flourished
-   * corners, three diamonds on its top edge, sides running down open-ended.
-   * **Not the reading panel's border**, which is a plain inset stroke; the
-   * first build put this around that panel.
-   */
-  frameOrnament: cardRef("frame-ornament", 1229, 604),
   appearsIcon1: cardRef("appears-icon-1", 49, 50),
   appearsIcon2: cardRef("appears-icon-2", 64, 73),
   appearsIcon3: cardRef("appears-icon-3", 57, 57),

@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { AppearsPanel } from "@/components/library/card/AppearsPanel";
 import { CardEssay } from "@/components/library/card/CardEssay";
 import { CardHeader } from "@/components/library/card/CardHeader";
@@ -12,7 +10,6 @@ import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
-import { cardReference } from "@/lib/assets";
 
 /**
  * A Major Arcana card's reference page (Figma `357:261`).
@@ -40,7 +37,7 @@ export function CardReferencePage({
   content: MajorArcanaContent;
 }) {
   return (
-    <div className="library-card-page min-h-full pb-[clamp(3rem,8.9vw,10.7rem)]">
+    <div className="library-card-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
       {/*
         **This wrapper is deliberately not `relative`**, which is what lets the
         artwork reach up behind the transparent masthead.
@@ -95,49 +92,35 @@ export function CardReferencePage({
         past the end of the wash onto flat parchment. Padding puts the room
         *inside* the box that was already there rather than adding to it.
       */}
-      <div className="card-paper mt-[clamp(1.5rem,5.28vw,6.34rem)] pb-[clamp(3.813rem,12.708vw,15.25rem)]">
+      <div className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]">
         {/*
-          Her gold ornament (`FRAME`, 1229x604 at x=345, y=228) frames the top
-          of the sheet: flourished corners, three diamonds centred on its top
-          edge, and sides that run down and simply stop. It is drawn, not
-          stretched — a 604px-tall ornament on a page of unknown height would
-          smear — so it keeps its own aspect and the content sits over it.
+          **Her gold `FRAME` ornament is gone at the client's request** — the
+          1229x604 flourish that used to hang 57px below the torn top edge, with
+          the numeral and the essay stacked over it. Its asset is deleted too,
+          so there is nothing to restore it from.
 
-          Her sheet starts at y=171 and this at y=228, so it hangs 57px below
-          the paper's top edge rather than sitting flush with it: 57/1920 as a
-          vw term, with the Figma pixel as the maximum.
+          What it leaves behind is this: the heading's top padding was measured
+          to her frame, not to the ornament, so it is unchanged. The `.stack`
+          that layered the two is gone with it — with one child there is
+          nothing left to layer — and this is a plain column again.
+
+          Her numeral starts at y=297 against a sheet that begins at y=171, so
+          126px down to the heading and 176 more to the essay. Explicit here for
+          the same reason the gaps below are: a shared `Section` padding gives
+          every block the same air, and hers are all different.
         */}
-        <div className="stack">
-          <Image
-            src={cardReference.frameOrnament.src}
-            alt=""
-            width={cardReference.frameOrnament.width}
-            height={cardReference.frameOrnament.height}
-            className="mt-[clamp(1.125rem,2.969vw,3.563rem)] h-auto w-[91.92%] justify-self-center self-start"
-            sizes="(width >= 64rem) 64.01vw, 92vw"
-            priority
-          />
+        <div className="flex flex-col">
+          <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
+            <Container width="card">
+              <CardHeader card={card} />
+            </Container>
+          </Section>
 
-          {/*
-            Her numeral starts at y=297 and the artwork beside the essay at
-            y=473, both against a sheet that begins at y=171 — so 126px down to
-            the heading and 176 more to the essay. Explicit here for the same
-            reason the gaps below are: a shared `Section` padding gives every
-            block the same air, and hers are all different.
-          */}
-          <div className="flex flex-col">
-            <Section padding="none" className="pt-[clamp(1.969rem,6.563vw,7.875rem)]">
-              <Container width="card">
-                <CardHeader card={card} />
-              </Container>
-            </Section>
-
-            <Section padding="none" className="pt-[clamp(0.875rem,2.917vw,3.5rem)]">
-              <Container width="card">
-                <CardEssay card={card} content={content} />
-              </Container>
-            </Section>
-          </div>
+          <Section padding="none" className="pt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
+            <Container width="card">
+              <CardEssay card={card} content={content} />
+            </Container>
+          </Section>
         </div>
 
         {/*
@@ -160,7 +143,7 @@ export function CardReferencePage({
           is the empty tail of its own column, not spacing.
         */}
 
-        <Section padding="none" className="mt-[clamp(0.5rem,1.25vw,1.5rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))]">
           <Container width="cardWide">
             <AppearsPanel cardName={card.name} columns={content.appears} />
           </Container>
@@ -177,19 +160,19 @@ export function CardReferencePage({
           Doubling it detaches the two. It is the one gap on the page that is
           deliberately not hers; the rest of the rhythm is untouched.
         */}
-        <Section padding="none" className="mt-[clamp(1.25rem,3.6vw,4.25rem)]">
+        <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
           <Container width="cardWide">
             <LookFor lines={content.lookFor} />
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(0.547rem,1.823vw,2.188rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))]">
           <Container width="cardWide">
             <SpheresCarousel cardName={card.name} spheres={content.spheres} />
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(0.641rem,2.135vw,2.563rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.641rem*var(--card-scale)),calc(2.135vw*var(--card-scale)),calc(2.563rem*var(--card-scale)))]">
           <Container width="cardWide">
             <ShadowPanel lines={content.shadow} />
           </Container>
@@ -202,7 +185,7 @@ export function CardReferencePage({
           far more air than she shows. 28px sets the strip close under the
           shadow panel, so the two dark blocks and the strip read as one run.
         */}
-        <Section padding="none" className="mt-[clamp(0.438rem,1.458vw,1.75rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
           <Container width="cardWide">
             <MetaStrip meta={content.meta} />
           </Container>
@@ -222,7 +205,7 @@ export function CardReferencePage({
           wants both.
         */}
         <ClosingSaying
-          className="mt-[clamp(0.313rem,1.042vw,1.25rem)]"
+          className="mt-[clamp(calc(0.313rem*var(--card-scale)),calc(1.042vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))]"
           saying={content.closing}
           action={null}
           width="cardClosing"

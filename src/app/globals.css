@@ -249,6 +249,43 @@
     go up while the rest of the site comes down. 1 everywhere but desktop.
   */
   --library-scale: 1;
+  /*
+    The card reference page's multiplier on top of `--content-scale`, the same
+    arrangement as `--library-scale` above and for the same reason: one page
+    steps further while the rest of the site holds still. 1 everywhere but
+    desktop, where `.library-card-page` takes it to 0.85 — the page read as
+    jumbo there even after the site-wide reduction. See the note on it.
+  */
+  --card-scale: 1;
+  /*
+    The three reading pages, which take the same treatment as the card page and
+    for the same reason — see `.reading-page` in the desktop query.
+
+    **Two knobs rather than one, because the client asked for two things.**
+    `--reading-rhythm` is the vertical gaps between blocks and `--reading-scale`
+    is everything's size; the ask was for the rhythm to come in *before* any
+    shrinking, so they tune separately. A single factor could not express
+    "tighter but not yet smaller".
+
+    Both are 1 here and set on the page class on desktop. `/redeem/` renders the
+    same `ReadingPresentation` and is deliberately not included: it is a page the
+    client has not asked to change, which is why the class arrives by an opt-in
+    prop rather than living on the component.
+  */
+  --reading-rhythm: 1;
+  --reading-scale: 1;
+  /*
+    **The alias the shared blocks read**, so a block drawn on more than one page
+    family scales with whichever page it is on.
+
+    `ClosingSaying` is the case that forced it: the card reference page and the
+    three reading pages both draw it, and each shrinks by its own factor. A
+    block that hardcoded `--reading-*` would have ignored the card page's
+    `--card-scale` and vice versa, so it reads these instead and each page maps
+    them to its own numbers. 1 here, so a page that maps neither is unchanged.
+  */
+  --block-rhythm: 1;
+  --block-scale: 1;
 }
 
 /*
@@ -425,6 +462,34 @@
     --library-scale: 1.4;
 
     /*
+      **The card reference page steps 15% below the rest of the site**, at the
+      client's request: it still read as jumbo here after `--content-scale`,
+      because her frame is drawn at a scale that suits a 1920 comp and not a
+      browser.
+
+      This is the same arrangement as `--library-scale` above, pointed the other
+      way — one factor on top of the site's, applied to the tokens that page
+      owns (`--text-card-*` and the four `card*` measures, all of which carry
+      `var(--card-scale)`).
+
+      **It is a `:root` default of 1 overridden on `.library-card-page`, rather
+      than a 0.85 here, and the scope is why.** Those tokens are declared on
+      `:root` beside the site's own steps, so setting the factor there would be
+      indistinguishable from retuning the site. On the page's class it inherits
+      to every consumer — a `.shell--card` is inside that element, and a custom
+      property substitutes where it is *used*, not where it is declared — while
+      staying 1 everywhere else, including the twenty-one `ComingSoonPage`
+      siblings that serve the same URL shape.
+
+      **Desktop only, because it lives in this query.** Below `lg` the layout
+      has stopped scaling and the clamp floors carry it, and another 15% off
+      those would put the page's prose under 16px — the one direction it cannot
+      go. The compounded figure on desktop is 0.7225 against her frame, which is
+      the intent: 15% off what is on screen today, not off the comp.
+    */
+
+
+    /*
       Both halves of each measure scale: the `vw` term so the column tracks the
       viewport at the new proportion, and the `--container-*` cap so it still
       freezes at the right width on a very wide screen. Multiplying the whole
@@ -448,10 +513,10 @@
       — this is "sitewide, then up again", not a measure that opted out.
     */
     --measure-library: calc(min(var(--container-library), 47.604vw) * var(--content-scale) * var(--library-scale));
-    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale)); /* 1337 / 19.2 */
-    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale)); /* 1035 / 19.2 */
-    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale)); /* 513 / 19.2 */
-    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale)); /* 1234 / 19.2 */
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale)); /* 1337 / 19.2 */
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale)); /* 1035 / 19.2 */
+    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale)); /* 513 / 19.2 */
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale)); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
     --measure-flourish: calc(min(448px, 23.333vw) * var(--content-scale));
@@ -510,12 +575,21 @@
       The card reference page's own steps. They sit inside `--measure-card`,
       which has already come down, so they scale with everything else rather
       than growing relative to the column that holds them.
+
+      **`--card-scale` rides along on each one**, which is what lets that page
+      step further down than the site without a second set of steps. It is 1
+      everywhere except under `.library-card-page`, so these read exactly as
+      the steps above them until that page sets it — and the measures they sit
+      inside carry the same factor, so the column and its type come down
+      together. The floors scale for the reason the long note above gives: a
+      floor is not scoped to a screen size, and leaving them would strand
+      full-size text in a narrower column.
     */
-    --text-card-name: clamp(calc(1.75rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
-    --text-card-lead: clamp(calc(1.375rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
-    --text-card-label: clamp(calc(1.125rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
-    --text-card-body: clamp(calc(1.125rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
-    --text-card-fine: clamp(calc(1.125rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
 
     /*
       Layout rhythm. `--spacing-section` and `--spacing-stack` carry the
@@ -527,6 +601,83 @@
     */
     --spacing-section: clamp(calc(3rem * var(--content-scale)), calc(7.2917vw * var(--content-scale)), calc(8.75rem * var(--content-scale)));
     --spacing-stack: clamp(calc(1rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+  }
+
+  /*
+    **The three reading pages, tightened then shrunk.** Two factors, because the
+    client asked for two things in order: the vertical rhythm comes in first and
+    the overall size follows, so each has its own knob and either can move
+    without the other.
+
+    `--reading-rhythm` (0.85) multiplies the vertical gaps — the `mt`/`pt` and
+    `gap-y` clamps that carry this page's rhythm, in the components themselves.
+    `--reading-scale` (0.85) multiplies everything else: the measures below and
+    the panels' own `cqw`-driven padding, which follows its container for free.
+
+    **The measures are redeclared here rather than left on `:root`, and that is
+    the lesson the card page paid for.** A `var()` resolves in the scope of the
+    element its declaration lands on, not the element that reads the result — so
+    a `--measure-reading` on `:root` would see `--reading-scale: 1` no matter
+    that every consumer sits inside this page, and the panels would not move at
+    all while the gaps around them did. That is exactly the "only some of it
+    scales" the card page showed, measured: see the note on `.library-card-page`.
+
+    **`/redeem/` is deliberately excluded.** It renders the same
+    `ReadingPresentation`, so this class cannot live on that component; the three
+    routes opt in with a prop instead. `/checkout/complete/` shares the backdrop
+    only and never had these tokens.
+  */
+  .reading-page {
+    --reading-rhythm: 0.85;
+    --reading-scale: 0.85;
+
+    /* The shared blocks follow this page's factors. See `--block-rhythm`. */
+    --block-rhythm: var(--reading-rhythm);
+    --block-scale: var(--reading-scale);
+
+    --measure-reading: calc(min(var(--container-reading), 74.531vw) * var(--content-scale) * var(--reading-scale));
+    --measure-reading-props: var(--measure-reading);
+  }
+
+  /*
+    **The factor, and the page's own tokens redeclared here with it.**
+
+    The redeclaration is the load-bearing part, and the reason is a custom
+    property rule that is easy to get backwards: a `var()` inside a declaration
+    resolves in the scope of the element the declaration *lands on*, not the
+    element that eventually reads the result. `--measure-card-paper` and the
+    `--text-card-*` steps are declared on `:root`, so their `var(--card-scale)`
+    resolved against `:root` — where the factor is 1 — no matter that every
+    element reading them sits inside this page. Measured at 1920px, the sheet
+    computed `calc(min(1337px, 69.635vw) * .85 * 1)` and forcing the factor to
+    0.5 moved the paper, the `<h1>` and both shells by exactly nothing; only the
+    hardcoded clamps in the components, which *are* read inside the page,
+    responded. That is the "only some elements scale" this block fixes.
+
+    So the tokens this page owns are declared again here, on the element that
+    carries the factor. Same expressions as the `:root` copies above, with the
+    factor now in scope: the four `card*` measures (the sheet, the prose column,
+    its wider panels, the closing line) and the five type steps. `:root` keeps
+    its own copies for the twenty-one `ComingSoonPage` siblings, which do not
+    set this class.
+  */
+  .library-card-page {
+    --card-scale: 0.85;
+
+    /* The shared blocks follow this page's factor. See `--block-rhythm`. */
+    --block-rhythm: var(--card-scale);
+    --block-scale: var(--card-scale);
+
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale));
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale));
+
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
   }
 
   /*
@@ -3799,18 +3950,27 @@
       interior a name may cross is 243px — 37.97% of the card's width.
 
       The size is derived from that rather than fitted by eye. Cinzel's own
-      metrics (`wght` 700, 1000 upem) put the widest standard-tier name, "THE
-      HANGED MAN", at 10.216em including this rule's 0.02em tracking, so the
-      ceiling is 243/10.216 = 23.8px, or 3.717cqw. This sets 3.70cqw and keeps
-      the last tenth as the margin for hinting and subpixel rounding.
+      metrics (`wght` 700, 1000 upem) put what was then the widest
+      standard-tier name, "THE HANGED MAN", at 10.216em including this rule's
+      0.02em tracking, so the ceiling is 243/10.216 = 23.8px, or 3.717cqw. This
+      sets 3.70cqw and keeps the last tenth as the margin for hinting and
+      subpixel rounding.
+
+      **That name is gone and the size deliberately has not moved.** XII was
+      renamed to "THE HANGMAN" on 26 September 2026, which leaves "THE HIGH
+      PRIEST" the widest of the standard tier and a narrower constraint than
+      the one this number was cut to. The ceiling therefore rose; 3.70cqw is
+      kept because it is the size the client signed off on, and because every
+      name still clears the rivets at it. Re-derive only if she asks for larger
+      again.
 
       **The history matters, because the number moved twice.** 2.62cqw was the
       client's own mockup size, at which the longest name fills about 85% of the
       interior; she called it too small to read, twice. 3.05cqw answered that by
       filling the interior, and she asked for larger again — "as large as
       possible for the best readability". This is that limit: one more step and
-      "THE HANGED MAN" crosses the rivets, which is a thing the artwork draws
-      and the type must not sit on top of.
+      "THE HANGED MAN", the longest name at the time, crossed the rivets, which
+      is a thing the artwork draws and the type must not sit on top of.
 
       **Vertical is not the limit and never was.** The brass is 51px tall while
       these caps are 16.6px — a third of it — so the headroom is real but
