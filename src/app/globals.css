@@ -644,13 +644,54 @@
   a sane minimum (verified by measuring at padding ≈ 0). Only widening the
   column (e.g. delaying the grid's own two-column switch past 1024px) would
   close the rest of the gap, and that's a layout change beyond this fix.
+
+  **Every value here is multiplied by `--content-scale`, and leaving it out
+  was a bug.** These are the only sizing tokens in the file that sat outside
+  the sitewide scale (they are declared after the `@media (width >= 64rem)`
+  block, so an override up there would have lost the cascade to them), and
+  the consequence was not a slightly-too-large button — it was the hero card.
+
+  The two buttons carry a shared `min-width`, so the copy column's
+  min-content is `2 × --hero-action-btn-min-w + --hero-action-row-gap`. When
+  that exceeds the column's share of `797fr 673fr`, an `fr` track with an
+  automatic minimum does not clip — it grows, and the width comes out of the
+  *other* track. So a min-width frozen at full size while the labels inside
+  it came down 15% did not overflow anywhere visible; it quietly widened the
+  text column and took the difference off the card. Measured at 1920: the
+  copy column held 849px against a 676px share and the card rendered 265px
+  where the design puts it at 380px — 30% under, which is
+  https://github.com/YoussefSanad/theworldtarot-frontend/issues/109.
+
+  Scaling is written in place rather than as a second block in the desktop
+  query because `--content-scale` is 1 below `lg` — the multiply is a no-op
+  there, so one declaration covers both halves and there is still only one
+  number to retune.
+
+  **The clamp floor is the one number that could not simply be multiplied.**
+  13.875rem was measured against unscaled labels, so at 0.85 it resolves to
+  188.7px where the widest label needs 198px — and because an explicit
+  `min-width` replaces the automatic min-content minimum, that does not grow
+  the track, it overflows the `whitespace-nowrap` label out of its own
+  padding box at 1024px. It is raised to 15rem, which scales to 204px and
+  clears the label with the same ~6-8px margin the rest of the ramp carries.
+
+  It is raised through `--hero-action-btn-min-w-floor` rather than inline
+  because the bump belongs to desktop alone. Below `lg` the scale is 1, the
+  type steps are sitting on their own clamp floors, and 13.875rem is already
+  generous there — writing 15rem into the shared declaration would widen both
+  buttons by 18px on tablet and phone, which is a signed-off layout nothing
+  here is meant to touch. The ramp's slope and maximum are unchanged:
+  re-measured across 1024→1920 (Playwright, both labels rendered
+  unconstrained), they were already correct once scaled.
 */
 :root {
-  --hero-action-py: clamp(0.365625rem, calc(0.365625rem + (100vw - 1024px) * 0.0131138), 1.1rem);
-  --hero-action-pr: clamp(1.1375rem, calc(1.1375rem + (100vw - 1024px) * 0.0226563), 2.40625rem);
-  --hero-action-pl: clamp(0.73125rem, calc(0.73125rem + (100vw - 1024px) * 0.0139509), 1.5125rem);
-  --hero-action-gap: clamp(0.4875rem, calc(0.4875rem + (100vw - 1024px) * 0.0047991), 0.75625rem);
-  --hero-action-row-gap: clamp(1.015625rem, calc(1.015625rem + (100vw - 1024px) * 0.0186942), 2.0625rem);
+  /* Desktop raises this to 15rem, below; see the note above for why. */
+  --hero-action-btn-min-w-floor: 13.875rem;
+  --hero-action-py: clamp(calc(0.365625rem * var(--content-scale)), calc((0.365625rem + (100vw - 1024px) * 0.0131138) * var(--content-scale)), calc(1.1rem * var(--content-scale)));
+  --hero-action-pr: clamp(calc(1.1375rem * var(--content-scale)), calc((1.1375rem + (100vw - 1024px) * 0.0226563) * var(--content-scale)), calc(2.40625rem * var(--content-scale)));
+  --hero-action-pl: clamp(calc(0.73125rem * var(--content-scale)), calc((0.73125rem + (100vw - 1024px) * 0.0139509) * var(--content-scale)), calc(1.5125rem * var(--content-scale)));
+  --hero-action-gap: clamp(calc(0.4875rem * var(--content-scale)), calc((0.4875rem + (100vw - 1024px) * 0.0047991) * var(--content-scale)), calc(0.75625rem * var(--content-scale)));
+  --hero-action-row-gap: clamp(calc(1.015625rem * var(--content-scale)), calc((1.015625rem + (100vw - 1024px) * 0.0186942) * var(--content-scale)), calc(2.0625rem * var(--content-scale)));
   /*
     Equal-width floor for the two buttons, same 1024→1920 anchor as above.
     Measured directly (Playwright, both labels rendered unconstrained) rather
@@ -663,7 +704,19 @@
     just close enough to *look* right while still wrapping the label. Prefer
     this measured value over another attempt at the grid trick.
   */
-  --hero-action-btn-min-w: clamp(13.875rem, calc(13.875rem + (100vw - 1024px) * 0.2075893), 25.5rem);
+  --hero-action-btn-min-w: clamp(calc(var(--hero-action-btn-min-w-floor) * var(--content-scale)), calc((13.875rem + (100vw - 1024px) * 0.2075893) * var(--content-scale)), calc(25.5rem * var(--content-scale)));
+}
+
+/*
+  The desktop floor. This sits after the block above rather than in the main
+  `@media (width >= 64rem)` further up the file for the same cascade reason
+  the scaling is written inline: `:root` rules of equal specificity are
+  resolved in source order, and the block above would win over an earlier one.
+*/
+@media (width >= 64rem) {
+  :root {
+    --hero-action-btn-min-w-floor: 15rem;
+  }
 }
 
 @layer base {
@@ -1973,12 +2026,18 @@
     together, as that comment requires.
 
     **Tuned by eye — this is the number to change if the sun wants to sit
-    higher or lower on desktop, and the only one.** 1.6vw is about 31px at
-    1920px, on top of the ~61px the shorter page already gave back.
+    higher or lower on desktop, and the only one.**
+
+    a width-relative share of the same width the globe is sized
+    in (100.21%), so dropping it is that 8% exactly. What is left on desktop is
+    the approved base placement, the ~61px the shorter page gave back and
+    nothing else. The declaration stays rather than going away because the
+    >=120rem expression below reads it too; restoring a desktop lift means
+    putting a number back here and only here.
   */
   @media (width >= 64rem) {
     #hero-sky {
-      --hero-sky-lift: 8vw;
+      --hero-sky-lift: 6vw;
     }
   }
 
