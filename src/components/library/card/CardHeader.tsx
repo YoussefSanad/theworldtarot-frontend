@@ -14,11 +14,11 @@ export function CardHeader({ card }: { card: MajorArcanaCard }) {
     <header className="flex flex-col items-center text-center">
       <p className="font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink">{card.numeral}</p>
 
-      <h1 className="mt-[clamp(0.5rem,0.99vw,1.1875rem)] font-serif text-card-name leading-none tracking-[0.01em] text-card-ink">
+      <h1 className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.99vw*var(--card-scale)),calc(1.1875rem*var(--card-scale)))] font-serif text-card-name leading-none tracking-[0.01em] text-card-ink">
         {card.name}
       </h1>
 
-      <Divider variant="green" className="mt-[clamp(0.75rem,1.04vw,1.25rem)]" />
+      <Divider variant="green" className="mt-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))]" />
     </header>
   );
 }

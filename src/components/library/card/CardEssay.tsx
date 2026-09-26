@@ -46,7 +46,7 @@ import { cn } from "@/lib/cn";
  */
 export function CardEssay({ card, content }: { card: MajorArcanaCard; content: MajorArcanaContent }) {
   return (
-    <div className="flex flex-col items-center gap-[clamp(1.5rem,3.02vw,3.625rem)] xl:flex-row xl:items-start xl:gap-[clamp(0.75rem,1.458vw,1.75rem)]">
+    <div className="flex flex-col items-center gap-[clamp(calc(1.5rem*var(--card-scale)),calc(3.02vw*var(--card-scale)),calc(3.625rem*var(--card-scale)))] xl:flex-row xl:items-start xl:gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
       {/*
         **The name is laid into the plaque here exactly as the grid does it**,
         and for the same reasons: her artwork ships the plaque empty ("NO PLAQUE
@@ -134,7 +134,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           {content.keywords}
         </p>
 
-        <p className="mt-[clamp(0.438rem,0.729vw,0.875rem)] text-balance text-center font-display text-nav leading-none tracking-[0.01em] text-card-ink-soft">
+        <p className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(0.729vw*var(--card-scale)),calc(0.875rem*var(--card-scale)))] text-balance text-center font-display text-nav leading-none tracking-[0.01em] text-card-ink-soft">
           {content.subtitle}
         </p>
 
@@ -153,7 +153,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           22/18, and a local override would have quietly kept the old ratio on
           the longest-running copy on the page.
         */}
-        <div className="mt-[clamp(0.625rem,1.146vw,1.375rem)] flex flex-col gap-[clamp(0.75rem,1.46vw,1.75rem)]">
+        <div className="mt-[clamp(calc(0.625rem*var(--card-scale)),calc(1.146vw*var(--card-scale)),calc(1.375rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}

@@ -80,7 +80,7 @@ export function ShadowPanel({ lines }: { lines: readonly string[] }) {
         Below `sm` she drops out, and with her the reason for the offset, so the
         column re-centres on the panel.
       */}
-      <div className="flex flex-col items-center py-[clamp(1rem,1.56vw,1.875rem)] text-center max-sm:px-[clamp(1rem,2vw,2.4rem)] sm:ml-[29.2%] sm:mr-[0.8%]">
+      <div className="flex flex-col items-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-sm:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] sm:ml-[29.2%] sm:mr-[0.8%]">
         <h2 className="font-serif text-h3 leading-none tracking-[0.01em] text-gold">shadow</h2>
 
         {/*
@@ -108,10 +108,10 @@ export function ShadowPanel({ lines }: { lines: readonly string[] }) {
           alt=""
           width={cardReference.dividerChampagne.width}
           height={cardReference.dividerChampagne.height}
-          className="mt-[clamp(0.5rem,0.83vw,1rem)] h-auto w-[61%] max-w-[27.04vw] lg:max-w-130"
+          className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.83vw*var(--card-scale)),calc(1rem*var(--card-scale)))] h-auto w-[61%] max-w-[27.04vw] lg:max-w-130"
         />
 
-        <div className="mt-[clamp(0.75rem,1.04vw,1.25rem)] flex flex-col">
+        <div className="mt-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] flex flex-col">
           {lines.map((line) => (
             <p key={line} className="font-light text-card-body tracking-wide text-cream">
               {line}

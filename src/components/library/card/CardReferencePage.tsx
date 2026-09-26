@@ -37,7 +37,7 @@ export function CardReferencePage({
   content: MajorArcanaContent;
 }) {
   return (
-    <div className="library-card-page min-h-full pb-[clamp(3rem,8.9vw,10.7rem)]">
+    <div className="library-card-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
       {/*
         **This wrapper is deliberately not `relative`**, which is what lets the
         artwork reach up behind the transparent masthead.
@@ -92,7 +92,7 @@ export function CardReferencePage({
         past the end of the wash onto flat parchment. Padding puts the room
         *inside* the box that was already there rather than adding to it.
       */}
-      <div className="card-paper mt-[clamp(1.5rem,5.28vw,6.34rem)] pb-[clamp(3.813rem,12.708vw,15.25rem)]">
+      <div className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]">
         {/*
           **Her gold `FRAME` ornament is gone at the client's request** — the
           1229x604 flourish that used to hang 57px below the torn top edge, with
@@ -110,13 +110,13 @@ export function CardReferencePage({
           every block the same air, and hers are all different.
         */}
         <div className="flex flex-col">
-          <Section padding="none" className="pt-[clamp(1.969rem,6.563vw,7.875rem)]">
+          <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
             <Container width="card">
               <CardHeader card={card} />
             </Container>
           </Section>
 
-          <Section padding="none" className="pt-[clamp(0.875rem,2.917vw,3.5rem)]">
+          <Section padding="none" className="pt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
             <Container width="card">
               <CardEssay card={card} content={content} />
             </Container>
@@ -143,7 +143,7 @@ export function CardReferencePage({
           is the empty tail of its own column, not spacing.
         */}
 
-        <Section padding="none" className="mt-[clamp(0.5rem,1.25vw,1.5rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))]">
           <Container width="cardWide">
             <AppearsPanel cardName={card.name} columns={content.appears} />
           </Container>
@@ -160,19 +160,19 @@ export function CardReferencePage({
           Doubling it detaches the two. It is the one gap on the page that is
           deliberately not hers; the rest of the rhythm is untouched.
         */}
-        <Section padding="none" className="mt-[clamp(1.25rem,3.6vw,4.25rem)]">
+        <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
           <Container width="cardWide">
             <LookFor lines={content.lookFor} />
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(0.547rem,1.823vw,2.188rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))]">
           <Container width="cardWide">
             <SpheresCarousel cardName={card.name} spheres={content.spheres} />
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(0.641rem,2.135vw,2.563rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.641rem*var(--card-scale)),calc(2.135vw*var(--card-scale)),calc(2.563rem*var(--card-scale)))]">
           <Container width="cardWide">
             <ShadowPanel lines={content.shadow} />
           </Container>
@@ -185,7 +185,7 @@ export function CardReferencePage({
           far more air than she shows. 28px sets the strip close under the
           shadow panel, so the two dark blocks and the strip read as one run.
         */}
-        <Section padding="none" className="mt-[clamp(0.438rem,1.458vw,1.75rem)]">
+        <Section padding="none" className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
           <Container width="cardWide">
             <MetaStrip meta={content.meta} />
           </Container>
@@ -205,7 +205,7 @@ export function CardReferencePage({
           wants both.
         */}
         <ClosingSaying
-          className="mt-[clamp(0.313rem,1.042vw,1.25rem)]"
+          className="mt-[clamp(calc(0.313rem*var(--card-scale)),calc(1.042vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))]"
           saying={content.closing}
           action={null}
           width="cardClosing"

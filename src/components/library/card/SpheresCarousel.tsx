@@ -85,10 +85,10 @@ export function SpheresCarousel({
         card, and the slide is ~86% of the viewport: this clamp covers that
         across the range the strip actually runs at.
       */
-      className="[--carousel-slide:86%] [--spheres-gutter:clamp(0.375rem,1.5vw,0.625rem)] [--carousel-lift:clamp(0.5rem,2.6vw,1rem)]"
+      className="[--carousel-slide:86%] [--spheres-gutter:clamp(calc(0.375rem*var(--card-scale)),calc(1.5vw*var(--card-scale)),calc(0.625rem*var(--card-scale)))] [--carousel-lift:clamp(calc(0.5rem*var(--card-scale)),calc(2.6vw*var(--card-scale)),calc(1rem*var(--card-scale)))]"
     >
       <CarouselViewport>
-        <CarouselTrack className="grid gap-x-[clamp(1rem,0.94vw,1.125rem)] gap-y-10 max-sm:flex max-sm:gap-x-0 sm:grid-cols-3">
+        <CarouselTrack className="grid gap-x-[clamp(calc(1rem*var(--card-scale)),calc(0.94vw*var(--card-scale)),calc(1.125rem*var(--card-scale)))] gap-y-10 max-sm:flex max-sm:gap-x-0 sm:grid-cols-3">
           {cards.map((card) => (
             // Below `sm` this is the flex item the strip drags, and the only
             // thing that reads `--carousel-slide` (see globals.css's

@@ -249,6 +249,14 @@
     go up while the rest of the site comes down. 1 everywhere but desktop.
   */
   --library-scale: 1;
+  /*
+    The card reference page's multiplier on top of `--content-scale`, the same
+    arrangement as `--library-scale` above and for the same reason: one page
+    steps further while the rest of the site holds still. 1 everywhere but
+    desktop, where `.library-card-page` takes it to 0.85 — the page read as
+    jumbo there even after the site-wide reduction. See the note on it.
+  */
+  --card-scale: 1;
 }
 
 /*
@@ -425,6 +433,34 @@
     --library-scale: 1.4;
 
     /*
+      **The card reference page steps 15% below the rest of the site**, at the
+      client's request: it still read as jumbo here after `--content-scale`,
+      because her frame is drawn at a scale that suits a 1920 comp and not a
+      browser.
+
+      This is the same arrangement as `--library-scale` above, pointed the other
+      way — one factor on top of the site's, applied to the tokens that page
+      owns (`--text-card-*` and the four `card*` measures, all of which carry
+      `var(--card-scale)`).
+
+      **It is a `:root` default of 1 overridden on `.library-card-page`, rather
+      than a 0.85 here, and the scope is why.** Those tokens are declared on
+      `:root` beside the site's own steps, so setting the factor there would be
+      indistinguishable from retuning the site. On the page's class it inherits
+      to every consumer — a `.shell--card` is inside that element, and a custom
+      property substitutes where it is *used*, not where it is declared — while
+      staying 1 everywhere else, including the twenty-one `ComingSoonPage`
+      siblings that serve the same URL shape.
+
+      **Desktop only, because it lives in this query.** Below `lg` the layout
+      has stopped scaling and the clamp floors carry it, and another 15% off
+      those would put the page's prose under 16px — the one direction it cannot
+      go. The compounded figure on desktop is 0.7225 against her frame, which is
+      the intent: 15% off what is on screen today, not off the comp.
+    */
+
+
+    /*
       Both halves of each measure scale: the `vw` term so the column tracks the
       viewport at the new proportion, and the `--container-*` cap so it still
       freezes at the right width on a very wide screen. Multiplying the whole
@@ -448,10 +484,10 @@
       — this is "sitewide, then up again", not a measure that opted out.
     */
     --measure-library: calc(min(var(--container-library), 47.604vw) * var(--content-scale) * var(--library-scale));
-    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale)); /* 1337 / 19.2 */
-    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale)); /* 1035 / 19.2 */
-    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale)); /* 513 / 19.2 */
-    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale)); /* 1234 / 19.2 */
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale)); /* 1337 / 19.2 */
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale)); /* 1035 / 19.2 */
+    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale)); /* 513 / 19.2 */
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale)); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
     --measure-flourish: calc(min(448px, 23.333vw) * var(--content-scale));
@@ -510,12 +546,21 @@
       The card reference page's own steps. They sit inside `--measure-card`,
       which has already come down, so they scale with everything else rather
       than growing relative to the column that holds them.
+
+      **`--card-scale` rides along on each one**, which is what lets that page
+      step further down than the site without a second set of steps. It is 1
+      everywhere except under `.library-card-page`, so these read exactly as
+      the steps above them until that page sets it — and the measures they sit
+      inside carry the same factor, so the column and its type come down
+      together. The floors scale for the reason the long note above gives: a
+      floor is not scoped to a screen size, and leaving them would strand
+      full-size text in a narrower column.
     */
-    --text-card-name: clamp(calc(1.75rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
-    --text-card-lead: clamp(calc(1.375rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
-    --text-card-label: clamp(calc(1.125rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
-    --text-card-body: clamp(calc(1.125rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
-    --text-card-fine: clamp(calc(1.125rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
 
     /*
       Layout rhythm. `--spacing-section` and `--spacing-stack` carry the
@@ -527,6 +572,43 @@
     */
     --spacing-section: clamp(calc(3rem * var(--content-scale)), calc(7.2917vw * var(--content-scale)), calc(8.75rem * var(--content-scale)));
     --spacing-stack: clamp(calc(1rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+  }
+
+  /*
+    **The factor, and the page's own tokens redeclared here with it.**
+
+    The redeclaration is the load-bearing part, and the reason is a custom
+    property rule that is easy to get backwards: a `var()` inside a declaration
+    resolves in the scope of the element the declaration *lands on*, not the
+    element that eventually reads the result. `--measure-card-paper` and the
+    `--text-card-*` steps are declared on `:root`, so their `var(--card-scale)`
+    resolved against `:root` — where the factor is 1 — no matter that every
+    element reading them sits inside this page. Measured at 1920px, the sheet
+    computed `calc(min(1337px, 69.635vw) * .85 * 1)` and forcing the factor to
+    0.5 moved the paper, the `<h1>` and both shells by exactly nothing; only the
+    hardcoded clamps in the components, which *are* read inside the page,
+    responded. That is the "only some elements scale" this block fixes.
+
+    So the tokens this page owns are declared again here, on the element that
+    carries the factor. Same expressions as the `:root` copies above, with the
+    factor now in scope: the four `card*` measures (the sheet, the prose column,
+    its wider panels, the closing line) and the five type steps. `:root` keeps
+    its own copies for the twenty-one `ComingSoonPage` siblings, which do not
+    set this class.
+  */
+  .library-card-page {
+    --card-scale: 0.85;
+
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale));
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale));
+
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
   }
 
   /*
