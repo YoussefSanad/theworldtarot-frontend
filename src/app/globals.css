@@ -2026,12 +2026,18 @@
     together, as that comment requires.
 
     **Tuned by eye — this is the number to change if the sun wants to sit
-    higher or lower on desktop, and the only one.** 1.6vw is about 31px at
-    1920px, on top of the ~61px the shorter page already gave back.
+    higher or lower on desktop, and the only one.**
+
+    a width-relative share of the same width the globe is sized
+    in (100.21%), so dropping it is that 8% exactly. What is left on desktop is
+    the approved base placement, the ~61px the shorter page gave back and
+    nothing else. The declaration stays rather than going away because the
+    >=120rem expression below reads it too; restoring a desktop lift means
+    putting a number back here and only here.
   */
   @media (width >= 64rem) {
     #hero-sky {
-      --hero-sky-lift: 8vw;
+      --hero-sky-lift: 6vw;
     }
   }
 
