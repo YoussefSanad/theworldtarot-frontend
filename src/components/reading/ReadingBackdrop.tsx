@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
+import { cn } from "@/lib/cn";
 
 /**
  * The night sky a single reading stands under, and the box that scopes it.
@@ -28,9 +29,9 @@ import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
  * block sitting on the page. 5rem lifts the start of the picture above the
  * header — the same clearance and the same number as `readings/page.tsx`.
  */
-export function ReadingBackdrop({ children }: { children: ReactNode }) {
+export function ReadingBackdrop({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="relative isolate">
+    <div className={cn("relative isolate", className)}>
       <PageAtmosphere variant="reading" className="max-lg:-top-20" />
 
       {children}

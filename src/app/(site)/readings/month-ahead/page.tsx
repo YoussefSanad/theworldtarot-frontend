@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function MonthAheadReadingPage() {
-  return <ReadingPresentation reading={monthAhead} commerce={<ReadingOrder reading={monthAhead} />} />;
+  return <ReadingPresentation scaled reading={monthAhead} commerce={<ReadingOrder reading={monthAhead} />} />;
 }

@@ -41,7 +41,7 @@ export function WhatYouGet({ reading }: { reading: ReadingPage }) {
       <PanelHeading className="text-h3">{readingPageChrome.included.heading}</PanelHeading>
 
       {/* 27px between lines at the 30px she sets them; 18px from mark to words. */}
-      <ul className="mt-[clamp(1rem,3.23vw,3.875rem)] flex flex-col gap-[0.9em] px-[4.5cqw] text-nav leading-[1.07] tracking-[0.01em] font-light text-gold">
+      <ul className="mt-[clamp(calc(1rem*var(--reading-rhythm)),calc(3.23vw*var(--reading-rhythm)),calc(3.875rem*var(--reading-rhythm)))] flex flex-col gap-[0.9em] px-[4.5cqw] text-nav leading-[1.07] tracking-[0.01em] font-light text-gold">
         {reading.included.map((item) => (
           <li key={item.join(" ")} className="flex items-start gap-[0.6em]">
             <Image

@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function InDepthReadingPage() {
-  return <ReadingPresentation reading={inDepth} commerce={<ReadingOrder reading={inDepth} />} />;
+  return <ReadingPresentation scaled reading={inDepth} commerce={<ReadingOrder reading={inDepth} />} />;
 }

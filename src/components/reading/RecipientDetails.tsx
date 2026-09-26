@@ -90,13 +90,13 @@ export function RecipientDetails() {
     <section className="flex flex-col items-center text-center">
       <PanelHeading className="text-h2-md">{gift.heading}</PanelHeading>
 
-      <p className="mt-[clamp(0.5rem,1.46vw,1.75rem)] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
+      <p className="mt-[clamp(calc(0.5rem*var(--reading-rhythm)),calc(1.46vw*var(--reading-rhythm)),calc(1.75rem*var(--reading-rhythm)))] max-w-[70cqw] font-light text-nav leading-[1.07] tracking-[0.01em] text-white">
         <Phrase parts={gift.body} />
       </p>
 
       {/* The same 607px box the question field takes, which is the half of the
           not-shifting that this section still keeps. See the note above. */}
-      <FieldBox className="mt-[clamp(0.75rem,1.56vw,1.875rem)]">
+      <FieldBox className="mt-[clamp(calc(0.75rem*var(--reading-rhythm)),calc(1.56vw*var(--reading-rhythm)),calc(1.875rem*var(--reading-rhythm)))]">
         <CountedField
           name="giftSignature"
           label={gift.signature.label}
@@ -114,7 +114,7 @@ export function RecipientDetails() {
         />
       </FieldBox>
 
-      <FieldBox className="mt-[clamp(0.3rem,0.625vw,0.75rem)]">
+      <FieldBox className="mt-[clamp(calc(0.3rem*var(--reading-rhythm)),calc(0.625vw*var(--reading-rhythm)),calc(0.75rem*var(--reading-rhythm)))]">
         <CountedField
           name="recipientEmail"
           label={gift.email.label}
@@ -140,7 +140,7 @@ export function RecipientDetails() {
       */}
       <FieldBox
         data-mismatch={gift.confirmation.mismatch}
-        className="mt-[clamp(0.3rem,0.625vw,0.75rem)]"
+        className="mt-[clamp(calc(0.3rem*var(--reading-rhythm)),calc(0.625vw*var(--reading-rhythm)),calc(0.75rem*var(--reading-rhythm)))]"
       >
         <CountedField
           name="addressConfirmation"
@@ -166,7 +166,7 @@ export function RecipientDetails() {
         />
       </FieldBox>
 
-      <FieldBox className="mt-[clamp(0.3rem,0.625vw,0.75rem)]">
+      <FieldBox className="mt-[clamp(calc(0.3rem*var(--reading-rhythm)),calc(0.625vw*var(--reading-rhythm)),calc(0.75rem*var(--reading-rhythm)))]">
         <CountedField
           name="giftMessage"
           label={gift.message.label}
@@ -180,11 +180,11 @@ export function RecipientDetails() {
             now need. See the note on this component.
           */
           rows={2}
-          className="min-h-[clamp(3rem,5.2vw,6.25rem)]"
+          className="min-h-[clamp(calc(3rem*var(--reading-scale)),calc(5.2vw*var(--reading-scale)),calc(6.25rem*var(--reading-scale)))]"
         />
       </FieldBox>
 
-      <p className="mt-[clamp(0.375rem,0.78vw,0.9375rem)] max-w-[70cqw] text-fine leading-[1.2] font-light text-champagne/73">
+      <p className="mt-[clamp(calc(0.375rem*var(--reading-rhythm)),calc(0.78vw*var(--reading-rhythm)),calc(0.9375rem*var(--reading-rhythm)))] max-w-[70cqw] text-fine leading-[1.2] font-light text-champagne/73">
         {gift.note}
       </p>
     </section>

@@ -120,7 +120,7 @@ export function CountedField({
     and the `--color-ink` at 30% she fills the box with.
   */
   const field = cn(
-    "field rounded-[clamp(0.5rem,1.04vw,1.25rem)] border-2 border-gold bg-ink/30 px-[1.35em] py-[0.9em] text-left align-top font-light text-note leading-tight",
+    "field rounded-[clamp(calc(0.5rem*var(--reading-scale)),calc(1.04vw*var(--reading-scale)),calc(1.25rem*var(--reading-scale)))] border-2 border-gold bg-ink/30 px-[1.35em] py-[0.9em] text-left align-top font-light text-note leading-tight",
     className,
   );
 

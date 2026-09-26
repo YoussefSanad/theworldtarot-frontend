@@ -42,7 +42,7 @@ import { brand } from "@/lib/assets";
  */
 export function ReadingFeatures() {
   return (
-    <Section padding="none" className="pt-[clamp(1.5rem,2.66vw,3.1875rem)]">
+    <Section padding="none" className="pt-[clamp(calc(1.5rem*var(--reading-rhythm)),calc(2.66vw*var(--reading-rhythm)),calc(3.1875rem*var(--reading-rhythm)))]">
       {/*
         `readingProps`, not `reading`: below `lg` the page is capped at 440px
         and this row opens out past it to 763px so three props can go across.
@@ -78,7 +78,7 @@ export function ReadingFeatures() {
           compasses up. At 1152 the phrase still clears its column by 4.6%,
           against 5.3% at 1920.
         */}
-        <ul className="grid gap-y-[clamp(1.5rem,3.13vw,3.75rem)] md:grid-cols-3 md:gap-x-[clamp(1rem,1.25vw,1.5rem)]">
+        <ul className="grid gap-y-[clamp(calc(1.5rem*var(--reading-rhythm)),calc(3.13vw*var(--reading-rhythm)),calc(3.75rem*var(--reading-rhythm)))] md:grid-cols-3 md:gap-x-[clamp(calc(1rem*var(--reading-scale)),calc(1.25vw*var(--reading-scale)),calc(1.5rem*var(--reading-scale)))]">
           {readingPageChrome.features.map((feature, index) => (
             /*
               `min-w-0` so a title wider than its third of the row overhangs it
@@ -103,7 +103,7 @@ export function ReadingFeatures() {
                   Same slow halo as the homepage's three, offset per compass so
                   the row does not breathe in step.
                 */
-                className="compass-breathe w-[clamp(6rem,9.9vw,11.875rem)] shrink-0 min-[72rem]:w-[clamp(3.5rem,6.875vw,8.25rem)]"
+                className="compass-breathe w-[clamp(calc(6rem*var(--reading-scale)),calc(9.9vw*var(--reading-scale)),calc(11.875rem*var(--reading-scale)))] shrink-0 min-[72rem]:w-[clamp(calc(3.5rem*var(--reading-scale)),calc(6.875vw*var(--reading-scale)),calc(8.25rem*var(--reading-scale)))]"
                 style={{ animationDelay: `${(-4 / 3) * index}s` }}
               />
 

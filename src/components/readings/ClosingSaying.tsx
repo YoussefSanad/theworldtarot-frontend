@@ -114,13 +114,13 @@ export function ClosingSaying({
   hugRule?: boolean;
 }) {
   return (
-    <Section padding="none" className={cn(className ?? "pb-[clamp(4rem,10vw,12rem)] lg:pb-0")}>
+    <Section padding="none" className={cn(className ?? "pb-[clamp(calc(4rem*var(--block-rhythm)),calc(10vw*var(--block-rhythm)),calc(12rem*var(--block-rhythm)))] lg:pb-0")}>
       <Container width={width} className="flex flex-col items-center text-center">
         <Divider variant={rule} />
 
         <p
           className={cn(
-            "mt-[clamp(0.5rem,0.78vw,0.9375rem)] font-display leading-[1.1]",
+            "mt-[clamp(calc(0.5rem*var(--block-rhythm)),calc(0.78vw*var(--block-rhythm)),calc(0.9375rem*var(--block-rhythm)))] font-display leading-[1.1]",
             /*
               The size travels with the tone, because on the page that asks for
               `ink` they are one decision: the readings frames set this line at
@@ -134,7 +134,7 @@ export function ClosingSaying({
           <Phrase parts={saying} />
         </p>
 
-        <Divider variant={rule} className="mt-[clamp(0.5rem,1.04vw,1.25rem)]" />
+        <Divider variant={rule} className="mt-[clamp(calc(0.5rem*var(--block-rhythm)),calc(1.04vw*var(--block-rhythm)),calc(1.25rem*var(--block-rhythm)))]" />
 
         {/*
           The box stays when the button does not. Its height is the room-space
@@ -144,7 +144,7 @@ export function ClosingSaying({
         */}
         <div
           className={cn(
-            "mt-[clamp(0.75rem,2.19vw,2.625rem)] flex flex-col items-center justify-center",
+            "mt-[clamp(calc(0.75rem*var(--block-rhythm)),calc(2.19vw*var(--block-rhythm)),calc(2.625rem*var(--block-rhythm)))] flex flex-col items-center justify-center",
             /*
               The room-space box is the readings pages' air; a caller that owns
               its own asks for `hugRule`.
@@ -156,7 +156,7 @@ export function ClosingSaying({
               button lands flush against the rule — that is the World Tarot
               frame's own 17px, near enough the 2.19vw this already sets.
             */
-            hugRule ? "lg:h-0" : "lg:mt-0 lg:h-[clamp(6rem,14vw,16rem)]",
+            hugRule ? "lg:h-0" : "lg:mt-0 lg:h-[clamp(calc(6rem*var(--block-scale)),calc(14vw*var(--block-scale)),calc(16rem*var(--block-scale)))]",
           )}
         >
           {/* 68px tall at 30px type in Figma; the width is the label's own. */}

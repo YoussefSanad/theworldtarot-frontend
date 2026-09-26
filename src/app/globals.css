@@ -257,6 +257,35 @@
     jumbo there even after the site-wide reduction. See the note on it.
   */
   --card-scale: 1;
+  /*
+    The three reading pages, which take the same treatment as the card page and
+    for the same reason — see `.reading-page` in the desktop query.
+
+    **Two knobs rather than one, because the client asked for two things.**
+    `--reading-rhythm` is the vertical gaps between blocks and `--reading-scale`
+    is everything's size; the ask was for the rhythm to come in *before* any
+    shrinking, so they tune separately. A single factor could not express
+    "tighter but not yet smaller".
+
+    Both are 1 here and set on the page class on desktop. `/redeem/` renders the
+    same `ReadingPresentation` and is deliberately not included: it is a page the
+    client has not asked to change, which is why the class arrives by an opt-in
+    prop rather than living on the component.
+  */
+  --reading-rhythm: 1;
+  --reading-scale: 1;
+  /*
+    **The alias the shared blocks read**, so a block drawn on more than one page
+    family scales with whichever page it is on.
+
+    `ClosingSaying` is the case that forced it: the card reference page and the
+    three reading pages both draw it, and each shrinks by its own factor. A
+    block that hardcoded `--reading-*` would have ignored the card page's
+    `--card-scale` and vice versa, so it reads these instead and each page maps
+    them to its own numbers. 1 here, so a page that maps neither is unchanged.
+  */
+  --block-rhythm: 1;
+  --block-scale: 1;
 }
 
 /*
@@ -575,6 +604,42 @@
   }
 
   /*
+    **The three reading pages, tightened then shrunk.** Two factors, because the
+    client asked for two things in order: the vertical rhythm comes in first and
+    the overall size follows, so each has its own knob and either can move
+    without the other.
+
+    `--reading-rhythm` (0.85) multiplies the vertical gaps — the `mt`/`pt` and
+    `gap-y` clamps that carry this page's rhythm, in the components themselves.
+    `--reading-scale` (0.85) multiplies everything else: the measures below and
+    the panels' own `cqw`-driven padding, which follows its container for free.
+
+    **The measures are redeclared here rather than left on `:root`, and that is
+    the lesson the card page paid for.** A `var()` resolves in the scope of the
+    element its declaration lands on, not the element that reads the result — so
+    a `--measure-reading` on `:root` would see `--reading-scale: 1` no matter
+    that every consumer sits inside this page, and the panels would not move at
+    all while the gaps around them did. That is exactly the "only some of it
+    scales" the card page showed, measured: see the note on `.library-card-page`.
+
+    **`/redeem/` is deliberately excluded.** It renders the same
+    `ReadingPresentation`, so this class cannot live on that component; the three
+    routes opt in with a prop instead. `/checkout/complete/` shares the backdrop
+    only and never had these tokens.
+  */
+  .reading-page {
+    --reading-rhythm: 0.85;
+    --reading-scale: 0.85;
+
+    /* The shared blocks follow this page's factors. See `--block-rhythm`. */
+    --block-rhythm: var(--reading-rhythm);
+    --block-scale: var(--reading-scale);
+
+    --measure-reading: calc(min(var(--container-reading), 74.531vw) * var(--content-scale) * var(--reading-scale));
+    --measure-reading-props: var(--measure-reading);
+  }
+
+  /*
     **The factor, and the page's own tokens redeclared here with it.**
 
     The redeclaration is the load-bearing part, and the reason is a custom
@@ -598,6 +663,10 @@
   */
   .library-card-page {
     --card-scale: 0.85;
+
+    /* The shared blocks follow this page's factor. See `--block-rhythm`. */
+    --block-rhythm: var(--card-scale);
+    --block-scale: var(--card-scale);
 
     --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale));
     --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale));
