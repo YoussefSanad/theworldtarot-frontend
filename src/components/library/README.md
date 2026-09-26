@@ -112,10 +112,13 @@ and `check:measure` is unaffected.
 ## The names are hers, with her typos fixed
 
 `content/library.ts` holds them, and the rule applied is **fix outright
-misspellings, keep deck-specific naming**: `THE EMPORER` and `THE HANGMAN` are
-corrected; `THE HIGH PRIEST` (not Hierophant), `THE WHEEL` (not Wheel of
-Fortune) and `JUDGEMENT` are hers and are kept. An official list from her later
-lands in that one array.
+misspellings, keep deck-specific naming**: `THE EMPORER` is corrected; `THE
+HANGMAN` (not the Hanged Man), `THE HIGH PRIEST` (not Hierophant), `THE WHEEL`
+(not Wheel of Fortune) and `JUDGEMENT` are hers and are kept. An official list
+from her later lands in that one array.
+
+`THE HANGMAN` sat in the corrected column until she confirmed it on 26 September
+2026; it is the deck's name, not a slip.
 
 **Her mockup's grid order has a slip and is not followed.** Her first row runs
 The Fool, The Magician, *The Tower*, The Empress — The Tower in the slot

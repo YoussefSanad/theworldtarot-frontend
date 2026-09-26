@@ -290,9 +290,9 @@ export const worldTarotSurfaces = {
  * script asserts on the source dimensions rather than trusting them.
  *
  * Addressed by slug so `content/library.ts` can look one up from the card it is
- * already holding; the client's own filenames (`04-the-emporer`,
- * `12-the-hangman`) are mapped to these slugs in the script and appear nowhere
- * else.
+ * already holding; the client's own filenames (`04-the-emporer`, `0-the-fool`
+ * beside `01-the-magician`) carry her spellings and inconsistent zero-padding,
+ * and are mapped to these slugs in the script and appear nowhere else.
  */
 const libraryCard = (slug: string): ImageAsset => asset(`/figma/library-cards/${slug}.webp`, 640, 1060);
 
@@ -309,7 +309,7 @@ export const libraryCards = {
   "the-hermit": libraryCard("the-hermit"),
   "the-wheel": libraryCard("the-wheel"),
   justice: libraryCard("justice"),
-  "the-hanged-man": libraryCard("the-hanged-man"),
+  "the-hangman": libraryCard("the-hangman"),
   death: libraryCard("death"),
   temperance: libraryCard("temperance"),
   "the-devil": libraryCard("the-devil"),

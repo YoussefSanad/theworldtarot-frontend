@@ -3799,18 +3799,27 @@
       interior a name may cross is 243px — 37.97% of the card's width.
 
       The size is derived from that rather than fitted by eye. Cinzel's own
-      metrics (`wght` 700, 1000 upem) put the widest standard-tier name, "THE
-      HANGED MAN", at 10.216em including this rule's 0.02em tracking, so the
-      ceiling is 243/10.216 = 23.8px, or 3.717cqw. This sets 3.70cqw and keeps
-      the last tenth as the margin for hinting and subpixel rounding.
+      metrics (`wght` 700, 1000 upem) put what was then the widest
+      standard-tier name, "THE HANGED MAN", at 10.216em including this rule's
+      0.02em tracking, so the ceiling is 243/10.216 = 23.8px, or 3.717cqw. This
+      sets 3.70cqw and keeps the last tenth as the margin for hinting and
+      subpixel rounding.
+
+      **That name is gone and the size deliberately has not moved.** XII was
+      renamed to "THE HANGMAN" on 26 September 2026, which leaves "THE HIGH
+      PRIEST" the widest of the standard tier and a narrower constraint than
+      the one this number was cut to. The ceiling therefore rose; 3.70cqw is
+      kept because it is the size the client signed off on, and because every
+      name still clears the rivets at it. Re-derive only if she asks for larger
+      again.
 
       **The history matters, because the number moved twice.** 2.62cqw was the
       client's own mockup size, at which the longest name fills about 85% of the
       interior; she called it too small to read, twice. 3.05cqw answered that by
       filling the interior, and she asked for larger again — "as large as
       possible for the best readability". This is that limit: one more step and
-      "THE HANGED MAN" crosses the rivets, which is a thing the artwork draws
-      and the type must not sit on top of.
+      "THE HANGED MAN", the longest name at the time, crossed the rivets, which
+      is a thing the artwork draws and the type must not sit on top of.
 
       **Vertical is not the limit and never was.** The brass is 51px tall while
       these caps are 16.6px — a third of it — so the headroom is real but
