@@ -40,6 +40,12 @@ import { cn } from "@/lib/cn";
  *
  * The heading names the card, so it is a real `<h2>`: on a page whose other
  * sections are pictures and prose, this is the one that titles what follows.
+ *
+ * **Three insets stack on the same measure** — this panel's own padding, the
+ * bordered box's, and each column's — and the columns are a quarter of the
+ * width each, so every pixel of all three is spent four times. That is why the
+ * client kept reading the four boxes as oddly proportioned, and why the cut
+ * she asked for had to come off all three rather than any one of them.
  */
 export function AppearsPanel({
   cardName,
@@ -49,7 +55,7 @@ export function AppearsPanel({
   columns: MajorArcanaContent["appears"];
 }) {
   return (
-    <div className="stack rounded-[clamp(calc(0.75rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))] bg-card-panel p-[clamp(calc(0.625rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))]">
+    <div className="stack rounded-[clamp(calc(0.75rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))] bg-card-panel p-[clamp(calc(0.375rem*var(--card-scale)),calc(0.63vw*var(--card-scale)),calc(0.75rem*var(--card-scale)))]">
       {/*
         The bordered box holds the columns and nothing else, and its top edge
         runs **behind** the heading above it — her drawing has the stroke pass
@@ -64,11 +70,16 @@ export function AppearsPanel({
         request**, and it is the panel's own margin rather than the columns'.
         Measured at 1920px her figure rendered 34px a side, and with the outer
         panel's 17px and each column's own inset stacked on top of it, a column
-        of four gave only 143px of its 186px to text. 24px here is the largest
-        of those three cuts; the columns take a smaller one below. Her drawn
-        value is kept in this note because nothing else records it now.
+        of four gave only 143px of its 186px to text.
+
+        **Cut a second time on the same note**: the first pass took this to
+        24px and the columns to 16px, and the client still read the four boxes
+        as strangely sized — the text was breaking after two or three words and
+        leaving deep ragged gutters. Three insets stack on the same measure
+        here, so each one is paid four times over; 14px is this one's share.
+        Her drawn value is kept in this note because nothing else records it.
       */}
-      <div className="mt-[0.72em] w-full self-start rounded-[clamp(calc(0.5rem*var(--card-scale)),calc(0.94vw*var(--card-scale)),calc(1.125rem*var(--card-scale)))] border border-gold/55 px-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))] pb-[clamp(calc(1rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] pt-[clamp(calc(1.5rem*var(--card-scale)),calc(2.08vw*var(--card-scale)),calc(2.5rem*var(--card-scale)))]">
+      <div className="mt-[0.72em] w-full self-start rounded-[clamp(calc(0.5rem*var(--card-scale)),calc(0.94vw*var(--card-scale)),calc(1.125rem*var(--card-scale)))] border border-gold/55 px-[clamp(calc(0.375rem*var(--card-scale)),calc(0.73vw*var(--card-scale)),calc(0.875rem*var(--card-scale)))] pb-[clamp(calc(1rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] pt-[clamp(calc(1.5rem*var(--card-scale)),calc(2.08vw*var(--card-scale)),calc(2.5rem*var(--card-scale)))]">
         {/*
           **`minmax(0, 1fr)` explicitly, which is what makes the four equal.**
 
@@ -90,13 +101,15 @@ export function AppearsPanel({
               key={column.label}
               className={cn(
                 /*
-                  16px a side rather than her 25px, the smaller half of the
+                  8px a side rather than her 25px, the smaller half of the
                   client's ask for less horizontal margin in this panel. These
                   four tracks are a quarter of the panel each, so an inset here
                   is paid twice over — it comes straight off the text measure
-                  and off the gold rule that underlines each label.
+                  and off the gold rule that underlines each label. It was 16px
+                  through the first cut; halving it is the cheapest width this
+                  panel had left to give the columns.
                 */
-                "flex flex-col items-center px-[clamp(calc(0.5rem*var(--card-scale)),calc(0.833vw*var(--card-scale)),calc(1rem*var(--card-scale)))] text-center",
+                "flex flex-col items-center px-[clamp(calc(0.25rem*var(--card-scale)),calc(0.417vw*var(--card-scale)),calc(0.5rem*var(--card-scale)))] text-center",
                 /*
                   The separator belongs to every column that has one before it
                   *in its own row*, so which columns get it changes with the

@@ -678,6 +678,24 @@
     --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
     --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
     --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
+
+    /*
+      `--text-h3` is the closing line's size, and it is redeclared here for the
+      same reason the four measures above are: it is read inside this page, so
+      the factor has to be in scope or only one half of the pair responds.
+
+      **That mismatch is what broke the wrap.** `ClosingSaying` sets this page's
+      quote at `text-h3` and `Container width="cardClosing"` puts it in a 513px
+      box — a Figma pair, drawn to break "The invitation is not to know -" onto
+      its own line. The box picked up the page's 0.85 and came down 15%; the
+      type, declared only on `:root`, did not. The line then no longer fitted
+      its own box and took a third line, breaking after "to".
+
+      Scaling it with the box restores her two lines, and it is the proportion
+      her frame draws rather than a number tuned to this one sentence — a
+      longer closing on another card breaks the same way hers does.
+    */
+    --text-h3: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(2.1875vw * var(--content-scale) * var(--card-scale)), calc(2.625rem * var(--content-scale) * var(--card-scale)));
   }
 
   /*
