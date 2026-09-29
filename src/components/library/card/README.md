@@ -10,22 +10,47 @@ The Library's own conventions are one level up in
 [`../README.md`](../README.md), and the asset warning it records is repeated
 below because this page is where it bit hardest.
 
-## One card has content; twenty-one do not
+## All twenty-two cards have content now
 
-`MajorArcanaCard.content` is optional, and that is the whole mechanism rather
-than a gap in it:
+`MajorArcanaCard.content` is still optional and that is still the mechanism —
+a card with a `MajorArcanaContent` record renders this template, a card without
+one renders `ComingSoonPage` — but **no Major Arcana card takes the second
+branch any more.** The Fool's copy was transcribed from her frame; the other
+twenty-one were imported from her `LIBRARY CARDS CONTENT 1.xls` by
+`scripts/import-card-content.mjs`. The four suit pages are still their own
+placeholders and are to have their own designs.
 
-- a card **with** a `MajorArcanaContent` record renders this template
-- a card **without** one renders `ComingSoonPage`, exactly as before
+**The imported copy is verbatim**, which reverses the rule this folder used to
+keep. At the client's instruction her `SOVREIGNTY`, her `fufillment`, her
+Magician shadow text (a copy of The Fool's) and her Wheel/Hermit shared quote
+all ship as written. The Fool's own `the unkown` fix predates that instruction
+and stays, so his is the one page whose copy is not hers exactly.
 
-Only The Fool has copy; the other twenty-one are waiting on the client. Each
-one arrives as a single object in `content/card-content.ts` — **no code
-changes** — and the route's one `if` does the rest. The four suit pages are
-still their own placeholders and are to have their own designs.
+## What varies per card, and what does not
+
+Three assets are the card's own and the rest are shared:
+
+| | Where it comes from |
+|---|---|
+| Parchment sheet | `cardPaper(slug)` → three slices, set as CSS custom properties |
+| Shadow panel | `cardShadows[slug]` → one flat image, figure composited in |
+| Card artwork | `card.image`, the same file the Library grid draws |
+| Meta glyphs | `cardSymbols` — **one shared set of twenty-nine**, because the client copied an identical set into every packet |
+| Dividers, spheres, meta strip, "Appears" icons | `cardReference`, unchanged |
+
+**The four "Appears in a Reading" icons are still The Fool's on every page**,
+and the key glyph with them: no packet contains either, so twenty-two pages draw
+one card's icons. `AppearsColumn` holds an icon per column, so per-card glyphs
+are a data-only swap when she delivers them.
+
+`scripts/optimize-packet-assets.mjs` writes all three per-card asset families
+from `asset dump/LIBRARY PACKETS/`. Read its header before changing it: the
+icons are deduped on an asserted byte-identity, the sheets are normalized to one
+width, and two of the backgrounds are keyed from white rather than alpha.
 
 ## The URL is derived, and the bare slug is now a 404
 
-`/library/the-fool-tarot-card-meaning/`, from `cardPath()` in
+`/library/the-fool-tarot-meaning/`, from `cardPath()` in
 `content/library.ts`. `slug` stays short (`the-fool`) because it is already
 the card's identity, its image filename and its lookup key; the SEO string is
 computed from it rather than stored beside it, so there is one spelling to keep
@@ -136,7 +161,7 @@ does the work (`src/app/README.md`), and every rearrangement here is an
 | `CardEssay` | artwork above the prose, centred — a 260px picture beside the prose column has no honest narrow form |
 | `AppearsPanel` | four columns to two, then one; the vertical rules turn horizontal, because a vertical rule between stacked blocks separates nothing |
 | `SpheresCarousel` | an Embla strip below `sm` — three cards stacked is three screens of scrolling |
-| `ShadowPanel` | the silhouette drops out below `sm`; it bleeds off the left edge by design and would sit under the text at phone width |
+| `ShadowPanel` | nothing — **this row used to say the silhouette drops out below `sm`.** She was a separate layer then; she is part of the flat panel image now, so the whole panel scales together and the text keeps its offset at every width |
 | `MetaStrip` | five columns wrap to three, then two |
 
 **The carousel's breakpoint is written in three places and all three must

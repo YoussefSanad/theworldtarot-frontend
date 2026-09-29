@@ -1,4 +1,28 @@
-import { theFool, type MajorArcanaContent } from "@/content/card-content";
+import {
+  death,
+  judgement,
+  justice,
+  strength,
+  temperance,
+  theChariot,
+  theDevil,
+  theEmperor,
+  theEmpress,
+  theFool,
+  theHangman,
+  theHermit,
+  theHighPriest,
+  theHighPriestess,
+  theLovers,
+  theMagician,
+  theMoon,
+  theStar,
+  theSun,
+  theTower,
+  theWheel,
+  theWorld,
+  type MajorArcanaContent,
+} from "@/content/card-content";
 import { libraryCards } from "@/lib/assets";
 import type { ImageAsset } from "@/lib/assets";
 
@@ -57,27 +81,27 @@ export type MajorArcanaCard = {
  */
 export const majorArcana: readonly MajorArcanaCard[] = [
   { slug: "the-fool", numeral: "0", name: "The Fool", image: libraryCards["the-fool"], content: theFool },
-  { slug: "the-magician", numeral: "I", name: "The Magician", image: libraryCards["the-magician"] },
-  { slug: "the-high-priestess", numeral: "II", name: "The High Priestess", image: libraryCards["the-high-priestess"] },
-  { slug: "the-empress", numeral: "III", name: "The Empress", image: libraryCards["the-empress"] },
-  { slug: "the-emperor", numeral: "IV", name: "The Emperor", image: libraryCards["the-emperor"] },
-  { slug: "the-high-priest", numeral: "V", name: "The High Priest", image: libraryCards["the-high-priest"] },
-  { slug: "the-lovers", numeral: "VI", name: "The Lovers", image: libraryCards["the-lovers"] },
-  { slug: "the-chariot", numeral: "VII", name: "The Chariot", image: libraryCards["the-chariot"] },
-  { slug: "strength", numeral: "VIII", name: "Strength", image: libraryCards.strength },
-  { slug: "the-hermit", numeral: "IX", name: "The Hermit", image: libraryCards["the-hermit"] },
-  { slug: "the-wheel", numeral: "X", name: "The Wheel", image: libraryCards["the-wheel"] },
-  { slug: "justice", numeral: "XI", name: "Justice", image: libraryCards.justice },
-  { slug: "the-hangman", numeral: "XII", name: "The Hangman", image: libraryCards["the-hangman"] },
-  { slug: "death", numeral: "XIII", name: "Death", image: libraryCards.death },
-  { slug: "temperance", numeral: "XIV", name: "Temperance", image: libraryCards.temperance },
-  { slug: "the-devil", numeral: "XV", name: "The Devil", image: libraryCards["the-devil"] },
-  { slug: "the-tower", numeral: "XVI", name: "The Tower", image: libraryCards["the-tower"] },
-  { slug: "the-star", numeral: "XVII", name: "The Star", image: libraryCards["the-star"] },
-  { slug: "the-moon", numeral: "XVIII", name: "The Moon", image: libraryCards["the-moon"] },
-  { slug: "the-sun", numeral: "XIX", name: "The Sun", image: libraryCards["the-sun"] },
-  { slug: "judgement", numeral: "XX", name: "Judgement", image: libraryCards.judgement },
-  { slug: "the-world", numeral: "XXI", name: "The World", image: libraryCards["the-world"] },
+  { slug: "the-magician", numeral: "I", name: "The Magician", image: libraryCards["the-magician"] , content: theMagician },
+  { slug: "the-high-priestess", numeral: "II", name: "The High Priestess", image: libraryCards["the-high-priestess"] , content: theHighPriestess },
+  { slug: "the-empress", numeral: "III", name: "The Empress", image: libraryCards["the-empress"] , content: theEmpress },
+  { slug: "the-emperor", numeral: "IV", name: "The Emperor", image: libraryCards["the-emperor"] , content: theEmperor },
+  { slug: "the-high-priest", numeral: "V", name: "The High Priest", image: libraryCards["the-high-priest"] , content: theHighPriest },
+  { slug: "the-lovers", numeral: "VI", name: "The Lovers", image: libraryCards["the-lovers"] , content: theLovers },
+  { slug: "the-chariot", numeral: "VII", name: "The Chariot", image: libraryCards["the-chariot"] , content: theChariot },
+  { slug: "strength", numeral: "VIII", name: "Strength", image: libraryCards.strength , content: strength },
+  { slug: "the-hermit", numeral: "IX", name: "The Hermit", image: libraryCards["the-hermit"] , content: theHermit },
+  { slug: "the-wheel", numeral: "X", name: "The Wheel", image: libraryCards["the-wheel"] , content: theWheel },
+  { slug: "justice", numeral: "XI", name: "Justice", image: libraryCards.justice , content: justice },
+  { slug: "the-hangman", numeral: "XII", name: "The Hangman", image: libraryCards["the-hangman"] , content: theHangman },
+  { slug: "death", numeral: "XIII", name: "Death", image: libraryCards.death , content: death },
+  { slug: "temperance", numeral: "XIV", name: "Temperance", image: libraryCards.temperance , content: temperance },
+  { slug: "the-devil", numeral: "XV", name: "The Devil", image: libraryCards["the-devil"] , content: theDevil },
+  { slug: "the-tower", numeral: "XVI", name: "The Tower", image: libraryCards["the-tower"] , content: theTower },
+  { slug: "the-star", numeral: "XVII", name: "The Star", image: libraryCards["the-star"] , content: theStar },
+  { slug: "the-moon", numeral: "XVIII", name: "The Moon", image: libraryCards["the-moon"] , content: theMoon },
+  { slug: "the-sun", numeral: "XIX", name: "The Sun", image: libraryCards["the-sun"] , content: theSun },
+  { slug: "judgement", numeral: "XX", name: "Judgement", image: libraryCards.judgement , content: judgement },
+  { slug: "the-world", numeral: "XXI", name: "The World", image: libraryCards["the-world"] , content: theWorld },
 ];
 
 /**
@@ -103,7 +127,7 @@ export function findMajorArcana(slug: string): MajorArcanaCard | undefined {
  * nothing from the framework.
  *
  * **The title carries the URL's intent.** The whole reason for
- * `/library/the-fool-tarot-card-meaning/` is the phrase "tarot card meaning",
+ * `/library/the-fool-tarot-meaning/` is the phrase "tarot meaning",
  * and a title reading only "The Fool" would spend that work without collecting
  * it. A card still awaiting the client's copy keeps a generic description
  * rather than inventing one.
@@ -120,13 +144,13 @@ export function cardMeta(card: MajorArcanaCard): { title: string; description: s
 /**
  * The suffixes the SEO URLs carry, and the reason `slug` stays short.
  *
- * The pattern is fixed: `/library/{card-name}-tarot-card-meaning`, and the
+ * The pattern is fixed: `/library/{card-name}-tarot-meaning`, and the
  * equivalent `-tarot-suit-meaning` for a suit. Both are **derived** from `slug`
  * rather than stored beside it — `slug` is already the card's identity, its
  * image filename and its lookup key, and a second spelling of the same thing is
  * a second thing to keep in step.
  */
-const CARD_SUFFIX = "-tarot-card-meaning";
+const CARD_SUFFIX = "-tarot-meaning";
 const SUIT_SUFFIX = "-tarot-suit-meaning";
 
 /**
@@ -135,7 +159,7 @@ const SUIT_SUFFIX = "-tarot-suit-meaning";
  * Exported so the test can *check* the brief's "lowercase, hyphenated, no
  * special characters" rather than restate it.
  */
-export const CARD_PATH_PATTERN = /^\/library\/[a-z]+(?:-[a-z]+)*-tarot-card-meaning\/$/;
+export const CARD_PATH_PATTERN = /^\/library\/[a-z]+(?:-[a-z]+)*-tarot-meaning\/$/;
 
 export function cardPath(card: MajorArcanaCard): string {
   return `/library/${card.slug}${CARD_SUFFIX}/`;

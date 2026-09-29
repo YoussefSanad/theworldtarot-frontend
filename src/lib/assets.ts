@@ -333,17 +333,12 @@ export const librarySurfaces = {
    */
   cardBase: "/figma/card-reference/page-base.webp",
   cardWash: "/figma/card-reference/page-wash.webp",
-  /**
-   * Her paper, in three pieces.
-   *
-   * The sheet is a fixed 1337x2995 with a torn deckle at top and bottom, and
-   * the page it backs has no fixed height. So the two edges are their own
-   * strips and the flat middle tiles between them — see
-   * `scripts/optimize-card-assets.mjs`.
-   */
-  cardPaperTop: "/figma/card-reference/page-paper-top.webp",
-  cardPaperMid: "/figma/card-reference/page-paper-mid.webp",
-  cardPaperBottom: "/figma/card-reference/page-paper-bottom.webp",
+  /*
+    The paper used to live here as three shared slices. It is per-card now —
+    twenty-two sheets, sliced the same way by
+    `scripts/optimize-packet-assets.mjs` — so it is keyed by slug in
+    `cardPaper()` below rather than named once here.
+  */
 } as const;
 
 const cardRef = (name: string, width: number, height: number): ImageAsset =>
@@ -387,13 +382,118 @@ export const cardReference = {
   sphereLove: cardRef("sphere-love", 369, 455),
   sphereCareer: cardRef("sphere-career", 369, 455),
   sphereMoney: cardRef("sphere-money", 370, 455),
-  shadowGround: cardRef("shadow-ground", 1216, 229),
-  /** The figure on her cliff, standing over the shadow panel's left end. */
-  shadowSilhouette: cardRef("shadow-silhouette", 269, 239),
   metaStripBg: cardRef("meta-strip-bg", 1205, 241),
-  symbolAir: cardRef("symbol-air", 58, 51),
-  symbolUranus: cardRef("symbol-uranus", 34, 54),
-  symbolAquarius: cardRef("symbol-aquarius", 51, 36),
+  /*
+    **Only the key is still his own.** His air, uranus, aquarius and compass
+    glyphs moved to the shared `cardSymbols` set below — the first three are the
+    same artwork the client ships in every packet, and her three-way yes/no/maybe
+    replaced his one generic compass. The packets carry no keyword glyph at all,
+    so this one stays here and every card points at it.
+  */
   symbolKey: cardRef("symbol-key", 80, 27),
-  symbolCompass: cardRef("symbol-compass", 87, 87),
 } as const;
+
+const cardSymbol = (name: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/symbols/${name}.webp`, width, height);
+
+/**
+ * The meta strip's glyphs — four elements, twelve signs, ten planets, three
+ * verdicts.
+ *
+ * **Shared, not per-card.** The client copied an identical set into all
+ * twenty-one packets — verified by hash in `scripts/optimize-packet-assets.mjs`,
+ * which throws if a re-delivery ever breaks that — so they are written once and
+ * every card's content object points at these.
+ *
+ * **Her sources are pure black silhouette masks**; the tint to the page's
+ * grey-taupe happens in that script. The dimensions below are its output: read
+ * them off a run of it rather than off a packet, where they are the untinted
+ * source's size.
+ */
+export const cardSymbols: Record<string, ImageAsset> = {
+  air: cardSymbol("air", 116, 102),
+  aquarius: cardSymbol("aquarius", 102, 72),
+  aries: cardSymbol("aries", 116, 105),
+  cancer: cardSymbol("cancer", 116, 100),
+  capricorn: cardSymbol("capricorn", 96, 115),
+  earth: cardSymbol("earth", 116, 102),
+  fire: cardSymbol("fire", 116, 102),
+  gemini: cardSymbol("gemini", 116, 110),
+  jupiter: cardSymbol("jupiter", 68, 101),
+  leo: cardSymbol("leo", 90, 114),
+  libra: cardSymbol("libra", 116, 96),
+  mars: cardSymbol("mars", 116, 116),
+  maybe: cardSymbol("maybe", 116, 116),
+  mercury: cardSymbol("mercury", 76, 148),
+  moon: cardSymbol("moon", 116, 125),
+  neptune: cardSymbol("neptune", 116, 130),
+  no: cardSymbol("no", 116, 116),
+  pisces: cardSymbol("pisces", 116, 117),
+  pluto: cardSymbol("pluto", 74, 114),
+  sagittarius: cardSymbol("sagittarius", 116, 116),
+  saturn: cardSymbol("saturn", 78, 118),
+  scorpio: cardSymbol("scorpio", 116, 97),
+  sun: cardSymbol("sun", 116, 116),
+  taurus: cardSymbol("taurus", 116, 117),
+  uranus: cardSymbol("uranus", 76, 121),
+  venus: cardSymbol("venus", 76, 121),
+  virgo: cardSymbol("virgo", 116, 115),
+  water: cardSymbol("water", 116, 102),
+  yes: cardSymbol("yes", 116, 115),
+};
+
+const cardShadow = (slug: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/shadows/${slug}.webp`, width, height);
+
+/**
+ * Each card's shadow panel — the ground and the figure in one flat image.
+ *
+ * **They were two layers and are now one.** The Fool's figure used to be
+ * positioned over an empty panel by arithmetic reverse-engineered from the 11px
+ * of transparent glow around her export, and that fitted one card and nothing
+ * else: the client's twenty-one packets each carry their own figure with its
+ * own padding. Every card now ships pre-composited.
+ *
+ * All 1216x227 or thereabouts, but The High Priestess at 260 — her figure
+ * reaches higher above the panel, and the panel is what the artwork overhangs.
+ */
+export const cardShadows: Record<string, ImageAsset> = {
+  death: cardShadow("death", 1216, 227),
+  judgement: cardShadow("judgement", 1216, 227),
+  justice: cardShadow("justice", 1216, 227),
+  strength: cardShadow("strength", 1216, 231),
+  temperance: cardShadow("temperance", 1216, 227),
+  "the-chariot": cardShadow("the-chariot", 1216, 239),
+  "the-devil": cardShadow("the-devil", 1216, 228),
+  "the-emperor": cardShadow("the-emperor", 1216, 249),
+  "the-empress": cardShadow("the-empress", 1216, 235),
+  "the-fool": cardShadow("the-fool", 1216, 228),
+  "the-hangman": cardShadow("the-hangman", 1216, 227),
+  "the-hermit": cardShadow("the-hermit", 1216, 227),
+  "the-high-priest": cardShadow("the-high-priest", 1216, 240),
+  "the-high-priestess": cardShadow("the-high-priestess", 1216, 260),
+  "the-lovers": cardShadow("the-lovers", 1216, 234),
+  "the-magician": cardShadow("the-magician", 1216, 227),
+  "the-moon": cardShadow("the-moon", 1216, 227),
+  "the-star": cardShadow("the-star", 1216, 228),
+  "the-sun": cardShadow("the-sun", 1216, 228),
+  "the-tower": cardShadow("the-tower", 1216, 227),
+  "the-wheel": cardShadow("the-wheel", 1216, 227),
+  "the-world": cardShadow("the-world", 1216, 227),
+};
+
+/**
+ * A card's parchment sheet, as a bare URL.
+ *
+ * **Not an `ImageAsset`, because CSS paints this** — `.card-paper` sets it as
+ * `background-image`, and a background has no intrinsic box for a width and a
+ * height to describe. The same reason `librarySurfaces` holds the page's other
+ * backdrops.
+ *
+ * **It was three URLs — a top edge, a middle and a bottom edge.** The sheet is
+ * whole now; `.card-paper` pins the two torn edges and stretches the middle by
+ * painting this one image three times, which is the same effect without cutting
+ * her deckle in half.
+ */
+export const cardPaper = (slug: string) => `/figma/card-reference/paper/${slug}.webp`;
+

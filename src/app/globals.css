@@ -221,11 +221,29 @@
   /* Her sheet of paper, `Layer 21`, which every block on that page sits inside. */
   --container-card-paper: 1337px;
   /*
-    The closing line's own box on that page, 513px in her frame — narrow enough
-    that "The invitation is not to know - / it is to begin" breaks where she
-    breaks it rather than running on one line in the 1035px column.
+    The closing line's own box on that page. Her frame draws it at 513px —
+    narrow enough that "The invitation is not to know - / it is to begin"
+    breaks where she breaks it rather than running on one line in the 1035px
+    column.
+
+    **640px, because her 513 was measured off the one card that wanted to
+    break.** His closing is two `Phrase` parts and hers is the only one written
+    that way; the other twenty-one are single strings, so they wrapped wherever
+    the box ran out and orphaned a word — "You are ready to answer the / call"
+    on Judgement. Measured in a browser: at 513 only fourteen of the
+    twenty-two sat on one line, at 640 it is twenty.
+
+    **The ceiling is The Fool, not the copy.** `Phrase` sets its parts on one
+    line while they fit, so a box wide enough for his 505px closing collapses
+    the break he was given. 640 renders at 462px — 43px of margin under that —
+    and 700 would cross it by a single pixel. Re-measure in a browser before
+    raising this; the two 0.85 scale factors make the token and the rendered
+    width very different numbers.
+
+    Justice stays on two lines at any sane width: its 58 characters need 757px,
+    wider than the 1035px prose column it sits under.
   */
-  --container-card-closing: 513px;
+  --container-card-closing: 640px;
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
@@ -515,7 +533,7 @@
     --measure-library: calc(min(var(--container-library), 47.604vw) * var(--content-scale) * var(--library-scale));
     --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale)); /* 1337 / 19.2 */
     --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale)); /* 1035 / 19.2 */
-    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale)); /* 513 / 19.2 */
+    --measure-card-closing: calc(min(var(--container-card-closing), 33.334vw) * var(--content-scale) * var(--card-scale)); /* 640 / 19.2 */
     --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale)); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
@@ -670,7 +688,7 @@
 
     --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale));
     --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale));
-    --measure-card-closing: calc(min(var(--container-card-closing), 26.719vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-closing: calc(min(var(--container-card-closing), 33.334vw) * var(--content-scale) * var(--card-scale));
     --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale));
 
     --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
@@ -1626,82 +1644,39 @@
     sheet sat where the viewport said instead of where the content was, and a
     page taller than her 2995px simply started a second sheet.
 
-    So it is an element that wraps the content and grows with it. Three layers
-    again, because the sheet has a torn deckle at each end and the middle has to
-    stretch: the two edges are `::before`/`::after` at their own aspect, and the
-    tiling middle is this element's own background.
+  /*
+    **The sheet is one image per card, painted once.**
+
+    Two earlier versions got this wrong and both are worth recording, because
+    each looked right in isolation.
+
+    First it was three *files* per card — a top edge, a stretching middle and a
+    bottom edge — on the reasoning that the page's height is content-driven and
+    only the featureless middle should distort. The cuts ran through her torn
+    deckle, so every sheet gained a hard line where the edge used to fade out.
+
+    Then it was one file painted three times, pinning the two edges with
+    `background-size: 100% 32px`. That does not crop the top 32px of the sheet —
+    **it squashes the entire 2965px sheet into a 32px band**, which rendered as a
+    smeared bar above and below the paper.
+
+    So: one layer, `100% 100%`. Her sheet already carries its own deckle at both
+    ends (it fades in over ~30px top and ~40px bottom), so there is nothing to
+    pin — the edges are simply part of the picture. The stretch is real but the
+    deckle is about 1% of the sheet's height, so it changes by a fraction of a
+    pixel while the flat grain in between takes the rest. That grain has no
+    figure and no horizon to skew, which is why this was always the layer that
+    could afford to stretch.
   */
   .card-paper {
-    /* 1337 of her 1920. Centred: her margins are 302 and 281, 21px apart. */
-    --paper-deckle: calc(100% * 24 / 1337);
-
-    /*
-      **The sheet stretches rather than tiles.** This was `repeat-y` at the
-      tile's own aspect, which is right only while the page is shorter than
-      one tile — her middle is 1337x2947 and this page is taller than that, so
-      the tile wrapped and the wrap read as a hard line straight across the
-      paper. It is not a subtle seam: the tile's first row averages
-      #e8dac1 and its last #d1cab0, so every repeat butts a light cream
-      against a distinctly greyer tan.
-
-      `100% 100%` stretches the one tile over whatever height the content
-      needs. That is normally the wrong instinct — it distorts the texture —
-      but this layer is a paper grain with no figure in it and no horizon to
-      skew, so a vertical stretch of a few percent is invisible where a seam
-      never is.
-
-      **The floor behind it is inset, not a full-box fill.** This was a flat
-      `background-color`, which paints the element's whole rectangle — and the
-      sheet is not a rectangle. Its sides are a torn deckle drawn into the
-      tile's own alpha (the first and last ~1.5% of the image fade to
-      transparent) and its ends are the `::before`/`::after` below, which sit
-      entirely outside this box. A flat fill therefore squared off the ragged
-      sides and read as a pale halo around the paper against the wash.
-
-      A gradient inset past the deckle keeps the floor where it is useful —
-      under the opaque middle, so a page that outgrows the stretch has no bare
-      ground — while leaving the torn edges to the artwork. 2% rather than the
-      measured 1.5%, so the fill ends inside the last fully-opaque column
-      rather than exactly on it.
-    */
-    background-image:
-      url("/figma/card-reference/page-paper-mid.webp"),
-      linear-gradient(to right, transparent 0 2%, #ebe2cf 2% 98%, transparent 98%);
-    background-position:
-      center top,
-      center top;
-    background-repeat:
-      no-repeat,
-      no-repeat;
-    background-size:
-      100% 100%,
-      100% 100%;
+    background-image: var(--card-paper);
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
     margin-inline: auto;
     max-width: var(--measure-card-paper);
     position: relative;
     width: 100%;
-  }
-
-  .card-paper::before,
-  .card-paper::after {
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    content: "";
-    inset-inline: 0;
-    /* Her deckle is 24px of a 1337-wide sheet; as a ratio it holds at any width. */
-    padding-block-start: var(--paper-deckle);
-    position: absolute;
-  }
-
-  .card-paper::before {
-    background-image: url("/figma/card-reference/page-paper-top.webp");
-    bottom: 100%;
-  }
-
-  .card-paper::after {
-    background-image: url("/figma/card-reference/page-paper-bottom.webp");
-    top: 100%;
   }
 
   /*
@@ -4098,7 +4073,7 @@
     **`:has()` rather than a prop, because the header cannot be told.** It is
     rendered by `(site)/layout.tsx` as a sibling *before* `main`, so no context
     or prop from the page reaches it, and the URL cannot stand in either:
-    `/library/*-tarot-card-meaning/` serves two different pages, since only The
+    `/library/*-tarot-meaning/` serves two different pages, since only The
     Fool has copy and the other twenty-one render `ComingSoonPage`. The class
     can tell them apart, because only `CardReferencePage` sets it.
   */

@@ -39,7 +39,11 @@ test("a bare slug is not a card page", () => {
 });
 
 test("an unknown card is not found", () => {
-  assert.equal(findMajorArcanaByPath("the-nonesuch-tarot-card-meaning"), undefined);
+  assert.equal(findMajorArcanaByPath("the-nonesuch-tarot-meaning"), undefined);
+});
+
+test("card paths use the client's -tarot-meaning suffix", () => {
+  assert.equal(cardPath(majorArcana[0]), "/library/the-fool-tarot-meaning/");
 });
 
 test("a suit's path follows the equivalent suit pattern", () => {

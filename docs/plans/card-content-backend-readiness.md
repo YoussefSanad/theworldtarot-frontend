@@ -106,7 +106,7 @@ times nine.
 > readable identifier is cheap now and awkward once you have built against ids.
 
 **This branch answers it: yes.** There are twenty-two indexed SEO URLs of the
-form `/library/the-fool-tarot-card-meaning/`, statically exported, each with its
+form `/library/the-fool-tarot-meaning/`, statically exported, each with its
 own `<title>` and meta description. The pop-up assumption the contract is
 written on no longer holds for the Major Arcana.
 
