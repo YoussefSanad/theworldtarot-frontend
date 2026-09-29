@@ -46,122 +46,177 @@ import { cn } from "@/lib/cn";
  */
 export function CardEssay({ card, content }: { card: MajorArcanaCard; content: MajorArcanaContent }) {
   return (
-    <div className="flex flex-col items-center gap-[clamp(calc(1.5rem*var(--card-scale)),calc(3.02vw*var(--card-scale)),calc(3.625rem*var(--card-scale)))] xl:flex-row xl:items-start xl:gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+    <div className="flex flex-col">
       {/*
-        **The name is laid into the plaque here exactly as the grid does it**,
-        and for the same reasons: her artwork ships the plaque empty ("NO PLAQUE
-        NAME" is her own folder's title), her baked-in version was not sharp
-        enough to read, and a picture of a word is invisible to search,
-        selection and translation.
+        **Centred over the whole sheet, not over the prose column.**
 
-        `@container` with the tile's own `cqw` sizing, so one set of
-        measurements holds at whatever width this column gives the card —
-        `.library-card__name` in globals.css owns where it sits on the plaque.
-        `TarotCardTile` carries the long-name rule for the one name in the deck
-        that overruns; it cannot bite here, where the card is drawn four times
-        the grid's size, but it is applied for consistency with that tile.
+        These two lines used to sit inside the prose column, beside the card.
+        That column is 496px — the 748px measure less the 232px card and its gap
+        — and it fitted The Fool's "Wonder • Trust • Beginning" with 44px to
+        spare, which is why it survived a year as the only card on the site. The
+        World's "Completion • Fulfillment • Wholeness" needs about 581px and ran
+        past the paper's right edge.
+
+        Lifting them out of the row gives them the full measure, where the
+        longest line in the deck clears by 167px and every card keeps the single
+        line her frame draws. It is also closer to her drawing, which sets both
+        above the essay rather than beside the card.
+
+        The keywords still wrap only at the bullets (see below), so a narrow
+        viewport breaks them between phrases rather than mid-phrase.
+        `text-balance` evens the result when it does.
+
+        **Both gaps here are tighter than her frame** — 25px above the
+        subtitle and 35px below it become 14 and 22. Hers measure between
+        text boxes whose leading is part of the number, and both lines are
+        set `leading-none`, so the drawn values open a hole between two lines
+        that belong together as one heading.
       */}
       {/*
-        **The `25.1vw` cap only applies from `xl`**, where the card sits beside
-        the prose and has to leave it a measure. Below that it stacks above the
-        prose with the whole column to itself, and the cap was making it far
-        smaller than it needed to be — the client's note that the plaque name
-        is unreadable on mobile is this, not the lettering.
+        **It wraps at the bullets and nowhere else.**
 
-        The name cannot answer it on its own: `.library-card__name` is already
-        at `3.7cqw`, which the note on that rule derives from the rivets in the
-        artwork and which the client has twice asked to raise. It is a ceiling,
-        not a preference. Since the letters are a share of the card, the only
-        lever left is the card, and at `25.1vw` a 390px phone was drawing a
-        98px card and a 3.6px capital. At 80% of the column it is 312px and
-        11.5px — the same plaque, legible.
+        This was `sm:whitespace-nowrap`: one line in her drawing, and the
+        bullets separate rather than break, so a wrap mid-phrase would read as
+        three items instead of one. That held while The Fool's
+        "Wonder • Trust • Beginning" was the only line on the site. It does not
+        hold for twenty-two: The World's "Completion • Fulfillment • Wholeness"
+        is 36 characters against his 28, and at this type size beside a
+        232px-wide card it ran past the paper's right edge.
 
-        `sizes` follows, or the browser keeps fetching the small candidate for
-        a box three times the width. Its breakpoint is `80rem` to match the
-        `xl` the layout now switches at.
+        So the promise is kept where it matters and dropped where it cannot
+        be. Each phrase is wrapped in `nowrap` so it can never break inside
+        itself, and the line is free to wrap *between* phrases when the column
+        is too narrow — which is exactly what the bullets are for. The
+        separators keep their own spaces either side, so a break lands after a
+        bullet rather than orphaning one.
+
+        `text-balance` then evens the two lines when it does wrap.
       */}
-      <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 xl:max-w-[min(14.5rem,25.1vw)]">
-        <span className="stack">
-          <Image
-            src={card.image.src}
-            alt={cardAlt(card)}
-            width={card.image.width}
-            height={card.image.height}
-            className="h-auto w-full"
-            sizes="(width >= 80rem) 14.5rem, min(20rem, 80vw)"
-            priority
-          />
+      <p className="text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink">
+        {content.keywords
+          /*
+            Split on the bullet itself, not on `" • "`. The Emperor's line
+            reads "authority •structure • leadership" — a missing space
+            that ships verbatim at the client's instruction — and a
+            space-delimited split would have left "authority •structure"
+            welded into one unbreakable phrase.
+          */
+          .split("•")
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((phrase, index) => (
+            <span key={phrase} className="whitespace-nowrap">
+              {index > 0 && " • "}
+              {phrase}
+            </span>
+          ))}
+      </p>
 
-          <span
-            className={cn(
-              "library-card__name pointer-events-none",
-              card.name.length > LONG_NAME && "library-card__name--long",
-            )}
-          >
-            <span className="library-card__name-text">{card.name}</span>
+      <p className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(0.729vw*var(--card-scale)),calc(0.875rem*var(--card-scale)))] text-balance text-center font-display text-nav leading-none tracking-[0.01em] text-card-ink-soft">
+        {content.subtitle}
+      </p>
+
+      {/*
+        Her 35px between the subtitle and the artwork below it, on the same
+        clamp the rest of this frame uses.
+      */}
+      <div className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))] flex flex-col items-center gap-[clamp(calc(1.5rem*var(--card-scale)),calc(3.02vw*var(--card-scale)),calc(3.625rem*var(--card-scale)))] xl:flex-row xl:items-start xl:gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+        {/*
+          **The name is laid into the plaque here exactly as the grid does it**,
+          and for the same reasons: her artwork ships the plaque empty ("NO PLAQUE
+          NAME" is her own folder's title), her baked-in version was not sharp
+          enough to read, and a picture of a word is invisible to search,
+          selection and translation.
+  
+          `@container` with the tile's own `cqw` sizing, so one set of
+          measurements holds at whatever width this column gives the card —
+          `.library-card__name` in globals.css owns where it sits on the plaque.
+          `TarotCardTile` carries the long-name rule for the one name in the deck
+          that overruns; it cannot bite here, where the card is drawn four times
+          the grid's size, but it is applied for consistency with that tile.
+        */}
+        {/*
+          **The `25.1vw` cap only applies from `xl`**, where the card sits beside
+          the prose and has to leave it a measure. Below that it stacks above the
+          prose with the whole column to itself, and the cap was making it far
+          smaller than it needed to be — the client's note that the plaque name
+          is unreadable on mobile is this, not the lettering.
+  
+          The name cannot answer it on its own: `.library-card__name` is already
+          at `3.7cqw`, which the note on that rule derives from the rivets in the
+          artwork and which the client has twice asked to raise. It is a ceiling,
+          not a preference. Since the letters are a share of the card, the only
+          lever left is the card, and at `25.1vw` a 390px phone was drawing a
+          98px card and a 3.6px capital. At 80% of the column it is 312px and
+          11.5px — the same plaque, legible.
+  
+          `sizes` follows, or the browser keeps fetching the small candidate for
+          a box three times the width. Its breakpoint is `80rem` to match the
+          `xl` the layout now switches at.
+        */}
+        <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 xl:max-w-[min(14.5rem,25.1vw)]">
+          <span className="stack">
+            <Image
+              src={card.image.src}
+              alt={cardAlt(card)}
+              width={card.image.width}
+              height={card.image.height}
+              className="h-auto w-full"
+              sizes="(width >= 80rem) 14.5rem, min(20rem, 80vw)"
+              priority
+            />
+  
+            <span
+              className={cn(
+                "library-card__name pointer-events-none",
+                card.name.length > LONG_NAME && "library-card__name--long",
+              )}
+            >
+              <span className="library-card__name-text">{card.name}</span>
+            </span>
           </span>
         </span>
-      </span>
-
-      <div className="flex flex-col items-center text-center xl:items-stretch">
+  
         {/*
-          **Centred over the prose, and on one line.** Her frame sets both above
-          the essay rather than beside it, so they stay centred where the
-          paragraphs below turn left-aligned at `lg` — the column is the shared
-          measure, not the alignment.
-
-          `whitespace-nowrap` on the keywords: they are one line in her drawing
-          and the bullets are separators rather than break points, so a wrap
-          would read as three items rather than one phrase. `text-balance` on
-          the subtitle for the narrow widths where it has to give.
-
-          **Both gaps here are tighter than her frame** — 25px above the
-          subtitle and 35px below it become 14 and 22. Hers measure between
-          text boxes whose leading is part of the number, and both lines are
-          set `leading-none`, so the drawn values open a hole between two lines
-          that belong together as one heading.
+          **`min-w-0`, because a flex item will not shrink below its content.**
+          At `xl` this column sits beside the card in a flex row, and the default
+          `min-width: auto` means its intrinsic width — the longest line of prose
+          laid out unwrapped — becomes its floor. The longest essay in the deck
+          (The World's, at 1423 characters against The Empress's 754) therefore
+          pushed this column past the paper's right edge instead of wrapping
+          inside it.
+  
+          `min-w-0` lets it shrink to the space the row actually gives it, which
+          is what makes the text wrap rather than overflow. It is invisible on
+          every card whose copy is short enough to fit either way.
         */}
-        {/*
-          `nowrap` only from `sm`. It is one line in her drawing and the bullets
-          separate rather than break, which the docblock above records — but on
-          the narrowest phones "WONDER • TRUST • BEGINNING" is wider than the
-          column at the 22px floor these tokens now carry, and `nowrap` there
-          overflows the sheet rather than keeping a promise. Below `sm` it may
-          wrap at a bullet; `text-balance` keeps the two lines even when it
-          does.
-        */}
-        <p className="text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink sm:whitespace-nowrap">
-          {content.keywords}
-        </p>
+        <div className="flex min-w-0 flex-col items-center text-center xl:items-stretch">
 
-        <p className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(0.729vw*var(--card-scale)),calc(0.875rem*var(--card-scale)))] text-balance text-center font-display text-nav leading-none tracking-[0.01em] text-card-ink-soft">
-          {content.subtitle}
-        </p>
+          {/*
+            **`text-pretty` on the paragraphs, not `text-balance`.** The client's
+            note is that single words sit alone on a line. `text-balance` is the
+            tempting answer and the wrong one here: it evens out a *whole* block
+            and browsers cap it at a few lines (Chrome stops at four), so on
+            three paragraphs of running prose it either does nothing or squares
+            off the whole shape. `text-pretty` targets exactly the reported
+            fault — it forbids the last line being a single short word — and has
+            no line cap.
 
-        {/*
-          **`text-pretty` on the paragraphs, not `text-balance`.** The client's
-          note is that single words sit alone on a line. `text-balance` is the
-          tempting answer and the wrong one here: it evens out a *whole* block
-          and browsers cap it at a few lines (Chrome stops at four), so on
-          three paragraphs of running prose it either does nothing or squares
-          off the whole shape. `text-pretty` targets exactly the reported
-          fault — it forbids the last line being a single short word — and has
-          no line cap.
-
-          The leading is the token's now, rather than the 1.273 that used to be
-          set here. `--text-card-label` carries 1.222 to meet the client's
-          22/18, and a local override would have quietly kept the old ratio on
-          the longest-running copy on the page.
-        */}
-        <div className="mt-[clamp(calc(0.625rem*var(--card-scale)),calc(1.146vw*var(--card-scale)),calc(1.375rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
-          {content.essay.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft xl:text-left"
-            >
-              {paragraph}
-            </p>
-          ))}
+            The leading is the token's now, rather than the 1.273 that used to be
+            set here. `--text-card-label` carries 1.222 to meet the client's
+            22/18, and a local override would have quietly kept the old ratio on
+            the longest-running copy on the page.
+          */}
+          <div className="mt-[clamp(calc(0.625rem*var(--card-scale)),calc(1.146vw*var(--card-scale)),calc(1.375rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+            {content.essay.map((paragraph) => (
+              <p
+                key={paragraph}
+                className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft xl:text-left"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </div>

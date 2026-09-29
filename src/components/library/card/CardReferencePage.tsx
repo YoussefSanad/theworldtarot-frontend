@@ -7,6 +7,7 @@ import { ShadowPanel } from "@/components/library/card/ShadowPanel";
 import { SpheresCarousel } from "@/components/library/card/SpheresCarousel";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
+import { cardPaper, cardShadows } from "@/lib/assets";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
@@ -36,6 +37,8 @@ export function CardReferencePage({
   card: MajorArcanaCard;
   content: MajorArcanaContent;
 }) {
+  const paper = cardPaper(card.slug);
+
   return (
     <div className="library-card-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
       {/*
@@ -92,7 +95,10 @@ export function CardReferencePage({
         past the end of the wash onto flat parchment. Padding puts the room
         *inside* the box that was already there rather than adding to it.
       */}
-      <div className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]">
+      <div
+        className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]"
+        style={{ "--card-paper": `url("${paper}")` } as React.CSSProperties}
+      >
         {/*
           **Her gold `FRAME` ornament is gone at the client's request** — the
           1229x604 flourish that used to hang 57px below the torn top edge, with
@@ -174,7 +180,7 @@ export function CardReferencePage({
 
         <Section padding="none" className="mt-[clamp(calc(0.641rem*var(--card-scale)),calc(2.135vw*var(--card-scale)),calc(2.563rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <ShadowPanel lines={content.shadow} />
+            <ShadowPanel lines={content.shadow} art={cardShadows[card.slug]} />
           </Container>
         </Section>
 

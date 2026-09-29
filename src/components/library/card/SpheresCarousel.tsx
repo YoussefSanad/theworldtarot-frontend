@@ -172,12 +172,33 @@ export function SpheresCarousel({
                 used to carry: a fixed `height:100%` resolves against the cell
                 and the ratio never applies.
               */}
+                {/*
+                  **The picture grows to the words, and the crop follows.**
+
+                  This was `aspect-369/420 h-auto`, which made the picture the
+                  taller cell-mate on every card and therefore the thing that
+                  set the card's height. That was tuned when The Fool was the
+                  only card with copy — his longest sphere paragraph is 143
+                  characters. The World's is 226, and with the height fixed
+                  those three extra lines had nowhere to go but down, into the
+                  painted band: measured on her art, the landscape starts about
+                  62% down the card, and the seventh line of copy lands past it.
+
+                  `min-h` keeps her 369/420 as the floor, so every card whose
+                  copy already fits is untouched and The Fool's approved page is
+                  unchanged. The text block below carries the matching
+                  `min-h-[62cqw]` that actually forces the growth — this alone
+                  would not, because the copy is still shorter than the floor.
+
+                  `h-full` lets the picture follow the cell upward; with
+                  `h-auto` it would keep its own aspect and leave a gap.
+                */}
                 <Image
                   src={card.art.src}
                   alt=""
                   width={card.art.width}
                   height={card.art.height}
-                  className="aspect-369/420 h-auto w-full object-cover object-bottom"
+                  className="h-full min-h-[calc(100cqw*420/369)] w-full object-cover object-bottom"
                   sizes="(width >= 64rem) 19.2vw, 82vw"
                 />
 
@@ -192,7 +213,33 @@ export function SpheresCarousel({
                   wraps to six lines and the copy lands back in the
                   watercolour. See the note on the `<Image>` above.
                 */}
-                <div className="flex flex-col items-center px-[10.5cqw] pb-[5cqw] pt-[9.5cqw] text-center">
+                {/*
+                  **`pb-[57cqw]` reserves the painted band, and that is what
+                  lets the card grow only when it has to.**
+
+                  Her watercolour is blank parchment down to about 62% of the
+                  card — measured on the three assets: love 65.9%, career 61.1%,
+                  money 63.1% — with the landscape painted below. The copy used
+                  to end 5cqw above the card's bottom edge, which put the last
+                  lines of a long paragraph straight over that art: measured in
+                  a browser at 1920px, The World's love card overlapped by 29px
+                  and career and money by 11px each.
+
+                  So the padding below the copy now reserves the band instead of
+                  a hairline. The text block's own height is text + that
+                  reserve, and because the block and the picture share one grid
+                  cell, the taller of the two wins — so a card whose copy is
+                  short is still sized by the picture and is unchanged, while a
+                  card whose copy is long grows exactly enough to keep its words
+                  on clear paper. The Fool's approved page is in the first group.
+
+                  57cqw is that space plus a few pixels of margin: `237/0.62 - 237` is
+                  the bare minimum and rendered 1px short, so it is rounded up.
+                  Re-measure in a browser before changing it; the earlier
+                  numbers in this file were modelled and were wrong.
+                */
+                }
+                <div className="flex flex-col items-center px-[10.5cqw] pb-[57cqw] pt-[9.5cqw] text-center">
                   <h3 className="font-serif text-h3 leading-none tracking-[0.01em] text-card-ink">{card.label}</h3>
 
                   {/*

@@ -66,13 +66,21 @@ const SLUGS = {
   "Layer 7": "sphere-love",
   "Layer 8": "sphere-career",
   "Layer 9": "sphere-money",
-  "Layer 17": "shadow-ground",
-  "FOOL SILOUHETTE": "shadow-silhouette", // her spelling; the figure on the cliff
-  "symbol 1": "symbol-air",
-  "symbol 2": "symbol-uranus",
-  "symbol 3": "symbol-aquarius",
   "symbol 4": "symbol-key",
-  "symbol 5": "symbol-compass", // over YES/NO — the fifth of a uniform row
+  /*
+    **Six of her layers are no longer converted here**, because the page they
+    fed is per-card now and one PSD cannot supply twenty-two:
+
+    - `Layer 17` (the empty panel) and `FOOL SILOUHETTE` (the figure) were
+      composited by hand in the page; every card now ships one flat image.
+    - `symbol 1`/`2`/`3` (air, uranus, aquarius) are the same artwork the client
+      ships in every packet, and `symbol 5` (a generic compass over YES/NO) is
+      replaced by her three-way yes/no/maybe.
+
+    All of it is written by `optimize-packet-assets.mjs` instead, including The
+    Fool's. `symbol 4` stays: the packets carry no keyword glyph, so his is the
+    one every card draws.
+  */
 };
 
 /** Sources that are reference material rather than page artwork. */
@@ -82,6 +90,29 @@ const IGNORE = new Set([
   "Layer 21",
   /* Only its diamond trio is used; the frame itself is drawn from tokens. */
   "LOVE DIAMOND FRAME TOP",
+  /*
+    **Her gold ornament, dropped at the client's request** — this file's own
+    header says so, but the layer had no `IGNORE` entry, so a run threw on it
+    rather than skipping it. Listed here now; both this line and the header note
+    go together if the ornament ever comes back.
+  */
+  "FRAME",
+  /*
+    **All-lowercase names are this script's own output, not her layers.** Every
+    PSD layer she exports carries a capital or a space — `Layer 21`,
+    `FOOL SILOUHETTE`, `symbol 4` — so a name with neither (`parchment`,
+    `shadow-ground`, `symbol-air`) is a slug this script itself wrote on an
+    earlier run and someone copied back into the source folder. Converting it
+    again would re-encode an already-lossy file. Matched by shape below rather
+    than listed, because the list grows with every run.
+  */
+  /* Superseded by the per-card packets — see the note in SLUGS above. */
+  "Layer 17",
+  "FOOL SILOUHETTE",
+  "symbol 1",
+  "symbol 2",
+  "symbol 3",
+  "symbol 5",
 ]);
 
 /**
@@ -115,13 +146,7 @@ const WIDTHS = {
   "sphere-love": 738, // 369 drawn
   "sphere-career": 738,
   "sphere-money": 740, // 370 drawn
-  "shadow-ground": 1216,
-  "shadow-silhouette": 269, // 254 drawn; her export is already ~1x
-  "symbol-air": 58,
-  "symbol-uranus": 34,
-  "symbol-aquarius": 51,
   "symbol-key": 80,
-  "symbol-compass": 87,
 };
 
 /**
@@ -152,7 +177,7 @@ let written = 0;
 for (const file of files) {
   const layer = file.replace(/\.png$/, "");
 
-  if (IGNORE.has(layer)) {
+  if (IGNORE.has(layer) || !/[A-Z\s]/.test(layer)) {
     console.log(`${layer.padEnd(20)} — reference only, not converted`);
     continue;
   }
@@ -249,29 +274,12 @@ const CREST = { file: "LOVE DIAMOND FRAME TOP.png", left: 164, width: 47, above:
   );
 }
 
-const PAPER = { file: "Layer 21.png", edge: 24 };
-
-{
-  const src = join(SOURCE, PAPER.file);
-  const { width, height } = await sharp(src).metadata();
-  const slices = [
-    ["page-paper-top", 0, PAPER.edge],
-    ["page-paper-mid", PAPER.edge, height - PAPER.edge * 2],
-    ["page-paper-bottom", height - PAPER.edge, PAPER.edge],
-  ];
-
-  for (const [stem, top, sliceHeight] of slices) {
-    const info = await sharp(src)
-      .extract({ left: 0, top, width, height: sliceHeight })
-      .webp({ quality: 76 })
-      .toFile(join(DEST, `${stem}.webp`));
-
-    total += info.size;
-    written += 1;
-    console.log(
-      `${stem.padEnd(20)} ${String(info.width).padStart(5)}x${String(info.height).padEnd(5)} ${(info.size / 1024).toFixed(0).padStart(5)}kB`,
-    );
-  }
-}
+/*
+  **The paper is no longer sliced here.** `Layer 21` was one shared sheet for
+  one page; the client has since delivered a parchment per card, each a
+  different size, and `optimize-packet-assets.mjs` crops, normalizes and slices
+  all twenty-two. Her layer stays in the PSD — it is simply not what the page
+  draws any more.
+*/
 
 console.log(`\n${written} assets, ${(total / 1024 / 1024).toFixed(2)}MB total.`);

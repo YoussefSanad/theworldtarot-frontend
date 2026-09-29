@@ -1,9 +1,10 @@
 import Image from "next/image";
 
+import type { ImageAsset } from "@/lib/assets";
 import { cardReference } from "@/lib/assets";
 
 /**
- * The shadow panel: the card's warnings, on near-black, with the silhouette
+ * The shadow panel: the card's warnings, on near-black, with the figure
  * standing at the left edge.
  *
  * Like the reading panel, this sits **outside the page's inversion** — gold and
@@ -14,60 +15,30 @@ import { cardReference } from "@/lib/assets";
  * uses, because the panel is the site's palette rather than the parchment's.
  * Green here would be consistency with the wrong neighbour.
  *
- * **The figure is her own element, not part of the panel.** `Layer 17` is the
- * empty rounded panel — checked, there is no one on it — so she is drawn over
- * it as a separate layer, standing at the left end with the text centred in
- * what is left.
+ * **The panel and the figure are one image, and that is a change.** They were
+ * two: an empty rounded panel (`Layer 17`) with the figure drawn over it,
+ * positioned by arithmetic reverse-engineered from the 11px of transparent glow
+ * around her export. That fitted The Fool and nothing else — the client's
+ * twenty-one packets each carry their own figure with its own padding — so
+ * every card now ships pre-composited and this draws one picture.
  *
- * **She drops out below `sm`.** Her frame gives her 254px of a 1216px panel to
- * stand in, and at phone width she would sit under the words rather than beside
- * them. An addition, recorded in this folder's README with the rest.
+ * **The figure no longer drops out below `sm`.** She used to, because a 254px
+ * figure in a 1216px panel would have sat under the words at phone width. She
+ * is part of the artwork now, so the panel scales as a whole and the text keeps
+ * its offset at every size.
  */
-export function ShadowPanel({ lines }: { lines: readonly string[] }) {
+export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: ImageAsset }) {
   return (
-    // `relative` because the figure below is absolutely positioned against this
-    // box and `.stack` sets no `position` of its own — the omission that once
-    // rendered every plaque in the Library grid empty, recorded in
-    // `src/components/library/README.md`.
-    <div className="stack relative">
+    <div className="stack">
       <Image
-        src={cardReference.shadowGround.src}
+        src={art.src}
         alt=""
-        width={cardReference.shadowGround.width}
-        height={cardReference.shadowGround.height}
+        width={art.width}
+        height={art.height}
         className="size-full object-fill"
         sizes="(width >= 64rem) 63.33vw, 100vw"
       />
 
-      {/*
-        **The layer is not the artwork, and that is the whole difficulty here.**
-
-        Her frame places the figure at 254x214, panel-relative (5, 13), in a
-        1216x229 panel. But her export is 269x239 with **11px of transparent
-        glow on every side**, so the drawn rock inside it measures 246x218.
-        Sizing the layer to her node box therefore renders the rock about 6%
-        small and holds it clear of both edges — which is exactly the "too
-        contained" look the first attempts had.
-
-        So the layer is scaled until its *artwork* measures her 254 wide
-        (x1.0325) and then offset so that artwork lands at (5, 13). The layer
-        itself consequently runs 22.84% x 107.76% of the panel, starting a hair
-        left of it and ending 8.48% below — she breaks both edges, as the
-        drawing shows, and the glow is what covers the difference.
-
-        `absolute` rather than a stack cell, because the box now extends past
-        the panel on two sides and a grid cell would stretch the row to fit it.
-        This is the exception `src/app/README.md` allows: positioning a picture
-        over a box, not laying out the page.
-      */}
-      <Image
-        src={cardReference.shadowSilhouette.src}
-        alt=""
-        width={cardReference.shadowSilhouette.width}
-        height={cardReference.shadowSilhouette.height}
-        className="pointer-events-none absolute bottom-[-8.48%] left-[-0.52%] hidden h-[107.76%] w-[22.84%] max-w-none object-contain sm:block"
-        sizes="(width >= 64rem) 14.47vw, 23vw"
-      />
 
       {/*
         **Centred text, but not on the panel — on the space the figure leaves.**

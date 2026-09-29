@@ -98,6 +98,23 @@ decisions are argued in the file and in
 Alt text is *derived* from the name (`cardAlt`) rather than written out
 twenty-two times, so it cannot drift from what the plaque prints.
 
+## `card-content.ts`
+
+Each Major Arcana card's reference-page copy. **All twenty-two have a record**
+— The Fool's transcribed from her Figma frame, the other twenty-one imported
+from her `LIBRARY CARDS CONTENT 1.xls` by `scripts/import-card-content.mjs`.
+
+**The imported copy is verbatim, which is the opposite of the rule `library.ts`
+keeps for the names above.** At the client's instruction of 2026-09-28 her
+misspellings and duplications ship as written rather than being fixed; the
+file's own header lists which, and they are raised with her instead. The Fool is
+the one exception, because his correction predates the instruction.
+
+Two invisible characters are normalized on import — U+2028, which she uses for
+paragraph breaks, and U+00B7, a second bullet glyph mixed with U+2022.
+`card-content.test.ts` pins that neither survives, along with the shape every
+record must have.
+
 ## Products (`home.ts`)
 
 The four `products` (One Card, Three Card, Month Ahead, Viewing Room) look

@@ -9,7 +9,7 @@ import { siteName } from "@/content/site";
 /**
  * A Major Arcana card's own reference page.
  *
- * **The segment is the SEO URL, not the slug** — `the-fool-tarot-card-meaning`.
+ * **The segment is the SEO URL, not the slug** — `the-fool-tarot-meaning`.
  * `content/library.ts` derives it from the slug and resolves it back; this file
  * only ever hands it the segment it was routed with.
  *
