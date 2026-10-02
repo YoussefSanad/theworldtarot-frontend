@@ -134,6 +134,37 @@ The seam is invisible because the source is an even wash rather than a
 composition. **If a horizontal line ever appears here, that is the first thing
 to check**, and the fix is a mirrored tile rather than a taller image.
 
+### The sheet itself is a composition, and that is an open problem
+
+The paragraph above is about `.page-atmosphere-card-reference`, the backdrop,
+and it still holds: that asset is an even wash.
+
+**The sheet in front of it is not, and this is easy to get backwards.** The
+client's current parchments are twenty-two bespoke watercolour vignettes —
+Death's lamppost and bridge, The Fool's pines, Justice's pillars and scales, The
+Tower's red storm — a painted border around a pale centre.
+
+Above `lg` that costs nothing: the box is near the asset's own proportion, so
+the plain `100% 100%` stretch reproduces the painting almost exactly.
+
+Below `lg` it has no good answer. A phone's box is ~375px wide and several
+thousand tall, so the stretch compresses the sheet to about a quarter of its
+height and the paper smears — the visible bug this was raised for. Tiling fixes
+the smear and is what ships, but **each tile restates her border and her torn
+top edge**, roughly every 790px.
+
+Two constructions that would avoid that were built and measured, and both are
+worse; `.card-paper`'s `@media (width < 64rem)` block records them in full so
+they are not tried again. Briefly: pinning painted top and bottom bands around a
+stretched middle still duplicates the side art *and* adds two hard seams, and
+stretching a thin belly slice between a split sheet turns that slice's own edge
+art into vertical stripes.
+
+**The root cause is the assets, not the CSS: there is no featureless band in
+these sheets to repeat or to stretch.** The fix is a separate tileable belly
+texture per card, or sheets drawn with a plain middle — a question for the
+client. Worth raising, in the same class as the two mockup slips below.
+
 ## The artwork is composed renders, never raw fills
 
 The Library's rotunda warning, and this page is where it cost the most time.

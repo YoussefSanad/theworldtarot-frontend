@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Fragment } from "react";
 
 import type { MajorArcanaContent } from "@/content/card-content";
 import { LONG_NAME } from "@/components/library/TarotCardTile";
@@ -86,13 +87,46 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         So the promise is kept where it matters and dropped where it cannot
         be. Each phrase is wrapped in `nowrap` so it can never break inside
         itself, and the line is free to wrap *between* phrases when the column
-        is too narrow — which is exactly what the bullets are for. The
-        separators keep their own spaces either side, so a break lands after a
-        bullet rather than orphaning one.
+        is too narrow — which is exactly what the bullets are for.
+
+        **The separator sits outside the spans, and that is the whole trick.**
+        It used to live inside them — `{index > 0 && " • "}` was the first
+        child of each `nowrap` span — and the note here claimed the separators
+        "keep their own spaces either side, so a break lands after a bullet".
+        They did not. React renders these spans adjacent with no text node
+        between them, so the only spaces on the whole line were the two
+        flanking each bullet, and both were sealed inside a
+        `white-space: nowrap` span. A line with no breakable space cannot
+        wrap at any width: `Endings • Release • Transformation` measured 424px
+        of content in a 352px box and simply hung out of it. Hoisting the
+        separator into the `<Fragment>` puts those spaces back in the
+        paragraph's own flow, where they are the break opportunities the
+        bullets were always meant to be.
 
         `text-balance` then evens the two lines when it does wrap.
+
+        **The `22rem` cap is what the wrap needs on a phone**, because the
+        shell will not supply it. Below `lg` this line is a flat 22px — the
+        clamp's `1.875vw` term does not beat its own 22px floor until a
+        1173px viewport, and `--card-scale` is only declared above `lg` —
+        while the shell is the whole screen less two 20px gutters. So the box
+        grows and the type does not, and the longest lines in the deck sit on
+        one line well past the point where the sheet's painted border has
+        closed in on them. The sheet is full-bleed below `lg` with that border
+        *inside* it, so a line filling the gutter sits on the artwork rather
+        than the pale centre — the words poking out of the parchment.
+
+        22rem is derived, not tuned. It clears the deck's widest single phrase
+        ("Transformation", 219px as rendered) so no phrase can break inside
+        itself, and its widest two-phrase run ("Completion • Fulfillment") so
+        the wrap stays 2+1 rather than three stacked words. Above `lg` it is
+        released and never binds: every line in the deck fits her single line
+        there on its own.
+
+        Verified in-browser across all 22 cards at 360/440/520/768/1024/1440:
+        no overflow, and no phrase wider than its box.
       */}
-      <p className="text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink">
+      <p className="mx-auto max-w-[22rem] text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink lg:max-w-none">
         {content.keywords
           /*
             Split on the bullet itself, not on `" • "`. The Emperor's line
@@ -105,10 +139,10 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           .map((part) => part.trim())
           .filter(Boolean)
           .map((phrase, index) => (
-            <span key={phrase} className="whitespace-nowrap">
+            <Fragment key={phrase}>
               {index > 0 && " • "}
-              {phrase}
-            </span>
+              <span className="whitespace-nowrap">{phrase}</span>
+            </Fragment>
           ))}
       </p>
 
@@ -206,6 +240,12 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
             set here. `--text-card-label` carries 1.222 to meet the client's
             22/18, and a local override would have quietly kept the old ratio on
             the longest-running copy on the page.
+
+            The faint wash this copy reads on is **not set here** — the whole
+            opening section carries it, from the keywords down to this last
+            paragraph, so it is one ground rather than a tint behind the prose
+            alone. See `.card-reading-ground` in globals.css, applied in
+            `CardReferencePage`.
           */}
           <div className="mt-[clamp(calc(0.625rem*var(--card-scale)),calc(1.146vw*var(--card-scale)),calc(1.375rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
             {content.essay.map((paragraph) => (

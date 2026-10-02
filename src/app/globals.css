@@ -171,6 +171,22 @@
     were only ever the same value by coincidence.
   */
   --color-card-panel: #050a17;
+  /*
+    **The SHADOW panel's ground, which is not the panel above it either.**
+
+    The same lesson as `--color-card-panel` directly above, one step further on.
+    That token exists because the page's dark *surface* is not its dark *ink*;
+    this one exists because the SHADOW panel's surface is not the "Appears in a
+    Reading" panel's surface. Her frame draws two different darks: a near-black
+    navy for the reading panel and this neutral grey, measurably lighter and
+    with the blue gone, for the plaque the figure stands on.
+
+    Sampled from the twenty-two shipped `shadows/<slug>.webp` exports, which is
+    where this colour lived until `.card-shadow-ground` replaced the panel half
+    of those images with CSS. See that rule for why it is a sampled value rather
+    than a mix of the token above.
+  */
+  --color-card-shadow: #383638;
   --color-card-parchment: #f2e8d5;
 
   /* Layout rhythm */
@@ -1677,6 +1693,304 @@
     max-width: var(--measure-card-paper);
     position: relative;
     width: 100%;
+  }
+
+  /*
+    **A reading ground for the sections that sit on her painted border.**
+
+    Every sheet is a watercolour vignette — pines, pillars, mist — painted around
+    a pale centre, and this page's copy is pure black. A block of text that
+    reaches the sides therefore loses its ground wherever the painting reaches
+    in, and the first words of each line go dark on dark. Worst on the busy
+    cards: Death, Justice, The Tower.
+
+    A wash of white at very low alpha fixes that without becoming a box. Her
+    paper still reads through it, which is the point — a solid panel would look
+    like a card laid on the sheet rather than like the page's own writing
+    surface.
+
+    **The alpha is deliberately near the floor.** At `0.38` it does real work on
+    the busy sheets and is close to invisible on the pale ones (The Fool,
+    Temperance), which is the right asymmetry: the cards that need it get it and
+    the cards that do not are barely touched. Raise it first if it reads as too
+    faint; lower it first if it reads as a panel. It was tried at `0.22` and put
+    back: that was too thin to clear black type off her darker borders.
+
+    The padding is small by the same logic — enough that the words are not flush
+    against the tint's edge, not so much that it becomes a block with margins.
+    The radius is the site's button radius rather than a new number.
+
+    **Who wears it**: the opening section (the keywords, subtitle, artwork and
+    essay as one block) and the LOOK FOR section. Both run the full width beside
+    or across her border. The dark panels do not — they bring their own opaque
+    ground and would gain nothing — and the closing line sits in the sheet's pale
+    foot where there is nothing to clear.
+  */
+  .card-reading-ground {
+    background-color: rgb(255 255 255 / 0.38);
+    border-radius: var(--radius-button);
+    padding: clamp(calc(0.625rem * var(--card-scale)), calc(1.25vw * var(--card-scale)), calc(1.25rem * var(--card-scale)));
+  }
+
+  /*
+    **The LOOK FOR rule, cut where the label sits.**
+
+    Her `divider-look-for.webp` is drawn with the gap already in it — a 229px
+    transparent span at x=490..718 of 1203, so 19% of the width, centred. That is
+    generous on a desktop and too narrow on a phone: the gap is a *share* of the
+    rule and shrinks with it, while the label's type bottoms out at the 22px
+    floor of `--text-card-lead` and `--card-scale` is only declared above `lg`.
+    So the words keep their size while the space drawn for them closes, and below
+    `lg` they end up sitting on the line.
+
+    The label used to paint `--color-card-parchment` behind itself to hide that.
+    It worked and it looked wrong: a flat swatch over a watercolour vignette,
+    under a translucent wash it could not match — visible as a smear around the
+    words.
+
+    So the rule is masked instead of the label painted. The band is transparent
+    through the middle and the line resumes either side, which is the same shape
+    her asset draws — only this one follows the type.
+
+    **`ch` is the unit that makes it track.** The mask is sized off the label's
+    own font size, so the cut scales exactly as the words do: it is wide enough
+    for "LOOK FOR:" plus a little air at every viewport, without a breakpoint or
+    a measured pixel value. `12ch` is the nine characters plus roughly three
+    characters of clearance.
+
+    The two `50%` stops are hard, not feathered: her own gap has clean ends with
+    dots finishing them, and a soft fade here would read as the line dissolving
+    rather than stopping.
+  */
+  .look-for__rule {
+    /*
+      **The rule carries the label's own type metrics**, which is what makes the
+      `ch` below mean anything: `ch` resolves against the element it is used on,
+      and this is an `<img>` that would otherwise inherit whatever the page sets.
+      Matching the font and size to the label makes one `ch` here the same width
+      as one character there, so the cut tracks the words rather than drifting
+      from them. Nothing renders text in this element — these two declarations
+      exist only to give the unit its meaning.
+    */
+    font-family: var(--font-serif);
+    font-size: var(--text-card-lead);
+
+    --look-for-gap: 12ch;
+
+    -webkit-mask-image: linear-gradient(
+      to right,
+      #000 calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% + var(--look-for-gap) / 2),
+      #000 calc(50% + var(--look-for-gap) / 2)
+    );
+    mask-image: linear-gradient(
+      to right,
+      #000 calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% + var(--look-for-gap) / 2),
+      #000 calc(50% + var(--look-for-gap) / 2)
+    );
+  }
+
+  /*
+    **The SHADOW panel's ground, drawn rather than shipped as an image.**
+
+    It used to be baked into each card's `shadows/<slug>.webp` — the figure and
+    the panel she stands on composited into one 1216x227 picture, twenty-two
+    times. The panel half of that was identical in all twenty-two: measured
+    across the set, every one is the same flat rounded rectangle, `#383638` on
+    most and `#373737` on a few (The Fool, The High Priestess), a difference of
+    one or two levels that is webp quantisation rather than art direction. So
+    the ground is one declaration here and the silhouette comes back as its own
+    image once the client's cut-out assets land.
+
+    **It is its own token, not a tint of the panel above it.** The obvious move
+    is to derive it from `--color-card-panel` (`#050a17`) — the "When ...
+    Appears in a Reading" panels — so the two dark blocks stay tied together.
+    They cannot be: that token is a near-black *navy*, 5/10/23, and this ground
+    measures 56/54/56, a neutral grey with no blue in it at all. Lightening her
+    navy toward white carries the blue cast along and lands on 203/204/206 by
+    the time it is this bright — the right value is unreachable on that path,
+    and a `color-mix` written to look derived would only be the sampled number
+    in disguise. So it is sampled, and named, and sits beside its sibling as a
+    second colour rather than a function of the first.
+
+    `#383638` is what twenty of the twenty-two measure. The Fool and The High
+    Priestess come in at `#373737`, one level off on two channels, which is webp
+    quantisation and not a different grey.
+
+    **The radius is a percentage of the width, not a token.** Her corner is 20px
+    on a 1216px panel — 1.645% — and this panel is the one box on the page that
+    is a fixed-aspect block scaling continuously with the viewport. A
+    `--radius-button` here would hold 10px while the panel ran from 320px to
+    1216px wide, so the corner would read as sharp at full width and as a pill
+    at phone width. The percentage holds her proportion at every size. It is
+    written on the inline axis alone (`/ 1.645% ...` would make it an ellipse
+    against the panel's much shorter height) — `border-radius` takes a second
+    value after the slash for exactly this, and `20px / 20px` on a 1216x227 box
+    is `1.645% / 8.811%`.
+
+    **The height is her 227/1216 of the width, and it must never run backwards.**
+    There is no image to supply a height now, so the ratio does — but it has to
+    be applied in a way that can only ever read the width and never re-derive
+    it, and that is the whole difficulty of this box.
+
+    `aspect-ratio: 1216 / 227` with `align-self: stretch` is the version that
+    looks right and is not. This ground and the words are the two children of a
+    `.stack` — one grid cell — so `stretch` hands the box the *taller* sibling's
+    height, and `aspect-ratio` then dutifully converts that height back into a
+    width. Measured at 1920: the text column stood 185px tall, the ratio turned
+    that into a 993px-wide ground inside an 834px cell, and the panel overflowed
+    159px past its own container and off the side of the sheet. The symptom
+    reads as "the panel is too wide" and the cause is entirely in the height.
+
+    So the ratio is expressed as a `min-block-size` in container-query units:
+    `calc(100cqw * 227 / 1216)`, read off the panel's own inline size. The grid
+    settles the width from the cell, the floor is derived from that width, and
+    nothing the height does can travel back the other way — which is the single
+    property this box needs and the one `aspect-ratio` could not give it.
+    `block-size: 100%` then takes the cell's full height when the words are the
+    taller of the two, replacing the `stretch` that caused the feedback.
+
+    **A percentage floor was tried here and is silently dead.** `min-block-size:
+    calc(100% * 227 / 1216)` looks like the same thing written without a
+    container, and it is not: a percentage in the block axis resolves against
+    the *parent's height*, which on this content-sized grid is the height the
+    floor was supposed to be constraining. It computes to nothing. With copy in
+    the panel the text holds the box open and it appears to work; hide the copy
+    and the ground collapses to 0. `cqw` is what makes the floor read the width,
+    and `container-type: inline-size` on `.card-shadow-panel` is what gives
+    those units something to measure — the two have to ship together.
+
+    The copy is why there has to be a floor rather than a fixed height. At
+    1216/227 a 360px phone gives a 67px panel, and the heading, the champagne
+    rule and the warnings do not fit in 67px at the 18px type floor. The shadow
+    text is not a fixed quantity either — two or three lines per card, the
+    longest single line over 140 characters, which wraps to four or five visual
+    lines in a narrow column. A `min-block-size` in `em` was tried before this
+    and is also wrong: it is a guess at a line count, so it is at once too tall
+    for the shortest card and too short for the longest.
+
+    See the note in `ShadowPanel` on the text's offset, which is the other half
+    of this.
+
+    **The width is 1216 of the container's 1234, and dropping that was a bug.**
+    Her export is 1216px wide inside a `--container-card-wide` of 1234, so the
+    panel carried a 9px inset on each side that came free with the image's own
+    dimensions. A `<div>` has no intrinsic width, so replacing the image with
+    one filled the container edge to edge and the panel grew 18px — enough that
+    it stood visibly proud of the meta strip beneath it (her `meta-strip-bg` is
+    narrower still at 1205) and read as sticking out of the page.
+
+    `98.541%` is 1216/1234, so the inset is restored as her proportion rather
+    than as a pixel value, and it holds at every width the way the radius above
+    does.
+
+    **It goes on the `.stack`, not on this box alone**, which is the part worth
+    getting right. The text column is this ground's sibling in that grid, and
+    its offsets (`ml-[29.2%]`, `mr-[0.8%]`) are percentages of whatever box it
+    is given — they are shares of *her panel*, not of the container. Narrowing
+    only the ground would leave the words measuring against the full 1234 while
+    the panel under them measured 1216: the column's right edge lands about 9px
+    past the panel's, so the last word of a long warning hangs off the plaque
+    onto the parchment. Narrowing the shared box keeps the two in one coordinate
+    system and every percentage on both children keeps meaning what it says.
+  */
+  .card-shadow-panel {
+    container-type: inline-size;
+    inline-size: 98.541%;
+    margin-inline: auto;
+  }
+
+  .card-shadow-ground {
+    background-color: var(--color-card-shadow);
+    block-size: 100%;
+    border-radius: 1.645% / 8.811%;
+    min-block-size: calc(100cqw * 227 / 1216);
+  }
+
+
+  /*
+    **Below `lg` the sheet tiles at its own aspect instead of stretching.**
+
+    `100% 100%` above is a two-axis stretch, and it is only cheap while the box
+    is close to the asset's own proportion. Her sheets are 1337px wide and
+    2432–2995px tall — an aspect between 1:1.82 and 1:2.24 — and on a desktop
+    the content box lands near that, so the vertical give is a few percent.
+
+    A phone breaks that assumption in both directions at once. The box is about
+    375px wide, so the sheet's *natural* height at full width is only ~790px,
+    while the content — essay, two dark panels, the carousel, the meta strip —
+    runs several thousand. The same declaration therefore compresses the sheet
+    to roughly a quarter of its height, and the paper smears into horizontal
+    banding. That is the squish this block exists to fix.
+
+    So the narrow sheet is sized the way the atmosphere layer above it already
+    is — `100% auto`, full width at the asset's own aspect — and `repeat-y`
+    takes the remaining height. Nothing bends.
+
+    **The seam repeats her scenery, and that is the open cost here.**
+    These sheets are *compositions*, not texture: twenty-two bespoke watercolour
+    vignettes — Death's lamppost and bridge, The Fool's pines, Justice's pillars
+    and scales — painted border around a pale centre. So each tile restates that
+    border, torn top deckle and all, roughly every 790px on a phone.
+
+    **UNDER REVIEW — this block currently ships the pinned-band construction
+    below, for a visual check on a phone. It is not settled.** Rendered against
+    three sheets it divides sharply: The Fool reads well (his pines elongate into
+    a forest corridor and the seams pass as creases in the paper), while Death
+    repeats his lamppost three times as a stretched streak and Justice repeats
+    her scales and torches with both seams cutting straight across. The rule
+    seems to be soft/textural art survives it and recognisable objects do not.
+    If this is rejected, the fallback is `repeat-y` with `100% auto` — which
+    never bends the paper and whose repetition is at least her own composition
+    at her own scale.
+  */
+  /*
+    **Pinned top and bottom, stretched middle.** Three layers of the one image:
+    the painted top pinned at its own aspect, the painted bottom likewise, and
+    the sheet stretched between them to cover the rest.
+
+    `--card-deckle` is 14%. Measured across all twenty-two sheets on the centre
+    240px, the painting clears into plain paper within 11.9% of the height at
+    the top (The Tower, Death) and 8.4% at the bottom (Justice, The Hermit), so
+    14% clears the worst card with room to spare. It is only the *centre* that
+    clears, though — the side edges carry art the whole way down, which is why
+    the object-bearing cards duplicate and this is still under review.
+
+    **`center` places the middle layer exactly, and is not a guess.** A
+    percentage `background-position` is proportional, not an offset: a layer of
+    height `m` in a box of height `H` sits at `pct × (H − m)`. The middle is
+    `H − 2d` tall for a band depth `d`, so `H − m` is `2d` and landing it at `d`
+    needs `d / 2d` — one half, whatever `d` and `H` are. That symmetry is why the
+    gap closes at every viewport and every essay length (verified 1200–12000px).
+    A literal `14%` here reads as the obvious thing to write and is wrong: it
+    lands the layer at a fifth of where it belongs and slides it under the top
+    band as the page grows. **Change `--card-deckle` freely — but leave this
+    `center` alone**, since the proof holds for any depth.
+
+    **Fading the seams was tried and is not here.** Two shapes of it: a
+    multi-layer `mask-image` on this element, and the same ramps moved onto
+    `::before`/`::after`. The first cannot work in principle — a mask applies to
+    the element's composited result, not to one background layer within it, so it
+    shapes the sheet's silhouette and nothing else. The second does fade, but a
+    crossfade between two copies of the same art at *different scales* blurs the
+    join rather than hiding it, and the deckle survives at partial alpha as a
+    fainter line. If it is picked up again, that is the thing to solve first.
+  */
+  @media (width < 64rem) {
+    .card-paper {
+      --card-deckle: 14%;
+
+      background-image: var(--card-paper), var(--card-paper), var(--card-paper);
+      background-position: center top, center bottom, center center;
+      background-repeat: no-repeat, no-repeat, no-repeat;
+      background-size:
+        100% auto,
+        100% auto,
+        100% calc(100% - 2 * var(--card-deckle));
+    }
   }
 
   /*
