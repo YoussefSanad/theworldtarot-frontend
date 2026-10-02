@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import type { ImageAsset } from "@/lib/assets";
 import { cardReference } from "@/lib/assets";
 
 /**
@@ -15,30 +14,34 @@ import { cardReference } from "@/lib/assets";
  * uses, because the panel is the site's palette rather than the parchment's.
  * Green here would be consistency with the wrong neighbour.
  *
- * **The panel and the figure are one image, and that is a change.** They were
- * two: an empty rounded panel (`Layer 17`) with the figure drawn over it,
- * positioned by arithmetic reverse-engineered from the 11px of transparent glow
- * around her export. That fitted The Fool and nothing else — the client's
- * twenty-one packets each carry their own figure with its own padding — so
- * every card now ships pre-composited and this draws one picture.
+ * **The ground is CSS and the figure is gone for now.** It has been an image
+ * twice: first an empty rounded panel (`Layer 17`) with the figure positioned
+ * over it by arithmetic reverse-engineered from the 11px of transparent glow
+ * around her export — which fitted The Fool and nothing else — and then one
+ * pre-composited 1216x227 picture per card, panel and figure baked together.
  *
- * **The figure no longer drops out below `sm`.** She used to, because a 254px
- * figure in a 1216px panel would have sat under the words at phone width. She
- * is part of the artwork now, so the panel scales as a whole and the text keeps
- * its offset at every size.
+ * The panel half of those twenty-two pictures was the same flat rounded
+ * rectangle every time, so it is `.card-shadow-ground` now: a colour, a radius
+ * and an aspect ratio, which scale cleanly where a bitmap was being stretched.
+ * **The silhouette is a separate image in a later step, once the client's
+ * cut-out assets are ready** — the text offset below is kept exactly as it was
+ * so she has her space to come back to, and the panel is the layer she will be
+ * laid over rather than composited into.
+ *
+ * Until then the panel's left fifth is deliberately empty. That is the
+ * interim state, not the design.
+ *
+ * **`.card-shadow-panel` is the width, and it is on the stack for a reason.**
+ * Her panel is 1216 inside a 1234 container — an inset the old image got for
+ * free from its own dimensions and a `<div>` does not — and the text column's
+ * offsets below are percentages of the panel rather than of the container, so
+ * the ground and the words have to measure against the same box. See
+ * `.card-shadow-ground` in globals.css.
  */
-export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: ImageAsset }) {
+export function ShadowPanel({ lines }: { lines: readonly string[] }) {
   return (
-    <div className="stack">
-      <Image
-        src={art.src}
-        alt=""
-        width={art.width}
-        height={art.height}
-        className="size-full object-fill"
-        sizes="(width >= 64rem) 63.33vw, 100vw"
-      />
-
+    <div className="stack card-shadow-panel">
+      <div className="card-shadow-ground" />
 
       {/*
         **Centred text, but not on the panel — on the space the figure leaves.**
@@ -48,10 +51,29 @@ export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: Ima
         because the figure owns the left fifth and the words are centred in what
         remains. The margin is the figure's own 20.89% plus the air beside her.
 
-        Below `sm` she drops out, and with her the reason for the offset, so the
-        column re-centres on the panel.
+        **The offset stays while the figure is away.** She is coming back as her
+        own image over this ground, so the gap she leaves is held rather than
+        reclaimed — closing it now would mean reopening it, and the client reads
+        these pages between steps.
+
+        Below `sm` the offset is dropped: at phone width the left fifth is barely
+        60px and a column pushed off it has nothing left to centre in, so the
+        words take the whole panel. That was true when she was drawn here too.
+
+        **Centred vertically, which the image used to do.** The words no longer
+        sit in a cell sized by a picture, so `justify-center` holds them in the
+        middle of the panel on the cards whose copy is shorter than her
+        1216/227 — which is most of them at desktop width.
+
+        **This column is also what sets the panel's height when the copy is
+        long.** The two children of the `.stack` share one grid cell and the
+        taller one wins: the ground asks for her ratio as a minimum, this column
+        asks for however many lines its card actually wraps to, and on a narrow
+        screen that is the larger of the two. The padding is then the air above
+        and below the words rather than a centring device. See
+        `.card-shadow-ground` in globals.css for the full account.
       */}
-      <div className="flex flex-col items-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-sm:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] sm:ml-[29.2%] sm:mr-[0.8%]">
+      <div className="flex flex-col items-center justify-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-sm:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] sm:ml-[29.2%] sm:mr-[0.8%]">
         <h2 className="font-serif text-h3 leading-none tracking-[0.01em] text-gold">shadow</h2>
 
         {/*

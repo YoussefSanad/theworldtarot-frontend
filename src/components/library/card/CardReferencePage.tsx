@@ -7,7 +7,7 @@ import { ShadowPanel } from "@/components/library/card/ShadowPanel";
 import { SpheresCarousel } from "@/components/library/card/SpheresCarousel";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { cardPaper, cardShadows } from "@/lib/assets";
+import { cardPaper } from "@/lib/assets";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
@@ -115,38 +115,52 @@ export function CardReferencePage({
           the same reason the gaps below are: a shared `Section` padding gives
           every block the same air, and hers are all different.
         */}
-        <div className="flex flex-col">
-          <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
-            <Container width="card">
-              <CardHeader card={card} />
-            </Container>
-          </Section>
+        {/*
+          **The opening section reads on its own ground.** The heading, the
+          keywords, the artwork and the essay are one block on a faint wash —
+          `.card-reading-ground` in globals.css, which carries the reasoning and
+          the alpha. It sits inside the `Container` so it takes the page's own
+          `card` measure rather than the sheet's full width, and wraps both
+          `Section`s together so the two read as one surface rather than as two
+          tinted strips with a seam of parchment between them.
 
-          <Section padding="none" className="pt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
-            <Container width="card">
-              <CardEssay card={card} content={content} />
-            </Container>
-          </Section>
-        </div>
+          **Her 126px from the torn top edge stays outside the wash**, as margin
+          on the `Section` rather than padding on the ground. That gap is the
+          space between the top of the sheet and the heading — parchment, in her
+          frame — so tinting it would read as a tall empty band of wash above the
+          first words. Only the gap *between* the heading and the essay is inside,
+          where it is the section's own internal rhythm.
+        */}
+        <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
+          <Container width="card">
+            <div className="card-reading-ground flex flex-col">
+              <CardHeader card={card} />
+
+              <div className="pt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
+                <CardEssay card={card} content={content} />
+              </div>
+            </div>
+          </Container>
+        </Section>
 
         {/*
-          **The gaps are hers, one at a time, rather than a shared rhythm.**
-          Her frame spaces these blocks 34, 35, 41 and 69px apart — they tighten
-          through the middle of the page — so a single `Section` padding cannot
-          produce them. Each is the Figma gap as the clamp's maximum and that
-          gap / 19.2 as its vw term, the conversion `src/app/README.md` requires.
+        **The gaps are hers, one at a time, rather than a shared rhythm.**
+        Her frame spaces these blocks 34, 35, 41 and 69px apart — they tighten
+        through the middle of the page — so a single `Section` padding cannot
+        produce them. Each is the Figma gap as the clamp's maximum and that
+        gap / 19.2 as its vw term, the conversion `src/app/README.md` requires.
 
-          Three are tighter than her frame: the gap above this panel, the one
-          above the meta strip and the one above the closing line. Her numbers measure to a *text box* whose
-          empty tail is part of the gap, and the same value applied to a box
-          that ends at its last line reads as far more air.
+        Three are tighter than her frame: the gap above this panel, the one
+        above the meta strip and the one above the closing line. Her numbers measure to a *text box* whose
+        empty tail is part of the gap, and the same value applied to a box
+        that ends at its last line reads as far more air.
 
-          **The panel sits close under the essay, and her frame is the reason.**
-          She starts it at y=1119 while the essay column's own box runs to
-          y=1166 — they overlap by 47px, because that column is sized for the
-          artwork beside it rather than for the prose, which ends higher. So the
-          gap here is small by design: the air the essay appears to have below it
-          is the empty tail of its own column, not spacing.
+        **The panel sits close under the essay, and her frame is the reason.**
+        She starts it at y=1119 while the essay column's own box runs to
+        y=1166 — they overlap by 47px, because that column is sized for the
+        artwork beside it rather than for the prose, which ends higher. So the
+        gap here is small by design: the air the essay appears to have below it
+        is the empty tail of its own column, not spacing.
         */}
 
         <Section padding="none" className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))]">
@@ -156,19 +170,22 @@ export function CardReferencePage({
         </Section>
 
         {/*
-          **Wider than her 35px, at the client's request.** Every other gap on
-          this page is her frame's own figure (see the note above), and this one
-          was `clamp(0.531rem, 1.771vw, 2.125rem)` — 34px at the top end.
+        **Wider than her 35px, at the client's request.** Every other gap on
+        this page is her frame's own figure (see the note above), and this one
+        was `clamp(0.531rem, 1.771vw, 2.125rem)` — 34px at the top end.
 
-          The panel above it is a dark, hard-edged block and LOOK FOR is a rule
-          with words in it, so at her spacing the rule read as though it
-          belonged to the panel rather than to the section it introduces.
-          Doubling it detaches the two. It is the one gap on the page that is
-          deliberately not hers; the rest of the rhythm is untouched.
+        The panel above it is a dark, hard-edged block and LOOK FOR is a rule
+        with words in it, so at her spacing the rule read as though it
+        belonged to the panel rather than to the section it introduces.
+        Doubling it detaches the two. It is the one gap on the page that is
+        deliberately not hers; the rest of the rhythm is untouched.
         */}
         <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <LookFor lines={content.lookFor} />
+            {/* The same ground as the opening section — see `.card-reading-ground`. */}
+            <div className="card-reading-ground">
+              <LookFor lines={content.lookFor} />
+            </div>
           </Container>
         </Section>
 
@@ -180,16 +197,16 @@ export function CardReferencePage({
 
         <Section padding="none" className="mt-[clamp(calc(0.641rem*var(--card-scale)),calc(2.135vw*var(--card-scale)),calc(2.563rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <ShadowPanel lines={content.shadow} art={cardShadows[card.slug]} />
+            <ShadowPanel lines={content.shadow} />
           </Container>
         </Section>
 
         {/*
-          **Tighter than her 69px**, which is the same correction as the two
-          gaps noted above: hers measures from the shadow panel's text box,
-          whose empty tail is part of the number, so the drawn value reads as
-          far more air than she shows. 28px sets the strip close under the
-          shadow panel, so the two dark blocks and the strip read as one run.
+        **Tighter than her 69px**, which is the same correction as the two
+        gaps noted above: hers measures from the shadow panel's text box,
+        whose empty tail is part of the number, so the drawn value reads as
+        far more air than she shows. 28px sets the strip close under the
+        shadow panel, so the two dark blocks and the strip read as one run.
         */}
         <Section padding="none" className="mt-[clamp(calc(0.438rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
           <Container width="cardWide">
@@ -198,14 +215,14 @@ export function CardReferencePage({
         </Section>
 
         {/*
-          `action={null}` is the case this block already has for a page with
-          nowhere to send the reader — `/redeem/` uses it — and it is right here
-          for the same reason the Library index sells nothing: her frame draws
-          the saying between two rules and no button under it.
+        `action={null}` is the case this block already has for a page with
+        nowhere to send the reader — `/redeem/` uses it — and it is right here
+        for the same reason the Library index sells nothing: her frame draws
+        the saying between two rules and no button under it.
 
-          `hugRule` because there is no button, so the box that would centre
-          one is pure empty height — up to 256px of it under a closing line
-          that her frame ends on. It used to come free with `className`, back
+        `hugRule` because there is no button, so the box that would centre
+        one is pure empty height — up to 256px of it under a closing line
+        that her frame ends on. It used to come free with `className`, back
           when that prop did both jobs; the two were separated so a caller
           could ask for one without the other, and this is the caller that
           wants both.
@@ -219,7 +236,6 @@ export function CardReferencePage({
           tone="ink"
           hugRule
         />
-
       </div>
     </div>
   );

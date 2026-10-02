@@ -15,11 +15,32 @@ const PHRASE_SEPARATOR = " • ";
  * each end. The first build drew two 582px rules instead, which is a different
  * shape entirely.
  *
- * So the rule and the label share a `.stack` cell and the label carries the
- * page's own ground colour as horizontal padding, masking the line behind it.
- * That keeps the gap the width of the words at every viewport, where a fixed
- * gap would show line through short words and clip long ones — and it is why
- * the label is `bg-card-parchment` rather than transparent.
+ * So the rule and the label share a `.stack` cell, and the label sits in the
+ * gap **her asset already carries**: measured on `divider-look-for.webp`, the
+ * 1203x8 rule is drawn with a 229px transparent span at x=490..718 — 19% of its
+ * width, centred at 50.2% — with small dots finishing each end.
+ *
+ * **So the label is transparent from `lg` up, and keeps its mask below.** It
+ * painted `bg-card-parchment` at every width on the belief that the rule ran
+ * unbroken behind it; above `lg` that was covering a gap rather than making one,
+ * and once the section gained its own translucent ground it read as a
+ * parchment-coloured block sitting on the wash.
+ *
+ * Something still has to hold the words clear of the line at narrow widths,
+ * because **her gap is proportional and the type is not**. The gap is a fixed
+ * 19% of the rule, which narrows with the viewport, while `--text-card-lead`
+ * bottoms out at its 22px floor — and `--card-scale` is only declared above
+ * `lg`, so the label stops shrinking while the gap keeps closing. On a phone the
+ * words are wider than the space drawn for them and would sit on the rule.
+ *
+ * **So the rule is cut rather than the label painted.** A block of colour behind
+ * the words only looks right where it matches what is behind it, and what is
+ * behind it here is a watercolour vignette under a translucent wash — nothing a
+ * flat swatch can match, which is why the parchment patch read as a smear.
+ * `.look-for__rule` masks the image instead: a transparent band through its
+ * middle, sized in `ch` off the label's own font so it tracks the words at every
+ * width. The line really is interrupted, there is no patch to notice, and the
+ * mechanism is the same one her own asset uses — it simply follows the type.
  *
  * **The label and the phrases are one block, not a heading and a list.** Her
  * frame sets them as a single centred text node, and the phrases are a sentence
@@ -35,11 +56,11 @@ export function LookFor({ lines }: { lines: readonly string[] }) {
           alt=""
           width={cardReference.dividerLookFor.width}
           height={cardReference.dividerLookFor.height}
-          className="h-auto w-full self-center justify-self-stretch"
+          className="look-for__rule h-auto w-full self-center justify-self-stretch"
           sizes="(width >= 64rem) 62.66vw, 100vw"
         />
 
-        <p className="justify-self-center bg-card-parchment px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
+        <p className="justify-self-center px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
           LOOK FOR:
         </p>
       </div>
