@@ -1794,16 +1794,31 @@
   }
 
   /*
-    **The SHADOW panel's ground, drawn rather than shipped as an image.**
+    **The SHADOW panel's ground on phones only — above `sm` her picture is the
+    panel.**
 
-    It used to be baked into each card's `shadows/<slug>.webp` — the figure and
-    the panel she stands on composited into one 1216x227 picture, twenty-two
-    times. The panel half of that was identical in all twenty-two: measured
-    across the set, every one is the same flat rounded rectangle, `#383638` on
-    most and `#373737` on a few (The Fool, The High Priestess), a difference of
-    one or two levels that is webp quantisation rather than art direction. So
-    the ground is one declaration here and the silhouette comes back as its own
-    image once the client's cut-out assets land.
+    It is baked into each card's `shadows/<slug>.webp` — the figure and the
+    plaque she stands on composited into one 1216x227 picture, twenty-two times
+    — and that composite still ships on a desktop, where it is the client's
+    artwork drawn as drawn. This rule is the phone's replacement for it.
+
+    **The split exists because the composite has a fixed ratio and the box does
+    not.** It is drawn `object-fill` into a cell whose height the text sets, so
+    the bitmap stretches to meet it: about +17% at 1920, which passes, and
+    **+218% at 390px**, where the figure is three times too tall and visibly
+    smeared. Measured, not estimated. A drawn ground cannot distort, so the
+    phone gets this and loses the figure — which the original design also did
+    below `sm`.
+
+    The panel half of those twenty-two pictures is identical in all of them:
+    measured across the set, the same flat rounded rectangle, `#383638` on most
+    and `#373737` on a few (The Fool, The High Priestess), a difference of one
+    or two levels that is webp quantisation rather than art direction. That is
+    what this reproduces.
+
+    **When the client's cut-out figures land this becomes the panel at every
+    width**, with the silhouette as her own layer over it, and the desktop
+    composite goes away. It is written to stand alone for that reason.
 
     **It is its own token, not a tint of the panel above it.** The obvious move
     is to derive it from `--color-card-panel` (`#050a17`) — the "When ...
@@ -1875,32 +1890,41 @@
     See the note in `ShadowPanel` on the text's offset, which is the other half
     of this.
 
-    **The width is 1216 of the container's 1234, and dropping that was a bug.**
-    Her export is 1216px wide inside a `--container-card-wide` of 1234, so the
-    panel carried a 9px inset on each side that came free with the image's own
-    dimensions. A `<div>` has no intrinsic width, so replacing the image with
-    one filled the container edge to edge and the panel grew 18px — enough that
-    it stood visibly proud of the meta strip beneath it (her `meta-strip-bg` is
-    narrower still at 1205) and read as sticking out of the page.
+    **The width is the container's, with no inset of her own.** Her export is
+    1216px inside a `--container-card-wide` of 1234, and reproducing that 9px-a-
+    side inset here was tried and removed: it is a desktop frame proportion, and
+    this rule only ever renders below `sm`, where the container is the edge
+    gutter and every neighbouring block fills it. See `.card-shadow-panel` above
+    for the measurement.
 
-    `98.541%` is 1216/1234, so the inset is restored as her proportion rather
-    than as a pixel value, and it holds at every width the way the radius above
-    does.
-
-    **It goes on the `.stack`, not on this box alone**, which is the part worth
-    getting right. The text column is this ground's sibling in that grid, and
-    its offsets (`ml-[29.2%]`, `mr-[0.8%]`) are percentages of whatever box it
-    is given — they are shares of *her panel*, not of the container. Narrowing
-    only the ground would leave the words measuring against the full 1234 while
-    the panel under them measured 1216: the column's right edge lands about 9px
-    past the panel's, so the last word of a long warning hangs off the plaque
-    onto the parchment. Narrowing the shared box keeps the two in one coordinate
-    system and every percentage on both children keeps meaning what it says.
+    **Whatever width this box takes, the text column must take too.** They are
+    siblings in the `.stack`, and the column's offsets (`ml-[29.2%]`,
+    `mr-[0.8%]`) are percentages of whatever box it is given. If the two ever
+    measure against different widths the words drift off the plaque — which is
+    why any future inset belongs on the shared `.card-shadow-panel` and not on
+    this box alone.
   */
-  .card-shadow-panel {
-    container-type: inline-size;
-    inline-size: 98.541%;
-    margin-inline: auto;
+  /*
+    **The phone panel's box**, which exists to give the ground's floor a width
+    to read — `min-block-size` below is in `cqw`, and `container-type` is what
+    makes those units mean the panel's own inline size.
+
+    **There is no width inset here, and that is a correction.** Her composite is
+    1216px inside a 1234px frame, so for a moment this carried `98.541%` to
+    reproduce that. It is a *desktop frame* proportion: below `sm` the container
+    is the edge gutter rather than her 1234, and every other block on the page —
+    the meta strip, the dark panels, the essay ground — simply fills it. Re-
+    applying her inset here stood the panel 3px inside all of them, measured at
+    390px (meta strip 20..370, panel 23..367). On a phone the right width is the
+    container's.
+
+    Above `sm` the picture is the panel and brings its own dimensions, so there
+    is nothing to set at all — hence no rule outside this query.
+  */
+  @media (width < 40rem) {
+    .card-shadow-panel {
+      container-type: inline-size;
+    }
   }
 
   .card-shadow-ground {
