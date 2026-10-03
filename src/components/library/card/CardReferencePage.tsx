@@ -7,7 +7,7 @@ import { ShadowPanel } from "@/components/library/card/ShadowPanel";
 import { SpheresCarousel } from "@/components/library/card/SpheresCarousel";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { cardPaper } from "@/lib/assets";
+import { cardPaper, cardShadows } from "@/lib/assets";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
@@ -197,7 +197,7 @@ export function CardReferencePage({
 
         <Section padding="none" className="mt-[clamp(calc(0.641rem*var(--card-scale)),calc(2.135vw*var(--card-scale)),calc(2.563rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <ShadowPanel lines={content.shadow} />
+            <ShadowPanel lines={content.shadow} art={cardShadows[card.slug]} />
           </Container>
         </Section>
 

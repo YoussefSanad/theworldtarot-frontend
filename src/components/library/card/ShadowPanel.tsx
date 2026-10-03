@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import type { ImageAsset } from "@/lib/assets";
 import { cardReference } from "@/lib/assets";
 
 /**
@@ -14,34 +15,51 @@ import { cardReference } from "@/lib/assets";
  * uses, because the panel is the site's palette rather than the parchment's.
  * Green here would be consistency with the wrong neighbour.
  *
- * **The ground is CSS and the figure is gone for now.** It has been an image
- * twice: first an empty rounded panel (`Layer 17`) with the figure positioned
- * over it by arithmetic reverse-engineered from the 11px of transparent glow
- * around her export — which fitted The Fool and nothing else — and then one
- * pre-composited 1216x227 picture per card, panel and figure baked together.
+ * **Two panels, split at `sm`: her picture above it, a drawn ground below.**
  *
- * The panel half of those twenty-two pictures was the same flat rounded
- * rectangle every time, so it is `.card-shadow-ground` now: a colour, a radius
- * and an aspect ratio, which scale cleanly where a bitmap was being stretched.
- * **The silhouette is a separate image in a later step, once the client's
- * cut-out assets are ready** — the text offset below is kept exactly as it was
- * so she has her space to come back to, and the panel is the layer she will be
- * laid over rather than composited into.
+ * Above `sm` this is the composite it has always been — one pre-composited
+ * 1216x227 webp per card, the figure and the plaque she stands on baked
+ * together, drawn `object-fill` across the box. That is the client's artwork
+ * and it is what ships on a desktop.
  *
- * Until then the panel's left fifth is deliberately empty. That is the
- * interim state, not the design.
+ * Below `sm` the same picture is wrong, and the figure is the reason. The
+ * composite is a fixed 5.357:1 and the box is not: the text sets the height, so
+ * `object-fill` stretches the bitmap to meet it — about +17% at 1920, which
+ * passes, and **+218% at 390px**, where she is three times too tall and plainly
+ * smeared. So the phone gets `.card-shadow-ground` instead: the same colour and
+ * radius expressed as CSS, which cannot distort, and **no figure at all**.
  *
- * **`.card-shadow-panel` is the width, and it is on the stack for a reason.**
- * Her panel is 1216 inside a 1234 container — an inset the old image got for
- * free from its own dimensions and a `<div>` does not — and the text column's
- * offsets below are percentages of the panel rather than of the container, so
- * the ground and the words have to measure against the same box. See
- * `.card-shadow-ground` in globals.css.
+ * Losing her on a phone is the deliberate half of that. She was already dropped
+ * below `sm` in the original design — the text offset below re-centres at the
+ * same breakpoint for the same reason — so this restores that behaviour rather
+ * than inventing it. A 254px figure in a 345px panel has nowhere to stand.
+ *
+ * **The client's cut-out assets replace the desktop composite when they land.**
+ * At that point the ground is CSS at every width and the figure is her own
+ * layer over it, which is why the ground below is written to stand alone.
  */
-export function ShadowPanel({ lines }: { lines: readonly string[] }) {
+export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: ImageAsset }) {
   return (
     <div className="stack card-shadow-panel">
-      <div className="card-shadow-ground" />
+      {/*
+        **The ground and the picture are the same cell, one per breakpoint.**
+        `max-sm:` and `sm:` rather than two components, so the text column below
+        is written once and both panels put it in the same place.
+
+        Neither sets a width: the image brings its own 1216-in-1234 dimensions,
+        and the phone ground fills the gutter the way every other block on a
+        phone does. See `.card-shadow-panel` in globals.css.
+      */}
+      <div className="card-shadow-ground sm:hidden" />
+
+      <Image
+        src={art.src}
+        alt=""
+        width={art.width}
+        height={art.height}
+        className="hidden size-full object-fill sm:block"
+        sizes="(width >= 64rem) 63.33vw, 100vw"
+      />
 
       {/*
         **Centred text, but not on the panel — on the space the figure leaves.**
@@ -51,27 +69,27 @@ export function ShadowPanel({ lines }: { lines: readonly string[] }) {
         because the figure owns the left fifth and the words are centred in what
         remains. The margin is the figure's own 20.89% plus the air beside her.
 
-        **The offset stays while the figure is away.** She is coming back as her
-        own image over this ground, so the gap she leaves is held rather than
-        reclaimed — closing it now would mean reopening it, and the client reads
-        these pages between steps.
+        **The offset and the figure switch at the same breakpoint**, which is the
+        point of using `sm` for both. Above it the composite is drawn and these
+        margins hold her space; below it the picture is replaced by a bare
+        ground with no figure on it, and the reason for the offset goes with
+        her, so the column re-centres on the panel. At phone width the left
+        fifth is barely 60px — a column pushed off it would have nothing left to
+        centre in.
 
-        Below `sm` the offset is dropped: at phone width the left fifth is barely
-        60px and a column pushed off it has nothing left to centre in, so the
-        words take the whole panel. That was true when she was drawn here too.
-
-        **Centred vertically, which the image used to do.** The words no longer
-        sit in a cell sized by a picture, so `justify-center` holds them in the
-        middle of the panel on the cards whose copy is shorter than her
-        1216/227 — which is most of them at desktop width.
+        **Centred vertically, for the phone panel's sake.** On the image side
+        this is a no-op: the picture stretches to the cell either way. On the
+        CSS side the ground can be taller than the words — the floor holds her
+        5.357 ratio when the copy is short — and `justify-center` is what puts
+        them in the middle of it rather than at the top.
 
         **This column is also what sets the panel's height when the copy is
-        long.** The two children of the `.stack` share one grid cell and the
-        taller one wins: the ground asks for her ratio as a minimum, this column
-        asks for however many lines its card actually wraps to, and on a narrow
-        screen that is the larger of the two. The padding is then the air above
-        and below the words rather than a centring device. See
-        `.card-shadow-ground` in globals.css for the full account.
+        long**, on both sides of the breakpoint. The children of the `.stack`
+        share one grid cell and the taller one wins: the panel asks for her
+        ratio, this column asks for however many lines its card actually wraps
+        to, and on a narrow screen that is the larger of the two. The padding is
+        then the air above and below the words rather than a centring device.
+        See `.card-shadow-ground` in globals.css for the full account.
       */}
       <div className="flex flex-col items-center justify-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-sm:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] sm:ml-[29.2%] sm:mr-[0.8%]">
         <h2 className="font-serif text-h3 leading-none tracking-[0.01em] text-gold">shadow</h2>
