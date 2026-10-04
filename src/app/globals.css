@@ -2018,12 +2018,25 @@
   }
 
   /*
-    **Cards with a phone sheet draw it once, cut to the content.** It is
-    painted at 390px wide as one tall sheet with its art at the top and flat
-    grain below, with no bottom deckle — so the box simply ends where the
-    content does. `cover` anchored at the top keeps her pillars in proportion
-    (`100% 100%` squashed them to ~58% on The Magician's 3008px page) and
-    only scales up if a page ever outgrows the 5200px sheet.
+    **Below `sm` the phone sheet replaces all of that, drawn once and cut to
+    the content.** Every card has one: she painted twenty-two at 390px wide as
+    one tall full-bleed sheet, art at the top and flat grain below, with no
+    bottom deckle — so the box simply ends where the content does and none of
+    the pinning and stretching above is needed.
+
+    `cover` anchored at the top keeps her pillars in proportion (`100% 100%`
+    squashed them to ~58% on The Magician's 3008px page) and only scales up if
+    a page outgrows the sheet's 3500px.
+
+    **The sheets were 5200 tall for one card and are 3500 for all of them.**
+    The Magician's shipped alone while this page was built; her finished
+    delivery is shorter. `cover` does not care — the only thing the height
+    changes is where upscaling begins — but the number is recorded because the
+    previous one was written here as though it were fixed.
+
+    `[data-paper-mobile]` is now set on every card page, so it no longer
+    selects a subset. It is kept as the hook that says *this element has a
+    phone sheet*, and `assets.ts` records why the gate behind it went away.
   */
   @media (width < 40rem) {
     .card-paper[data-paper-mobile] {

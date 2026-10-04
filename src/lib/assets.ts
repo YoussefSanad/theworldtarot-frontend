@@ -498,14 +498,20 @@ export const cardShadows: Record<string, ImageAsset> = {
 export const cardPaper = (slug: string) => `/figma/card-reference/paper/${slug}.webp`;
 
 /**
- * A card's phone-width sheet, for the cards that have one.
+ * A card's phone-width sheet.
  *
- * Painted at 390px wide as a single tall sheet, so below `sm` `.card-paper`
- * draws it once and stretches it to the content instead of tiling the desktop
- * sheet. Cards missing from this set keep `cardPaper()` at every width.
+ * Painted at 390px wide as a single tall full-bleed sheet, so below `sm`
+ * `.card-paper` draws it once with `cover` from the top instead of tiling the
+ * desktop sheet — which keeps her art in proportion and lets the box end where
+ * the content does.
+ *
+ * **All twenty-two have one now, so there is no gate.** This was a `Set` of the
+ * cards with a sheet, holding only The Magician while her phone delivery was
+ * one test card; `MOBILE BACKGROUNDS` completed the set, and a card missing
+ * from a gate fails as a silently absent background rather than a build error.
+ * `optimize-packet-assets.mjs` asserts all twenty-two are present instead,
+ * which is where a gap should surface.
  */
-const cardsWithMobilePaper = new Set(["the-magician"]);
-
 export const cardPaperMobile = (slug: string) =>
-  cardsWithMobilePaper.has(slug) ? `/figma/card-reference/paper-mobile/${slug}.webp` : undefined;
+  `/figma/card-reference/paper-mobile/${slug}.webp`;
 
