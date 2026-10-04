@@ -7,7 +7,7 @@ import { ShadowPanel } from "@/components/library/card/ShadowPanel";
 import { SpheresCarousel } from "@/components/library/card/SpheresCarousel";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { cardPaper, cardShadows } from "@/lib/assets";
+import { cardPaper, cardPaperMobile, cardShadows } from "@/lib/assets";
 import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import type { MajorArcanaContent } from "@/content/card-content";
 import type { MajorArcanaCard } from "@/content/library";
@@ -38,6 +38,7 @@ export function CardReferencePage({
   content: MajorArcanaContent;
 }) {
   const paper = cardPaper(card.slug);
+  const paperMobile = cardPaperMobile(card.slug);
 
   return (
     <div className="library-card-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
@@ -97,7 +98,13 @@ export function CardReferencePage({
       */}
       <div
         className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]"
-        style={{ "--card-paper": `url("${paper}")` } as React.CSSProperties}
+        data-paper-mobile={paperMobile ? "" : undefined}
+        style={
+          {
+            "--card-paper": `url("${paper}")`,
+            ...(paperMobile && { "--card-paper-mobile": `url("${paperMobile}")` }),
+          } as React.CSSProperties
+        }
       >
         {/*
           **Her gold `FRAME` ornament is gone at the client's request** — the

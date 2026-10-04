@@ -2018,6 +2018,23 @@
   }
 
   /*
+    **Cards with a phone sheet draw it once, cut to the content.** It is
+    painted at 390px wide as one tall sheet with its art at the top and flat
+    grain below, with no bottom deckle — so the box simply ends where the
+    content does. `cover` anchored at the top keeps her pillars in proportion
+    (`100% 100%` squashed them to ~58% on The Magician's 3008px page) and
+    only scales up if a page ever outgrows the 5200px sheet.
+  */
+  @media (width < 40rem) {
+    .card-paper[data-paper-mobile] {
+      background-image: var(--card-paper-mobile);
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+  }
+
+  /*
     **Below `sm` the sheet is gone and the page sits on the wash directly.**
 
     The client's note is that the mobile version "does not need to float within
