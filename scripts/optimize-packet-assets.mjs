@@ -29,6 +29,7 @@ import sharp from "sharp";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const SOURCE = resolve(root, "..", "asset dump", "LIBRARY PACKETS");
+const MOBILE_SOURCE = resolve(root, "..", "asset dump", "MOBILE BACKGROUNDS");
 const DEST = join(root, "public", "figma", "card-reference");
 
 /**
@@ -665,6 +666,131 @@ async function writeShadows(packets) {
   return { written, total };
 }
 
+/**
+ * Her `MOBILE BACKGROUNDS` filenames, mapped to the slugs the code uses.
+ *
+ * **A second delivery, and a separate roster from `PACKETS`.** These arrived as
+ * one flat zip rather than per-card packets, so the names are her display
+ * names rather than folder names and they are recorded exactly: `12- THE
+ * HANGMAN` has no space before its dash and `05 - THE HIGH PRIEST` is the one
+ * JPEG in the set. The Fool is `THE FOOL MOBILE BKGRND` and sorts last — the
+ * same trap `REVISED MAGICIAN TEST PACK` sets in `PACKETS`.
+ *
+ * **Unlike the packets, this set is complete**: all twenty-two cards including
+ * The Fool, so there is no hand-composited exception here.
+ */
+const MOBILE_SHEETS = {
+  "THE FOOL MOBILE BKGRND": "the-fool",
+  "01 - THE MAGICIAN": "the-magician",
+  "02 - THE HIGH PRIESTESS": "the-high-priestess",
+  "03 - THE EMPRESS": "the-empress",
+  "04 - THE EMPEROR": "the-emperor",
+  "05 - THE HIGH PRIEST": "the-high-priest",
+  "06 - THE LOVERS": "the-lovers",
+  "07 - THE CHARIOT": "the-chariot",
+  "08 - STRENGTH": "strength",
+  "09 - THE HERMIT": "the-hermit",
+  "10 - THE WHEEL": "the-wheel",
+  "11 - JUSTICE": "justice",
+  "12- THE HANGMAN": "the-hangman",
+  "13 - DEATH": "death",
+  "14 - TEMPERANCE": "temperance",
+  "15 - THE DEVIL": "the-devil",
+  "16 - THE TOWER": "the-tower",
+  "17 - THE STAR": "the-star",
+  "18 - THE MOON": "the-moon",
+  "19 - THE SUN": "the-sun",
+  "20 - JUDGEMENT": "judgement",
+  "21 - THE WORLD": "the-world",
+};
+
+/**
+ * The size every phone sheet is delivered at, and asserted to be.
+ *
+ * She painted all twenty-two on one 390x3500 canvas — 390 being the CSS width
+ * of the phone she designed for. They are written at that size untouched: no
+ * trim, no resize, and no keying.
+ *
+ * **Nothing is cropped here, unlike `writePaper`.** The desktop sheets are a
+ * paper object floating inside an oversized canvas, so the empty margin has to
+ * go and the deckle has to survive the cut. These are full-bleed: the art runs
+ * to all four edges, there is no margin to trim and no torn edge to preserve,
+ * and `background-size: cover` crops whatever the page does not need. Measuring
+ * bounds on them would find the canvas and change nothing.
+ *
+ * **And nothing is keyed.** `writePaper` keys white back to alpha for the two
+ * flattened sheets, because a hard white rectangle behind a floating sheet
+ * shows against the night sky. These are opaque by design — all twenty-two,
+ * every pixel, verified — because the sheet *is* the background below `sm`.
+ * Keying their pale grain would punch holes in it.
+ *
+ * A source that is not exactly this size throws: it would mean she has changed
+ * the canvas, and `cover` would silently reframe every phone page.
+ */
+const MOBILE_SIZE = { width: 390, height: 3500 };
+
+/**
+ * The phone sheets: one full-bleed image per card, re-encoded and nothing else.
+ *
+ * **These supersede a taller first draft.** The Magician's phone sheet shipped
+ * alone at 390x5200 while this page was being built; her revised delivery is
+ * 3500 tall for every card, and the shorter sheet is the one in use. Only the
+ * comment in globals.css named the old height — `cover` itself does not care,
+ * it just begins upscaling on a page taller than the sheet rather than at 5200.
+ *
+ * Quality 80 on a photograph of paper grain: the same judgement
+ * `optimize-card-assets.mjs` records for its backgrounds, and it takes the
+ * delivery from 31MB of PNG to well under a tenth of that. These ship byte for
+ * byte — `images.unoptimized` is set — so the encode here is the only one.
+ */
+async function writePaperMobile() {
+  const dest = join(DEST, "paper-mobile");
+  await mkdir(dest, { recursive: true });
+
+  const files = (await readdir(MOBILE_SOURCE)).filter((n) => /\.(png|jpe?g)$/i.test(n));
+
+  if (files.length !== 22) {
+    throw new Error(
+      `Expected 22 phone sheets in ${MOBILE_SOURCE}, found ${files.length}. ` +
+        `Her zip holds twenty-one; The Fool's is delivered separately and must sit beside them.`,
+    );
+  }
+
+  let written = 0;
+  let total = 0;
+
+  for (const file of files.sort()) {
+    const stem = file.replace(/\.(png|jpe?g)$/i, "");
+    const slug = MOBILE_SHEETS[stem];
+
+    if (!slug) {
+      throw new Error(`No slug for phone sheet "${stem}" — add it to MOBILE_SHEETS in this script.`);
+    }
+
+    const path = join(MOBILE_SOURCE, file);
+    const { width, height } = await sharp(path).metadata();
+
+    if (width !== MOBILE_SIZE.width || height !== MOBILE_SIZE.height) {
+      throw new Error(
+        `${file} is ${width}x${height}, not the delivered ${MOBILE_SIZE.width}x${MOBILE_SIZE.height}. ` +
+          `See MOBILE_SIZE in this script for why that throws rather than being resized.`,
+      );
+    }
+
+    const out = await sharp(path).webp({ quality: 80 }).toFile(join(dest, `${slug}.webp`));
+
+    total += out.size;
+    written += 1;
+    console.log(
+      `paper-mobile/${slug}`.padEnd(28) +
+        `${String(out.width).padStart(5)}x${String(out.height).padEnd(5)} ` +
+        `${(out.size / 1024).toFixed(0).padStart(5)}kB`,
+    );
+  }
+
+  return { written, total };
+}
+
 const packets = await readPackets();
 const symbols = await collectSymbols(packets);
 
@@ -676,9 +802,11 @@ const { written, total } = await writeSymbols(symbols);
 
 const paper = await writePaper(packets);
 
+const paperMobile = await writePaperMobile();
+
 const shadows = await writeShadows(packets);
 
 console.log(
-  `\n${written + paper.written + shadows.written} assets, ` +
-    `${((total + paper.total + shadows.total) / 1024 / 1024).toFixed(2)}MB total.`,
+  `\n${written + paper.written + paperMobile.written + shadows.written} assets, ` +
+    `${((total + paper.total + paperMobile.total + shadows.total) / 1024 / 1024).toFixed(2)}MB total.`,
 );

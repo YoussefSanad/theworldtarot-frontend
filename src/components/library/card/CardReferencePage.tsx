@@ -98,11 +98,11 @@ export function CardReferencePage({
       */}
       <div
         className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]"
-        data-paper-mobile={paperMobile ? "" : undefined}
+        data-paper-mobile=""
         style={
           {
             "--card-paper": `url("${paper}")`,
-            ...(paperMobile && { "--card-paper-mobile": `url("${paperMobile}")` }),
+            "--card-paper-mobile": `url("${paperMobile}")`,
           } as React.CSSProperties
         }
       >
