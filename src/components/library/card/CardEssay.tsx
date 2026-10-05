@@ -116,17 +116,45 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         *inside* it, so a line filling the gutter sits on the artwork rather
         than the pale centre — the words poking out of the parchment.
 
-        22rem is derived, not tuned. It clears the deck's widest single phrase
-        ("Transformation", 219px as rendered) so no phrase can break inside
-        itself, and its widest two-phrase run ("Completion • Fulfillment") so
-        the wrap stays 2+1 rather than three stacked words. Above `lg` it is
-        released and never binds: every line in the deck fits her single line
-        there on its own.
+        22rem was derived, not tuned. It cleared the deck's widest single
+        phrase ("Transformation", 219px as rendered) so no phrase could break
+        inside itself, and its widest two-phrase run ("Completion •
+        Fulfillment") so the wrap stayed 2+1 rather than three stacked words.
+        Above `lg` it is released and never binds: every line in the deck fit
+        her single line there on its own.
 
-        Verified in-browser across all 22 cards at 360/440/520/768/1024/1440:
-        no overflow, and no phrase wider than its box.
+        **Those two measurements predate the `uppercase` below and no longer
+        hold.** They were taken with the deck's title-case and lower-case lines
+        rendering as Cinzel small capitals; forcing full capitals widens every
+        phrase, so both the widest single phrase and the widest two-phrase run
+        are now wider than the numbers above. The cap itself is unchanged and
+        still does its job — keeping the line off the painted border — but the
+        clearances it was chosen for want re-measuring, and some lines that sat
+        on one line below `lg` will now wrap.
+
+        Previously verified in-browser across all 22 cards at
+        360/440/520/768/1024/1440: no overflow, and no phrase wider than its
+        box. That sweep needs redoing in full capitals.
       */}
-      <p className="mx-auto max-w-[22rem] text-balance text-center font-serif text-card-lead leading-none tracking-[0.01em] text-card-ink lg:max-w-none">
+      {/*
+        **`uppercase` rather than capitals in the copy**, for the reason the
+        meta strip's value cell gives: the client asks this line to read in
+        caps and the content is inconsistent about it. The deck ships four
+        lines in full capitals (Magician, High Priestess, Hierophant, Hanged
+        Man), two in lower case (Empress, Emperor) and sixteen in title case.
+
+        **Cinzel is what makes that visible.** It is an all-capitals face with
+        no true lower case — lowercase codepoints are drawn as small capitals —
+        so the three casings render at three different glyph heights from one
+        `font-size`. The client read that as three different font sizes across
+        the Fool, the Magician and the Empress, and they were right to: the
+        type size is identical at every width, the drawn height is not.
+
+        Casing here means the rule holds for whatever case the remaining copy
+        arrives in rather than relying on each entry being typed correctly in
+        `card-content.ts` — the same argument, and the same fix, as `MetaStrip`.
+      */}
+      <p className="mx-auto max-w-[22rem] text-balance text-center font-serif text-card-lead uppercase leading-none tracking-[0.01em] text-card-ink lg:max-w-none">
         {content.keywords
           /*
             Split on the bullet itself, not on `" • "`. The Emperor's line
