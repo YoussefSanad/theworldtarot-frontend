@@ -1,10 +1,19 @@
 import Image from "next/image";
 import { Fragment } from "react";
 
+import { lookForGap } from "@/components/library/card/look-for-gap";
 import { cardReference } from "@/lib/assets";
 
-/** The bullet her copy separates phrases with; see `LookFor`. */
+/**
+ * The separators her copy breaks phrases on; see `LookFor`.
+ *
+ * **Two of them, because she uses two**: `•` through the card pages' LOOK FOR
+ * lines and `·` through the suit pages' KEY THEMES. `SEPARATOR_PATTERN` is what
+ * splits, `PHRASE_SEPARATOR` is what is drawn back between the pieces — so both
+ * kinds of line render in the one hand her card frames set.
+ */
 const PHRASE_SEPARATOR = " • ";
+const SEPARATOR_PATTERN = /\s*[•·]\s*/;
 
 /**
  * "LOOK FOR:" on her 1203px rule, over the Magically prose beneath it.
@@ -47,10 +56,17 @@ const PHRASE_SEPARATOR = " • ";
  * broken by bullets rather than items: a `<ul>` would have a screen reader
  * announce "list, six items" for what reads aloud as one line.
  */
-export function LookFor({ lines }: { lines: readonly string[] }) {
+export function LookFor({ lines, label = "LOOK FOR:" }: { lines: readonly string[]; label?: string }) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="stack w-full items-center">
+        {/*
+          **The cut in the rule follows the label**, rather than being the fixed
+          12ch the CSS declares. The suit pages put "KEY THEMES" in this rule,
+          which is longer than "LOOK FOR:" and would sit on the line at the
+          default. See `lookForGap`, and `.look-for__rule` in globals.css for
+          how the band is masked.
+        */}
         <Image
           src={cardReference.dividerLookFor.src}
           alt=""
@@ -58,10 +74,11 @@ export function LookFor({ lines }: { lines: readonly string[] }) {
           height={cardReference.dividerLookFor.height}
           className="look-for__rule h-auto w-full self-center justify-self-stretch"
           sizes="(width >= 64rem) 62.66vw, 100vw"
+          style={{ "--look-for-gap": lookForGap(label) } as React.CSSProperties}
         />
 
         <p className="justify-self-center px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
-          LOOK FOR:
+          {label}
         </p>
       </div>
 
@@ -80,13 +97,13 @@ export function LookFor({ lines }: { lines: readonly string[] }) {
         reads and copies as she wrote it, and a screen reader still hears one
         continuous phrase rather than a list.
 
-        `PHRASE_SEPARATOR` is the same bullet the content uses; a line with no
-        bullet simply yields one span and behaves as before.
+        `SEPARATOR_PATTERN` matches both separators her copy uses; a line with
+        neither simply yields one span and behaves as before.
       */}
       <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.83vw*var(--card-scale)),calc(1rem*var(--card-scale)))] flex flex-col">
         {lines.map((line) => (
           <p key={line} className="text-pretty font-display text-card-lead leading-[1.444] tracking-[0.01em] text-card-forest">
-            {line.split(PHRASE_SEPARATOR).map((phrase, index) => (
+            {line.split(SEPARATOR_PATTERN).map((phrase, index) => (
               <Fragment key={phrase}>
                 {index > 0 ? <span> {PHRASE_SEPARATOR.trim()} </span> : null}
                 <span className="whitespace-nowrap">{phrase.trim()}</span>

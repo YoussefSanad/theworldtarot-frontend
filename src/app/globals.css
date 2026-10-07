@@ -1775,6 +1775,12 @@
     font-family: var(--font-serif);
     font-size: var(--text-card-lead);
 
+    /*
+      **The default, for a caller that sets nothing.** `LookFor` overrides it
+      inline from the label's own length — the suit pages put "KEY THEMES" in
+      this rule, which is longer than "LOOK FOR:" and would sit on the line at a
+      fixed 12ch. See `lookForGap` in look-for-gap.ts.
+    */
     --look-for-gap: 12ch;
 
     -webkit-mask-image: linear-gradient(
