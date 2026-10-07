@@ -82,14 +82,26 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
 
         <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
           <Container width="cardWide">
-            {/* No reading ground here either — see the note on the opening section. */}
-            <LookFor label="KEY THEMES" lines={content.keyThemes} tone="suit" />
+            {/*
+              The ground runs the full measure here, unlike the opening section
+              above: this block spans the sheet rather than sharing it with the
+              emblem, so there is no painting to keep clear of.
+            */}
+            <div className="card-reading-ground">
+              <LookFor label="KEY THEMES" lines={content.keyThemes} tone="suit" />
+            </div>
           </Container>
         </Section>
 
         <Section padding="none" className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <SpheresCarousel cardName={suit.title} spheres={content.spheres} tone="suit" />
+            {/*
+              **Black here, not the page's navy.** The three cards sit on their
+              own pale ground inside her ornate frames, and she sets their type
+              black the way the card pages do — so this takes the component's
+              default rather than the `suit` tone the rest of the page uses.
+            */}
+            <SpheresCarousel cardName={suit.title} spheres={content.spheres} />
           </Container>
         </Section>
 

@@ -51,8 +51,28 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
         heading across the full sheet — which an earlier build did — put it
         over the emblem and broke that column.
       */}
-      <div className="flex min-w-0 flex-col">
-        <CardHeader heading={title} />
+      {/*
+        **The reading ground sits on this column alone**, not across the row.
+        Her first section is the one place on the page where the wash belongs
+        to the writing and not to the section: the emblem's half of the sheet
+        is her painting at its heaviest and must stay uncovered, while the
+        prose beside it reads on the tint. An earlier build put the ground
+        around both columns, which laid a panel over the chalice.
+      */}
+      <div className="card-reading-ground flex min-w-0 flex-col">
+        {/*
+          **Her title is far larger than a card's**, and that is the one place
+          this page departs from `--text-card-name`. Measured off all four of
+          her frames, the title's cap height is 107–109px of a 1920 frame —
+          about 154px of Cinzel, where a card's name maxes at 48. So the size
+          is set here rather than by the shared token, which the twenty-two
+          card pages read.
+
+          Light, as she draws it: Cinzel's own weight, with nothing added.
+        */}
+        <div className="[--text-card-name:clamp(2.75rem,8.02vw,9.625rem)]">
+          <CardHeader heading={title} />
+        </div>
 
         {/*
           Her keyword line, in the same component the card pages use — see
