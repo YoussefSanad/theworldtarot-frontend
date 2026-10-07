@@ -242,6 +242,26 @@ export function suitPath(suit: Suit): string {
  * nothing from the framework, which is the rule the whole content layer keeps —
  * it is copy, and copy is what a CMS would one day own.
  */
+/**
+ * A suit's meta description: hers when she has written one, the generated
+ * sentence otherwise.
+ *
+ * The fallback is what every suit answered with while the pages were
+ * placeholders, and it stays for the same reason the holding page does — a suit
+ * whose copy is pulled should still describe itself to a search engine rather
+ * than ship `undefined`.
+ *
+ * **Its own exported function so that arm can be tested**, since no real suit
+ * reaches it: all four carry copy, so the only way to exercise the fallback is
+ * to call this with a constructed `Suit`.
+ */
+export function suitDescription(suit: Suit): string {
+  return (
+    suit.content?.metaDescription ??
+    `The suit of ${suit.title} in the Minor Arcana of The World Tarot.`
+  );
+}
+
 export function suitMeta(slug: string): { title: string; description: string } {
   const suit = findSuit(slug);
 
@@ -249,17 +269,7 @@ export function suitMeta(slug: string): { title: string; description: string } {
     throw new Error(`Unknown suit "${slug}"`);
   }
 
-  return {
-    title: suit.title,
-    /*
-      Hers when she has written one, the generated sentence otherwise. The
-      fallback is what every suit answered with while the pages were
-      placeholders; it stays for the same reason the holding page does.
-    */
-    description:
-      suit.content?.metaDescription ??
-      `The suit of ${suit.title} in the Minor Arcana of The World Tarot.`,
-  };
+  return { title: suit.title, description: suitDescription(suit) };
 }
 
 /**

@@ -77,6 +77,22 @@ async function writePaper() {
   for (const slug of SUITS) {
     const path = join(SOURCE, `${slug}.png`);
     const { width, height, channels } = await sharp(path).metadata();
+
+    /*
+      **Dimensions first, because a missing one defeats the aspect check
+      silently.** `metadata()` types both as optional, and `undefined / 2851` is
+      `NaN` — against which *every* comparison below is `false`, so an
+      unmeasurable sheet would sail through the one check this script exists to
+      perform and encode anyway.
+    */
+    if (!width || !height) {
+      throw new Error(
+        `${slug}.png reported no dimensions (${width}x${height}). Every check below is an ` +
+          `arithmetic comparison, and NaN defeats all of them — so this throws rather than ` +
+          `encoding a sheet nothing has measured.`,
+      );
+    }
+
     const aspect = width / height;
 
     if (Math.abs(aspect - ASPECT) / ASPECT > ASPECT_TOLERANCE) {
@@ -137,6 +153,11 @@ async function writePaperMobile() {
     const path = join(MOBILE_SOURCE, file);
     const { width, height } = await sharp(path).metadata();
 
+    /*
+      An equality check rather than a tolerance, so `undefined` fails it the way
+      any other wrong size does — this arm has no NaN hole for the reason the
+      desktop one needed a guard against.
+    */
     if (width !== MOBILE_SIZE.width || height !== MOBILE_SIZE.height) {
       throw new Error(
         `${file} is ${width}x${height}, not the delivered ${MOBILE_SIZE.width}x${MOBILE_SIZE.height}.`,

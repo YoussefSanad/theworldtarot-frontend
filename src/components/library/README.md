@@ -165,18 +165,20 @@ pattern `suitPath` spells, applied when the real pages landed.
 ## What is deliberately unfinished
 
 `ComingSoonPage` is a statement that content does not exist yet rather than a
-template for what will. Two things still use it:
+template for what will — and **both routes that can reach it are now unreachable
+in practice**, because every card and every suit carries copy:
 
-- **Twenty-one of the twenty-two Major Arcana.** The Fool's page is the
-  confirmed template; the rest are waiting on the client for artwork and text.
-- **A suit with no copy** — unreachable today, since all four carry it. The
-  branch stays in `SuitPage` so a suit whose words are pulled answers rather
-  than 404ing, which is the same arm the card route keeps.
+- **A card with no `content`.** All twenty-two Major Arcana have theirs; the arm
+  stays in `[card]/page.tsx` because the deck is the client's to revise.
+- **A suit with no `content`.** All four have theirs; the arm stays in
+  `SuitPage` for the same reason.
 
-They were worth routing either way: the grid links to twenty-two cards, and a
-page that answers beats a 404 while she writes them. They keep the masthead and
-the suit navigation so a visitor who lands there is still somewhere and can
-leave the way they came.
+Neither branch is dead code. Each costs one `if` and means that copy pulled
+back for a rewrite answers with a page rather than a 404 — which is the state
+both routes were in for most of their existence, when the grid linked to
+twenty-two cards and the navigation to four suits that had nothing behind them
+yet. Both keep the masthead and the suit navigation, so a visitor who lands
+there is still somewhere and can leave the way they came.
 
 ## The active state is an addition
 

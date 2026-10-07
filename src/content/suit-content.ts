@@ -29,7 +29,7 @@ export type SuitContent = {
   essay: readonly string[];
   /** The three centred lines under the KEY THEMES rule. */
   keyThemes: readonly string[];
-  spheres: { love: string; career: string; money: string };
+  spheres: { readonly love: string; readonly career: string; readonly money: string };
   /** The saying between the two rules. */
   closing: readonly string[];
   unfolding: { heading: string; body: readonly string[] };

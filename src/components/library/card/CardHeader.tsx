@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 import { Divider } from "@/components/ui/Divider";
 import { cn } from "@/lib/cn";
 
@@ -16,10 +14,16 @@ import { cn } from "@/lib/cn";
  * card passes its Roman numeral, a suit passes nothing and the line is not
  * rendered.
  *
+ * **`string` rather than `ReactNode`**, narrowly and deliberately. A `ReactNode`
+ * admits `0`, which is falsy — so a future caller rendering a rank as a number
+ * (an Ace as `0`) would silently get a heading with its eyebrow dropped and no
+ * error anywhere. Every caller passes a string already; the narrower type makes
+ * that whole class of bug unrepresentable rather than guarded against.
+ *
  * The keyword line under this rule is **not** here — it is `Keywords`, which
  * both page kinds call.
  */
-export function CardHeader({ heading, eyebrow }: { heading: string; eyebrow?: ReactNode }) {
+export function CardHeader({ heading, eyebrow }: { heading: string; eyebrow?: string }) {
   return (
     <header className="flex flex-col items-center text-center">
       {eyebrow ? (
@@ -35,8 +39,7 @@ export function CardHeader({ heading, eyebrow }: { heading: string; eyebrow?: Re
       <h1
         className={cn(
           "font-serif text-card-name leading-none tracking-[0.01em] text-card-ink",
-          /* `Boolean`, because a `ReactNode` can be `0` and `cn` takes no numbers. */
-          Boolean(eyebrow) &&
+          eyebrow &&
             "mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.99vw*var(--card-scale)),calc(1.1875rem*var(--card-scale)))]",
         )}
       >
