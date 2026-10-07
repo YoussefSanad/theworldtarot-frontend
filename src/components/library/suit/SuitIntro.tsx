@@ -29,17 +29,26 @@ import type { SuitContent } from "@/content/suit-content";
  */
 export function SuitIntro({ title, content }: { title: string; content: SuitContent }) {
   return (
-    <div className="flex flex-col items-center gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:flex-row xl:items-start">
+    /*
+      The gap is vertical-only above `xl`: the 15% reserve beside this row is
+      measured to where her prose *begins*, so a column gap on top of it would
+      push the writing past her left edge and narrow the column again.
+    */
+    <div className="flex flex-col items-center gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:flex-row xl:items-start xl:gap-x-0">
       {/*
         **The emblem's room.** It draws nothing — the parchment behind it
         already carries her artwork — and exists so the column beside it starts
         where her frame starts it. `aria-hidden` because there is nothing here
         to announce: the emblem is part of the page's background.
 
-        The share is the one `CardEssay` gives the card tile at `xl`, so the
-        prose on a suit page and the prose on a card page begin at the same x.
+        **Her share, not the card tile's.** This began as `CardEssay`'s
+        `min(14.5rem, 25.1vw)`, which reserves about 22% of the measure for a
+        *card* — and left the writing column too narrow here. Measured on all
+        four frames, her prose begins 11.6–17.2% into the sheet (Swords least,
+        Pentacles most), averaging 14.4%. 15% is that average rounded, and it
+        gives the second column the room it was short of.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[min(14.5rem,25.1vw)]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[15%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**
@@ -61,16 +70,21 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
       */}
       <div className="card-reading-ground flex min-w-0 flex-col">
         {/*
-          **Her title is far larger than a card's**, and that is the one place
-          this page departs from `--text-card-name`. Measured off all four of
-          her frames, the title's cap height is 107–109px of a 1920 frame —
-          about 154px of Cinzel, where a card's name maxes at 48. So the size
-          is set here rather than by the shared token, which the twenty-two
-          card pages read.
+          **A little larger than a card's name, not three times it.**
 
-          Light, as she draws it: Cinzel's own weight, with nothing added.
+          The first attempt at this read the cap height straight off her frame —
+          107–109px of 1920 — and converted it as though the frame mapped 1:1 to
+          the viewport, which gave ~154px and rendered enormous. It does not map
+          1:1: the sheet is inset in her frame and the page carries its own
+          `--content-scale` and `--card-scale` on top, so a figure taken from
+          her pixels has to be read against the rendered page rather than
+          multiplied out. Checked against the real page, the title wants about
+          50px at desktop where `--text-card-name` gives 48.
+
+          So this is a small local nudge rather than a departure, and it is
+          local because the twenty-two card pages read the shared token.
         */}
-        <div className="[--text-card-name:clamp(2.75rem,8.02vw,9.625rem)]">
+        <div className="[--text-card-name:clamp(1.875rem,2.6vw,3.125rem)]">
           <CardHeader heading={title} />
         </div>
 
