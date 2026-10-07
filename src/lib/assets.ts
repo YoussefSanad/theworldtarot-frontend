@@ -515,3 +515,23 @@ export const cardPaper = (slug: string) => `/figma/card-reference/paper/${slug}.
 export const cardPaperMobile = (slug: string) =>
   `/figma/card-reference/paper-mobile/${slug}.webp`;
 
+/**
+ * A suit's parchment — her delivered sheet, one per suit.
+ *
+ * **The emblem is painted into it.** The chalice, the coin pouch, the sword and
+ * the torch are part of the sheet rather than layers to place, which is why
+ * there is no suit equivalent of `cardShadows` and no emblem accessor here: a
+ * suit page leaves that column of the sheet empty and the artwork shows
+ * through.
+ *
+ * Wider than a card's 1337 — hers run ~1460 — and that costs nothing:
+ * `.card-paper` is a box the image fills, so a sheet's own width is only its
+ * aspect, and all four suits share one. See `scripts/optimize-suit-assets.mjs`
+ * for why that aspect is checked rather than assumed.
+ */
+export const suitPaper = (slug: string) => `/figma/suit-reference/paper/${slug}.webp`;
+
+/** The same sheet drawn for the phone, at the 390x3500 the card pages already use. */
+export const suitPaperMobile = (slug: string) =>
+  `/figma/suit-reference/paper-mobile/${slug}.webp`;
+
