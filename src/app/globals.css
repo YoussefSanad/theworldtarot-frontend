@@ -158,6 +158,20 @@
   --color-card-ink-soft: #000000; /* her body copy */
   --color-card-forest: #000000; /* the rules, and the LOOK FOR prose */
   /*
+    **The suit pages' navy, which the card pages do not use.**
+
+    Her four suit frames are set in two inks rather than the card pages' one:
+    black for the title and the keyword line, and this navy for everything
+    else — the three paragraphs, KEY THEMES and its lines, the sphere cards,
+    the closing saying and the unfolding block. Sampled from her `CUPS.psd`
+    at `#17335d`, and the client confirmed the split.
+
+    **It is a separate token rather than a change to the three above**, because
+    those were taken to pure black at her request for the card pages and the
+    twenty-two must not move. The suit pages opt in; nothing else reads this.
+  */
+  --color-suit-ink: #17335d;
+  /*
     **The dark panels' ground, which is not the ink above.**
 
     `--color-card-ink` was doing two jobs: the page's dark *type* on the sheet,

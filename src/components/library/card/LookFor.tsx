@@ -3,6 +3,7 @@ import { Fragment } from "react";
 
 import { lookForGap } from "@/components/library/card/look-for-gap";
 import { cardReference } from "@/lib/assets";
+import { cn } from "@/lib/cn";
 
 /**
  * The separators her copy breaks phrases on; see `LookFor`.
@@ -56,7 +57,24 @@ const SEPARATOR_PATTERN = /\s*[•·]\s*/;
  * broken by bullets rather than items: a `<ul>` would have a screen reader
  * announce "list, six items" for what reads aloud as one line.
  */
-export function LookFor({ lines, label = "LOOK FOR:" }: { lines: readonly string[]; label?: string }) {
+export function LookFor({
+  lines,
+  label = "LOOK FOR:",
+  tone = "forest",
+}: {
+  lines: readonly string[];
+  label?: string;
+  /**
+   * Which ink the label and the lines take.
+   *
+   * `forest` is the card pages' — the token is black since the client took
+   * this page's ink there. `suit` is her navy, and it also sets the label bold,
+   * because her suit frames draw KEY THEMES considerably heavier than the lines
+   * beneath it where a card's LOOK FOR and its prose share one weight.
+   */
+  tone?: "forest" | "suit";
+}) {
+  const ink = tone === "suit" ? "text-suit-ink" : "text-card-forest";
   return (
     <div className="flex flex-col items-center text-center">
       <div className="stack w-full items-center">
@@ -77,7 +95,13 @@ export function LookFor({ lines, label = "LOOK FOR:" }: { lines: readonly string
           style={{ "--look-for-gap": lookForGap(label) } as React.CSSProperties}
         />
 
-        <p className="justify-self-center px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em] text-card-forest">
+        <p
+          className={cn(
+            "justify-self-center px-[clamp(calc(0.75rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] font-serif text-card-lead leading-none tracking-[0.01em]",
+            ink,
+            tone === "suit" && "font-bold",
+          )}
+        >
           {label}
         </p>
       </div>
@@ -102,7 +126,7 @@ export function LookFor({ lines, label = "LOOK FOR:" }: { lines: readonly string
       */}
       <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(0.83vw*var(--card-scale)),calc(1rem*var(--card-scale)))] flex flex-col">
         {lines.map((line) => (
-          <p key={line} className="text-pretty font-display text-card-lead leading-[1.444] tracking-[0.01em] text-card-forest">
+          <p key={line} className={cn("text-pretty font-display text-card-lead leading-[1.444] tracking-[0.01em]", ink)}>
             {line.split(SEPARATOR_PATTERN).map((phrase, index) => (
               <Fragment key={phrase}>
                 {index > 0 ? <span> {PHRASE_SEPARATOR.trim()} </span> : null}

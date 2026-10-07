@@ -20,7 +20,12 @@ export function StillUnfolding({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <h2 className="font-serif text-card-lead font-bold leading-none tracking-[0.02em] text-card-ink">
+      {/*
+        **Bold, and in the suit navy** — her frame sets this line heavier than
+        anything else on the page bar the keyword line, and in the same navy as
+        the body rather than the black the saying above it takes.
+      */}
+      <h2 className="font-serif text-card-lead font-bold leading-none tracking-[0.02em] text-suit-ink">
         {heading}
       </h2>
 
@@ -31,7 +36,7 @@ export function StillUnfolding({
       */}
       <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] flex flex-col">
         {body.map((line) => (
-          <p key={line} className="font-light text-card-label tracking-[0.01em] text-card-ink-soft">
+          <p key={line} className="font-light text-card-label tracking-[0.01em] text-suit-ink">
             {line}
           </p>
         ))}

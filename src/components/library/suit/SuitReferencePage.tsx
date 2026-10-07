@@ -64,24 +64,32 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
       >
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
           <Container width="card">
-            {/* The same faint ground the card page's opening section reads on. */}
-            <div className="card-reading-ground">
-              <SuitIntro title={suit.title} content={content} />
-            </div>
+            {/*
+              **No reading ground on this section, unlike the card pages.**
+
+              `.card-reading-ground` exists because a card's sheet is a
+              watercolour vignette painted *around* a pale centre, so copy that
+              reaches the sides loses its ground and black type goes dark on
+              dark. Her suit sheets are the opposite composition: the wash is
+              heaviest where the emblem is, and the column the writing occupies
+              is the palest part of the sheet. A wash here had nothing to
+              correct and read as a panel laid over her painting — which is the
+              failure mode that rule's own note warns about.
+            */}
+            <SuitIntro title={suit.title} content={content} />
           </Container>
         </Section>
 
         <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <div className="card-reading-ground">
-              <LookFor label="KEY THEMES" lines={content.keyThemes} />
-            </div>
+            {/* No reading ground here either — see the note on the opening section. */}
+            <LookFor label="KEY THEMES" lines={content.keyThemes} tone="suit" />
           </Container>
         </Section>
 
         <Section padding="none" className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))]">
           <Container width="cardWide">
-            <SpheresCarousel cardName={suit.title} spheres={content.spheres} />
+            <SpheresCarousel cardName={suit.title} spheres={content.spheres} tone="suit" />
           </Container>
         </Section>
 

@@ -7,6 +7,7 @@ import { Carousel, CarouselDots, CarouselSlide, CarouselTrack, CarouselViewport,
 import { OrnateFrame } from "@/components/ui/OrnateFrame";
 import type { MajorArcanaContent } from "@/content/card-content";
 import { cardReference } from "@/lib/assets";
+import { cn } from "@/lib/cn";
 
 /**
  * Love, career and money — three framed cards, each a heading over a paragraph
@@ -50,11 +51,21 @@ import { cardReference } from "@/lib/assets";
 export function SpheresCarousel({
   cardName,
   spheres,
+  tone = "ink",
 }: {
   cardName: string;
   spheres: MajorArcanaContent["spheres"];
+  /**
+   * Which ink the three cards' headings and copy take.
+   *
+   * `ink` is the card pages' black. `suit` is her navy, which her four suit
+   * frames set these cards in along with the rest of the page's body copy.
+   */
+  tone?: "ink" | "suit";
 }) {
   const duration = useCarouselDuration();
+  const ink = tone === "suit" ? "text-suit-ink" : "text-card-ink";
+  const bodyInk = tone === "suit" ? "text-suit-ink" : "text-black";
 
   const cards = [
     { label: "love", body: spheres.love, art: cardReference.sphereLove },
@@ -240,7 +251,7 @@ export function SpheresCarousel({
                 */
                 }
                 <div className="flex flex-col items-center px-[10.5cqw] pb-[57cqw] pt-[9.5cqw] text-center">
-                  <h3 className="font-serif text-h3 leading-none tracking-[0.01em] text-card-ink">{card.label}</h3>
+                  <h3 className={cn("font-serif text-h3 leading-none tracking-[0.01em]", ink)}>{card.label}</h3>
 
                   {/*
                     **`text-pretty` and the hard-spaced tails together.** The
@@ -251,7 +262,7 @@ export function SpheresCarousel({
                     two she named, since `text-wrap: pretty` is a preference a
                     narrow column can still overrule.
                   */}
-                  <p className="mt-[4.5cqw] text-pretty font-light text-card-body leading-[1.083] tracking-[0.01em] text-black">
+                  <p className={cn("mt-[4.5cqw] text-pretty font-light text-card-body leading-[1.083] tracking-[0.01em]", bodyInk)}>
                     {card.body}
                   </p>
                 </div>

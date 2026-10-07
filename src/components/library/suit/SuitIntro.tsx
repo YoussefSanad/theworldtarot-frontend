@@ -29,36 +29,46 @@ import type { SuitContent } from "@/content/suit-content";
  */
 export function SuitIntro({ title, content }: { title: string; content: SuitContent }) {
   return (
-    <div className="flex flex-col">
-      <CardHeader heading={title} />
+    <div className="flex flex-col items-center gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:flex-row xl:items-start">
+      {/*
+        **The emblem's room.** It draws nothing — the parchment behind it
+        already carries her artwork — and exists so the column beside it starts
+        where her frame starts it. `aria-hidden` because there is nothing here
+        to announce: the emblem is part of the page's background.
+
+        The share is the one `CardEssay` gives the card tile at `xl`, so the
+        prose on a suit page and the prose on a card page begin at the same x.
+      */}
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[min(14.5rem,25.1vw)]" />
 
       {/*
-        Her keyword line, in the same component the card pages use — see
-        `Keywords` for why the separator splitting is shared rather than
-        retyped. The gap is `CardEssay`'s own, since her suit frames set it
-        identically.
+        **The whole of the writing is in this one column, heading included.**
+
+        Her frame sets the title, the rule under it and the keyword line
+        against the *prose's* measure rather than the sheet's: they share the
+        body's right edge, and the chalice has the left of the sheet to itself
+        from the torn top edge down to the KEY THEMES rule. Centring the
+        heading across the full sheet — which an earlier build did — put it
+        over the emblem and broke that column.
       */}
-      <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
-        <Keywords keywords={content.keywords} />
-      </div>
+      <div className="flex min-w-0 flex-col">
+        <CardHeader heading={title} />
 
-      <div className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))] flex flex-col items-center gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:flex-row xl:items-start">
         {/*
-          **The emblem's room.** It draws nothing — the parchment behind it
-          already carries her artwork — and exists so the prose column starts
-          where her frame starts it. `aria-hidden` because there is nothing here
-          to announce: the emblem is part of the page's background.
-
-          The share is the one `CardEssay` gives the card tile at `xl`, so the
-          prose on a suit page and the prose on a card page begin at the same x.
+          Her keyword line, in the same component the card pages use — see
+          `Keywords` for why the separator splitting is shared rather than
+          retyped. **Bold here where a card's is not**: her suit frames set this
+          line considerably heavier than the title above it.
         */}
-        <span aria-hidden className="hidden shrink-0 xl:block xl:w-[min(14.5rem,25.1vw)]" />
+        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] font-bold">
+          <Keywords keywords={content.keywords} />
+        </div>
 
-        <div className="flex min-w-0 flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
-              className="text-pretty text-center font-light text-card-label tracking-[0.01em] text-card-ink-soft xl:text-left"
+              className="text-pretty text-center font-light text-card-label tracking-[0.01em] text-suit-ink xl:text-left"
             >
               {paragraph}
             </p>
