@@ -34,9 +34,15 @@ export function StillUnfolding({
         every frame rather than a paragraph that wraps, so each is its own
         element — the same reasoning as `ClosingSaying`'s `saying` array.
       */}
+      {/*
+        `--text-card-body` rather than the `--text-card-label` the intro
+        paragraphs take: 24px against 22. Her frame sets this block a step
+        larger than the essay above it, which reads as the page's closing note
+        rather than more body copy.
+      */}
       <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] flex flex-col">
         {body.map((line) => (
-          <p key={line} className="font-light text-card-label tracking-[0.01em] text-suit-ink">
+          <p key={line} className="font-light text-card-body tracking-[0.01em] text-suit-ink">
             {line}
           </p>
         ))}

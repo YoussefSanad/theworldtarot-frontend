@@ -112,7 +112,23 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           <Keywords keywords={content.keywords} />
         </div>
 
-        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+        {/*
+          **The prose is narrower than the column it sits in**, where the
+          heading and the keyword line above it run the column's full width.
+          That is her frame: the title and keywords reach further right than the
+          paragraphs, which hold a shorter measure so the three of them stack as
+          an even block rather than running the width of the sheet.
+
+          `max-w` rather than a narrower column, so only the paragraphs move —
+          the heading and keywords keep the position they were set against.
+          A percentage rather than `ch`, because `ch` is a share of the font
+          size and this type is on a clamp: the measure would widen and narrow
+          with the viewport independently of the column it sits in.
+
+          `xl`-only. Below that the column is the full measure and the prose is
+          centred under the heading, where a cap would read as an inset block.
+        */}
+        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:max-w-[82%]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
