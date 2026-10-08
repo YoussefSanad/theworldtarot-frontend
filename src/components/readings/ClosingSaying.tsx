@@ -47,8 +47,16 @@ export function ClosingSaying({
   rule = "hero",
   className,
   hugRule = false,
+  reflow = false,
 }: {
   saying?: readonly string[];
+  /**
+   * Lets a stored line wrap inside itself when it is wider than the measure,
+   * rather than dropping whole and leaving an orphan beneath it. See `Phrase`.
+   * The suit pages set it because her sayings run to 53 characters on one line
+   * and a phone column cannot hold that.
+   */
+  reflow?: boolean;
   /**
    * **`null` is a page with nowhere to send them**, and it renders the saying
    * and its rules with no button under them. That is `/redeem/`, where this
@@ -131,7 +139,7 @@ export function ClosingSaying({
             tone === "gold" ? "text-gold" : tone === "ink" ? "text-card-ink" : "text-champagne",
           )}
         >
-          <Phrase parts={saying} />
+          <Phrase parts={saying} reflow={reflow} />
         </p>
 
         <Divider variant={rule} className="mt-[clamp(calc(0.5rem*var(--block-rhythm)),calc(1.04vw*var(--block-rhythm)),calc(1.25rem*var(--block-rhythm)))]" />

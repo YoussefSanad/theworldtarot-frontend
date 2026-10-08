@@ -177,6 +177,7 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           rule="green"
           tone="ink"
           hugRule
+          reflow
         />
 
         <Section padding="none" className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))]">
