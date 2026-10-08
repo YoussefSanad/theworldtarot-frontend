@@ -1723,6 +1723,42 @@
   }
 
   /*
+    **The suit sheets never stretch, at any width.**
+
+    `.card-paper` above paints `100% 100%`, so the image takes the *box's*
+    aspect rather than its own — the box being content-driven, that is a
+    horizontal squeeze whenever the sheet is wider than the card measure and a
+    vertical one whenever the copy runs past the sheet's natural height. On a
+    card that is cheap: the note further down explains that her card sheets are
+    flat grain through the middle with no figure to skew. **Each suit sheet has
+    her emblem painted into it** — a chalice, a coin pouch, a sword, a torch —
+    and a stretched sword reads immediately.
+
+    So these take `100% auto` with `repeat-y`: full width at the asset's own
+    aspect, the remaining height tiled. Nothing bends, which is the whole point.
+    This is the fallback the card sheets' own note names, and it is the right
+    construction *here* for a reason it is not there: her suit washes are
+    heaviest at the top around the emblem and fade to near-plain parchment
+    below, so a seam falls in flat paper rather than restating a lamppost.
+
+    **Repetition is near zero where it matters.** At her design width the sheet
+    is 1460x2851 — an aspect of 0.512 — so its natural height at full width is
+    2852px, which is her own frame's sheet height. A desktop page lands close to
+    that, and only copy running well past hers reaches a second tile.
+
+    The pinned-band construction below (`@media (width < 64rem)`) is for the
+    card sheets and must not apply to these, which is why this rule resets
+    `background-image` to a single layer: a suit page below `lg` would otherwise
+    inherit three layers and two pinned deckles.
+  */
+  .suit-paper {
+    background-image: var(--card-paper);
+    background-position: center top;
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+  }
+
+  /*
     **A reading ground for the sections that sit on her painted border.**
 
     Every sheet is a watercolour vignette — pines, pillars, mist — painted around
@@ -2037,7 +2073,13 @@
     fainter line. If it is picked up again, that is the thing to solve first.
   */
   @media (width < 64rem) {
-    .card-paper {
+    /*
+      `:not(.suit-paper)` because this construction is for *her card sheets*.
+      A suit sheet takes `100% auto` with `repeat-y` at every width (see
+      `.suit-paper`), and inheriting three layers and two pinned deckles here
+      would undo it.
+    */
+    .card-paper:not(.suit-paper) {
       --card-deckle: 14%;
 
       background-image: var(--card-paper), var(--card-paper), var(--card-paper);

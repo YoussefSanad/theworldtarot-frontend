@@ -69,7 +69,7 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         term (1460 / 19.2 = 76.042).
       */}
       <div
-        className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
+        className="card-paper suit-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
         data-paper-mobile=""
         style={
           {
@@ -79,7 +79,14 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         }
       >
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
-          <Container width="card">
+          {/*
+            **`cardWide`, not `card`.** The narrower measure is her *card*
+            prose column, and inside a suit sheet it left 212px of parchment
+            either side where her own frame leaves about 100. `cardWide` is
+            1234 against the sheet's 1460, which lands within a dozen pixels
+            of hers.
+          */}
+          <Container width="cardWide">
             {/*
               **No reading ground on this section, unlike the card pages.**
 
@@ -137,7 +144,7 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         />
 
         <Section padding="none" className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.25vw*var(--card-scale)),calc(1.5rem*var(--card-scale)))]">
-          <Container width="card">
+          <Container width="cardWide">
             <StillUnfolding heading={content.unfolding.heading} body={content.unfolding.body} />
           </Container>
         </Section>
