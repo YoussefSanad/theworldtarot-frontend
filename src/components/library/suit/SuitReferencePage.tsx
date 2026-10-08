@@ -83,13 +83,25 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
       >
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
           {/*
-            **`cardWide`, not `card`.** The narrower measure is her *card*
-            prose column; her suit frames set the writing wider than that
-            against the sheet, leaving roughly 100px of parchment either side
-            where `card` leaves well over twice as much. `cardWide` is 1234
-            against the sheet's 1337.
+            **`cardWide`, widened further to the sheet's own measure.**
+
+            `cardWide` is 1234 against the sheet's 1337 — about 50px of
+            parchment either side, which is roughly her frame. But `.shell`
+            also takes `100% - 2 * --spacing-gutter` off whatever it is given,
+            and that 60px gutter is sized for a section spanning the *viewport*.
+            Inside a sheet already inset from the page, it was costing another
+            120px and reading as a deep horizontal pad on the column.
+
+            So this section zeroes the gutter and lets `cardWide` be the whole
+            inset — the sheet's own margins are already the edge this column
+            needs to clear. `.shell` reads `--spacing-gutter` inside its
+            `min()`, so setting it here is the whole change; the three sections
+            below keep the gutter as it is.
+
+            `xl`-only, because below that the sheet is full-bleed and the gutter
+            is the only thing holding the copy off the screen edge.
           */}
-          <Container width="cardWide">
+          <Container width="cardWide" className="xl:[--spacing-gutter:0px]">
             {/*
               **No reading ground on this section, unlike the card pages.**
 

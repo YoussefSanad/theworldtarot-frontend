@@ -147,7 +147,7 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           already centred under the heading, where a cap would read as an inset
           block.
         */}
-        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:mx-auto xl:max-w-[78%]">
+        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:mx-auto xl:max-w-[66%]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
