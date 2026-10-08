@@ -1724,6 +1724,96 @@
 
 
   /*
+    **The suit sheets are never stretched, on either axis.**
+
+    `.card-paper` paints `100% 100%`, which hands the image the *box's* aspect.
+    On a card that costs nothing — her card sheets are flat grain through the
+    middle, and a page whose content lands near the sheet's own proportions
+    stretches it by a few percent that nothing in the picture shows. **Each
+    suit sheet has her emblem painted into it**, a chalice or a sword or a
+    torch, and those skew visibly at the same few percent.
+
+    Two attempts at this failed and are worth recording, because each looked
+    like the obvious fix:
+
+    - **`repeat-y` with `100% auto`.** Never bends the sheet, which is why it
+      seemed right. But our page is always taller than her frame — we add a
+      masthead, the Library intro with its suit nav, and a footer, none of
+      which she draws — so the tile always came round, restating her torn top
+      deckle partway down and ending on a hard cut.
+    - **The pinned-band construction**, borrowed from the card sheets' phone
+      layout. That works where a sheet is a painted border around a quiet
+      centre; her suit washes run the full height at the sides and reach well
+      into the middle, so there is no quiet band to stretch.
+
+    What works is to stop the box from ever being a shape the sheet has to fill.
+    `min-block-size` derives the sheet's natural height from its own inline
+    size, so the box *starts* at the image's true proportions and the picture
+    is painted at `100% auto` — full width, its own aspect, pinned to the top.
+    Content shorter than the sheet leaves her parchment showing below it, which
+    is what her frame draws anyway.
+
+    **The floor is derived from the measure, not from a container query.**
+    `cqw` would need `container-type: inline-size` on this element, and the
+    sheet is an ancestor of boxes that resolve their own `cqw` — the sphere
+    cards size their type against `OrnateFrame`. Those have containers of their
+    own in between, so it would most likely be harmless, but "most likely" is
+    not a reason to introduce a containment context the layout never asked for.
+    `--measure-card-paper` is exactly the width this box takes, so the height
+    can be read straight off it.
+
+    `aspect-ratio` is the other thing not used here, and the note on
+    `.appears-panel__ground` sets out why at length: it can convert a *height*
+    back into a width, so a box in a stretched grid cell feeds its sibling's
+    height into its own measure. A floor computed from the measure only ever
+    travels one way.
+
+    The ratio is one number for all four — her sheets are 1.9466 to 1.9545 high
+    per unit wide, a 0.4% spread — so 1.953 fits every one within half a percent.
+
+    **If content ever outruns the sheet**, the box grows past the floor and the
+    image simply stops where it stops, on her bottom deckle, with the page's own
+    atmosphere behind the remainder. That is a seam, not a stretch, and it is
+    the failure this construction chooses: her chalice keeps its shape.
+  */
+  .suit-paper {
+    background-size: 100% auto;
+  }
+
+  /*
+    Above `lg` the floor is read off the measure, which is the width this box
+    actually takes.
+  */
+  @media (width >= 64rem) {
+    .suit-paper {
+      min-block-size: calc(var(--measure-card-paper) * 1.953);
+    }
+  }
+
+  /*
+    **Between `sm` and `lg` the sheet is full-bleed, so the floor is `vw`.**
+    `--measure-card-paper` is the literal `100%` in that band — a percentage of
+    the parent, which cannot be multiplied into a height — and the box spans the
+    viewport, so `100vw` is the same number expressed in a unit that can be.
+
+    This window also has to opt out of the pinned-band construction the card
+    sheets use here. That design stretches everything between a 14% band at each
+    end, which is right for a sheet painted as a border around a quiet centre
+    and wrong for these: her suit washes run the full height at the sides and
+    reach into the middle, so there is no quiet band and the stretch lands on
+    her emblem.
+  */
+  @media (width >= 40rem) and (width < 64rem) {
+    .suit-paper {
+      background-image: var(--card-paper);
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+      min-block-size: calc(100vw * 1.953);
+    }
+  }
+
+  /*
     **A reading ground for the sections that sit on her painted border.**
 
     Every sheet is a watercolour vignette — pines, pillars, mist — painted around
@@ -2038,7 +2128,15 @@
     fainter line. If it is picked up again, that is the thing to solve first.
   */
   @media (width < 64rem) {
-    .card-paper {
+    /*
+      `:not(.suit-paper)` because this is for *her card sheets*: it stretches
+      everything between a 14% band at each end, which works where a sheet is a
+      painted border around a quiet centre. Her suit washes run the full height
+      at the sides and reach into the middle, so there is no quiet band and the
+      stretch would land on the emblem. Those sheets size to their own aspect
+      instead — see `.suit-paper`.
+    */
+    .card-paper:not(.suit-paper) {
       --card-deckle: 14%;
 
       background-image: var(--card-paper), var(--card-paper), var(--card-paper);
