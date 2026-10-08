@@ -53,23 +53,31 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
       <LibraryIntro current={suit.slug} />
 
       {/*
-        **`--container-card-paper` is overridden here**, because her suit sheets
-        are ~1460 wide where the card sheets are 1337 and `.card-paper` paints
-        at `100% 100%` — the image takes the box's aspect, not its own. In the
-        card box the parchment was squeezed about 8% horizontally, which shows
-        on these sheets in a way it does not on a card's: a card's sheet is flat
-        grain with no figure to skew, while each of these has her emblem painted
-        into it.
+        **This is `.card-paper`, unmodified — the suit sheets take exactly the
+        card pages' construction.** One layer at `100% 100%` above `lg`, the
+        pinned bands below it, her phone sheet below `sm`. Nothing here is
+        special-cased, and a bug fixed on one page kind is fixed on both.
 
-        **`--measure-card-paper` is set, not `--container-card-paper`.** The
-        measure is declared on `:root`, where it is already computed from the
-        root's container value — so overriding the container on this element
-        would change nothing. The measure itself is what `.card-paper` reads,
-        and the expression mirrors the one in globals.css with 1460's own vw
-        term (1460 / 19.2 = 76.042).
+        A `.suit-paper` variant was tried and is gone. It began from a true
+        observation — `100% 100%` takes the box's aspect, not the image's — and
+        drew the wrong conclusion, that these sheets therefore needed their own
+        sizing. They do not: the card sheets stretch the same way and have
+        always looked right, because the stretch is a few percent on a page
+        whose content lands near the sheet's own proportions. What the variant
+        actually bought was `repeat-y`, which tiled her torn deckle down the
+        page and ended on a hard cut.
+
+        **The one thing that is per-suit is the width.** Her sheets are ~1460
+        where a card's is 1337, so `--measure-card-paper` is set from
+        `--container-suit-paper` — the measure rather than the container,
+        because the measure is computed on `:root` from the root's container
+        value and an override further down would resolve to nothing. The
+        expression mirrors globals.css with 1460's own vw term (1460 / 19.2 =
+        76.042), and is `lg:`-scoped because below that the measure is `100%`
+        for the full-bleed phone sheet.
       */}
       <div
-        className="card-paper suit-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
+        className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
         data-paper-mobile=""
         style={
           {

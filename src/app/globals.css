@@ -1722,66 +1722,6 @@
     width: 100%;
   }
 
-  /*
-    **The suit sheets never stretch, at any width.**
-
-    `.card-paper` above paints `100% 100%`, so the image takes the *box's*
-    aspect rather than its own — the box being content-driven, that is a
-    horizontal squeeze whenever the sheet is wider than the card measure and a
-    vertical one whenever the copy runs past the sheet's natural height. On a
-    card that is cheap: the note further down explains that her card sheets are
-    flat grain through the middle with no figure to skew. **Each suit sheet has
-    her emblem painted into it** — a chalice, a coin pouch, a sword, a torch —
-    and a stretched sword reads immediately.
-
-    So these take `100% auto` with `repeat-y`: full width at the asset's own
-    aspect, the remaining height tiled. Nothing bends, which is the whole point.
-    This is the fallback the card sheets' own note names, and it is the right
-    construction *here* for a reason it is not there: her suit washes are
-    heaviest at the top around the emblem and fade to near-plain parchment
-    below, so a seam falls in flat paper rather than restating a lamppost.
-
-    **Repetition is near zero where it matters.** At her design width the sheet
-    is 1460x2851 — an aspect of 0.512 — so its natural height at full width is
-    2852px, which is her own frame's sheet height. A desktop page lands close to
-    that, and only copy running well past hers reaches a second tile.
-
-    **`repeat-y` was tried here and is gone.** It never bends the sheet, which
-    is why it looked like the answer — but our page is always taller than her
-    frame's, because we add a masthead, the Library intro and its suit nav, and
-    a footer, none of which she draws. So the tile always came round, restating
-    her torn top deckle partway down the page and ending on a hard cut wherever
-    the content happened to stop.
-
-    What ships instead is the pinned-band construction the card sheets use
-    below `lg`, applied here at every width: her painted top pinned at its own
-    aspect, her painted bottom likewise, and the sheet stretched between them to
-    cover whatever height the content asks for. The deckles keep their
-    proportions, so neither torn edge skews; the emblem sits inside the top
-    band and is pinned with it.
-
-    `--suit-deckle` is 30%, far deeper than the card sheets' 14%. Her suit
-    washes are not a border around a pale centre — they run the full height of
-    the sheet at the sides and reach well into the middle — so the bands have
-    to carry the whole emblem and most of the colour, leaving only the quietest
-    part of the sheet to take the stretch.
-
-    `center` on the middle layer is exact rather than approximate, for the
-    reason the card block's own note proves: a layer of height `H − 2d` in a box
-    of height `H` lands at `d` when positioned at `d / 2d` = one half, whatever
-    `d` and `H` are.
-  */
-  .suit-paper {
-    --suit-deckle: 30%;
-
-    background-image: var(--card-paper), var(--card-paper), var(--card-paper);
-    background-position: center top, center bottom, center center;
-    background-repeat: no-repeat, no-repeat, no-repeat;
-    background-size:
-      100% auto,
-      100% auto,
-      100% calc(100% - 2 * var(--suit-deckle));
-  }
 
   /*
     **A reading ground for the sections that sit on her painted border.**
@@ -2098,13 +2038,7 @@
     fainter line. If it is picked up again, that is the thing to solve first.
   */
   @media (width < 64rem) {
-    /*
-      `:not(.suit-paper)` because this construction is for *her card sheets*.
-      A suit sheet takes `100% auto` with `repeat-y` at every width (see
-      `.suit-paper`), and inheriting three layers and two pinned deckles here
-      would undo it.
-    */
-    .card-paper:not(.suit-paper) {
+    .card-paper {
       --card-deckle: 14%;
 
       background-image: var(--card-paper), var(--card-paper), var(--card-paper);
