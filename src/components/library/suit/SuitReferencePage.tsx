@@ -92,16 +92,25 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
             Inside a sheet already inset from the page, it was costing another
             120px and reading as a deep horizontal pad on the column.
 
-            So this section zeroes the gutter and lets `cardWide` be the whole
-            inset — the sheet's own margins are already the edge this column
-            needs to clear. `.shell` reads `--spacing-gutter` inside its
-            `min()`, so setting it here is the whole change; the three sections
-            below keep the gutter as it is.
+            So this section spans the sheet itself. `--shell-width` takes the
+            sheet's own measure and the gutter goes to zero, which together
+            make the shell exactly as wide as the parchment — the sheet's
+            margins are then the only inset, and the column's apparent padding
+            is whatever the emblem reserve and the prose cap choose inside it.
+
+            **Zeroing the gutter alone did almost nothing**, which is worth
+            recording: `.shell` takes `min(--shell-width, 100% - 2 * gutter)`,
+            and inside a 1337px sheet those were 1234 and 1217 — so the gutter
+            term was winning by 17px and removing it moved the edge by exactly
+            that. The 103px that reads as padding was `cardWide` itself.
 
             `xl`-only, because below that the sheet is full-bleed and the gutter
             is the only thing holding the copy off the screen edge.
           */}
-          <Container width="cardWide" className="xl:[--spacing-gutter:0px]">
+          <Container
+            width="cardWide"
+            className="xl:[--shell-width:var(--measure-card-paper)] xl:[--spacing-gutter:0px]"
+          >
             {/*
               **No reading ground on this section, unlike the card pages.**
 
