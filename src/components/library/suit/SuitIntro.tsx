@@ -41,14 +41,19 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
         where her frame starts it. `aria-hidden` because there is nothing here
         to announce: the emblem is part of the page's background.
 
-        **Her share, not the card tile's.** This began as `CardEssay`'s
-        `min(14.5rem, 25.1vw)`, which reserves about 22% of the measure for a
-        *card* — and left the writing column too narrow here. Measured on all
-        four frames, her prose begins 11.6–17.2% into the sheet (Swords least,
-        Pentacles most), averaging 14.4%. 15% is that average rounded, and it
-        gives the second column the room it was short of.
+        **A quarter of the row, so the writing takes the other three.** This
+        figure has been wrong in both directions: it began as `CardEssay`'s
+        `min(14.5rem, 25.1vw)` — the card-tile slot, which left the column
+        cramped — and was then cut to 15% off a pixel measurement of where her
+        prose starts, which overshot the other way and made it too wide.
+
+        Pixel-measuring those edges is unreliable: her wash reaches into the
+        margin at different densities per suit, so a threshold that finds the
+        text on Swords finds watercolour on Pentacles. 25% is set against the
+        rendered page instead, which is the thing the proportion is actually
+        judged on.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[15%]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[25%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**
@@ -78,13 +83,14 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           1:1: the sheet is inset in her frame and the page carries its own
           `--content-scale` and `--card-scale` on top, so a figure taken from
           her pixels has to be read against the rendered page rather than
-          multiplied out. Checked against the real page, the title wants about
-          50px at desktop where `--text-card-name` gives 48.
+          multiplied out. Judged there, the title wants 58px at desktop where
+          `--text-card-name` gives 48.
 
-          So this is a small local nudge rather than a departure, and it is
-          local because the twenty-two card pages read the shared token.
+          The vw term is 58/19.2 to match, and the floor keeps the same ratio
+          to the maximum that the shared token does. Local because the
+          twenty-two card pages read that token.
         */}
-        <div className="[--text-card-name:clamp(1.875rem,2.6vw,3.125rem)]">
+        <div className="[--text-card-name:clamp(2.125rem,3.02vw,3.625rem)]">
           <CardHeader heading={title} />
         </div>
 
