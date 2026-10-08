@@ -21,11 +21,17 @@ import { suitPaper, suitPaperMobile } from "@/lib/assets";
  * in the same box. See `CardReferencePage` for why those exist; nothing about
  * them is re-derived here.
  *
- * **Her sheets are wider than a card's** — about 1460 against 1337 — which
- * costs nothing: `.card-paper` is a box the image fills, so a sheet's own width
- * is only its aspect, and all four suits share one. The aspect is checked at
- * conversion time (`scripts/optimize-suit-assets.mjs`) because an export
- * trimmed to layer bounds breaks it, and did once.
+ * **The sheet takes the card measure and its own aspect.** Her suit parchments
+ * are ~1460x2850 where a card's is 1337x2995, and the page briefly gave them a
+ * wider measure to match — which only made them read oversized beside the card
+ * pages. The width is the card's again; what makes them undistorted is
+ * `.suit-paper`, which sizes the box to the sheet's own proportions so there is
+ * nothing for the picture to stretch into. See that rule for the two
+ * constructions tried before it.
+ *
+ * All four sheets share one aspect, checked at conversion time
+ * (`scripts/optimize-suit-assets.mjs`) because an export trimmed to layer
+ * bounds breaks it, and did once.
  *
  * **What this page does not have**: no numeral, no `AppearsPanel`, no
  * `ShadowPanel`, no `MetaStrip` — a suit has no element, planet, sign or
@@ -53,31 +59,20 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
       <LibraryIntro current={suit.slug} />
 
       {/*
-        **This is `.card-paper`, unmodified — the suit sheets take exactly the
-        card pages' construction.** One layer at `100% 100%` above `lg`, the
-        pinned bands below it, her phone sheet below `sm`. Nothing here is
-        special-cased, and a bug fixed on one page kind is fixed on both.
+        `.card-paper` for the measure, the phone sheet and the rest of the
+        construction; `.suit-paper` for the one thing that differs, which is
+        that this sheet is sized to its own proportions rather than to the
+        content's. See `.suit-paper` in globals.css.
 
-        A `.suit-paper` variant was tried and is gone. It began from a true
-        observation — `100% 100%` takes the box's aspect, not the image's — and
-        drew the wrong conclusion, that these sheets therefore needed their own
-        sizing. They do not: the card sheets stretch the same way and have
-        always looked right, because the stretch is a few percent on a page
-        whose content lands near the sheet's own proportions. What the variant
-        actually bought was `repeat-y`, which tiled her torn deckle down the
-        page and ended on a hard cut.
-
-        **The one thing that is per-suit is the width.** Her sheets are ~1460
-        where a card's is 1337, so `--measure-card-paper` is set from
-        `--container-suit-paper` — the measure rather than the container,
-        because the measure is computed on `:root` from the root's container
-        value and an override further down would resolve to nothing. The
-        expression mirrors globals.css with 1460's own vw term (1460 / 19.2 =
-        76.042), and is `lg:`-scoped because below that the measure is `100%`
-        for the full-bleed phone sheet.
+        **The bottom padding is this page's own, not the card page's.** That one
+        is `12.708vw` — 244px at 1920 — and it exists because her card frames
+        run 305px of empty paper past the closing line. Her suit frames end much
+        closer to the unfolding block, and carrying the card figure here pushed
+        the box past the height of one sheet, which is what made the parchment
+        appear to repeat.
       */}
       <div
-        className="card-paper suit-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
+        className="card-paper suit-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(1.5rem*var(--card-scale)),calc(5vw*var(--card-scale)),calc(6rem*var(--card-scale)))]"
         data-paper-mobile=""
         style={
           {
@@ -89,10 +84,10 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
           {/*
             **`cardWide`, not `card`.** The narrower measure is her *card*
-            prose column, and inside a suit sheet it left 212px of parchment
-            either side where her own frame leaves about 100. `cardWide` is
-            1234 against the sheet's 1460, which lands within a dozen pixels
-            of hers.
+            prose column; her suit frames set the writing wider than that
+            against the sheet, leaving roughly 100px of parchment either side
+            where `card` leaves well over twice as much. `cardWide` is 1234
+            against the sheet's 1337.
           */}
           <Container width="cardWide">
             {/*

@@ -251,19 +251,6 @@
   /* Her sheet of paper, `Layer 21`, which every block on that page sits inside. */
   --container-card-paper: 1337px;
   /*
-    **The suit pages' sheet, which is wider than a card's.**
-
-    Her four suit parchments are ~1460x2850 where the card sheets are 1337x2995,
-    and `.card-paper` paints at `background-size: 100% 100%` — the image takes
-    the *box's* aspect, not its own. So a suit sheet in the card box was
-    squeezed about 8% horizontally. This is the box it wants instead.
-
-    `.card-paper` reads `--measure-card-paper`, which is derived from this
-    token at both breakpoints, so a suit page overrides the container and the
-    rest follows.
-  */
-  --container-suit-paper: 1460px;
-  /*
     The closing line's own box on that page. Her frame draws it at 513px —
     narrow enough that "The invitation is not to know - / it is to begin"
     breaks where she breaks it rather than running on one line in the 1035px
@@ -1781,12 +1768,28 @@
   }
 
   /*
-    Above `lg` the floor is read off the measure, which is the width this box
-    actually takes.
+    Above `lg` the sheet is **exactly** its own aspect — a floor and a ceiling,
+    both read off the measure, which is the width this box actually takes.
+
+    The ceiling is what stops the parchment showing twice. With a floor alone
+    the box could still grow past the sheet, and then the single painted layer
+    ends partway down with her torn bottom deckle across the middle of the page
+    and bare ground beneath it — which reads as the sheet repeating.
+
+    **There is room for the content inside one sheet**, which is what makes the
+    cap safe: at the card measure the sheet stands 2611px tall, and the page's
+    five blocks and their rhythm fit inside that with parchment to spare — her
+    own frames end well short of their bottom deckle.
+
+    `overflow: visible` is deliberate rather than default-by-accident. If a
+    future suit's copy ever did outgrow the sheet, the words run past her
+    bottom edge where they can be seen and fixed; `hidden` would silently cut
+    them off, and `auto` would put a scrollbar inside a page.
   */
   @media (width >= 64rem) {
     .suit-paper {
-      min-block-size: calc(var(--measure-card-paper) * 1.953);
+      block-size: calc(var(--measure-card-paper) * 1.953);
+      overflow: visible;
     }
   }
 
