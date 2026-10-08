@@ -120,7 +120,15 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(calc(1.25rem*var(--card-scale)),calc(3.6vw*var(--card-scale)),calc(4.25rem*var(--card-scale)))]">
+        {/*
+          **A wide gap above KEY THEMES**, wider than the rhythm between the
+          blocks below it. The rule has to clear the emblem painted into the
+          sheet — on Pentacles her coin pouch reaches furthest down — and this
+          gap is the second of the two controls that do it, the first being the
+          prose measure in `SuitIntro`. If the rule ever collides with an
+          emblem again, this is the cheaper of the two to raise.
+        */}
+        <Section padding="none" className="mt-[clamp(calc(2.25rem*var(--card-scale)),calc(7vw*var(--card-scale)),calc(8.4rem*var(--card-scale)))]">
           <Container width="cardWide">
             {/*
               The ground runs the full measure here, unlike the opening section
