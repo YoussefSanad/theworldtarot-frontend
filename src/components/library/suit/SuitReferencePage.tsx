@@ -136,11 +136,22 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           exactly as the card pages do — so `action={null}` and `hugRule`, for
           the reasons `CardReferencePage` records on the same call.
         */}
+        {/*
+          **`card`, not `cardClosing`.** That measure is 640px — her *card*
+          pages' closing box, narrow on purpose so a two-line saying breaks
+          where she breaks it. Her suit sayings are longer and were wrapping to
+          four and five lines inside it; `card` is 1035 and lets each sit on the
+          two she draws.
+
+          The gap above is this page's own too. The card figure is `1.042vw`,
+          which sets the saying tight under a meta strip; here it follows the
+          three sphere cards and wants air between.
+        */}
         <ClosingSaying
-          className="mt-[clamp(calc(0.313rem*var(--card-scale)),calc(1.042vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))]"
+          className="mt-[clamp(calc(1.5rem*var(--card-scale)),calc(4.2vw*var(--card-scale)),calc(5rem*var(--card-scale)))]"
           saying={content.closing}
           action={null}
-          width="cardClosing"
+          width="card"
           rule="green"
           tone="ink"
           hugRule

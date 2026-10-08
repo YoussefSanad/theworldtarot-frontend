@@ -53,14 +53,15 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
         the rendered page instead, which is the thing the proportion is
         actually judged on.
 
-        **Half the row, at the client's direction.** The figure has moved
-        several times — the card tile's 25.1vw, then 15%, 25%, 20% — because
-        two other things were distorting what it looked like: the sheet was
-        being squeezed horizontally (see `.suit-paper`) and the section sat in
-        the narrower `card` measure. Both are fixed, and 50% is the proportion
-        judged against the corrected page.
+        **A third of the row**, which is what the writing column needs to carry
+        a 72px title without breaking it across two lines. The figure has moved
+        repeatedly — the card tile's 25.1vw, then 15%, 25%, 20%, 50% — mostly
+        because two other faults were distorting how it read: the sheet was
+        being squeezed horizontally and the section sat in the narrower `card`
+        measure. Both are long fixed, so this is the proportion judged against
+        a correct page.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[50%]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[33%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**
@@ -97,7 +98,7 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           to the maximum that the shared token does. Local because the
           twenty-two card pages read that token.
         */}
-        <div className="[--text-card-name:clamp(2.125rem,3.02vw,3.625rem)]">
+        <div className="[--text-card-name:clamp(2.625rem,3.75vw,4.5rem)]">
           <CardHeader heading={title} />
         </div>
 
