@@ -141,27 +141,44 @@ this one needs no credentials and is committed; re-running it is the documented
 way to redo the conversion. The sources stay in `asset dump/`, not in `public/`,
 because everything under `public/` is deployed.
 
+## The suit pages
+
+Each suit gets **one** page describing the suit — not a page per card. All four
+are built from the client's frames and live in `suit/`, which has its own
+README covering what they share with the card pages and what they deliberately
+do not.
+
+Two things worth knowing from here:
+
+- **Her emblems are painted into the parchments.** There is no emblem component;
+  `SuitIntro` is the card page's two-column arrangement with the first column
+  empty, so the sheet's own artwork shows through where a card's tile would be.
+- **`CardHeader`, `Keywords` and `LookFor` are shared with the card pages**, so a
+  change to any of them lands on both kinds at once. `CardEssay` is not shared,
+  and `suit/README.md` says why.
+
+The four routes are their own directories rather than another dynamic segment —
+static segments beat `[card]` in Next's matching, which is what stops
+`/library/cups-tarot-suit-meaning/` resolving as a card. They carry the SEO
+pattern `suitPath` spells, applied when the real pages landed.
+
 ## What is deliberately unfinished
 
-The twenty-two card pages and the four suit pages are **placeholders**, and
-`ComingSoonPage` is a statement that the content does not exist yet rather than
-a template for what will:
+`ComingSoonPage` is a statement that content does not exist yet rather than a
+template for what will — and **both routes that can reach it are now unreachable
+in practice**, because every card and every suit carries copy:
 
-- The Fool's page is the confirmed template for all twenty-two Major Arcana and
-  has its own issue. The other twenty-one are waiting on the client for artwork
-  and text.
-- Each suit gets **one** page describing the suit — not a page per card — and
-  each is to have its own design rather than share a template. None have been
-  drawn.
+- **A card with no `content`.** All twenty-two Major Arcana have theirs; the arm
+  stays in `[card]/page.tsx` because the deck is the client's to revise.
+- **A suit with no `content`.** All four have theirs; the arm stays in
+  `SuitPage` for the same reason.
 
-They were still worth routing: the grid links to twenty-two cards and the
-navigation to four suits, and a page that answers beats a 404 while she writes
-them. They keep the masthead and the suit navigation so a visitor who lands
+Neither branch is dead code. Each costs one `if` and means that copy pulled
+back for a rewrite answers with a page rather than a 404 — which is the state
+both routes were in for most of their existence, when the grid linked to
+twenty-two cards and the navigation to four suits that had nothing behind them
+yet. Both keep the masthead and the suit navigation, so a visitor who lands
 there is still somewhere and can leave the way they came.
-
-The four suit routes are their own directories rather than another dynamic
-segment — static segments beat `[card]` in Next's matching, which is what stops
-`/library/swords/` resolving as a card named "swords".
 
 ## The active state is an addition
 

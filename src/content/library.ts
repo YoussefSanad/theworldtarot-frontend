@@ -23,6 +23,7 @@ import {
   theWorld,
   type MajorArcanaContent,
 } from "@/content/card-content";
+import { cups, pentacles, swords, wands, type SuitContent } from "@/content/suit-content";
 import { libraryCards } from "@/lib/assets";
 import type { ImageAsset } from "@/lib/assets";
 
@@ -161,6 +162,9 @@ const SUIT_SUFFIX = "-tarot-suit-meaning";
  */
 export const CARD_PATH_PATTERN = /^\/library\/[a-z]+(?:-[a-z]+)*-tarot-meaning\/$/;
 
+/** The suit equivalent, for the same reason: the brief is checked, not restated. */
+export const SUIT_PATH_PATTERN = /^\/library\/[a-z]+(?:-[a-z]+)*-tarot-suit-meaning\/$/;
+
 export function cardPath(card: MajorArcanaCard): string {
   return `/library/${card.slug}${CARD_SUFFIX}/`;
 }
@@ -186,18 +190,32 @@ export type Suit = {
   /** As a heading reads it, where caps would be shouting. */
   readonly title: string;
   readonly href: string;
+  /**
+   * Her copy for this suit, if it exists.
+   *
+   * **Optional for the same reason `MajorArcanaCard.content` is**: a suit whose
+   * words have not arrived still has a route, and answers with the holding page
+   * rather than a 404. All four carry copy today, so the empty arm is
+   * unreachable — it costs one line and makes a suit whose copy is pulled a
+   * content change rather than a code change.
+   */
+  readonly content?: SuitContent;
 };
 
 /**
  * The four suits, each of which gets **one** reference page describing the suit
- * — not a page per card. Their designs are the client's to draw and none have
- * arrived, so the routes exist and say so rather than 404ing.
+ * — not a page per card.
+ *
+ * **`href` carries the SEO pattern now**, where it was `/library/{slug}/` while
+ * the pages were placeholders. `suitPath` below is the single spelling of that
+ * pattern; these four literals and the four route directories are what it
+ * describes.
  */
 export const suits: readonly Suit[] = [
-  { slug: "swords", label: "SWORDS", title: "Swords", href: "/library/swords/" },
-  { slug: "cups", label: "CUPS", title: "Cups", href: "/library/cups/" },
-  { slug: "wands", label: "WANDS", title: "Wands", href: "/library/wands/" },
-  { slug: "pentacles", label: "PENTACLES", title: "Pentacles", href: "/library/pentacles/" },
+  { slug: "swords", label: "SWORDS", title: "Swords", href: `/library/swords${SUIT_SUFFIX}/`, content: swords },
+  { slug: "cups", label: "CUPS", title: "Cups", href: `/library/cups${SUIT_SUFFIX}/`, content: cups },
+  { slug: "wands", label: "WANDS", title: "Wands", href: `/library/wands${SUIT_SUFFIX}/`, content: wands },
+  { slug: "pentacles", label: "PENTACLES", title: "Pentacles", href: `/library/pentacles${SUIT_SUFFIX}/`, content: pentacles },
 ];
 
 export function findSuit(slug: string): Suit | undefined {
@@ -205,12 +223,13 @@ export function findSuit(slug: string): Suit | undefined {
 }
 
 /**
- * A suit's SEO path — **confirmed, and not yet applied.**
+ * A suit's SEO path, and **the single spelling of the pattern.**
  *
- * The four suit routes still answer at `/library/swords/` and keep their
- * placeholder pages until their designs arrive. This lives here so the pattern
- * is recorded in code rather than only in the ticket, and so the rename, when
- * it comes, is this one line plus four directory moves.
+ * It was recorded here as "confirmed, and not yet applied" while the four
+ * routes answered at `/library/swords/` with holding pages — applying it was
+ * always "this one line plus four directory moves", and that is what the move
+ * to her real pages did. `suits[].href` and the four route directories now both
+ * follow it; a test asserts they agree.
  */
 export function suitPath(suit: Suit): string {
   return `/library/${suit.slug}${SUIT_SUFFIX}/`;
@@ -223,6 +242,26 @@ export function suitPath(suit: Suit): string {
  * nothing from the framework, which is the rule the whole content layer keeps —
  * it is copy, and copy is what a CMS would one day own.
  */
+/**
+ * A suit's meta description: hers when she has written one, the generated
+ * sentence otherwise.
+ *
+ * The fallback is what every suit answered with while the pages were
+ * placeholders, and it stays for the same reason the holding page does — a suit
+ * whose copy is pulled should still describe itself to a search engine rather
+ * than ship `undefined`.
+ *
+ * **Its own exported function so that arm can be tested**, since no real suit
+ * reaches it: all four carry copy, so the only way to exercise the fallback is
+ * to call this with a constructed `Suit`.
+ */
+export function suitDescription(suit: Suit): string {
+  return (
+    suit.content?.metaDescription ??
+    `The suit of ${suit.title} in the Minor Arcana of The World Tarot.`
+  );
+}
+
 export function suitMeta(slug: string): { title: string; description: string } {
   const suit = findSuit(slug);
 
@@ -230,10 +269,7 @@ export function suitMeta(slug: string): { title: string; description: string } {
     throw new Error(`Unknown suit "${slug}"`);
   }
 
-  return {
-    title: suit.title,
-    description: `The suit of ${suit.title} in the Minor Arcana of The World Tarot.`,
-  };
+  return { title: suit.title, description: suitDescription(suit) };
 }
 
 /**

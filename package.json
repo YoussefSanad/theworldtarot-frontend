@@ -14,6 +14,7 @@
     "assets:media": "node scripts/stage-media.mjs",
     "assets:card": "node scripts/optimize-card-assets.mjs",
     "assets:packets": "node scripts/optimize-packet-assets.mjs",
+    "assets:suits": "node scripts/optimize-suit-assets.mjs",
     "check:corners": "node scripts/check-shadow-corners.mjs",
     "check:shoot": "node scripts/shoot.mjs",
     "check:measure": "node scripts/measure.mjs",

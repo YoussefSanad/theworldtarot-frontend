@@ -21,6 +21,21 @@ import { cn } from "@/lib/cn";
  *
  * The separators are drawn by CSS rather than typed between the links, so they
  * are never read aloud as "pipe" and never end up inside a link's own text.
+ *
+ * **`scroll={false}` on every link, which is the second addition here.** Next's
+ * default on a route change is to put the window back at the top of the
+ * document, and that is right for a link that takes you somewhere else. These
+ * five do not: they swap what is under one masthead that every destination
+ * draws identically, so the strip itself sits at the same place on the grid and
+ * on all four suits. Scrolling to the top therefore threw the visitor ~500px
+ * above the control they had just used — the Library's masthead is that tall —
+ * and comparing two suits meant scrolling back down after each click. Holding
+ * the position leaves the nav under the cursor, so the pages read as the tabs
+ * they are drawn as.
+ *
+ * It is safe in both directions: the grid frame is 3772px against a suit's
+ * 3237, so leaving a suit for the cards cannot land past the end of the page,
+ * and a browser clamps the offset to the document anyway.
  */
 export function SuitNav({ current }: { current?: string }) {
   const items = [majorArcanaNav, ...suits.map((suit) => ({ label: suit.label, href: suit.href, slug: suit.slug }))];
@@ -37,6 +52,7 @@ export function SuitNav({ current }: { current?: string }) {
             <li key={item.href}>
               <Link
                 href={item.href}
+                scroll={false}
                 aria-current={isCurrent ? "page" : undefined}
                 className={cn("library-suit-nav__link", isCurrent && "is-current")}
               >

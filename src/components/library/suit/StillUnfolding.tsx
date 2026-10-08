@@ -1,0 +1,52 @@
+/**
+ * The block that closes a suit page: a bold line saying the suit is not
+ * finished, over the note about cards arriving.
+ *
+ * **This is her design for the page as it stands, not a placeholder of ours.**
+ * The fifty-six Minor Arcana have neither copy nor artwork, and rather than
+ * leave the question hanging her frame answers it in the page. When those cards
+ * land, this is where their grid goes.
+ *
+ * The copy is per suit because the singular is — "each Cup", "each Pentacle",
+ * "each Sword", "each Wand" — so both lines are stored whole in
+ * `suit-content.ts` and nothing is assembled from the suit's name.
+ */
+export function StillUnfolding({
+  heading,
+  body,
+}: {
+  heading: string;
+  body: readonly string[];
+}) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      {/*
+        **Bold, and in the suit navy** — her frame sets this line heavier than
+        anything else on the page bar the keyword line, and in the same navy as
+        the body rather than the black the saying above it takes.
+      */}
+      <h2 className="font-serif text-card-lead font-bold leading-none tracking-[0.02em] text-suit-ink">
+        {heading}
+      </h2>
+
+      {/*
+        **Her line breaks, kept.** The block is three short centred lines in
+        every frame rather than a paragraph that wraps, so each is its own
+        element — the same reasoning as `ClosingSaying`'s `saying` array.
+      */}
+      {/*
+        `--text-card-body` rather than the `--text-card-label` the intro
+        paragraphs take: 24px against 22. Her frame sets this block a step
+        larger than the essay above it, which reads as the page's closing note
+        rather than more body copy.
+      */}
+      <div className="mt-[clamp(calc(0.5rem*var(--card-scale)),calc(1.04vw*var(--card-scale)),calc(1.25rem*var(--card-scale)))] flex flex-col">
+        {body.map((line) => (
+          <p key={line} className="font-light text-card-body tracking-[0.01em] text-suit-ink">
+            {line}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}

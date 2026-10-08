@@ -141,7 +141,7 @@ export function CardReferencePage({
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
           <Container width="card">
             <div className="card-reading-ground flex flex-col">
-              <CardHeader card={card} />
+              <CardHeader heading={card.name} eyebrow={card.numeral} />
 
               <div className="pt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
                 <CardEssay card={card} content={content} />

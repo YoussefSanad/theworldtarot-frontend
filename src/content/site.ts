@@ -1,4 +1,5 @@
 import type { SocialIconName } from "@/components/ui/SocialIcon";
+import { majorArcanaNav, suits } from "@/content/library";
 import { signInPath } from "@/content/login";
 import { icons } from "@/lib/assets";
 
@@ -63,7 +64,27 @@ export const primaryNav: NavItem[] = [
       { label: "IN DEPTH", href: "/readings/in-depth/", productKey: "in-depth" },
     ],
   },
-  { label: "LIBRARY", href: "/library/" },
+  {
+    /**
+     * **The label navigates and the panel opens**, the arrangement READINGS
+     * already has: LIBRARY goes to the grid, hovering it offers the four suits.
+     *
+     * **The first row is a deliberate redundancy**, asked for by the client.
+     * The note on `NavGroup` above records that READINGS dropped its OVERVIEW
+     * child because a row repeating the group's own destination was that
+     * destination offered twice — which this row is. It is labelled MAJOR
+     * ARCANA rather than LIBRARY so it reads as the thing it points at, the
+     * grid, rather than as an echo of the label above it. That is also what
+     * `SuitNav` calls the same link.
+     *
+     * The children are built from `majorArcanaNav` and `suits` rather than
+     * written out, so this panel and the strip above the grid cannot drift
+     * apart — and so the suits' SEO URLs are spelled in `library.ts` alone.
+     */
+    label: "LIBRARY",
+    href: "/library/",
+    children: [majorArcanaNav, ...suits.map(({ label, href }) => ({ label, href }))],
+  },
   { label: "FAQ", href: "/faq" },
 ];
 

@@ -158,6 +158,20 @@
   --color-card-ink-soft: #000000; /* her body copy */
   --color-card-forest: #000000; /* the rules, and the LOOK FOR prose */
   /*
+    **The suit pages' navy, which the card pages do not use.**
+
+    Her four suit frames are set in two inks rather than the card pages' one:
+    black for the title and the keyword line, and this navy for everything
+    else — the three paragraphs, KEY THEMES and its lines, the sphere cards,
+    the closing saying and the unfolding block. Sampled from her `CUPS.psd`
+    at `#17335d`, and the client confirmed the split.
+
+    **It is a separate token rather than a change to the three above**, because
+    those were taken to pure black at her request for the card pages and the
+    twenty-two must not move. The suit pages opt in; nothing else reads this.
+  */
+  --color-suit-ink: #17335d;
+  /*
     **The dark panels' ground, which is not the ink above.**
 
     `--color-card-ink` was doing two jobs: the page's dark *type* on the sheet,
@@ -1695,6 +1709,129 @@
     width: 100%;
   }
 
+
+  /*
+    **The suit sheets are never stretched, on either axis.**
+
+    `.card-paper` paints `100% 100%`, which hands the image the *box's* aspect.
+    On a card that costs nothing — her card sheets are flat grain through the
+    middle, and a page whose content lands near the sheet's own proportions
+    stretches it by a few percent that nothing in the picture shows. **Each
+    suit sheet has her emblem painted into it**, a chalice or a sword or a
+    torch, and those skew visibly at the same few percent.
+
+    Two attempts at this failed and are worth recording, because each looked
+    like the obvious fix:
+
+    - **`repeat-y` with `100% auto`.** Never bends the sheet, which is why it
+      seemed right. But our page is always taller than her frame — we add a
+      masthead, the Library intro with its suit nav, and a footer, none of
+      which she draws — so the tile always came round, restating her torn top
+      deckle partway down and ending on a hard cut.
+    - **The pinned-band construction**, borrowed from the card sheets' phone
+      layout. That works where a sheet is a painted border around a quiet
+      centre; her suit washes run the full height at the sides and reach well
+      into the middle, so there is no quiet band to stretch.
+
+    What works is to stop the box from ever being a shape the sheet has to fill.
+    `min-block-size` derives the sheet's natural height from its own inline
+    size, so the box *starts* at the image's true proportions and the picture
+    is painted at `100% auto` — full width, its own aspect, pinned to the top.
+    Content shorter than the sheet leaves her parchment showing below it, which
+    is what her frame draws anyway.
+
+    **The floor is derived from the measure, not from a container query.**
+    `cqw` would need `container-type: inline-size` on this element, and the
+    sheet is an ancestor of boxes that resolve their own `cqw` — the sphere
+    cards size their type against `OrnateFrame`. Those have containers of their
+    own in between, so it would most likely be harmless, but "most likely" is
+    not a reason to introduce a containment context the layout never asked for.
+    `--measure-card-paper` is exactly the width this box takes, so the height
+    can be read straight off it.
+
+    `aspect-ratio` is the other thing not used here, and the note on
+    `.appears-panel__ground` sets out why at length: it can convert a *height*
+    back into a width, so a box in a stretched grid cell feeds its sibling's
+    height into its own measure. A floor computed from the measure only ever
+    travels one way.
+
+    The ratio is one number for all four — her sheets are 1.9466 to 1.9545 high
+    per unit wide, a 0.4% spread — so 1.953 fits every one within half a percent.
+
+    **If content ever outruns the sheet**, the box grows past the floor and the
+    image simply stops where it stops, on her bottom deckle, with the page's own
+    atmosphere behind the remainder. That is a seam, not a stretch, and it is
+    the failure this construction chooses: her chalice keeps its shape.
+  */
+  .suit-paper {
+    background-size: 100% auto;
+  }
+
+  /*
+    Above `lg` the sheet is **exactly** its own aspect — a floor and a ceiling,
+    both read off the measure, which is the width this box actually takes.
+
+    The ceiling is what stops the parchment showing twice. With a floor alone
+    the box could still grow past the sheet, and then the single painted layer
+    ends partway down with her torn bottom deckle across the middle of the page
+    and bare ground beneath it — which reads as the sheet repeating.
+
+    **There is room for the content inside one sheet**, which is what makes the
+    cap safe: at the card measure the sheet stands 2611px tall, and the page's
+    five blocks and their rhythm fit inside that with parchment to spare — her
+    own frames end well short of their bottom deckle.
+
+    **A floor, not a fixed height.** It was `block-size` for a while, to stop
+    the box growing past one sheet — but the page's own layout now deliberately
+    runs the first section tall, so that the KEY THEMES rule clears the emblem
+    painted into the sheet (see `SuitIntro`'s prose measure). A hard height
+    would have put those extra lines outside the parchment.
+
+    So the sheet is at least its own proportions and grows with the content,
+    and the picture is `cover` rather than `100% auto` past that point.
+
+    **`cover` is what makes growth safe**, and it is the one sizing that fails
+    in none of the ways the others do. `100% 100%` stretches. `100% auto` with
+    `repeat-y` tiles her torn deckle down the page. `100% auto` alone stops
+    where the image stops and shows bare ground beneath. `cover` scales the
+    sheet up until it fills the box, keeping its aspect exactly — so a taller
+    box means a slightly larger parchment, not a distorted or a repeated one.
+
+    What it costs is the sides: a box taller than the sheet's own proportions
+    crops a little off each edge, where the deckle is. The floor keeps that
+    crop small, since the box only ever exceeds the sheet's height by the
+    amount the content overruns it.
+  */
+  @media (width >= 64rem) {
+    .suit-paper {
+      background-size: cover;
+      min-block-size: calc(var(--measure-card-paper) * 1.953);
+    }
+  }
+
+  /*
+    **Between `sm` and `lg` the sheet is full-bleed, so the floor is `vw`.**
+    `--measure-card-paper` is the literal `100%` in that band — a percentage of
+    the parent, which cannot be multiplied into a height — and the box spans the
+    viewport, so `100vw` is the same number expressed in a unit that can be.
+
+    This window also has to opt out of the pinned-band construction the card
+    sheets use here. That design stretches everything between a 14% band at each
+    end, which is right for a sheet painted as a border around a quiet centre
+    and wrong for these: her suit washes run the full height at the sides and
+    reach into the middle, so there is no quiet band and the stretch lands on
+    her emblem.
+  */
+  @media (width >= 40rem) and (width < 64rem) {
+    .suit-paper {
+      background-image: var(--card-paper);
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+      min-block-size: calc(100vw * 1.953);
+    }
+  }
+
   /*
     **A reading ground for the sections that sit on her painted border.**
 
@@ -1775,6 +1912,12 @@
     font-family: var(--font-serif);
     font-size: var(--text-card-lead);
 
+    /*
+      **The default, for a caller that sets nothing.** `LookFor` overrides it
+      inline from the label's own length — the suit pages put "KEY THEMES" in
+      this rule, which is longer than "LOOK FOR:" and would sit on the line at a
+      fixed 12ch. See `lookForGap` in look-for-gap.ts.
+    */
     --look-for-gap: 12ch;
 
     -webkit-mask-image: linear-gradient(
@@ -2004,7 +2147,15 @@
     fainter line. If it is picked up again, that is the thing to solve first.
   */
   @media (width < 64rem) {
-    .card-paper {
+    /*
+      `:not(.suit-paper)` because this is for *her card sheets*: it stretches
+      everything between a 14% band at each end, which works where a sheet is a
+      painted border around a quiet centre. Her suit washes run the full height
+      at the sides and reach into the middle, so there is no quiet band and the
+      stretch would land on the emblem. Those sheets size to their own aspect
+      instead — see `.suit-paper`.
+    */
+    .card-paper:not(.suit-paper) {
       --card-deckle: 14%;
 
       background-image: var(--card-paper), var(--card-paper), var(--card-paper);
