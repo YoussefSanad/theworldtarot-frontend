@@ -1781,15 +1781,31 @@
     five blocks and their rhythm fit inside that with parchment to spare — her
     own frames end well short of their bottom deckle.
 
-    `overflow: visible` is deliberate rather than default-by-accident. If a
-    future suit's copy ever did outgrow the sheet, the words run past her
-    bottom edge where they can be seen and fixed; `hidden` would silently cut
-    them off, and `auto` would put a scrollbar inside a page.
+    **A floor, not a fixed height.** It was `block-size` for a while, to stop
+    the box growing past one sheet — but the page's own layout now deliberately
+    runs the first section tall, so that the KEY THEMES rule clears the emblem
+    painted into the sheet (see `SuitIntro`'s prose measure). A hard height
+    would have put those extra lines outside the parchment.
+
+    So the sheet is at least its own proportions and grows with the content,
+    and the picture is `cover` rather than `100% auto` past that point.
+
+    **`cover` is what makes growth safe**, and it is the one sizing that fails
+    in none of the ways the others do. `100% 100%` stretches. `100% auto` with
+    `repeat-y` tiles her torn deckle down the page. `100% auto` alone stops
+    where the image stops and shows bare ground beneath. `cover` scales the
+    sheet up until it fills the box, keeping its aspect exactly — so a taller
+    box means a slightly larger parchment, not a distorted or a repeated one.
+
+    What it costs is the sides: a box taller than the sheet's own proportions
+    crops a little off each edge, where the deckle is. The floor keeps that
+    crop small, since the box only ever exceeds the sheet's height by the
+    amount the content overruns it.
   */
   @media (width >= 64rem) {
     .suit-paper {
-      block-size: calc(var(--measure-card-paper) * 1.953);
-      overflow: visible;
+      background-size: cover;
+      min-block-size: calc(var(--measure-card-paper) * 1.953);
     }
   }
 

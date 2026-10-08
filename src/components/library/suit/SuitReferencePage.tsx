@@ -81,7 +81,7 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           } as React.CSSProperties
         }
       >
-        <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
+        <Section padding="none" className="pt-[clamp(calc(3rem*var(--card-scale)),calc(9.5vw*var(--card-scale)),calc(11.4rem*var(--card-scale)))]">
           {/*
             **`cardWide`, widened further to the sheet's own measure.**
 
@@ -112,16 +112,9 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
             className="xl:[--shell-width:var(--measure-card-paper)] xl:[--spacing-gutter:0px]"
           >
             {/*
-              **No reading ground on this section, unlike the card pages.**
-
-              `.card-reading-ground` exists because a card's sheet is a
-              watercolour vignette painted *around* a pale centre, so copy that
-              reaches the sides loses its ground and black type goes dark on
-              dark. Her suit sheets are the opposite composition: the wash is
-              heaviest where the emblem is, and the column the writing occupies
-              is the palest part of the sheet. A wash here had nothing to
-              correct and read as a panel laid over her painting — which is the
-              failure mode that rule's own note warns about.
+              The reading ground is inside `SuitIntro`, on the writing column
+              alone rather than on this section — the emblem's half of the sheet
+              has to stay uncovered. See that component.
             */}
             <SuitIntro title={suit.title} content={content} />
           </Container>
