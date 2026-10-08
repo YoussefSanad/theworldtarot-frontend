@@ -53,15 +53,18 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
         the rendered page instead, which is the thing the proportion is
         actually judged on.
 
-        **A third of the row**, which is what the writing column needs to carry
-        a 72px title without breaking it across two lines. The figure has moved
-        repeatedly — the card tile's 25.1vw, then 15%, 25%, 20%, 50% — mostly
-        because two other faults were distorting how it read: the sheet was
-        being squeezed horizontally and the section sat in the narrower `card`
-        measure. Both are long fixed, so this is the proportion judged against
-        a correct page.
+        **A quarter of the row.** What sets the floor is the keyword line:
+        "EMOTION · INTUITION · CONNECTION" is 34 characters of bold Cinzel caps
+        at up to 36px, which wants roughly 760px and wrapped to two lines when
+        the column gave it 827. A quarter leaves about 925.
+
+        The figure has moved repeatedly — the card tile's 25.1vw, then 15%, 25%,
+        20%, 50%, 33% — mostly because two other faults were distorting how it
+        read: the sheet was being squeezed horizontally and the section sat in
+        the narrower `card` measure. Both are long fixed, so what remains is a
+        plain constraint: the longest keyword line has to fit on one line.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[33%]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[25%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**
@@ -98,7 +101,15 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           to the maximum that the shared token does. Local because the
           twenty-two card pages read that token.
         */}
-        <div className="[--text-card-name:clamp(2.625rem,3.75vw,4.5rem)]">
+        {/*
+          **The green rule is narrower here than on a card page.** Its own
+          measure is 582px, drawn under a card's name; her suit frames cut it
+          much shorter, to about the width of the title it sits under rather
+          than the column's. `--measure-rule-green` is what `.divider--green`
+          reads, so setting it here is the whole change and the card pages keep
+          theirs.
+        */}
+        <div className="[--measure-rule-green:clamp(14rem,22vw,26rem)] [--text-card-name:clamp(2.625rem,3.75vw,4.5rem)]">
           <CardHeader heading={title} />
         </div>
 
@@ -119,6 +130,13 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           paragraphs, which hold a shorter measure so the three of them stack as
           an even block rather than running the width of the sheet.
 
+          **And it is inset from the left, not flush with the heading.** Her
+          frame centres the paragraph block under the title rather than hanging
+          it on the column's left edge, so the three paragraphs sit inside the
+          span of the words above them. `mx-auto` with the cap does exactly
+          that: the block is narrower than the column and the remaining space
+          falls either side of it.
+
           `max-w` rather than a narrower column, so only the paragraphs move —
           the heading and keywords keep the position they were set against.
           A percentage rather than `ch`, because `ch` is a share of the font
@@ -126,9 +144,10 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
           with the viewport independently of the column it sits in.
 
           `xl`-only. Below that the column is the full measure and the prose is
-          centred under the heading, where a cap would read as an inset block.
+          already centred under the heading, where a cap would read as an inset
+          block.
         */}
-        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:max-w-[82%]">
+        <div className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.917vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))] flex flex-col gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.46vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))] xl:mx-auto xl:max-w-[78%]">
           {content.essay.map((paragraph) => (
             <p
               key={paragraph}
