@@ -121,14 +121,14 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         </Section>
 
         {/*
-          **A wide gap above KEY THEMES**, wider than the rhythm between the
-          blocks below it. The rule has to clear the emblem painted into the
-          sheet — on Pentacles her coin pouch reaches furthest down — and this
-          gap is the second of the two controls that do it, the first being the
-          prose measure in `SuitIntro`. If the rule ever collides with an
-          emblem again, this is the cheaper of the two to raise.
+          **A wider gap above KEY THEMES** than the rhythm between the blocks
+          below it. The rule has to clear the emblem painted into the sheet —
+          on Pentacles her coin pouch reaches furthest down — and this gap is
+          the second of the two controls that do it, the first being the prose
+          measure in `SuitIntro`. If the rule ever collides with an emblem
+          again, this is the cheaper of the two to raise: it reflows no copy.
         */}
-        <Section padding="none" className="mt-[clamp(calc(2.25rem*var(--card-scale)),calc(7vw*var(--card-scale)),calc(8.4rem*var(--card-scale)))]">
+        <Section padding="none" className="mt-[clamp(calc(1.75rem*var(--card-scale)),calc(5.2vw*var(--card-scale)),calc(6.25rem*var(--card-scale)))]">
           <Container width="cardWide">
             {/*
               The ground runs the full measure here, unlike the opening section
@@ -141,7 +141,7 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           </Container>
         </Section>
 
-        <Section padding="none" className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))]">
+        <Section padding="none" className="mt-[clamp(calc(0.875rem*var(--card-scale)),calc(2.9vw*var(--card-scale)),calc(3.5rem*var(--card-scale)))]">
           <Container width="cardWide">
             {/*
               **Black here, not the page's navy.** The three cards sit on their
