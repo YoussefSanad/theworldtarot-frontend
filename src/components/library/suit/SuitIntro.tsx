@@ -53,14 +53,14 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
         the rendered page instead, which is the thing the proportion is
         actually judged on.
 
-        **Two things that made it read wide were not this number at all**, and
-        both are fixed now: the sheet was squeezed horizontally (see
-        `.suit-paper`), and the section sat in the `card` measure, which left
-        far more parchment either side than her frame does. The percentage is
-        of a wider, undistorted row now, so it buys more column than the same
-        figure did before.
+        **Half the row, at the client's direction.** The figure has moved
+        several times — the card tile's 25.1vw, then 15%, 25%, 20% — because
+        two other things were distorting what it looked like: the sheet was
+        being squeezed horizontally (see `.suit-paper`) and the section sat in
+        the narrower `card` measure. Both are fixed, and 50% is the proportion
+        judged against the corrected page.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[15%]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[50%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**

@@ -1746,16 +1746,41 @@
     2852px, which is her own frame's sheet height. A desktop page lands close to
     that, and only copy running well past hers reaches a second tile.
 
-    The pinned-band construction below (`@media (width < 64rem)`) is for the
-    card sheets and must not apply to these, which is why this rule resets
-    `background-image` to a single layer: a suit page below `lg` would otherwise
-    inherit three layers and two pinned deckles.
+    **`repeat-y` was tried here and is gone.** It never bends the sheet, which
+    is why it looked like the answer — but our page is always taller than her
+    frame's, because we add a masthead, the Library intro and its suit nav, and
+    a footer, none of which she draws. So the tile always came round, restating
+    her torn top deckle partway down the page and ending on a hard cut wherever
+    the content happened to stop.
+
+    What ships instead is the pinned-band construction the card sheets use
+    below `lg`, applied here at every width: her painted top pinned at its own
+    aspect, her painted bottom likewise, and the sheet stretched between them to
+    cover whatever height the content asks for. The deckles keep their
+    proportions, so neither torn edge skews; the emblem sits inside the top
+    band and is pinned with it.
+
+    `--suit-deckle` is 30%, far deeper than the card sheets' 14%. Her suit
+    washes are not a border around a pale centre — they run the full height of
+    the sheet at the sides and reach well into the middle — so the bands have
+    to carry the whole emblem and most of the colour, leaving only the quietest
+    part of the sheet to take the stretch.
+
+    `center` on the middle layer is exact rather than approximate, for the
+    reason the card block's own note proves: a layer of height `H − 2d` in a box
+    of height `H` lands at `d` when positioned at `d / 2d` = one half, whatever
+    `d` and `H` are.
   */
   .suit-paper {
-    background-image: var(--card-paper);
-    background-position: center top;
-    background-repeat: repeat-y;
-    background-size: 100% auto;
+    --suit-deckle: 30%;
+
+    background-image: var(--card-paper), var(--card-paper), var(--card-paper);
+    background-position: center top, center bottom, center center;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size:
+      100% auto,
+      100% auto,
+      100% calc(100% - 2 * var(--suit-deckle));
   }
 
   /*
