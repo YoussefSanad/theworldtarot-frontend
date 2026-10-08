@@ -52,8 +52,24 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
       */}
       <LibraryIntro current={suit.slug} />
 
+      {/*
+        **`--container-card-paper` is overridden here**, because her suit sheets
+        are ~1460 wide where the card sheets are 1337 and `.card-paper` paints
+        at `100% 100%` — the image takes the box's aspect, not its own. In the
+        card box the parchment was squeezed about 8% horizontally, which shows
+        on these sheets in a way it does not on a card's: a card's sheet is flat
+        grain with no figure to skew, while each of these has her emblem painted
+        into it.
+
+        **`--measure-card-paper` is set, not `--container-card-paper`.** The
+        measure is declared on `:root`, where it is already computed from the
+        root's container value — so overriding the container on this element
+        would change nothing. The measure itself is what `.card-paper` reads,
+        and the expression mirrors the one in globals.css with 1460's own vw
+        term (1460 / 19.2 = 76.042).
+      */}
       <div
-        className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))]"
+        className="card-paper mt-[clamp(calc(1.5rem*var(--card-scale)),calc(5.28vw*var(--card-scale)),calc(6.34rem*var(--card-scale)))] pb-[clamp(calc(3.813rem*var(--card-scale)),calc(12.708vw*var(--card-scale)),calc(15.25rem*var(--card-scale)))] lg:[--measure-card-paper:calc(min(var(--container-suit-paper),76.042vw)*var(--content-scale)*var(--card-scale))]"
         data-paper-mobile=""
         style={
           {

@@ -251,6 +251,19 @@
   /* Her sheet of paper, `Layer 21`, which every block on that page sits inside. */
   --container-card-paper: 1337px;
   /*
+    **The suit pages' sheet, which is wider than a card's.**
+
+    Her four suit parchments are ~1460x2850 where the card sheets are 1337x2995,
+    and `.card-paper` paints at `background-size: 100% 100%` — the image takes
+    the *box's* aspect, not its own. So a suit sheet in the card box was
+    squeezed about 8% horizontally. This is the box it wants instead.
+
+    `.card-paper` reads `--measure-card-paper`, which is derived from this
+    token at both breakpoints, so a suit page overrides the container and the
+    rest follows.
+  */
+  --container-suit-paper: 1460px;
+  /*
     The closing line's own box on that page. Her frame draws it at 513px —
     narrow enough that "The invitation is not to know - / it is to begin"
     breaks where she breaks it rather than running on one line in the 1035px

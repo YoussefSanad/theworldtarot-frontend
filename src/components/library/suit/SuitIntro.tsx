@@ -49,11 +49,17 @@ export function SuitIntro({ title, content }: { title: string; content: SuitCont
 
         Pixel-measuring those edges is unreliable: her wash reaches into the
         margin at different densities per suit, so a threshold that finds the
-        text on Swords finds watercolour on Pentacles. 25% is set against the
-        rendered page instead, which is the thing the proportion is actually
-        judged on.
+        text on Swords finds watercolour on Pentacles. So this is set against
+        the rendered page instead, which is the thing the proportion is
+        actually judged on.
+
+        **Part of what made it read wide was not this number at all**: the
+        sheet behind it was being squeezed ~8% horizontally, because
+        `.card-paper` sized her 1460px parchment to the card's 1337px box. The
+        page overrides `--measure-card-paper` now, so the column is being
+        judged against a sheet at its true width.
       */}
-      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[25%]" />
+      <span aria-hidden className="hidden shrink-0 xl:block xl:w-[20%]" />
 
       {/*
         **The whole of the writing is in this one column, heading included.**
