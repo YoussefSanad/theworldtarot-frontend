@@ -22,24 +22,44 @@ import { cn } from "@/lib/cn";
  * and the card stays legible at that size because it is still nearly three
  * times the Library grid's tile.
  *
- * **The row starts at `xl`, not `lg`, and that is a fix rather than a
- * preference.** At 1024 the page's measure is 552px and the card was taking
- * 257 of it, which left the prose 280px — about 31 characters, where running
- * prose wants 45 or more. The keywords line is `nowrap` and needs roughly 340,
- * so it broke out of the sheet, which is how the fault was reported. Stacked
- * through that range the prose has the whole measure instead: 46 characters at
- * 768px rising to 72 by 1200.
+ * **The row starts at `lg`, and it used to start at `xl`.** That later
+ * threshold was itself a fix: at 1024 the card took 257px of a 552px measure
+ * and left the prose about 31 characters, where running prose wants 45 or more.
+ * Two things have since changed it. The keywords moved out of the row entirely
+ * (see below), so the `nowrap` line that used to break out of the sheet no
+ * longer sits in this column at all; and the card's cap came down to 14.5rem.
  *
- * The card's own cap came down with it, from 16.25rem to 14.5rem, so the row
- * opens at about 49 characters rather than 46 and widens from there. Both
- * numbers are a trade against the plaque, which is a share of the card — see
- * `.library-card__name`, whose size the client has twice asked to raise. 232px
- * holds its capitals at 8.6px.
+ * Measured on the current page, stacking through 1024..1280 was overshooting
+ * rather than protecting: the prose ran **65 characters at 1024 rising to 77 by
+ * 1200**, at and then past the top of the comfortable range, while the row at
+ * 1280 came in at 39. So the single-column band was the wrong half of the
+ * trade.
  *
- * **Below `xl` the artwork goes above the prose**, which is an addition — she
+ * **And it was feeding the sheet.** The parchment is drawn at its own aspect
+ * from the content's height (see `.card-paper__sheet`), so a narrow column
+ * makes a tall page and a tall page makes a wide sheet: through 1024..1200 the
+ * sheet reached 100% of the viewport and had to be capped. Crossing into the
+ * row at 1280 dropped the page 321px at a stroke — 2222 to 1901 on Justice —
+ * and the sheet back to 82%. Moving the row to `lg` takes that saving across
+ * the whole band.
+ *
+ * The 14.5rem cap is a trade against the plaque, which is a share of the card —
+ * see `.library-card__name`, whose size the client has twice asked to raise.
+ * 232px holds its capitals at 8.6px.
+ *
+ * **Below `lg` the artwork goes above the prose**, which is an addition — she
  * drew no mobile frame, and a 359px picture beside a 603px column has no honest
  * narrow form. See this folder's README for the full list of what was added
  * below `lg` and why.
+ *
+ * **The stacked cap is `min(14rem, 56%)`, and it is deliberately smaller than
+ * the row's.** With the picture above the prose it has the whole column to
+ * itself, so the old `min(20rem, 80%)` drew it as large as the column allowed —
+ * which on this page is not free: every pixel of card height is a pixel of page
+ * height, and the sheet's width follows the page's height. A narrower card
+ * shortens the page and narrows the parchment with it. 56% of the column rather
+ * than 80% keeps the plaque legible (the client's note about the plaque name is
+ * the card's size, not the lettering) while giving that loop less to work with.
  *
  * The artwork is the deck file the Library grid already ships — gold border,
  * roundel and plaque baked in — so there is no chrome to rebuild here, and the
@@ -83,7 +103,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
         Her 35px between the subtitle and the artwork below it, on the same
         clamp the rest of this frame uses.
       */}
-      <div className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))] flex flex-col items-center gap-[clamp(calc(1.5rem*var(--card-scale)),calc(3.02vw*var(--card-scale)),calc(3.625rem*var(--card-scale)))] xl:flex-row xl:items-start xl:gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
+      <div className="mt-[clamp(calc(0.547rem*var(--card-scale)),calc(1.823vw*var(--card-scale)),calc(2.188rem*var(--card-scale)))] flex flex-col items-center gap-[clamp(calc(1.5rem*var(--card-scale)),calc(3.02vw*var(--card-scale)),calc(3.625rem*var(--card-scale)))] lg:flex-row lg:items-start lg:gap-[clamp(calc(0.75rem*var(--card-scale)),calc(1.458vw*var(--card-scale)),calc(1.75rem*var(--card-scale)))]">
         {/*
           **The name is laid into the plaque here exactly as the grid does it**,
           and for the same reasons: her artwork ships the plaque empty ("NO PLAQUE
@@ -99,25 +119,28 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           the grid's size, but it is applied for consistency with that tile.
         */}
         {/*
-          **The `25.1vw` cap only applies from `xl`**, where the card sits beside
-          the prose and has to leave it a measure. Below that it stacks above the
-          prose with the whole column to itself, and the cap was making it far
-          smaller than it needed to be — the client's note that the plaque name
-          is unreadable on mobile is this, not the lettering.
-  
-          The name cannot answer it on its own: `.library-card__name` is already
-          at `3.7cqw`, which the note on that rule derives from the rivets in the
-          artwork and which the client has twice asked to raise. It is a ceiling,
-          not a preference. Since the letters are a share of the card, the only
-          lever left is the card, and at `25.1vw` a 390px phone was drawing a
-          98px card and a 3.6px capital. At 80% of the column it is 312px and
-          11.5px — the same plaque, legible.
-  
-          `sizes` follows, or the browser keeps fetching the small candidate for
-          a box three times the width. Its breakpoint is `80rem` to match the
-          `xl` the layout now switches at.
+          **The `25.1vw` cap applies from `lg`**, where the card sits beside the
+          prose and has to leave it a measure. Below that it stacks above the
+          prose with the whole column to itself and takes the other cap.
+
+          **Neither cap can be answered by the lettering instead.**
+          `.library-card__name` is already at `3.7cqw`, which the note on that
+          rule derives from the rivets in the artwork and which the client has
+          twice asked to raise. It is a ceiling, not a preference. Since the
+          letters are a share of the card, the only lever is the card itself:
+          at `25.1vw` a 390px phone drew a 98px card and a 3.6px capital, which
+          is the unreadable plaque the client reported.
+
+          `min(14rem, 56%)` draws that phone at 218px and the capital at 8.1px —
+          legible, and a good deal shorter than the 312px the old `80%` gave.
+          The header note above records why the smaller figure is wanted here:
+          card height is page height, and page height is the sheet's width.
+
+          `sizes` follows both, or the browser keeps fetching the wrong
+          candidate. Its breakpoint is `64rem` to match the `lg` the layout now
+          switches at.
         */}
-        <span className="library-card @container block w-full max-w-[min(20rem,80%)] shrink-0 xl:max-w-[min(14.5rem,25.1vw)]">
+        <span className="library-card @container block w-full max-w-[min(14rem,56%)] shrink-0 lg:max-w-[min(14.5rem,25.1vw)]">
           <span className="stack">
             <Image
               src={card.image.src}
@@ -125,7 +148,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
               width={card.image.width}
               height={card.image.height}
               className="h-auto w-full"
-              sizes="(width >= 80rem) 14.5rem, min(20rem, 80vw)"
+              sizes="(width >= 64rem) 14.5rem, min(14rem, 56vw)"
               priority
             />
   
@@ -153,7 +176,19 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
           is what makes the text wrap rather than overflow. It is invisible on
           every card whose copy is short enough to fit either way.
         */}
-        <div className="flex min-w-0 flex-col items-center text-center xl:items-stretch">
+        {/*
+          **`max-w-prose` below `lg`, where this column has the whole sheet.**
+
+          The sheet is full-bleed under `lg` (`--measure-card-paper` is the
+          literal `100%` there), so with the picture stacked above it these
+          paragraphs ran the entire viewport: measured at 88 characters on a
+          768px tablet and 117 by 1023, against the 45..75 running prose wants.
+          Capping the column centres it instead and holds it near 70.
+
+          Dropped at `lg`, where the row takes over and the card beside it sets
+          the measure.
+        */}
+        <div className="flex min-w-0 max-w-prose flex-col items-center text-center lg:items-stretch">
 
           {/*
             **`text-pretty` on the paragraphs, not `text-balance`.** The client's
@@ -180,7 +215,7 @@ export function CardEssay({ card, content }: { card: MajorArcanaCard; content: M
             {content.essay.map((paragraph) => (
               <p
                 key={paragraph}
-                className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft xl:text-left"
+                className="text-pretty font-light text-card-label tracking-[0.01em] text-card-ink-soft lg:text-left"
               >
                 {paragraph}
               </p>

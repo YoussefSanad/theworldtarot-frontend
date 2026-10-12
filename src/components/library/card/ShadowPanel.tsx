@@ -15,24 +15,52 @@ import { cardReference } from "@/lib/assets";
  * uses, because the panel is the site's palette rather than the parchment's.
  * Green here would be consistency with the wrong neighbour.
  *
- * **Two panels, split at `sm`: her picture above it, a drawn ground below.**
+ * **Two panels, split at `xl`: her picture above it, a drawn ground below.**
  *
- * Above `sm` this is the composite it has always been — one pre-composited
+ * Above `xl` this is the composite it has always been — one pre-composited
  * 1216x227 webp per card, the figure and the plaque she stands on baked
  * together, drawn `object-fill` across the box. That is the client's artwork
  * and it is what ships on a desktop.
  *
- * Below `sm` the same picture is wrong, and the figure is the reason. The
- * composite is a fixed 5.357:1 and the box is not: the text sets the height, so
- * `object-fill` stretches the bitmap to meet it — about +17% at 1920, which
- * passes, and **+218% at 390px**, where she is three times too tall and plainly
- * smeared. So the phone gets `.card-shadow-ground` instead: the same colour and
- * radius expressed as CSS, which cannot distort, and **no figure at all**.
+ * Below `xl` the same picture is wrong, and the figure is the reason. The
+ * composite is a fixed 5.357:1 and the box is not: the text sets the height,
+ * so `object-fill` stretches the bitmap to meet it.
  *
- * Losing her on a phone is the deliberate half of that. She was already dropped
- * below `sm` in the original design — the text offset below re-centres at the
- * same breakpoint for the same reason — so this restores that behaviour rather
- * than inventing it. A 254px figure in a 345px panel has nowhere to stand.
+ * **The split was `sm`, then `lg`, and is now `xl`. The honest statement is
+ * that the composite does not fit at any width we ship.** The original pair of
+ * measurements — about +17% at 1920 and +218% at 390px — put the line at `sm`
+ * on the reading that the stretch fell away smoothly with width. Two things
+ * were wrong with that. The panel is `--measure-card-wide`, which is
+ * `64.271vw` times `--content-scale` and `--card-scale` — both 0.85, and both
+ * applied only above `lg` — so it is far narrower than its 1216px export and
+ * **caps at about 892px even on a 1920px screen**; the artwork's native width
+ * is never reached. And the two scales switching on at `lg` put a cliff in the
+ * curve rather than a slope: the panel drops from ~657px at 1023 to ~476px at
+ * 1024, so the stretch jumps rather than easing off.
+ *
+ * Modelled against the one hard measurement in the tree — the 185px text
+ * column recorded at 1920 in `.card-shadow-ground`'s note, against a natural
+ * height of ~156px there — the composite runs roughly +19% at 1920, +28% at
+ * 1103 and +71% at 768. It was reported from an iPad Pro 13" at 1032px, and
+ * narrowing from there made it worse until it was plainly visible below about
+ * 1103px.
+ *
+ * `xl` is therefore a judgement, not a width at which the artwork fits: it
+ * clears the band where the distortion reads as wrong with margin to spare,
+ * and it is a breakpoint that already exists rather than a number invented for
+ * this. Above it the client's artwork ships as drawn, a few percent tall,
+ * which is the state this page has always been in.
+ *
+ * `object-cover` would end the distortion at every width and keep the figure,
+ * at the cost of cropping the plaque's ends. That is the change to make if the
+ * stretch above `xl` is ever judged too much; it was weighed here and the
+ * client's framing was kept intact instead.
+ *
+ * Losing her below `xl` is the deliberate half of that. She was already
+ * dropped below `sm` in the original design — the text offset below re-centres
+ * at the same breakpoint for the same reason — so this widens that behaviour
+ * rather than inventing it. A 254px figure in a 345px panel has nowhere to
+ * stand, and the same crowding holds through the tablet band.
  *
  * **The client's cut-out assets replace the desktop composite when they land.**
  * At that point the ground is CSS at every width and the figure is her own
@@ -50,15 +78,26 @@ export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: Ima
         and the phone ground fills the gutter the way every other block on a
         phone does. See `.card-shadow-panel` in globals.css.
       */}
-      <div className="card-shadow-ground sm:hidden" />
+      <div className="card-shadow-ground xl:hidden" />
 
+      {/*
+        `sizes` is one branch, not two. This image only ever renders at `xl`
+        and up now, so the old `100vw` fallback described widths it is never
+        drawn at — and invited the browser to fetch a full-viewport source for
+        a picture that was about to be `display: none`.
+
+        46.4vw, not the 63.33 this said: the panel is `--measure-card-wide`,
+        `64.271vw` times `--content-scale` and `--card-scale`, both 0.85 above
+        `lg`. 64.271 x 0.7225 = 46.4. The old number ignored the two scales and
+        so over-fetched by about a third.
+      */}
       <Image
         src={art.src}
         alt=""
         width={art.width}
         height={art.height}
-        className="hidden size-full object-fill sm:block"
-        sizes="(width >= 64rem) 63.33vw, 100vw"
+        className="hidden size-full object-fill xl:block"
+        sizes="46.4vw"
       />
 
       {/*
@@ -70,12 +109,14 @@ export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: Ima
         remains. The margin is the figure's own 20.89% plus the air beside her.
 
         **The offset and the figure switch at the same breakpoint**, which is the
-        point of using `sm` for both. Above it the composite is drawn and these
+        point of using `xl` for both. Above it the composite is drawn and these
         margins hold her space; below it the picture is replaced by a bare
         ground with no figure on it, and the reason for the offset goes with
         her, so the column re-centres on the panel. At phone width the left
         fifth is barely 60px — a column pushed off it would have nothing left to
-        centre in.
+        centre in. The two have to move together: an offset left at `sm` while
+        the figure goes at `lg` would push the words a third of the way across
+        a panel with nothing standing in the space they vacated.
 
         **Centred vertically, for the phone panel's sake.** On the image side
         this is a no-op: the picture stretches to the cell either way. On the
@@ -91,7 +132,7 @@ export function ShadowPanel({ lines, art }: { lines: readonly string[]; art: Ima
         then the air above and below the words rather than a centring device.
         See `.card-shadow-ground` in globals.css for the full account.
       */}
-      <div className="flex flex-col items-center justify-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-sm:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] sm:ml-[29.2%] sm:mr-[0.8%]">
+      <div className="flex flex-col items-center justify-center py-[clamp(calc(1rem*var(--card-scale)),calc(1.56vw*var(--card-scale)),calc(1.875rem*var(--card-scale)))] text-center max-xl:px-[clamp(calc(1rem*var(--card-scale)),calc(2vw*var(--card-scale)),calc(2.4rem*var(--card-scale)))] xl:ml-[29.2%] xl:mr-[0.8%]">
         <h2 className="font-serif text-h3 leading-none tracking-[0.01em] text-gold">shadow</h2>
 
         {/*
