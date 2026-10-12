@@ -107,6 +107,58 @@ export function CardReferencePage({
         }
       >
         {/*
+          **The sheet above `lg`, drawn as a picture rather than a background —
+          and this is the one layer on the page that is allowed out of the
+          column.**
+
+          Her parchments are ~1.82 to 2.24 tall per unit wide and this page's
+          content runs 2.5 to 2.7, so a sheet pinned to the content's *width*
+          can never also reach its height: every construction that tried ended
+          up stretching the picture (`100% 100%`), tiling her composition
+          (`repeat-y`), or cropping her deckle (`cover`). Measured, that stretch
+          ran +13% on The Magician at 1920 and +105% on Justice at 1024 — on
+          *every* card, because even the tallest sheet in the deck is shorter
+          than the shortest content box.
+
+          **So the height leads and the width follows.** This is sized
+          `block-size: 100%` with `inline-size: auto`, so the browser derives the
+          width from the file's own intrinsic ratio: the sheet is exactly as wide
+          as it must be to stand as tall as the page, at its true proportions.
+          Nothing is stretched, tiled or cropped, on any sheet, ever.
+
+          What it costs is that the parchment is no longer the same width on
+          every page — at 1920 it runs 1078px on The Fool against 1328px on
+          Justice, where the content column is 966px — so her torn side edges
+          sit further out on the shorter sheets. That overflow is the point
+          rather than a side effect: it spreads into page atmosphere that was
+          empty anyway, and `.card-paper` lets it (see that rule's note on
+          `overflow`). The content column itself does not move by a pixel on any
+          card.
+
+          **The decisive property is that nothing here knows the aspect.** No
+          per-card token, no generated table, no build-time assertion, no
+          re-export. A future card delivered at 1.8 draws wide and one at 2.4
+          draws narrow, both undistorted, with no code change — which is what
+          this page needs with fifty-odd cards still to come.
+
+          `aria-hidden` and empty `alt`: it is the page's writing surface, not
+          an illustration, and `CardEssay` already carries the card's own
+          artwork with real alt text.
+
+          A plain `<img>` rather than `next/image`, deliberately. `images.unoptimized`
+          is on for the static export so there is no optimizer to engage, and
+          the intrinsic-ratio sizing this depends on wants the raw element —
+          `next/image` sets its own `width`/`height` attributes and inline styles.
+        */}
+        <img
+          src={paper}
+          alt=""
+          aria-hidden
+          className="card-paper__sheet"
+          decoding="async"
+          fetchPriority="high"
+        />
+        {/*
           **Her gold `FRAME` ornament is gone at the client's request** — the
           1229x604 flourish that used to hang 57px below the torn top edge, with
           the numeral and the essay stacked over it. Its asset is deleted too,
@@ -139,7 +191,41 @@ export function CardReferencePage({
           where it is the section's own internal rhythm.
         */}
         <Section padding="none" className="pt-[clamp(calc(1.969rem*var(--card-scale)),calc(6.563vw*var(--card-scale)),calc(7.875rem*var(--card-scale)))]">
-          <Container width="card">
+          {/*
+            **This section spans the sheet from `lg` to `xl`, where every other
+            block keeps the prose measure.**
+
+            `card` is 1035px, and at 1024 that resolves to 515px — minus a 232px
+            card and its gap, the essay beside it had about 23 characters. That
+            is the fault the row's `xl` threshold was first introduced to avoid,
+            and it comes straight back when the row moves down to `lg` without
+            width to move into.
+
+            So the shell takes the sheet's own measure through that band, exactly
+            as `SuitReferencePage` does for its intro: `--shell-width` becomes
+            `--measure-card-paper` and the 60px gutter goes to zero, which is
+            sized for a section spanning the viewport rather than one inside a
+            sheet already inset from the page. The row then opens at about 45
+            characters instead of 23.
+
+            **It runs to `2xl`, not to `xl`, and the choice is where to put the
+            step rather than whether to have one.** The override has to end
+            somewhere, and wherever it ends the measure drops as the section
+            returns to `card`. Ended at `xl` that drop lands at 1280 and costs
+            16ch (50 to 34) — in the middle of the common laptop widths. Carried
+            to `2xl` it lands at 1536 and costs 20ch from a higher starting
+            point (67 to 47), which is both further out and lands on a measure
+            that is still comfortable.
+
+            `max-w-prose` on the essay column caps the top of that climb, so the
+            extra width the override buys goes to the row rather than to an
+            over-long line. Above `2xl` the heading and essay line up with the
+            blocks below them the way her frame draws it.
+          */}
+          <Container
+            width="card"
+            className="lg:max-2xl:[--shell-width:var(--measure-card-paper)] lg:max-2xl:[--spacing-gutter:0px]"
+          >
             <div className="card-reading-ground flex flex-col">
               <CardHeader heading={card.name} eyebrow={card.numeral} />
 

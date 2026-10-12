@@ -180,9 +180,17 @@ test("no raw line breaks survived the import", () => {
 test("CardEssay's prose column can shrink inside the flex row", async () => {
   const source = await readFile(new URL("../components/library/card/CardEssay.tsx", import.meta.url), "utf8");
 
-  assert.match(
-    source,
-    /className="flex min-w-0 flex-col items-center text-center xl:items-stretch"/,
+  /*
+    **Matched on `min-w-0` within the column's class list, not on the whole
+    string.** This used to pin the attribute verbatim, which made it fail on any
+    edit to a neighbouring utility — the row moved from `xl` to `lg` and gained
+    a `max-w-prose`, both deliberate, and neither touches what this guards. The
+    assertion is the thing that matters: the prose column must be able to shrink.
+  */
+  const column = source.match(/className="flex min-w-0[^"]*"/);
+
+  assert.ok(
+    column,
     "the prose column lost its min-w-0 and will overflow the paper on long essays",
   );
 });

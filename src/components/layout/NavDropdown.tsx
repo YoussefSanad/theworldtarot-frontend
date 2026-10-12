@@ -18,7 +18,8 @@ const CLOSE_DELAY_MS = 120;
  * A primary-nav item that both navigates and opens a panel of links — today
  * just READINGS. Borrows `LocaleMenu`'s panel behaviour in
  * `LocaleControls.tsx` (outside-click/Escape/Tab dismiss, focus return, the
- * same `menu-panel`/`menu-option` styling) since that is the one dropdown
+ * same `menu-panel`/`menu-option` styling, less the face — see
+ * `.nav-menu-option`) since that is the one dropdown
  * already in this header; it stays its own component rather than folding into
  * `LocaleMenu` because the two share no state and a third caller would rather
  * find two small files than one that branches on what kind of menu it is.
@@ -283,7 +284,7 @@ const NavDropdownLink = forwardRef<
       onFocus={onFocus}
       onClick={onNavigate}
       onKeyDown={onKeyDown}
-      className="menu-option flex w-full items-center px-[1.1em] py-[0.42em]"
+      className="menu-option nav-menu-option flex w-full items-center px-[1.1em] py-[0.42em]"
     >
       <NavGroupLinkLabel link={link} />
     </Link>

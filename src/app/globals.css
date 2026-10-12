@@ -1,6 +1,46 @@
 @import "tailwindcss";
 
 /*
+  **Who gets the desktop nav: a width AND a pointer that can hover.**
+
+  `SiteHeader` shows a label-plus-dropdown nav above this and a hamburger
+  drawer below it. That split used to be `lg:` alone, which asks the wrong
+  question — `NavDropdown` opens its panel on `pointerenter` and explicitly
+  ignores touch, so on a touchscreen wide enough to clear `lg` the panel's
+  only door is a 0.55em chevron. The iPad Pro 13" is 1032 x 1376, so *both*
+  its orientations landed there.
+
+  Width cannot tell that iPad from a 1024px laptop window, so the query asks
+  about the pointer instead. The drawer was already built for touch — flat
+  rows, no hover anywhere — so the fix is to let the device that needs it have
+  it, not to teach the dropdown a second interaction model.
+
+  A media query rather than `matchMedia`: this app is a static export, so a JS
+  check would paint the wrong nav before hydration and then flicker.
+
+  Known trade-off: a touchscreen laptop reports `pointer: coarse` and so takes
+  the drawer at full desktop width. That is the safe direction to fail — the
+  drawer works at every width — and it is why this is one variant rather than
+  a condition spelled out at each of the four call sites.
+*/
+/*
+  **One variant, not a complementary pair — and that is deliberate.**
+
+  The obvious shape here is a second `touch-nav` variant holding the De Morgan
+  inverse, `(max-width: ...), (hover: none), (pointer: coarse)`. Do not: in
+  Tailwind v4 a comma list inside `@custom-variant` compiles to its FIRST
+  condition only. The other two are dropped silently, with no build error, so
+  `touch-nav` degrades into a plain `max-width` — and an iPad Pro 13" at
+  1032px then matches neither variant and gets no nav control whatsoever.
+  Verified in the built CSS, not assumed.
+
+  So the drawer controls are visible unconditionally and this one query hides
+  them, which puts both branches of the split on the same compiled condition
+  and makes "no nav" unrepresentable.
+*/
+@custom-variant desktop-nav (@media (min-width: 64rem) and (hover: hover) and (pointer: fine));
+
+/*
   Design tokens for The World Tarot.
 
   Colours and type come from the client style sheet (TWT STYLE SHEET) and were
@@ -1698,16 +1738,121 @@
     figure and no horizon to skew, which is why this was always the layer that
     could afford to stretch.
   */
+  /*
+    **No background here any more — above `lg` the sheet is the `<img>` below.**
+
+    The declarations that used to live on this rule (`var(--card-paper)` at
+    `100% 100%`) were the stretch: they handed the picture whatever shape the
+    content box happened to be. The two narrow bands further down still paint a
+    background, and both set every property they need, so nothing is inherited
+    from here.
+
+    What stays is the box itself: the measure, the centring, and `position:
+    relative` so the sheet layer resolves against this element.
+
+    **`overflow` is deliberately not set.** The sheet is wider than this box on
+    every card and has to be allowed out of it — a `hidden` or `clip` here would
+    crop the torn side edges back to the column and undo the whole construction.
+    That is also why no ancestor between here and the page may clip: see the note
+    on `.page-atmosphere-card-reference`, which clips its own artwork but is a
+    sibling of this box rather than its parent.
+  */
   .card-paper {
-    background-image: var(--card-paper);
-    background-position: center top;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
     margin-inline: auto;
     max-width: var(--measure-card-paper);
     position: relative;
     width: 100%;
   }
+
+  /*
+    **The content sits above the sheet.**
+
+    The sheet layer is `position: absolute` inside this box, so without a
+    position of their own the content blocks would paint *under* it — the
+    parchment is added to the flow after nothing and before everything. Each
+    direct child is lifted into its own layer instead of the sheet being pushed
+    to a negative `z-index`, because a negative index would put it behind this
+    element's own background and, on the bands that still paint one, behind the
+    paper.
+
+    `> *:not(.card-paper__sheet)` so the rule names exactly the content and the
+    sheet keeps its own `z-index: 0`.
+  */
+  .card-paper > *:not(.card-paper__sheet) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /*
+    **The sheet as a picture, free to be wider than the column it backs.**
+
+    See the long note in `CardReferencePage` for why the parchment is an element
+    here rather than a background: her sheets are ~1.82..2.24 tall per unit wide
+    against content that runs 2.5..2.7, so a sheet held to the content's width
+    cannot also reach its height, and every attempt to make it bridge that gap
+    distorted, tiled or cropped her artwork.
+
+    `block-size: 100%` with an automatic inline size is the whole mechanism: the
+    height is the page's, and the browser works the width back from the file's
+    own intrinsic ratio. The picture is therefore always at true proportions and
+    always exactly tall enough, whatever aspect the file happens to be — nothing
+    in CSS or TS states or derives that aspect.
+
+    **`inset-block-start: 0` with the centring transform, not `inset: 0`.** The
+    layer has to be *taller-agnostic*: pinning both block edges would hand it the
+    box's height as a constraint again and defeat the sizing. So it hangs from the
+    top, takes the box's height through `block-size`, and is centred across the
+    column with the translate — which is what lets the overflow fall evenly either
+    side rather than all to the right.
+
+    `max-inline-size: none` because `img` carries `max-width: 100%` from the
+    preflight, and that cap is exactly the constraint this layer exists to escape.
+
+    `z-index: 0` with the content above it: the sheet is behind the writing but
+    inside the same stacking context, so it does not need to leave the element or
+    reach the page's atmosphere layer.
+  */
+  .card-paper__sheet {
+    block-size: 100%;
+    inline-size: auto;
+    inset-block-start: 0;
+    inset-inline-start: 50%;
+    max-inline-size: 100vw;
+    object-fit: contain;
+    object-position: center top;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 0;
+  }
+
+  /*
+    **The one sheet that outgrows the window, and why the cap is `object-fit`
+    rather than a width.**
+
+    Justice is the shallowest parchment in the deck at 1.819 — hers is the
+    shortest sheet, so standing it as tall as the page makes it the widest:
+    1055px against a 1024px window, about 16px past each edge. The content sits
+    well inside the paper there and `overflow-x-hidden` on `html`/`body` keeps a
+    scrollbar away, so this is a clipped deckle rather than a broken layout, and
+    it affects one card over roughly fifty pixels of width.
+
+    **A bare `max-inline-size` is the obvious fix and reintroduces the stretch.**
+    With `block-size: 100%` still in force a width cap squashes the picture
+    horizontally into the cap — the box's aspect wins again, which is the exact
+    fault this construction exists to remove. It was written that way first and
+    measured at once; recorded here so it is not tried again.
+
+    `object-fit: contain` with the cap is what holds the proportions: the element
+    may be capped to the window, and the *picture* inside it keeps its own ratio
+    and letterboxes rather than distorting. So in this narrow band the sheet
+    draws at window width, at true proportions, ending before the copy does —
+    the honest trade, and the same one her frames make by running paper past
+    the last line.
+
+    `100vw` rather than `100%`, because the sheet is deliberately allowed outside
+    its column: the limit here is the window, not the box.
+  */
 
 
   /*
@@ -1937,7 +2082,7 @@
   }
 
   /*
-    **The SHADOW panel's ground on phones only — above `sm` her picture is the
+    **The SHADOW panel's ground below `xl` — above it her picture is the
     panel.**
 
     It is baked into each card's `shadows/<slug>.webp` — the figure and the
@@ -1950,8 +2095,24 @@
     the bitmap stretches to meet it: about +17% at 1920, which passes, and
     **+218% at 390px**, where the figure is three times too tall and visibly
     smeared. Measured, not estimated. A drawn ground cannot distort, so the
-    phone gets this and loses the figure — which the original design also did
-    below `sm`.
+    narrow widths get this and lose the figure — which the original design also
+    did below `sm`.
+
+    **This was `sm`, then `lg`, and is now `xl` — and the composite does not
+    truly fit at any width.** Fitting the split to those two measurements
+    assumed the stretch fell away smoothly with width. It does not. The panel
+    is `--measure-card-wide`: `64.271vw` times `--content-scale` and
+    `--card-scale`, both 0.85 and both applied only above `lg`. So it caps near
+    892px even at 1920 — her 1216px export is never drawn at its own width —
+    and the two scales switching on put a cliff at `lg`, the panel dropping
+    from ~657px at 1023 to ~476px at 1024.
+
+    Against the 185px text column measured at 1920 below, the composite runs
+    roughly +19% there, +28% at 1103 and +71% at 768. Reported from an iPad Pro
+    13" at 1032px, visibly wrong below about 1103px. `xl` clears that band with
+    margin; it is a judgement about where the distortion stops reading as
+    wrong, not a width at which the ratio agrees. `object-cover` is the change
+    that would end it everywhere, at the cost of cropping the plaque.
 
     The panel half of those twenty-two pictures is identical in all of them:
     measured across the set, the same flat rounded rectangle, `#383638` on most
@@ -2036,7 +2197,7 @@
     **The width is the container's, with no inset of her own.** Her export is
     1216px inside a `--container-card-wide` of 1234, and reproducing that 9px-a-
     side inset here was tried and removed: it is a desktop frame proportion, and
-    this rule only ever renders below `sm`, where the container is the edge
+    this rule only ever renders below `xl`, where the container is the edge
     gutter and every neighbouring block fills it. See `.card-shadow-panel` above
     for the measurement.
 
@@ -2061,10 +2222,18 @@
     390px (meta strip 20..370, panel 23..367). On a phone the right width is the
     container's.
 
-    Above `sm` the picture is the panel and brings its own dimensions, so there
+    Above `xl` the picture is the panel and brings its own dimensions, so there
     is nothing to set at all — hence no rule outside this query.
+
+    **This query's width and the ground's own breakpoint are one decision.**
+    The floor below is in `cqw`, which needs a container to measure; if this
+    query stayed narrower than the ground's own breakpoint, the floor
+    would quietly resolve against no container and compute to nothing. With
+    copy in the panel the text holds the box open and it would look correct —
+    the failure only shows on a card whose copy is short. The two widths move
+    together or the floor is dead.
   */
-  @media (width < 40rem) {
+  @media (width < 80rem) {
     .card-shadow-panel {
       container-type: inline-size;
     }
@@ -2165,6 +2334,27 @@
         100% auto,
         100% auto,
         100% calc(100% - 2 * var(--card-deckle));
+    }
+
+    /*
+      **The picture layer is for the wide sheet only.**
+
+      Below `lg` the paper is full-bleed, so there is no room either side for it
+      to spread into — a sheet wider than the column would simply run off the
+      screen, and the construction's whole purpose is to use margin that exists.
+      This band paints its own background instead, so the element goes.
+
+      `display: none` rather than `visibility: hidden`: the layer must not
+      contribute a box here, and a hidden one still would.
+
+      **The file is still fetched**, which is deliberate rather than overlooked:
+      the two bands below paint `var(--card-paper)` and `var(--card-paper-mobile)`
+      from CSS, so the desktop sheet is wanted at these widths anyway on the
+      tablet band. Only below `sm` is this file genuinely unused, and the
+      download is one `webp` the browser may already hold from a wider layout.
+    */
+    .card-paper__sheet {
+      display: none;
     }
   }
 
@@ -2890,6 +3080,26 @@
   */
   .menu-option:focus-visible {
     outline-offset: -3px;
+  }
+
+  /*
+    The primary nav's dropdown rows (READINGS, LIBRARY), which part from
+    `.menu-option` on the face only.
+
+    **The rows are Gill Sans, not `.menu-option`'s Cinzel, at the client's
+    request** — the same call recorded on `.reading-action-frame`: a dropdown
+    row is the nav link above it continued downwards, so it is drawn in the
+    nav's own face rather than in the panel's. Weight is Light to match that
+    decision; the size is left to the panel, which sets `--text-nav-sm` once
+    for every row so no row can be larger than its siblings.
+
+    Scoped to a class of its own rather than folded into `.menu-option`
+    because the language/currency menu shares that class and keeps Cinzel —
+    its panel is a settings surface, not a continuation of the nav.
+  */
+  .nav-menu-option {
+    font-family: var(--font-sans);
+    font-weight: 300;
   }
 
   .menu-option:hover,

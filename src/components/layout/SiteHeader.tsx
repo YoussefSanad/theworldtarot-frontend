@@ -109,14 +109,25 @@ export function SiteHeader() {
   }, [menuOpen, closeMenu]);
 
   /*
-    The drawer is `lg:hidden`, so widening past the breakpoint with it open
-    hides the panel while leaving the scroll lock on — a page that cannot be
-    scrolled and nothing on screen to explain why. Close it instead.
+    The drawer is hidden wherever the desktop nav shows, so crossing into that
+    state with the drawer open hides the panel while leaving the scroll lock on
+    — a page that cannot be scrolled and nothing on screen to explain why.
+    Close it instead.
+
+    **The query has to be `desktop-nav`'s own, not the width half of it.** When
+    this watched `(min-width: 64rem)` alone it fired on any rotation across
+    1024px — and an iPad Pro 13" is 1032 x 1376, so turning one with the drawer
+    open closed the drawer, kept the scroll lock, and showed no nav at all,
+    which is the exact failure this effect exists to prevent. Matching the
+    variant means it now fires only when the desktop nav is really there to
+    receive the user.
   */
   useEffect(() => {
     if (!menuOpen) return;
 
-    const desktop = window.matchMedia("(min-width: 64rem)");
+    const desktop = window.matchMedia(
+      "(min-width: 64rem) and (hover: hover) and (pointer: fine)",
+    );
     const onChange = () => {
       if (desktop.matches) closeMenu();
     };
@@ -162,7 +173,7 @@ export function SiteHeader() {
           aria-expanded={menuOpen}
           aria-controls={panelId}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
+          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note desktop-nav:hidden"
         >
           {/*
             One button that morphs into the X, rather than a close control
@@ -193,8 +204,8 @@ export function SiteHeader() {
           </span>
         </button>
 
-        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
+        <div className="hidden desktop-nav:flex desktop-nav:w-auto desktop-nav:flex-col desktop-nav:items-end desktop-nav:gap-6">
+          <div className="flex flex-wrap items-center justify-end gap-[0.93em] text-nav-sm">
             <ButtonLink
               href={headerActions.cta.href}
               variant="ghost"
@@ -214,7 +225,7 @@ export function SiteHeader() {
             <LocaleMenu selection={localeSelection} />
           </div>
 
-          <nav aria-label="Primary" className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
+          <nav aria-label="Primary" className="flex flex-row items-center gap-[1.33em] text-nav-sm">
             {primaryNav.map((item) =>
               "children" in item ? (
                 <NavDropdown key={item.label} group={item} />
@@ -238,7 +249,7 @@ export function SiteHeader() {
             key="backdrop"
             type="button"
             aria-label="Close menu"
-            className="fixed inset-0 z-50 touch-none bg-night/55 lg:hidden"
+            className="fixed inset-0 z-50 touch-none bg-night/55 desktop-nav:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -256,7 +267,7 @@ export function SiteHeader() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={labelId}
-            className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-[min(100vw,28rem)] flex-col overflow-hidden shadow-[-12px_0_48px_rgba(0,0,0,0.35)] lg:hidden"
+            className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-[min(100vw,28rem)] flex-col overflow-hidden shadow-[-12px_0_48px_rgba(0,0,0,0.35)] desktop-nav:hidden"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -325,10 +336,25 @@ export function SiteHeader() {
                 <AccountControl onNavigate={closeMenu} />
               </div>
 
-              <nav aria-label="Primary" className="flex flex-col gap-5 text-nav-sm">
+              {/*
+                **`gap-1` with 44px rows, not the `gap-5` this had.** These
+                rows were bare text, so each one's tap target was its own line
+                box — 16.8px at the phone floor, 29.7px on a tablet, against
+                the ~44px a fingertip needs. The height moves to the rows
+                themselves (`min-h-[44px]`, centred) so the targets meet and
+                tile the list instead of leaving dead gutters between them.
+
+                The gap comes down from `1.25rem` to `0.25rem` to pay for it:
+                the rows now carry their own height, so keeping the old gap
+                would add that space on top of boxes already three times their
+                text's height and push the list far looser than the client's
+                spacing. Visually this lands close to where it was; what
+                changed is that the space between labels is now tappable.
+              */}
+              <nav aria-label="Primary" className="flex flex-col gap-1 text-nav-sm">
                 {primaryNav.map((item) =>
                   "children" in item ? (
-                    <div key={item.label} className="flex flex-col gap-5">
+                    <div key={item.label} className="flex flex-col gap-1">
                       {/*
                         A link here too, not the inert label it used to be —
                         the drawer has no hover and no dropdown, so if the
@@ -338,17 +364,17 @@ export function SiteHeader() {
                       */}
                       <Link
                         href={item.href}
-                        className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                        className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                         onClick={closeMenu}
                       >
                         {item.label}
                       </Link>
-                      <div className="flex flex-col gap-5 border-l border-(--edge-gold) pl-5">
+                      <div className="flex flex-col gap-1 border-l border-(--edge-gold) pl-5">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                            className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                             onClick={closeMenu}
                           >
                             <NavGroupLinkLabel link={child} />
@@ -360,7 +386,7 @@ export function SiteHeader() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                      className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                       onClick={closeMenu}
                     >
                       {item.label}
