@@ -1908,51 +1908,65 @@
     atmosphere behind the remainder. That is a seam, not a stretch, and it is
     the failure this construction chooses: her chalice keeps its shape.
   */
-  .suit-paper {
-    background-size: 100% auto;
-  }
+  /*
+    **The suit sheets have no background of their own above `lg` — the picture
+    layer draws them, exactly as it draws the card sheets.**
+
+    These pages are `.card-paper .suit-paper`, and this rule was once a single
+    `background-size` override riding on `.card-paper`'s image. Two changes have
+    passed through it since, both worth recording because the second undid the
+    first:
+
+    - When the card pages moved their sheet to an `<img>`, `.card-paper`'s
+      `background-image` went with it and this rule inherited nothing. The four
+      suit parchments vanished at every width except the 40..64rem band, which
+      happens to declare its own. The fix was to restate the declarations here.
+    - Then the suits took the picture layer too, because the floor-and-`cover`
+      construction was cropping 5..9% off the sides between 1024 and ~1100 (see
+      the note where that block used to be). With the layer drawing the sheet, a
+      background here would paint the same parchment behind it at a different
+      size.
+
+    So the only band that still needs a background is 40..64rem, and it is
+    declared in its own block below rather than here. Above `lg` this rule has
+    nothing to say, which is why there is no `.suit-paper` base rule any more —
+    only the one thing that is still true of these sheets at every width.
+
+    **What remains is the aspect, and it is a real difference from the cards.**
+    All four suit sheets share one ratio to 0.4%, asserted at conversion time in
+    `optimize-suit-assets.mjs`, where the twenty-two card sheets run a 23%
+    spread. Nothing in the picture layer depends on that — it reads each file's
+    own ratio — but it is the reason this page could use a single-constant floor
+    for as long as it did.
+  */
 
   /*
-    Above `lg` the sheet is **exactly** its own aspect — a floor and a ceiling,
-    both read off the measure, which is the width this box actually takes.
+    **Above `lg` the sheet is the picture layer, not a background.**
 
-    The ceiling is what stops the parchment showing twice. With a floor alone
-    the box could still grow past the sheet, and then the single painted layer
-    ends partway down with her torn bottom deckle across the middle of the page
-    and bare ground beneath it — which reads as the sheet repeating.
+    This block used to set `cover` with a `min-block-size` floor computed from
+    the one aspect all four sheets share. That is the construction this page
+    pioneered and it was right for a long time — but it assumes the content
+    lands near the sheet's own proportions, and between 1024 and about 1100 it
+    does not: the sheet halves in width crossing `lg` while the copy keeps its
+    length, so the box ran 2.05..2.14 against her 1.95 and `cover` scaled the
+    parchment up and cropped 5..9% off each side. Worst on Wands. It read as a
+    stretch because the thing that disappears is the torn edge.
 
-    **There is room for the content inside one sheet**, which is what makes the
-    cap safe: at the card measure the sheet stands 2611px tall, and the page's
-    five blocks and their rhythm fit inside that with parchment to spare — her
-    own frames end well short of their bottom deckle.
+    `.card-paper__sheet` replaces both declarations: the picture takes the box's
+    height and derives its own width, so it is neither scaled unevenly nor
+    cropped at any width. The floor goes with the `cover` — the layer needs the
+    box to be the *content's* height, and a floor would hold it taller than the
+    content on short pages and push the sheet wider than it needs to be.
 
-    **A floor, not a fixed height.** It was `block-size` for a while, to stop
-    the box growing past one sheet — but the page's own layout now deliberately
-    runs the first section tall, so that the KEY THEMES rule clears the emblem
-    painted into the sheet (see `SuitIntro`'s prose measure). A hard height
-    would have put those extra lines outside the parchment.
+    The two things that block kept safe are both still handled. The sheet cannot
+    show twice, because the picture is drawn once with no `repeat`. And it
+    cannot end partway down leaving bare ground, because its height *is* the
+    box's height by construction.
 
-    So the sheet is at least its own proportions and grows with the content,
-    and the picture is `cover` rather than `100% auto` past that point.
-
-    **`cover` is what makes growth safe**, and it is the one sizing that fails
-    in none of the ways the others do. `100% 100%` stretches. `100% auto` with
-    `repeat-y` tiles her torn deckle down the page. `100% auto` alone stops
-    where the image stops and shows bare ground beneath. `cover` scales the
-    sheet up until it fills the box, keeping its aspect exactly — so a taller
-    box means a slightly larger parchment, not a distorted or a repeated one.
-
-    What it costs is the sides: a box taller than the sheet's own proportions
-    crops a little off each edge, where the deckle is. The floor keeps that
-    crop small, since the box only ever exceeds the sheet's height by the
-    amount the content overruns it.
+    What the background is still needed for is the 40..64rem band below, which
+    is full-bleed and has no room either side for a wider sheet — see the note
+    there, and `.card-paper__sheet`'s own `display: none` in that window.
   */
-  @media (width >= 64rem) {
-    .suit-paper {
-      background-size: cover;
-      min-block-size: calc(var(--measure-card-paper) * 1.953);
-    }
-  }
 
   /*
     **Between `sm` and `lg` the sheet is full-bleed, so the floor is `vw`.**
