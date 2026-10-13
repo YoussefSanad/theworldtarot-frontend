@@ -81,6 +81,38 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
           } as React.CSSProperties
         }
       >
+        {/*
+          **The sheet as a picture, the same construction the card pages use.**
+
+          This page used to rely on `.suit-paper`'s floor alone: a `min-block-size`
+          computed from the one aspect all four sheets share, with `cover` above
+          `lg` for the case where content outran it. That holds while the content
+          lands near the sheet's proportions, and between 1024 and about 1100 it
+          does not — the sheet halves in width at `lg` while the copy keeps its
+          length, so the box ran 2.05..2.14 against her 1.95 and `cover` scaled
+          the parchment up and cut 5..9% off each side. Worst on Wands, which is
+          the tallest box of the four. It read as the sheet stretching because
+          what goes missing is the torn edge.
+
+          `.card-paper__sheet` fixes it the way it fixed the card pages, and the
+          reasoning there applies unchanged: the height leads, the width follows
+          from the file's own ratio, so the picture is never scaled unevenly and
+          never cropped. See that rule in globals.css.
+
+          **It is the same class deliberately.** The two pages had different
+          problems — the cards' sheets run a 23% spread of aspects where these
+          four share one to 0.4% — but the solution is the one layer, and a suit
+          copy of it would be two rules to keep in step.
+        */}
+        <img
+          src={suitPaper(suit.slug)}
+          alt=""
+          aria-hidden
+          className="card-paper__sheet"
+          decoding="async"
+          fetchPriority="high"
+        />
+
         <Section padding="none" className="pt-[clamp(calc(3rem*var(--card-scale)),calc(9.5vw*var(--card-scale)),calc(11.4rem*var(--card-scale)))]">
           {/*
             **`cardWide`, widened further to the sheet's own measure.**
@@ -106,10 +138,26 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
 
             `xl`-only, because below that the sheet is full-bleed and the gutter
             is the only thing holding the copy off the screen edge.
+
+            **The 5% gutter is new, and it is what the picture layer costs.**
+            The paragraph above says "the sheet's margins are then the only
+            inset", and that was true while the sheet was a `cover` background:
+            it filled the box by definition, so spanning the box meant spanning
+            the paper. The sheet is drawn at its true aspect now
+            (`.card-paper__sheet`), and on these shallow sheets that lands it
+            *narrower* than the box — measured 3..29px a side at 1280 and up,
+            which put the first and last characters of the widest lines off the
+            parchment and onto the page's night sky.
+
+            So the section keeps a small inset of its own rather than trusting
+            the sheet to reach the box's edge. 5% of the sheet's measure is
+            ~48px at the 966px desktop box, which clears the worst case (Swords)
+            with a little to spare and still reads as her frame — it is a third
+            of what `cardWide` was taking before this override existed.
           */}
           <Container
             width="cardWide"
-            className="xl:[--shell-width:var(--measure-card-paper)] xl:[--spacing-gutter:0px]"
+            className="xl:[--shell-width:var(--measure-card-paper)] xl:[--spacing-gutter:calc(0.05*var(--measure-card-paper))]"
           >
             {/*
               The reading ground is inside `SuitIntro`, on the writing column
