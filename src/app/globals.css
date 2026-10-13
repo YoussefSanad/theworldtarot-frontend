@@ -1908,7 +1908,32 @@
     atmosphere behind the remainder. That is a seam, not a stretch, and it is
     the failure this construction chooses: her chalice keeps its shape.
   */
+  /*
+    **The suit sheets paint their own background, and must keep doing so.**
+
+    These pages are `.card-paper .suit-paper`, and this rule used to be a single
+    `background-size` override riding on `.card-paper`'s image. That image is
+    gone — the card pages draw their sheet as an `<img>` now (see
+    `.card-paper__sheet`) — and for a while this rule inherited nothing and the
+    four suit parchments vanished on every width except the 40..64rem band,
+    which happened to declare its own.
+
+    So the declarations live here in full. **The suits deliberately do not take
+    the card pages' picture layer**: their construction already works. All four
+    sheets share one aspect to 0.4% (asserted at conversion time in
+    `optimize-suit-assets.mjs`), so a floor computed from that single ratio
+    sizes the box to the sheet's own proportions and nothing stretches — which
+    is the problem the card pages had to solve differently, their own sheets
+    running a 23% spread.
+
+    If the suit pages ever need the picture layer too — the client has noted a
+    separate oddity in one width range — this is the rule to replace rather than
+    extend.
+  */
   .suit-paper {
+    background-image: var(--card-paper);
+    background-position: center top;
+    background-repeat: no-repeat;
     background-size: 100% auto;
   }
 
