@@ -51,3 +51,6 @@ next-env.d.ts
 # IDE state. Only ever holds this machine's open tabs and window layout,
 # and the backend repo already ignores it.
 /.idea
+
+# Superpowers execution scratch (ledger, briefs, review packages)
+.superpowers/
