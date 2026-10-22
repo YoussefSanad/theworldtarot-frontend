@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ViewingRoom } from "@/components/viewing-room/ViewingRoom";
 import { siteName } from "@/content/site";
 import { viewingRoom, viewingRoomDeck } from "@/content/viewing-room";
 
@@ -27,5 +28,9 @@ export const metadata: Metadata = {
  * **The real gate is the video endpoint**, which refuses on every play.
  */
 export default function ViewingRoomPage() {
-  return <main data-deck-size={viewingRoomDeck.length} />;
+  return (
+    <main className="relative pt-[clamp(32px,5vw,102px)]">
+      <ViewingRoom cards={viewingRoomDeck} />
+    </main>
+  );
 }

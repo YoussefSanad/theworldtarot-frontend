@@ -52,8 +52,13 @@ export function FilmPlayer({
   labels,
 }: {
   card: ViewingRoomCard;
-  /** A backend refusal the room must answer with a modal, not the player. */
-  onRefused: (failure: PlaybackFailure) => void;
+  /**
+   * A backend refusal the room must answer with a modal, not the player.
+   *
+   * Carries the card it happened to, so the room never has to guess which
+   * selection a late refusal belongs to.
+   */
+  onRefused: (failure: PlaybackFailure, cardId: string) => void;
   labels: { play: string; replay: string; retry: string; loading: string; error: string };
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -146,7 +151,7 @@ export function FilmPlayer({
           if (!request.isCurrent()) return;
 
           const failure = readFailure(error);
-          if (failure) onRefused(failure);
+          if (failure) onRefused(failure, card.id);
           setState({ phase: "error" });
           return;
         }
