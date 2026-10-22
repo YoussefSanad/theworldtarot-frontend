@@ -92,6 +92,36 @@ export const viewingRoom = {
     price: "$29 — One-time payment",
     /** Two clauses because only the second is the link. */
     signIn: { lead: "Already Have Access? ", link: "Sign in Here." },
+
+    /**
+     * The switch-account line, for a visitor signed in **without** the pass.
+     *
+     * Not in her frame. `API_CONTRACT.md` warns that people pay under one
+     * address and sign in as another, and this state is where that person
+     * lands; a panel that only says "buy it" sends them to a 422.
+     */
+    account: { signedInAs: "Signed in as", switch: "Sign out / switch account" },
+
+    /** Screen two, which her frame does not draw. See `PaymentPanel`. */
+    payment: {
+      back: "Back",
+      loading: "Checking the price…",
+      unavailable: "The pass cannot be bought right now. Please try again shortly.",
+    },
+  },
+
+  /** The player's own states, which carry no words in her frame. */
+  player: {
+    play: "Play this film",
+    replay: "Play this film again",
+    retry: "Try again",
+    loading: "Starting the film…",
+    error: "This film could not be played.",
+  },
+
+  carousel: {
+    previous: "Previous cards",
+    next: "More cards",
   },
 
   closing: {
