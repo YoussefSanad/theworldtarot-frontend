@@ -164,6 +164,22 @@ export function FilmPlayer({
         playbackRef.current = playback;
       }
 
+      /*
+        Asked again here, and not only after the fetch. The cached-URL path
+        skips the block above entirely — a replay or a retry with a live URL
+        never awaits — so without this a selection landing in the same tick
+        attaches the previous card's film to the element before the teardown
+        effect has run.
+      */
+      if (!request.isCurrent()) return;
+
+      // Detach before replacing. Two starts on the same card — retry pressed
+      // while a source is attached, or a quick double replay — otherwise orphan
+      // the first one, and in phase two each orphan is a live `hls.js` instance
+      // with its own worker and buffer that only `detach()` tears down. The
+      // teardown effect cannot help: it only fires when `card.id` changes.
+      sourceRef.current?.detach();
+
       const source = attachVideoSource(video, playback.url);
       sourceRef.current = source;
 
@@ -228,14 +244,28 @@ export function FilmPlayer({
   return (
     <div
       className={cn(
-        "relative mx-auto w-full overflow-hidden",
+        "relative mx-auto overflow-hidden",
         // Her 509x842. The ratio, never a height: this is the one measurement
         // that has to survive every breakpoint intact.
         "aspect-[509/842]",
-        // A 3:5 portrait at phone width is taller than the screen, so the
-        // player yields height before it yields shape — the carousel has to
-        // stay reachable without a scroll.
-        "max-h-[min(842px,70dvh)]",
+        /*
+          **The width is capped from the height, and that is what keeps the
+          shape.** A 3:5 portrait is taller than a laptop screen, so the height
+          has to be bounded — but `max-height` alone loses the argument with
+          `width: 100%`: the box keeps the full width, takes the capped height,
+          and quietly becomes a landscape frame with the card drawn small in
+          the middle of it. Measured 1333x630 at 1920 before this line, which
+          is the letterboxing the spec forbids, turned on its side.
+
+          So the cap is expressed as a width instead — the widest the card can
+          be and still fit the height — and `aspect-ratio` supplies the height
+          from it. The player then narrows on a short screen rather than
+          spreading, which is what `docs/plans/viewing-room.md` asks for.
+
+          509/842 is the reciprocal of the aspect. 70dvh leaves the carousel
+          reachable on a phone without a scroll.
+        */
+        "w-full max-w-[min(100%,509px,calc(70dvh*509/842))]",
       )}
     >
       {/* The card rests on its own artwork, which is what the poster used to be. */}

@@ -28,6 +28,24 @@ import { type Customer, currentCustomer } from "@/lib/session";
 /** `undefined` until `/me` has answered, which is not the same as nobody being signed in. */
 type Snapshot = Customer | null | undefined;
 
+/**
+ * How long `/me` gets before we answer for it.
+ *
+ * **A rejection was already handled; a request that never settles was not.**
+ * Those are different failures: a refused connection rejects at once, but a
+ * captive portal, a half-open socket, or an API that accepts and then stalls
+ * leaves the promise pending forever — and `undefined` means "still asking",
+ * so every reader waits with it. The masthead sits on a blank account control,
+ * and the Viewing Room sits behind its veil with no modal to act on, neither
+ * of which recovers.
+ *
+ * Eight seconds is long enough for a slow phone on a bad connection and short
+ * enough that nobody reads it as broken. Timing out answers `null`, which is
+ * the same answer a thrown read already gives, and for the same reason: a
+ * visitor can act on "sign in" and cannot act on a spinner.
+ */
+const ANSWER_DEADLINE_MS = 8_000;
+
 let snapshot: Snapshot;
 let asked = false;
 let asking: Promise<void> | null = null;
@@ -72,7 +90,7 @@ function readOnServer(): Snapshot {
 function ask(): void {
   if (asked || asking) return;
 
-  asking = currentCustomer()
+  asking = currentCustomer({ signal: AbortSignal.timeout(ANSWER_DEADLINE_MS) })
     .then(
       (customer) => publish(customer),
       // A 401 already answered `null` rather than throwing, so this is a broken

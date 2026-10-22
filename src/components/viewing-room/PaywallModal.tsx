@@ -29,10 +29,21 @@ export type PaywallScreen = "unlock" | "payment";
  */
 export function PaywallModal({
   screen,
+  state,
   heading,
   children,
 }: {
   screen: PaywallScreen;
+  /**
+   * The access state the panel is drawn for.
+   *
+   * Here only so focus is re-seated when it changes: signing out swaps the
+   * panel's contents — the account line goes, the sign-in link arrives —
+   * without changing `screen`, and the element focus was on is removed from
+   * the document. Without this the visitor is left on `<body>`, outside the
+   * trap, until they press Tab.
+   */
+  state: string;
   /** The panel's own heading text, which labels the dialog. */
   heading: string;
   children: React.ReactNode;
@@ -50,11 +61,17 @@ export function PaywallModal({
     };
   }, []);
 
-  /* Focus starts inside, so the first Tab is already within the trap. */
+  /*
+    Focus starts inside, so the first Tab is already within the trap — and is
+    re-seated whenever the panel's contents are replaced, which is either
+    screen changing or the access state changing underneath it.
+  */
   useEffect(() => {
-    const first = focusableWithin(panelRef.current)[0];
-    first?.focus();
-  }, [screen]);
+    const panel = panelRef.current;
+    if (panel?.contains(document.activeElement)) return;
+
+    focusableWithin(panel)[0]?.focus();
+  }, [screen, state]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

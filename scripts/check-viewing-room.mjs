@@ -326,6 +326,93 @@ console.log("\nRapid switching:");
 }
 
 /* ------------------------------------------------------------------ */
+console.log("\nSigning out from the no-pass panel:");
+for (const logoutWorks of [true, false]) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  let signedOut = false;
+
+  await page.route(
+    (url) => url.pathname.includes("/api/v1/") || url.pathname.includes("/sanctum/"),
+    (route) => {
+      const url = route.request().url();
+
+      if (url.endsWith("/logout")) {
+        signedOut = logoutWorks;
+        return logoutWorks ? route.fulfill(api(null, 204)) : route.abort();
+      }
+      if (url.endsWith("/api/v1/me")) {
+        return route.fulfill(signedOut ? api({ message: "Unauthenticated." }, 401) : api(NO_PASS));
+      }
+      return route.fulfill(api([]));
+    },
+  );
+
+  await page.goto(ROOM, { waitUntil: "networkidle" });
+
+  const label = logoutWorks ? "logout succeeds" : "logout fails";
+  await page.getByRole("button", { name: SWITCH }).click();
+  await page.waitForTimeout(400);
+
+  const dialog = page.locator(modalSelector);
+  expect(label, "the panel is still up", await dialog.count(), 1);
+
+  /*
+    The point of both branches: whatever the network did, the visitor must end
+    up on a panel that offers a way back in. A failed logout that leaves the
+    old account named is the state the contract warns about — somebody buying
+    a second pass under an address they were trying to leave.
+  */
+  expect(label, "the sign-in link is offered", await dialog.getByRole("link", { name: SIGN_IN }).count(), 1);
+  expect(label, "the old account is no longer named", await dialog.getByText(NO_PASS.email).count(), 0);
+
+  const focusInside = await page.evaluate(
+    () => document.querySelector('[role="dialog"]')?.contains(document.activeElement) ?? false,
+  );
+  expect(label, "focus stays inside the dialog", focusInside, true);
+
+  await context.close();
+}
+
+
+/* ------------------------------------------------------------------ */
+console.log("\nThe player keeps the card's shape at every width:");
+{
+  /*
+    The one measurement that has to survive every breakpoint. 509x842 is
+    1:1.654, and a player that quietly becomes a landscape box is the
+    letterboxing the spec forbids, rotated 90 degrees — the card draws at its
+    own ratio inside it and the rest of the box is empty.
+  */
+  const CARD = 842 / 509;
+
+  for (const width of [360, 390, 430, 768, 1024, 1280, 1920]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage();
+
+    await page.route(
+      (url) => url.pathname.includes("/api/v1/"),
+      (route) =>
+        route.fulfill(route.request().url().endsWith("/api/v1/me") ? api(MEMBER) : api([])),
+    );
+    await page.goto(ROOM, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+
+    const box = await page
+      .locator("video")
+      .first()
+      .evaluateHandle((video) => video.parentElement)
+      .then((handle) => handle.asElement().boundingBox());
+
+    const ratio = box.height / box.width;
+    expect(`${width}px`, "the player is the card's shape", Math.abs(ratio - CARD) < 0.02, true);
+
+    await context.close();
+  }
+}
+
+
+/* ------------------------------------------------------------------ */
 console.log("\n360px with the keyboard up (Review Focus #5):");
 {
   // 360x480 is roughly a 360 phone with the on-screen keyboard raised: the

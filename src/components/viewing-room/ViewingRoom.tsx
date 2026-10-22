@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Container } from "@/components/layout/Section";
@@ -145,7 +145,7 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
       </div>
 
       {modal && (
-        <PaywallModal screen={screen} heading={viewingRoom.panel.heading}>
+        <PaywallModal screen={screen} state={state} heading={viewingRoom.panel.heading}>
           {screen === "unlock" ? (
             <UnlockPanel
               state={state}
@@ -170,7 +170,11 @@ function firstPlayable(cards: readonly ViewingRoomCard[]): string {
 }
 
 /**
- * `?state=signed-out|no-pass|member`, **outside production only**.
+ * `?state=signed-out|no-pass|member|asking`, **outside production only**.
+ *
+ * `asking` is included so the veil can be held open deliberately — it is the
+ * state a slow or hanging `/me` produces, and it is otherwise a half-second
+ * nobody can look at.
  *
  * Phase one has no backend to sign anybody in, so without this the signed-out
  * panel is the only reachable state and the member's room — the thing the
@@ -180,12 +184,32 @@ function firstPlayable(cards: readonly ViewingRoomCard[]): string {
  * a film, and in phase two it is deleted.
  */
 function useDevState(): AccessState | null {
+  /*
+    Read after mount, never during render. This is a static export: the HTML is
+    built on a machine with no URL, so a render that reads `window.location`
+    produces different markup than the one it is adopting — a hydration
+    mismatch, in the one environment this switch exists for. `useSignedIn`
+    goes to the same trouble for the same reason.
+  */
+  return useSyncExternalStore(subscribeToNothing, readDevState, readNothing);
+}
+
+/** The URL never changes under this page, so there is nothing to subscribe to. */
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
+/** The server snapshot: a build machine has no URL and nobody is signed in. */
+function readNothing(): AccessState | null {
+  return null;
+}
+
+function readDevState(): AccessState | null {
   if (process.env.NODE_ENV === "production") return null;
-  if (typeof window === "undefined") return null;
 
-  const asked = new URLSearchParams(window.location.search).get("state");
+  const value = new URLSearchParams(window.location.search).get("state");
 
-  return asked === "signed-out" || asked === "no-pass" || asked === "member" || asked === "asking"
-    ? asked
+  return value === "signed-out" || value === "no-pass" || value === "member" || value === "asking"
+    ? value
     : null;
 }
