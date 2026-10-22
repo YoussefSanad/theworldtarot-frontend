@@ -38,28 +38,29 @@ export function ReplayControl({
       onClick={onReplay}
       aria-label={label}
       className={cn(
-        "absolute bottom-[4%] left-1/2 z-10 -translate-x-1/2",
-        "grid size-[43px] place-items-center rounded-full",
-        "border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/45 backdrop-blur-sm",
-        "text-[color:var(--gold,#d4b06a)]",
-        "opacity-55 transition-opacity duration-300 ease-out",
+        // Centred on the card and the same 88px disc as the play button: this
+        // is the same affordance a second time, so it is the same control.
+        "absolute inset-0 z-10 grid place-items-center",
+        "opacity-70 transition-opacity duration-300 ease-out",
         "hover:opacity-100 focus-visible:opacity-100",
         // No hover to wait for: show it outright rather than hiding a control
         // behind a gesture the device cannot make.
         "[@media(hover:none)]:opacity-100",
       )}
     >
+      <span className="grid size-[88px] place-items-center rounded-full border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/40 text-[color:var(--gold,#d4b06a)] backdrop-blur-sm">
       {/* A circling arrow: replay, in the gold the room already uses. */}
       <svg
         viewBox="0 0 24 24"
         aria-hidden="true"
-        className="size-5 fill-none stroke-current stroke-[1.6]"
+        className="size-8 fill-none stroke-current stroke-[1.6]"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
         <path d="M20 12a8 8 0 1 1-2.34-5.66" />
         <path d="M20 4v4.5h-4.5" />
       </svg>
+      </span>
     </button>
   );
 }

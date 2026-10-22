@@ -81,14 +81,17 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
           `inert` yet.
         */
         {...(modal ? { inert: true, "aria-hidden": true } : {})}
+        // A stable hook for the browser check, which must not depend on this
+        // being a particular child of `main` — `PageAtmosphere` is one too.
+        data-viewing-room=""
         className={cn(modal && "pointer-events-none select-none")}
       >
         <Container className="flex flex-col items-center">
           <header className="text-center">
-            <h1 className="text-[clamp(32px,4.5vw,58px)] leading-tight text-white">
+            <h1 className="font-display text-[clamp(32px,4.5vw,58px)] leading-tight text-white">
               {viewingRoom.title}
             </h1>
-            <p className="mt-3 text-[clamp(13px,1.8vw,24px)] tracking-[0.2em] text-[#f9f3d0]/80">
+            <p className="mt-3 font-serif text-[clamp(13px,1.8vw,24px)] tracking-[0.2em] text-[#f9f3d0]/80">
               {viewingRoom.subtitle}
             </p>
           </header>

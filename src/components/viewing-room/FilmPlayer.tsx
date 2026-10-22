@@ -238,6 +238,25 @@ export function FilmPlayer({
     startRef.current = (options) => void start(options);
   }, [start]);
 
+  /**
+   * Pause and resume, for a visitor who clicks the film itself.
+   *
+   * Clicking a playing video to stop it is what every player does, and without
+   * it the only way to stop this one is to pick a different card. The phase
+   * follows the element rather than being tracked separately, so a pause from
+   * anywhere — this, the keyboard, the OS media keys — reads the same.
+   */
+  const togglePlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, []);
+
   const resting = state.phase === "resting";
   const ended = state.phase === "ended";
 
@@ -286,9 +305,13 @@ export function FilmPlayer({
         playsInline
         poster={card.image.src}
         onEnded={() => setState({ phase: "ended" })}
+        onClick={togglePlayback}
         className={cn(
           "absolute inset-0 size-full object-contain",
           resting && "invisible",
+          // Only while there is something to pause; the play overlay owns the
+          // surface before that and the replay control owns it after.
+          !resting && !ended && "cursor-pointer",
         )}
       />
 

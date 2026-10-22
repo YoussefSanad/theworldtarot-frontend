@@ -1443,6 +1443,23 @@
     percentage would squash the room whenever the page runs taller or shorter
     than the frame.
   */
+  /*
+    The Viewing Room's own room (Figma `384:3`, her two BACKGROUND layers
+    flattened to one delivery).
+
+    `cover` from the top, like the Library's rotunda: her artboard is
+    1920x2132 and the real page is taller once a header and a footer it does
+    not draw are added, so the image is anchored at the top and the floor runs
+    out of frame rather than the ceiling being cropped away.
+  */
+  .page-atmosphere-viewing-room {
+    background-color: var(--color-night, #05080d);
+    background-image: url("/figma/viewing-room-bg.png");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   .page-atmosphere-library {
     /*
       **`--room-drop` is the World Tarot path's `--path-drop`, and it is here

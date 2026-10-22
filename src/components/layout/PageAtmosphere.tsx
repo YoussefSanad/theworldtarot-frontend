@@ -28,7 +28,8 @@ export type AtmosphereVariant =
   | "reading"
   | "world-tarot"
   | "library"
-  | "card-reference";
+  | "card-reference"
+  | "viewing-room";
 
 const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
   hero: { className: "page-atmosphere-hero overflow-clip", id: "hero-sky" },
@@ -44,6 +45,8 @@ const VARIANT: Record<AtmosphereVariant, { className: string; id?: string }> = {
    * the site, and the one that repeats rather than being cropped to fit.
    */
   "card-reference": { className: "page-atmosphere-card-reference" },
+  /** The dark room the Living Tarot films are shown in (Figma `384:3`). */
+  "viewing-room": { className: "page-atmosphere-viewing-room" },
 };
 
 export function PageAtmosphere({ variant, className }: { variant: AtmosphereVariant; className?: string }) {

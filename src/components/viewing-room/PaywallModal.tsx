@@ -115,10 +115,17 @@ export function PaywallModal({
         aria-labelledby={headingId}
         className={cn(
           "relative w-full max-w-[772px]",
-          // Her panel is 772x713. The height is content-led rather than fixed
-          // so the payment screen can be taller than the unlock screen, and so
-          // a phone with the keyboard up can still scroll to the button.
-          "max-h-[100dvh] overflow-y-auto",
+          /*
+            Her panel is 772x713 on a 2132 artboard — a third of the page, not
+            the whole of it. Sized to the content and then capped, so the
+            room stays visible around it, which is the point of a paywall over
+            a room rather than in front of one.
+
+            The cap is generous on a phone, where a 50% panel would put the
+            gold button under the keyboard, and tight on a desktop, where
+            there is a room to see behind it.
+          */
+          "max-h-[min(92dvh,713px)] overflow-y-auto",
           "rounded-[18px] border border-[color:var(--gold-line,#d4b06a)]/60",
           "bg-[#0b1522]/95 px-[clamp(20px,5vw,50px)] py-[clamp(24px,4vw,51px)]",
           "shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-sm",

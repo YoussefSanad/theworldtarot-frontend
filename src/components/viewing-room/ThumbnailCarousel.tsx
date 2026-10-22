@@ -1,11 +1,16 @@
 "use client";
 
-import AutoScroll from "embla-carousel-auto-scroll";
 import type { EmblaOptionsType } from "embla-carousel";
-import { useReducedMotion } from "motion/react";
 import { useMemo } from "react";
 
-import { Carousel, CarouselSlide, CarouselTrack, CarouselViewport, useCarousel } from "@/components/ui/Carousel";
+import {
+  Carousel,
+  CarouselSlide,
+  CarouselTrack,
+  CarouselViewport,
+  useCarousel,
+  useCarouselDuration,
+} from "@/components/ui/Carousel";
 import type { ViewingRoomCard } from "@/content/viewing-room";
 import { cn } from "@/lib/cn";
 import { thumbnailLabel } from "@/lib/viewing-room-access";
@@ -18,17 +23,16 @@ import { thumbnailLabel } from "@/lib/viewing-room-access";
  * deck, not the whole deck**: twenty-two drift through it, which is what
  * continuous auto-scroll means and why she draws a left/right control beneath.
  *
- * ## The drift is `MetaStripCarousel`'s, re-tuned
+ * ## It loops, and it does not drift
  *
- * That component already solved this on this site and its reasoning holds
- * here: drift rather than snap, so nothing demands attention by jumping;
- * `stopOnInteraction: false`, so the row is never left parked where a thumb
- * abandoned it; and under `prefers-reduced-motion` the plugin is **not
- * passed** rather than merely slowed, which leaves an ordinary draggable
- * strip.
+ * **No auto-scroll.** The strip is a set to choose from rather than decoration
+ * beside a value, and a row that moves on its own is a row a visitor has to
+ * chase to click — the thing they are trying to do is pick a card. It wraps
+ * instead: `loop` means the deck has no ends, so the arrows and a drag both
+ * run forever in either direction without ever stopping at an edge.
  *
- * Two deliberate departures, both because this strip is a set to choose from
- * rather than decoration beside a value:
+ * Two more departures from the strips elsewhere on the site, for the same
+ * reason:
  *
  * - **The selected card is marked**, visibly and with `aria-current`.
  * - **Manual controls exist.** Her frame draws one disc with both arrows; it
@@ -48,53 +52,53 @@ export function ThumbnailCarousel({
   hint: string;
   labels: { previous: string; next: string };
 }) {
-  const reducedMotion = useReducedMotion();
+  const duration = useCarouselDuration();
 
-  const options: EmblaOptionsType = {
-    align: "center",
-    loop: true,
-    // The strip is a continuous band rather than a set of pages, so it is not
-    // held to its own edges.
-    containScroll: false,
-  };
-
-  /**
-   * A fresh array every render would tear Embla down and rebuild it in a loop,
-   * so this is memoised — and empty, not merely stopped, under reduced motion.
-   */
-  const plugins = useMemo(
-    () =>
-      reducedMotion
-        ? []
-        : [
-            AutoScroll({
-              // Slower than the meta strip's 0.6: twenty-two cards is a longer
-              // journey than five captions, and a visitor is choosing from
-              // these rather than reading past them.
-              speed: 0.4,
-              startDelay: 0,
-              stopOnInteraction: false,
-              stopOnMouseEnter: true,
-              stopOnFocusIn: true,
-            }),
-          ],
-    [reducedMotion],
+  const options: EmblaOptionsType = useMemo(
+    () => ({
+      align: "center",
+      /** The deck has no ends: the arrows and a drag both run forever. */
+      loop: true,
+      // A looping strip is a continuous band rather than a set of pages, so it
+      // is not held to its own edges.
+      containScroll: false,
+      // Zeroed under `prefers-reduced-motion`, which Embla's rAF transform
+      // would otherwise ignore — see `useCarouselDuration`.
+      duration,
+    }),
+    [duration],
   );
 
   return (
     <section aria-label={hint} className="relative w-full">
-      <p className="mb-3 text-center text-[18px] tracking-[0.18px] text-[#b1b2b2]">{hint}</p>
+      {/*
+        Her hint sits just under the top of the band and well clear of the
+        cards: 13px above it in the frame, 33px below. Asymmetric on purpose —
+        it reads as a label for the row rather than as a floating caption.
+      */}
+      <p className="mt-[clamp(2px,0.7vw,13px)] mb-[clamp(18px,2.4vw,46px)] text-center font-serif text-[clamp(13px,1.1vw,18px)] tracking-[0.18px] text-[#b1b2b2]">
+        {hint}
+      </p>
 
-      <Carousel
-        options={options}
-        plugins={plugins}
-        /* ~230px of a 1920 frame, so five sit across it as her band does. */
-        className="[--carousel-slide:clamp(140px,11.98vw,230px)]"
-      >
+      <Carousel options={options}>
         <CarouselViewport>
-          <CarouselTrack className="flex gap-[clamp(12px,1.7vw,32px)]">
+          <CarouselTrack className="flex items-center gap-[clamp(12px,1.7vw,32px)]">
             {cards.map((card) => (
-              <CarouselSlide key={card.id} className="carousel-slide">
+              <CarouselSlide
+                key={card.id}
+                /*
+                  **The width is set here, not through `--carousel-slide`.**
+                  `.carousel-slide`'s `flex: 0 0 var(…)` is defined in a layer
+                  that this track's own `flex` utility outranks, so the slides
+                  resolved to `0 1 auto` and shrank to their content — 54px
+                  instead of 230, and 109px for the first locked card, whose
+                  grayscale filter changed how the image reported its
+                  intrinsic size. Measured, not guessed.
+
+                  ~230px of her 1920 frame, so five sit across the band.
+                */
+                className="w-[clamp(132px,11.98vw,230px)] shrink-0 grow-0 basis-auto"
+              >
                 <Thumbnail
                   card={card}
                   selected={card.id === selectedId}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ViewingRoom } from "@/components/viewing-room/ViewingRoom";
 import { siteName } from "@/content/site";
 import { viewingRoom, viewingRoomDeck } from "@/content/viewing-room";
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 export default function ViewingRoomPage() {
   return (
     <main className="relative pt-[clamp(32px,5vw,102px)]">
+      <PageAtmosphere variant="viewing-room" />
       <ViewingRoom cards={viewingRoomDeck} />
     </main>
   );

@@ -163,7 +163,7 @@ console.log("\nSigned out (401):");
 
   // The room is behind an inert container, so nothing in it is reachable.
   const roomInert = await page.evaluate(
-    () => document.querySelector("main > div")?.hasAttribute("inert") ?? false,
+    () => document.querySelector("[data-viewing-room]")?.hasAttribute("inert") ?? false,
   );
   expect("signed-out", "the room is inert", roomInert, true);
 
@@ -239,7 +239,7 @@ console.log("\nMember:");
 
   expect("member", "no panel now", await page.locator(modalSelector).count(), 0);
   expect("member", "no panel ever", everSawModal, false);
-  expect("member", "the room is usable", await page.locator("main > div").first().getAttribute("inert"), null);
+  expect("member", "the room is usable", await page.locator("[data-viewing-room]").getAttribute("inert"), null);
   expect("member", "the carousel is there", await page.getByText(HINT).isVisible(), true);
 
   await context.close();
@@ -251,7 +251,7 @@ console.log("\nInert removed by hand (the gate is the backend, not the DOM):");
   const { context, page, videoRequests } = await openRoom({ meStatus: 401 });
 
   await page.evaluate(() => {
-    document.querySelector("main > div")?.removeAttribute("inert");
+    document.querySelector("[data-viewing-room]")?.removeAttribute("inert");
     document.querySelector('[role="dialog"]')?.closest("div.fixed")?.remove();
   });
 
