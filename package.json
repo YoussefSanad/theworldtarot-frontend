@@ -24,7 +24,8 @@
     "check:currency": "node scripts/check-currency.mjs",
     "check:confirmation": "node scripts/check-confirmation.mjs",
     "check:redeem": "node scripts/check-redeem.mjs",
-    "check:login": "node scripts/check-login.mjs"
+    "check:login": "node scripts/check-login.mjs",
+    "check:viewing-room": "node scripts/check-viewing-room.mjs"
   },
   "volta": {
     "node": "22.23.2"

@@ -92,7 +92,7 @@ export function ThumbnailCarousel({
         className="[--carousel-slide:clamp(140px,11.98vw,230px)]"
       >
         <CarouselViewport>
-          <CarouselTrack as="ul" className="m-0 flex list-none gap-[clamp(12px,1.7vw,32px)] p-0">
+          <CarouselTrack className="flex gap-[clamp(12px,1.7vw,32px)]">
             {cards.map((card) => (
               <CarouselSlide key={card.id} className="carousel-slide">
                 <Thumbnail
@@ -130,6 +130,7 @@ function Thumbnail({
         skipped. Three of twenty-two have no film yet, and dropping them from
         the sequence silently shortens the deck for anybody not using a mouse.
       */
+      aria-label={thumbnailLabel(card)}
       aria-disabled={locked || undefined}
       aria-current={selected || undefined}
       onClick={() => {
@@ -147,7 +148,7 @@ function Thumbnail({
     >
       <img
         src={card.image.src}
-        alt={thumbnailLabel(card)}
+        alt=""
         width={card.image.width}
         height={card.image.height}
         loading="lazy"
