@@ -31,15 +31,15 @@ export function UnlockPanel({
   labels: { signedInAs: string; switch: string };
 }) {
   return (
-    <div className="mt-6 flex flex-col items-center">
+    <div className="mt-4 flex flex-col items-center">
       {/* Her key divider (`384:40`), as a rule with a keyhole at its middle. */}
-      <div aria-hidden className="flex w-full max-w-[452px] items-center gap-3 opacity-80">
+      <div aria-hidden className="flex w-full max-w-[380px] items-center gap-3 opacity-80">
         <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d4b06a]/60" />
         <KeyMark />
         <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#d4b06a]/60" />
       </div>
 
-      <p className="mt-6 max-w-[680px] text-center text-[clamp(16px,2.6vw,32px)] leading-[1.08] text-[#f9f3d0]">
+      <p className="mt-5 max-w-[560px] text-center text-[clamp(14px,1.25vw,20px)] leading-[1.35] text-[#f9f3d0]">
         {panel.body}
       </p>
 
@@ -48,11 +48,11 @@ export function UnlockPanel({
         stack: her row is three short captions, and squeezing them onto one
         line on a 360 would shrink the type below the rest of the panel.
       */}
-      <ul className="mt-8 grid w-full max-w-[560px] list-none grid-cols-3 gap-4 p-0 max-[420px]:grid-cols-1">
+      <ul className="mt-6 grid w-full max-w-[460px] list-none grid-cols-3 gap-4 p-0 max-[420px]:grid-cols-1">
         {panel.benefits.map((benefit) => (
           <li key={benefit.lines.join(" ")} className="flex flex-col items-center gap-3 text-center">
             <BenefitMark name={benefit.lines[0]} />
-            <span className="text-[clamp(12px,1.5vw,18px)] leading-[1.1] tracking-[0.9px] text-[#f9f3d0]">
+            <span className="font-serif text-[clamp(10px,0.78vw,13px)] leading-[1.25] tracking-[0.9px] text-[#f9f3d0]">
               {benefit.lines.map((line) => (
                 <span key={line} className="block">
                   {line}
@@ -67,11 +67,11 @@ export function UnlockPanel({
         type="button"
         onClick={onBuy}
         className={cn(
-          "mt-9 flex w-full max-w-[470px] items-center justify-center gap-3",
+          "mt-7 flex w-full max-w-[390px] items-center justify-center gap-3",
           // 66px at her size, never below the 44px tap target on a phone.
-          "min-h-[clamp(52px,6vw,66px)] rounded-full px-6",
+          "min-h-[clamp(48px,3.4vw,56px)] rounded-full px-6",
           "bg-gradient-to-b from-[#f4dfa8] via-[#d4b06a] to-[#b8923f]",
-          "text-[clamp(16px,2.2vw,30px)] tracking-[-0.75px] text-[#101b2e]",
+          "font-serif text-[clamp(14px,1.25vw,20px)] tracking-[-0.3px] text-[#101b2e]",
           "transition-[filter] hover:brightness-110",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
         )}
@@ -80,7 +80,7 @@ export function UnlockPanel({
         {panel.action}
       </button>
 
-      <p className="mt-4 text-center text-[clamp(18px,2.6vw,36px)] tracking-[0.36px] text-white">
+      <p className="mt-3 text-center text-[clamp(15px,1.4vw,22px)] tracking-[0.36px] text-white">
         {panel.price}
       </p>
 
@@ -90,7 +90,7 @@ export function UnlockPanel({
         path itself is #132's, and this is the link it will honour.
       */}
       {state === "signed-out" && (
-        <p className="mt-6 text-center text-[clamp(16px,2.2vw,30px)] tracking-[0.75px] text-[#d4b06a]">
+        <p className="mt-4 text-center text-[clamp(13px,1.05vw,17px)] tracking-[0.75px] text-[#d4b06a]">
           {panel.signIn.lead}
           <Link
             href="/login/?next=/viewing-room/"
@@ -132,7 +132,7 @@ function KeyholeMark() {
  * they return.
  */
 function BenefitMark({ name }: { name: string }) {
-  const common = "size-[clamp(40px,5.5vw,71px)] fill-none stroke-[#d4b06a] stroke-[1.2]";
+  const common = "size-[clamp(32px,2.9vw,46px)] fill-none stroke-[#d4b06a] stroke-[1.2]";
 
   if (name.startsWith("LIFETIME")) {
     return (

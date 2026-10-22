@@ -376,6 +376,44 @@ for (const logoutWorks of [true, false]) {
 
 
 /* ------------------------------------------------------------------ */
+console.log("\nThe panel stays a panel, not a page:");
+{
+  /*
+    Her 713px is a third of a 2132px artboard, not of a screen. Transcribing
+    her type sizes literally made this 66% of a 1080p viewport and 89% of a
+    1280x800 laptop, which reads as a page rather than as something laid over
+    a room. Desktop viewports are held to roughly half the height; the phone
+    is exempt, because there the panel is the whole interaction and a cap
+    would only clip the button.
+  */
+  for (const [width, height] of [[1280, 800], [1440, 900], [1920, 1080]]) {
+    const context = await browser.newContext({ viewport: { width, height } });
+    const page = await context.newPage();
+
+    await page.route(
+      (url) => url.pathname.includes("/api/v1/"),
+      (route) => route.fulfill(route.request().url().endsWith("/api/v1/me") ? api(NO_PASS) : api([])),
+    );
+    await page.goto(ROOM, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(700);
+
+    const box = await page.locator(modalSelector).boundingBox();
+    const share = box.height / height;
+    expect(`${width}x${height}`, "the panel is about half the screen", share < 0.62, true);
+
+    // And it fits, rather than hiding its own button behind a scrollbar.
+    const fits = await page.evaluate(() => {
+      const dialog = document.querySelector('[role="dialog"]');
+      return dialog.scrollHeight <= dialog.clientHeight + 1;
+    });
+    expect(`${width}x${height}`, "the content fits without scrolling", fits, true);
+
+    await context.close();
+  }
+}
+
+
+/* ------------------------------------------------------------------ */
 console.log("\nThe player keeps the card's shape at every width:");
 {
   /*

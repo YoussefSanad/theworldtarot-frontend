@@ -116,24 +116,26 @@ export function PaywallModal({
         className={cn(
           "relative w-full max-w-[772px]",
           /*
-            Her panel is 772x713 on a 2132 artboard — a third of the page, not
-            the whole of it. Sized to the content and then capped, so the
-            room stays visible around it, which is the point of a paywall over
-            a room rather than in front of one.
+            **Her 713px is a third of a 2132px artboard, not of a screen.**
+            Transcribing her type sizes literally made the panel 66% of a
+            1080p viewport and 89% of a 1280x800 laptop — it read as a page
+            rather than as a panel over a room, which is the whole point of
+            a paywall you can see the room behind.
 
-            The cap is generous on a phone, where a 50% panel would put the
-            gold button under the keyboard, and tight on a desktop, where
-            there is a room to see behind it.
+            So the type below is scaled to the viewport rather than to her
+            artboard, and this cap is the backstop rather than the mechanism:
+            the content now fits inside it on every desktop, and it only
+            bites on a short window.
           */
-          "max-h-[min(92dvh,713px)] overflow-y-auto",
+          "max-h-[min(88dvh,640px)] overflow-y-auto",
           "rounded-[18px] border border-[color:var(--gold-line,#d4b06a)]/60",
-          "bg-[#0b1522]/95 px-[clamp(20px,5vw,50px)] py-[clamp(24px,4vw,51px)]",
+          "bg-[#0b1522]/95 px-[clamp(20px,3.4vw,50px)] py-[clamp(20px,2.2vw,36px)]",
           "shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-sm",
         )}
       >
         <h2
           id={headingId}
-          className="text-center text-[clamp(26px,4.2vw,45px)] leading-tight text-[#f9f3d0]"
+          className="text-center font-display text-[clamp(24px,2.1vw,34px)] leading-tight text-[#f9f3d0]"
         >
           {heading}
         </h2>

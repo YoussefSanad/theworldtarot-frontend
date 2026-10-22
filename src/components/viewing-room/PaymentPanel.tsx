@@ -44,12 +44,12 @@ export function PaymentPanel({
   const offer = useProduct(PASS);
 
   return (
-    <div className="mt-6 flex flex-col items-center">
-      <p className="text-center text-[clamp(18px,2.6vw,36px)] tracking-[0.36px] text-white">
+    <div className="mt-4 flex flex-col items-center">
+      <p className="text-center text-[clamp(15px,1.4vw,22px)] tracking-[0.36px] text-white">
         {viewingRoom.panel.price}
       </p>
 
-      <div className="mt-7 w-full max-w-[470px]">
+      <div className="mt-6 w-full max-w-[390px]">
         {offer.status === "loading" && (
           <p role="status" className="text-center text-sm text-[#f9f3d0]/70">
             {labels.loading}
@@ -80,7 +80,7 @@ export function PaymentPanel({
       <button
         type="button"
         onClick={onBack}
-        className="mt-6 text-[clamp(14px,1.8vw,20px)] text-[#d4b06a] underline decoration-from-font underline-offset-2"
+        className="mt-5 text-[clamp(13px,1.05vw,16px)] text-[#d4b06a] underline decoration-from-font underline-offset-2"
       >
         {labels.back}
       </button>
