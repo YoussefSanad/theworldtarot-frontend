@@ -20,7 +20,7 @@ export const hero = {
       label: ["explore the", "complete collection"],
       /** Shorter variant shown below `sm`, so both buttons fit on one row on phones. */
       labelMobile: ["explore the", "collection"],
-      href: "/living-tarot",
+      href: "/viewing-room/",
       icon: icons.book,
     },
     {
@@ -152,7 +152,7 @@ export const products: Product[] = [
     subtitle: "Complete Cinematic Collection",
     price: "$29",
     action: "ENTER",
-    href: "/viewing-room",
+    href: "/viewing-room/",
     image: artwork.productViewingRoom,
   },
 ];

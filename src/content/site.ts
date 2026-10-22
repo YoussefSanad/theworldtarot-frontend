@@ -52,7 +52,7 @@ export type NavItem = NavLink | NavGroup;
 
 export const primaryNav: NavItem[] = [
   { label: "WORLD TAROT", href: "/world-tarot/" },
-  { label: "LIVING TAROT", href: "/living-tarot" },
+  { label: "VIEWING ROOM", href: "/viewing-room/" },
   {
     label: "READINGS",
     href: "/readings/",
@@ -115,7 +115,7 @@ export const headerActions = {
 
 export const footerNav: NavLink[] = [
   { label: "World Tarot", href: "/world-tarot/" },
-  { label: "Living Tarot", href: "/living-tarot" },
+  { label: "Viewing Room", href: "/viewing-room/" },
   { label: "Readings", href: "/readings/" },
   { label: "Library", href: "/library/" },
   { label: "FAQ", href: "/faq" },
