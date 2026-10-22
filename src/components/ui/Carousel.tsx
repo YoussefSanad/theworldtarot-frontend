@@ -43,7 +43,16 @@ export function useCarouselDuration() {
   return useReducedMotion() ? 0 : EMBLA_DEFAULT_DURATION;
 }
 
-function useCarousel(component: string) {
+/**
+ * The Embla instance this carousel is driving, for a call site that needs to
+ * steer it rather than only lay it out.
+ *
+ * Exported since `components/viewing-room/ThumbnailCarousel.tsx`, the first
+ * call site to draw its own previous/next controls: every carousel before it
+ * was either drag-and-drift or navigated by `CarouselDots`, which reads this
+ * context from inside the primitive.
+ */
+export function useCarousel(component: string) {
   const context = use(CarouselContext);
   if (!context) throw new Error(`<${component} /> must be rendered inside <Carousel>`);
   return context;

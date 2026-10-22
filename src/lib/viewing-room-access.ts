@@ -51,3 +51,22 @@ export function accessStateOf(customer: Customer | null | undefined): AccessStat
 export function roomIsInert(state: AccessState): boolean {
   return state === "signed-out" || state === "no-pass";
 }
+
+/**
+ * What a screen reader says for one thumbnail.
+ *
+ * The alt-text pattern the ticket fixes — `"[Card Name] tarot card from The
+ * World Tarot"` — with the lock appended rather than substituted, so a locked
+ * card is still named the same way as every other.
+ *
+ * **A locked card stays in the tab order.** Three of the twenty-two have no
+ * film yet, and dropping them from the sequence would silently shorten the
+ * deck for anybody not using a mouse — they would never learn those cards
+ * exist. So the card is reachable, and it explains itself instead of simply
+ * failing to respond to a press.
+ */
+export function thumbnailLabel(card: { name: string; inViewingRoom: boolean }): string {
+  const base = `${card.name} tarot card from The World Tarot`;
+
+  return card.inViewingRoom ? base : `${base} — coming soon`;
+}
