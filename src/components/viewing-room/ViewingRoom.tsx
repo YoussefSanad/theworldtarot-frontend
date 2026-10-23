@@ -239,32 +239,26 @@ function subscribeToNothing(): () => void {
  * has no way to buy the pass, so without this nobody can look at the member's
  * room on staging — which is the thing the client is actually approving.
  *
- * `NEXT_PUBLIC_ALLOW_STATE_OVERRIDE` is inlined at build time, so production
- * builds strip this whole path as dead code rather than carrying a flag that
- * could be flipped at runtime. An env var rather than a hostname check
- * because the exception then lives in the deploy config, where it is visible,
- * instead of in a string that outlives the reason for it.
- *
- * **It overrides presentation only.** The video endpoint decides access on
- * every call, so this cannot play a film for somebody without the pass — it
- * only chooses which panel is drawn. Deleted in phase two.
+ * Deleted in phase two, when the pass can actually be bought.
  */
 function stateOverrideAllowed(): boolean {
   /*
-    **A runtime check, not a compile-time one, and that is fine here.**
+    **Derived from the API base, not a flag of its own.**
 
-    An unset `NEXT_PUBLIC_*` inlines as `undefined` rather than folding to a
-    constant, so the production bundle keeps this path instead of stripping
-    it — verified in `out/`. It is inert: the flag is baked in at build time
-    and there is nothing on a deployed page that can set it.
+    `NEXT_PUBLIC_API_BASE_URL` is already set in every environment and is
+    already what tells the builds apart — staging points at
+    `staging-api.theworldtarot.com`, production does not. Asking it costs
+    the deploy nothing, where a dedicated variable has to be remembered in
+    a build config and silently does nothing when it is not.
 
-    The real guard is in `next.config.mjs`, which refuses to build with the
-    flag against any API base but staging. Defence in depth rather than
-    relying on the bundler.
+    **Presentation only.** The video endpoint decides access on every call,
+    so this cannot play a film for anybody without the pass — it chooses
+    which panel is drawn and nothing else. On production it is false, and
+    `next.config.mjs` refuses a build that tries to force it.
   */
-  if (process.env.NEXT_PUBLIC_ALLOW_STATE_OVERRIDE === "1") return true;
+  if (process.env.NODE_ENV !== "production") return true;
 
-  return process.env.NODE_ENV !== "production";
+  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").includes("staging-api.theworldtarot.com");
 }
 
 /** The server snapshot: a build machine has no URL and nobody is signed in. */
