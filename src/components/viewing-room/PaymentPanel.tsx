@@ -45,13 +45,14 @@ export function PaymentPanel({
 
   return (
     <div className="mt-4 flex flex-col items-center">
-      <p className="text-center text-[clamp(15px,1.4vw,22px)] tracking-[0.36px] text-white">
+      {/* Magically, as on screen one. */}
+      <p className="text-center font-display text-[clamp(16px,1.5vw,24px)] tracking-[0.36px] text-white">
         {viewingRoom.panel.price}
       </p>
 
-      <div className="mt-6 w-full max-w-[390px]">
+      <div className="mt-6 w-full max-w-[340px]">
         {offer.status === "loading" && (
-          <p role="status" className="text-center text-sm text-[#f9f3d0]/70">
+          <p role="status" className="text-center font-sans text-sm text-[#f9f3d0]/70">
             {labels.loading}
           </p>
         )}
@@ -62,7 +63,7 @@ export function PaymentPanel({
           nobody has verified today is not a price to take money against.
         */}
         {(offer.status === "withdrawn" || offer.status === "unreachable") && (
-          <p className="text-center text-sm text-[#f9f3d0]/70">{labels.unavailable}</p>
+          <p className="text-center font-sans text-sm text-[#f9f3d0]/70">{labels.unavailable}</p>
         )}
 
         {offer.status === "live" && (
@@ -80,7 +81,7 @@ export function PaymentPanel({
       <button
         type="button"
         onClick={onBack}
-        className="mt-5 text-[clamp(13px,1.05vw,16px)] text-[#d4b06a] underline decoration-from-font underline-offset-2"
+        className="mt-5 font-sans text-[clamp(13px,1.05vw,16px)] text-[#d4b06a] underline decoration-from-font underline-offset-2"
       >
         {labels.back}
       </button>

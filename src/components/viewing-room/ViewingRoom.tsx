@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Container } from "@/components/layout/Section";
+import { ButtonLink } from "@/components/ui/Button";
 import { FilmPlayer } from "@/components/viewing-room/FilmPlayer";
 import { PaymentPanel } from "@/components/viewing-room/PaymentPanel";
 import { PaywallModal, type PaywallScreen } from "@/components/viewing-room/PaywallModal";
@@ -87,25 +87,24 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
         className={cn(modal && "pointer-events-none select-none")}
       >
         <Container className="flex flex-col items-center">
-          <header className="text-center">
+          <header className="mt-[clamp(16px,2.2vw,40px)] text-center">
             <h1 className="font-display text-[clamp(32px,4.5vw,58px)] leading-tight text-white">
               {viewingRoom.title}
             </h1>
-            <p className="mt-3 font-serif text-[clamp(13px,1.8vw,24px)] tracking-[0.2em] text-[#f9f3d0]/80">
+            {/*
+              Her own 0.0125em, not the 0.2em this carried. The frame sets
+              tracking 0.3 on a 24px line — small-caps spacing, not the wide
+              display tracking that was here, which pushed the line most of
+              the way across the player beneath it.
+            */}
+            <p className="mt-2 font-serif text-[clamp(13px,1.8vw,24px)] tracking-[0.0125em] text-[#f9f3d0]/80">
               {viewingRoom.subtitle}
             </p>
           </header>
 
-          <div className="relative mt-[clamp(28px,4vw,52px)] w-full">
+          <div className="relative mt-[clamp(44px,6vw,88px)] w-full">
             <FilmPlayer card={selected} onRefused={onRefused} labels={viewingRoom.player} />
 
-            {/*
-              The veil, not a spinner: the room is already drawn underneath and
-              this is the half-second before we know who is looking at it.
-            */}
-            {state === "asking" && (
-              <div aria-hidden className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
-            )}
           </div>
         </Container>
 
@@ -120,7 +119,14 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
         </div>
 
         <Container className="mt-[clamp(40px,6vw,96px)] flex flex-col items-center text-center">
-          <p className="text-[clamp(18px,2.4vw,30px)] text-white/90">
+          {/*
+            `ClosingSaying`'s own treatment — Magically at `text-h2-lg` in
+            champagne — rather than the one-off this carried. That component
+            draws this same line above GET A READING on every readings page
+            and at the foot of the Library, so a different face here reads as
+            a different page rather than as the same voice.
+          */}
+          <p className="font-display text-h2-lg leading-[1.1] text-champagne">
             {viewingRoom.closing.lines.map((line) => (
               <span key={line} className="block">
                 {line}
@@ -128,12 +134,18 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
             ))}
           </p>
 
-          <Link
+          {/*
+            The site's own gold button, as `ClosingSaying` draws the same call
+            to action at the foot of every readings page — not a gradient
+            rebuilt here, which is what this was and why it matched nothing.
+          */}
+          <ButtonLink
             href="/readings/"
-            className="mt-6 rounded-full bg-gradient-to-b from-[#f4dfa8] via-[#d4b06a] to-[#b8923f] px-8 py-3 text-[clamp(14px,1.6vw,20px)] tracking-wide text-[#101b2e]"
+            size="fluid"
+            className="mt-6 min-h-[clamp(48px,3.4vw,56px)] px-[1.2em] text-[clamp(14px,1.25vw,20px)] leading-none tracking-[0.01em]"
           >
             {viewingRoom.closing.action}
-          </Link>
+          </ButtonLink>
         </Container>
 
         {/*
@@ -146,6 +158,24 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
         */}
         <div aria-hidden className="h-[clamp(48px,14vw,276px)]" />
       </div>
+
+      {/*
+        **The veil covers the page, and stays under the panel.**
+
+        It was `absolute inset-0` inside the player's own wrapper, so it
+        dimmed the card and nothing else — the room either side of it stayed
+        bright behind a panel that is meant to be the only thing you can use.
+        Fixed to the viewport instead, and shown for the whole time the room
+        is out of reach rather than only during the half-second `asking`.
+
+        `z-40` sits above the room and below the panel's own `z-50`.
+      */}
+      {(state === "asking" || modal) && (
+        <div
+          aria-hidden
+          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[3px]"
+        />
+      )}
 
       {modal && (
         <PaywallModal screen={screen} state={state} heading={viewingRoom.panel.heading}>

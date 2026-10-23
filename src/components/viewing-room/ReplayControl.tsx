@@ -40,7 +40,7 @@ export function ReplayControl({
       className={cn(
         // Centred on the card and the same 88px disc as the play button: this
         // is the same affordance a second time, so it is the same control.
-        "absolute inset-0 z-10 grid place-items-center",
+        "absolute inset-0 z-10 grid cursor-pointer place-items-center",
         "opacity-70 transition-opacity duration-300 ease-out",
         "hover:opacity-100 focus-visible:opacity-100",
         // No hover to wait for: show it outright rather than hiding a control

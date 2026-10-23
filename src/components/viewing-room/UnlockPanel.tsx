@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 
+import { Button } from "@/components/ui/Button";
 import { AccountLine } from "@/components/viewing-room/AccountLine";
 import { viewingRoom } from "@/content/viewing-room";
+import { viewingRoomMarks as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 import type { AccessState } from "@/lib/viewing-room-access";
 
@@ -32,14 +34,16 @@ export function UnlockPanel({
 }) {
   return (
     <div className="mt-4 flex flex-col items-center">
-      {/* Her key divider (`384:40`), as a rule with a keyhole at its middle. */}
-      <div aria-hidden className="flex w-full max-w-[380px] items-center gap-3 opacity-80">
-        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d4b06a]/60" />
-        <KeyMark />
-        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#d4b06a]/60" />
-      </div>
+      {/* Her key divider (`384:40`), 452x38, as delivered. */}
+      <img
+        src={marks.keyDivider.src}
+        alt=""
+        width={marks.keyDivider.width}
+        height={marks.keyDivider.height}
+        className="mt-1 h-auto w-full max-w-[min(100%,300px)]"
+      />
 
-      <p className="mt-5 max-w-[560px] text-center text-[clamp(14px,1.25vw,20px)] leading-[1.35] text-[#f9f3d0]">
+      <p className="mt-5 max-w-[440px] text-center font-sans text-[clamp(14px,1.25vw,20px)] leading-[1.35] text-[#f9f3d0]">
         {panel.body}
       </p>
 
@@ -48,11 +52,11 @@ export function UnlockPanel({
         stack: her row is three short captions, and squeezing them onto one
         line on a 360 would shrink the type below the rest of the panel.
       */}
-      <ul className="mt-6 grid w-full max-w-[460px] list-none grid-cols-3 gap-4 p-0 max-[420px]:grid-cols-1">
+      <ul className="mt-6 grid w-full max-w-[380px] list-none grid-cols-3 gap-4 p-0 max-[420px]:grid-cols-1">
         {panel.benefits.map((benefit) => (
           <li key={benefit.lines.join(" ")} className="flex flex-col items-center gap-3 text-center">
             <BenefitMark name={benefit.lines[0]} />
-            <span className="font-serif text-[clamp(10px,0.78vw,13px)] leading-[1.25] tracking-[0.9px] text-[#f9f3d0]">
+            <span className="font-sans text-[clamp(10px,0.78vw,13px)] leading-[1.25] tracking-[0.9px] text-[#f9f3d0]">
               {benefit.lines.map((line) => (
                 <span key={line} className="block">
                   {line}
@@ -63,24 +67,39 @@ export function UnlockPanel({
         ))}
       </ul>
 
-      <button
-        type="button"
+      {/*
+        **The site's own gold button**, not a gradient rebuilt here. `btn-gold`
+        carries the real `--gradient-gold`, the button radius, Cinzel, and the
+        glow-and-lift on hover that every other call to action on the site
+        answers with — none of which a hand-rolled gradient had.
+      */}
+      <Button
         onClick={onBuy}
+        size="fluid"
         className={cn(
-          "mt-7 flex w-full max-w-[390px] items-center justify-center gap-3",
-          // 66px at her size, never below the 44px tap target on a phone.
-          "min-h-[clamp(48px,3.4vw,56px)] rounded-full px-6",
-          "bg-gradient-to-b from-[#f4dfa8] via-[#d4b06a] to-[#b8923f]",
-          "font-serif text-[clamp(14px,1.25vw,20px)] tracking-[-0.3px] text-[#101b2e]",
-          "transition-[filter] hover:brightness-110",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+          /*
+            Her button is 470x66 inside a 772 panel — 61% of its width and
+            7.1:1, so it sits snug around its label rather than stretching.
+            `w-fit` with her own ratio as padding; the min-height is the 44px
+            tap target, which a 7:1 box clears on its own above a phone.
+          */
+          "mt-7 w-fit min-h-[44px] px-[1.45em] py-[0.42em]",
+          /*
+            A floor as well as a fit: sized from its label alone the button
+            shrank to 5.9:1 on a laptop, where her frame is 7.1:1, so it
+            started reading as a chip rather than as the page's one call to
+            action. 60% of the 560px panel, less its padding.
+          */
+          "min-w-[min(100%,330px)]",
+          "text-[clamp(13px,1.1vw,18px)] leading-none tracking-[0.01em]",
         )}
       >
         <KeyholeMark />
         {panel.action}
-      </button>
+      </Button>
 
-      <p className="mt-3 text-center text-[clamp(15px,1.4vw,22px)] tracking-[0.36px] text-white">
+      {/* The one line in Magically; everything else in the panel is Gill Sans. */}
+      <p className="mt-3 text-center font-display text-[clamp(16px,1.5vw,24px)] tracking-[0.36px] text-white">
         {panel.price}
       </p>
 
@@ -90,7 +109,7 @@ export function UnlockPanel({
         path itself is #132's, and this is the link it will honour.
       */}
       {state === "signed-out" && (
-        <p className="mt-4 text-center text-[clamp(13px,1.05vw,17px)] tracking-[0.75px] text-[#d4b06a]">
+        <p className="mt-4 text-center font-sans text-[clamp(13px,1.05vw,17px)] tracking-[0.75px] text-[#d4b06a]">
           {panel.signIn.lead}
           <Link
             href="/login/?next=/viewing-room/"
@@ -107,57 +126,64 @@ export function UnlockPanel({
   );
 }
 
-function KeyMark() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-5 fill-none stroke-[#d4b06a] stroke-[1.4]">
-      <circle cx="8" cy="12" r="3.2" />
-      <path d="M11.2 12H21M18 12v3M15 12v2.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
+/**
+ * The keyhole inside the gold button (`384:36`).
+ *
+ * **The viewBox is the artwork's own bounds, and that is what centres it.**
+ * The first version drew into `0 0 17 29` with the shape spanning y=3..27 and
+ * x=2.5..15.5 — three units of empty space above against two below, and the
+ * whole figure half a unit right of centre. `flex` centres the *box*, so the
+ * mark sat visibly low and slightly right of the label beside it.
+ *
+ * Here the box is exactly the figure: 14 wide, 24 tall, origin at 0,0, with
+ * the stem symmetrical about x=7. Nothing to align around.
+ */
 function KeyholeMark() {
   return (
-    <svg viewBox="0 0 17 29" aria-hidden className="h-[1.1em] w-auto shrink-0 fill-[#101b2e]">
-      <circle cx="8.5" cy="9" r="6" />
-      <path d="M5.5 14h6l2 13h-10z" />
+    <svg
+      viewBox="0 0 14 24"
+      aria-hidden
+      /*
+        **Nudged up, because the label is all capitals.** `flex` centres the
+        icon on the text's *line box*, but Cinzel's capitals sit in the upper
+        part of that box with the descender space empty beneath them — so a
+        perfectly centred icon reads low against the letters. Measured 2.25px
+        low off the rendered button at this size; `-0.09em` is that offset
+        expressed against the type so it holds as the button scales.
+      */
+      className="block h-[1.05em] w-auto shrink-0 translate-y-[-0.13em] fill-current"
+    >
+      <circle cx="7" cy="7" r="7" />
+      <path d="M4 12h6l1.6 12H2.4z" />
     </svg>
   );
 }
 
 /**
- * Her three icons (`384:34`, `384:35`, `384:41`) — cards, infinity, star —
- * drawn rather than shipped as bitmaps, in the same gold as the rest of the
- * panel. They are simple enough that three more PNGs would cost more than
- * they return.
+ * Her three marks (`384:41`, `384:34`, `384:35`) — cards, infinity, star.
+ *
+ * **Hers, not redrawn.** These shipped as inline SVG first, which was a guess
+ * at artwork she had already made: her star has a filled roundel and her
+ * infinity is a drawn ribbon, neither of which a generic path approximates.
+ *
+ * Keyed off the caption's first line rather than an index, so reordering the
+ * benefits in `content/viewing-room.ts` cannot silently swap the pictures.
  */
 function BenefitMark({ name }: { name: string }) {
-  const common = "size-[clamp(32px,2.9vw,46px)] fill-none stroke-[#d4b06a] stroke-[1.2]";
-
-  if (name.startsWith("LIFETIME")) {
-    return (
-      <svg viewBox="0 0 48 48" aria-hidden className={common}>
-        <path d="M17 24c0-4 3-7 7-7s7 3 7 7-3 7-7 7-7-3-7-7z" opacity="0" />
-        <path d="M14 19c-3 0-5 2.2-5 5s2 5 5 5c5 0 7-10 12-10 3 0 5 2.2 5 5s-2 5-5 5c-5 0-7-10-12-10z" />
-        <circle cx="24" cy="24" r="22" opacity="0.35" />
-      </svg>
-    );
-  }
-
-  if (name.startsWith("MOTION")) {
-    return (
-      <svg viewBox="0 0 48 48" aria-hidden className={common}>
-        <path d="M24 10l3.6 8.2 8.9.9-6.7 6 1.9 8.8L24 29.4 16.3 33.9l1.9-8.8-6.7-6 8.9-.9z" />
-        <circle cx="24" cy="24" r="22" opacity="0.35" />
-      </svg>
-    );
-  }
+  const mark = name.startsWith("LIFETIME")
+    ? marks.infinity
+    : name.startsWith("MOTION")
+      ? marks.star
+      : marks.cards;
 
   return (
-    <svg viewBox="0 0 48 48" aria-hidden className={common}>
-      <rect x="13" y="12" width="16" height="24" rx="2" />
-      <path d="M31 16l5 2-6 18-4-1.4" />
-      <circle cx="24" cy="24" r="22" opacity="0.35" />
-    </svg>
+    <img
+      src={mark.src}
+      alt=""
+      width={mark.width}
+      height={mark.height}
+      /* Her 69-76px, held to one box so three different sources line up. */
+      className="h-[clamp(34px,3.1vw,48px)] w-auto"
+    />
   );
 }

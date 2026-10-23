@@ -167,6 +167,30 @@ console.log("\nSigned out (401):");
   );
   expect("signed-out", "the room is inert", roomInert, true);
 
+  /*
+    The veil is a fixed sheet over the whole page, not a tint on the player:
+    it was `absolute inset-0` inside the player's wrapper, so it dimmed the
+    card and left the room either side of it bright behind a panel that is
+    meant to be the only usable thing on screen.
+  */
+  const veil = await page.evaluate(() => {
+    const el = [...document.querySelectorAll("div[aria-hidden=true]")].find((d) => {
+      const style = getComputedStyle(d);
+      return style.position === "fixed" && style.zIndex === "40";
+    });
+    if (!el) return null;
+
+    const box = el.getBoundingClientRect();
+    return {
+      covers: Math.round(box.width) >= innerWidth && Math.round(box.height) >= innerHeight,
+      underPanel:
+        Number(getComputedStyle(el).zIndex) <
+        Number(getComputedStyle(document.querySelector('[role="dialog"]').closest("div.fixed")).zIndex),
+    };
+  });
+  expect("signed-out", "the veil covers the page", veil?.covers, true);
+  expect("signed-out", "and sits under the panel", veil?.underPanel, true);
+
   expect("signed-out", "no account line", await page.getByText(SWITCH).count(), 0);
   expect("signed-out", "nothing was requested", videoRequests.length, 0);
 
@@ -241,6 +265,18 @@ console.log("\nMember:");
   expect("member", "no panel ever", everSawModal, false);
   expect("member", "the room is usable", await page.locator("[data-viewing-room]").getAttribute("inert"), null);
   expect("member", "the carousel is there", await page.getByText(HINT).isVisible(), true);
+  expect(
+    "member",
+    "no veil over the room",
+    await page.evaluate(
+      () =>
+        [...document.querySelectorAll("div[aria-hidden=true]")].filter((d) => {
+          const style = getComputedStyle(d);
+          return style.position === "fixed" && style.zIndex === "40";
+        }).length,
+    ),
+    0,
+  );
 
   await context.close();
 }

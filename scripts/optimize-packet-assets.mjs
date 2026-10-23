@@ -214,12 +214,50 @@ const FOOL_SHADOW = { folder: FOOL_FOLDER, file: "shadow-fool.png" };
 const PAPER_WIDTH = 1337;
 
 /**
+ * Which background to use where a folder holds more than one, named outright.
+ *
+ * **A folder with two usable PNGs cannot pick between them by rule.** The
+ * search below prefers PNG over JPEG, which settles format but not vintage:
+ * Justice ships her original `11-JUSTICE BKGRND.png` beside a later
+ * `11-JUSTICE-BKGRND-2.png`, both PNG, and `readdir` order would otherwise
+ * decide which goes live. That is the same silent-switch trap the format
+ * preference exists to close, so the choice is pinned here rather than
+ * inferred from a `-2` suffix — her naming is not consistent enough to parse,
+ * and a rule that guessed would eventually guess wrong on a card nobody is
+ * looking at.
+ *
+ * **Justice is pinned to her original, deliberately.** Her `-2` revision drops
+ * the gold scales from the lower left — the page draws that emblem itself, so
+ * on the face of it the sheet should not carry a second one baked in, the same
+ * correction `21-the-world-no-name.jpg` makes to the library card. It was
+ * shipped on that reasoning and then reverted.
+ *
+ * The reason to know about: **that file is 380x640 where hers are 1920x3237**,
+ * so it upscales ~3.9x to the `PAPER_WIDTH` below and lands visibly softer in
+ * the torches and pillars than the rest of the deck. If the scales are to come
+ * off the paper, it wants a hi-res re-export rather than this file; changing
+ * the value below and rerunning the script is the whole of the swap.
+ */
+const REVISED_PAPER = {
+  "11 - Justice": "11-JUSTICE BKGRND.png",
+};
+
+/**
  * The plausible range for a detected sheet, as a share of the 1920 canvas.
  *
  * Her twenty-one measure 1314..1466 wide. A detection that lands outside this
  * has found something other than the paper — most likely the whole canvas,
  * because a white-keyed card whose art bleeds to the edge has no margin to key
  * — and shipping that would put a mis-cropped page live. Throwing is the point.
+ *
+ * **It is an absolute pixel range, and that is a real constraint on the
+ * sources.** Every background this reads is either one of her 1920x3237
+ * packets or The Fool's trimmed 1337px layer, so the pixel count carries the
+ * meaning. A smaller export of the same sheet fails here — Justice's 380x640
+ * `-2` revision did — and the fix is a re-export at her usual size rather than
+ * a looser bound: this check was loosened to a ratio once to admit it, and the
+ * ratio that let it through was wide enough to stop catching the mis-crop it
+ * exists to catch.
  */
 const PAPER_BOUNDS = { min: 1250, max: 1550 };
 
@@ -400,7 +438,16 @@ async function writePaper(packets) {
       (n) => /BKGRND|BACKGROUND/i.test(n) && !/\.pbm$/i.test(n),
     );
     const file =
-      candidates.find((n) => /\.png$/i.test(n)) ?? candidates.find((n) => /\.jpe?g$/i.test(n));
+      REVISED_PAPER[folder] ??
+      candidates.find((n) => /\.png$/i.test(n)) ??
+      candidates.find((n) => /\.jpe?g$/i.test(n));
+
+    if (REVISED_PAPER[folder] && !files.includes(REVISED_PAPER[folder])) {
+      throw new Error(
+        `${folder}: pinned background "${REVISED_PAPER[folder]}" is missing. Restore the file, ` +
+          `or point its REVISED_PAPER entry at the background this card should use.`,
+      );
+    }
 
     if (!file) {
       throw new Error(

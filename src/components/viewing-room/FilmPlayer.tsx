@@ -43,6 +43,7 @@ type PlayerState =
   | { phase: "resting" }
   | { phase: "loading" }
   | { phase: "playing" }
+  | { phase: "paused" }
   | { phase: "ended" }
   | { phase: "error" };
 
@@ -59,7 +60,14 @@ export function FilmPlayer({
    * selection a late refusal belongs to.
    */
   onRefused: (failure: PlaybackFailure, cardId: string) => void;
-  labels: { play: string; replay: string; retry: string; loading: string; error: string };
+  labels: {
+    play: string;
+    resume: string;
+    replay: string;
+    retry: string;
+    loading: string;
+    error: string;
+  };
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sourceRef = useRef<VideoSource | null>(null);
@@ -259,6 +267,7 @@ export function FilmPlayer({
 
   const resting = state.phase === "resting";
   const ended = state.phase === "ended";
+  const paused = state.phase === "paused";
 
   return (
     <div
@@ -284,7 +293,23 @@ export function FilmPlayer({
           509/842 is the reciprocal of the aspect. 70dvh leaves the carousel
           reachable on a phone without a scroll.
         */
-        "w-full max-w-[min(100%,509px,calc(70dvh*509/842))]",
+        /*
+          **Bigger than her 509px, which is a measurement off a 1920 artboard
+          rather than a size.** Pinned at 509 the card stopped growing past a
+          laptop and read small in the middle of a wide room.
+
+          `clamp` rather than a `vw` share: a share alone shrinks the card on
+          a narrow screen, where the opposite is wanted — 34vw put it at
+          133px on a phone. So it is at least 300px, grows with the viewport,
+          and tops out at 640px.
+
+          **The height cap is the one that actually binds on a desktop**, not
+          the width: a 3:5 card 640px wide wants 1059px of height, which no
+          laptop has. So 86dvh is what sets the size on most screens, and the
+          width clamp only takes over on a short, wide window. The carousel
+          is in its own band below and need not share the fold with the card.
+        */
+        "w-full max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]",
       )}
     >
       {/* The card rests on its own artwork, which is what the poster used to be. */}
@@ -305,6 +330,12 @@ export function FilmPlayer({
         playsInline
         poster={card.image.src}
         onEnded={() => setState({ phase: "ended" })}
+        /*
+          The phase follows the element, so a pause from anywhere — this
+          click, the keyboard, the OS media keys — reads the same.
+        */
+        onPause={() => setState((was) => (was.phase === "playing" ? { phase: "paused" } : was))}
+        onPlaying={() => setState({ phase: "playing" })}
         onClick={togglePlayback}
         className={cn(
           "absolute inset-0 size-full object-contain",
@@ -320,13 +351,27 @@ export function FilmPlayer({
           type="button"
           onClick={() => void start()}
           aria-label={labels.play}
-          className="absolute inset-0 grid place-items-center"
+          className="group absolute inset-0 grid cursor-pointer place-items-center"
         >
-          <span className="grid size-[88px] place-items-center rounded-full border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/40 backdrop-blur-sm">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="ml-1 size-8 fill-[color:var(--gold,#d4b06a)]">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
+          <PlayBadge />
+        </button>
+      )}
+
+      {/*
+        **A paused film says so.** Without this the player simply stopped,
+        which is indistinguishable from a film that has stalled or ended.
+        The badge shows a pause mark at rest — "this is paused" — and turns
+        into a play arrow under the pointer, which is the thing pressing it
+        will do.
+      */}
+      {paused && (
+        <button
+          type="button"
+          onClick={togglePlayback}
+          aria-label={labels.resume}
+          className="group absolute inset-0 grid cursor-pointer place-items-center"
+        >
+          <PlayBadge showPauseAtRest />
         </button>
       )}
 
@@ -370,4 +415,53 @@ function readFailure(error: unknown): PlaybackFailure | null {
   const failure = (error as { playbackFailure?: PlaybackFailure }).playbackFailure;
 
   return failure ?? null;
+}
+
+/**
+ * The round gold control the player shows over its own picture.
+ *
+ * One component for both the first play and a resume, so the two cannot
+ * drift apart in size or treatment. `showPauseAtRest` swaps the mark: a
+ * paused film shows a pause bar that becomes an arrow on hover, which reads
+ * as "this is stopped" and then "pressing me starts it".
+ *
+ * The feedback is on `group-*` rather than the badge's own `hover:`, because
+ * the button is the whole picture — a visitor's pointer is over the control
+ * long before it is over the 88px disc.
+ */
+function PlayBadge({ showPauseAtRest = false }: { showPauseAtRest?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "grid size-[88px] place-items-center rounded-full",
+        "border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/40 backdrop-blur-sm",
+        "transition-[transform,background-color,border-color] duration-200 ease-out",
+        "group-hover:scale-105 group-hover:border-[color:var(--gold,#d4b06a)] group-hover:bg-black/55",
+        "group-focus-visible:scale-105 group-focus-visible:border-[color:var(--gold,#d4b06a)]",
+        "group-active:scale-95 group-active:duration-75",
+      )}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className={cn(
+          "size-8 fill-[color:var(--gold,#d4b06a)]",
+          // The arrow is optically left-heavy; nudge it onto the centre.
+          showPauseAtRest ? "group-hover:ml-1 group-focus-visible:ml-1" : "ml-1",
+        )}
+      >
+        {showPauseAtRest ? (
+          <>
+            <g className="group-hover:hidden group-focus-visible:hidden">
+              <rect x="7" y="5" width="3.5" height="14" rx="1" />
+              <rect x="13.5" y="5" width="3.5" height="14" rx="1" />
+            </g>
+            <path d="M8 5v14l11-7z" className="hidden group-hover:block group-focus-visible:block" />
+          </>
+        ) : (
+          <path d="M8 5v14l11-7z" />
+        )}
+      </svg>
+    </span>
+  );
 }

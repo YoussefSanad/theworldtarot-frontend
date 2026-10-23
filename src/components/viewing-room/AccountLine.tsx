@@ -28,7 +28,7 @@ export function AccountLine({ labels }: { labels: { signedInAs: string; switch: 
   if (!customer) return null;
 
   return (
-    <p className="mt-4 text-center text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]/70">
+    <p className="mt-4 text-center font-sans text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]/70">
       {labels.signedInAs}{" "}
       <span title={customer.email} className="text-[#f9f3d0]">
         {customerLabel(customer)}

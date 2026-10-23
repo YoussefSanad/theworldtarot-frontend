@@ -113,6 +113,7 @@ export const viewingRoom = {
   /** The player's own states, which carry no words in her frame. */
   player: {
     play: "Play this film",
+    resume: "Resume this film",
     replay: "Play this film again",
     retry: "Try again",
     loading: "Starting the film…",
@@ -120,8 +121,14 @@ export const viewingRoom = {
   },
 
   carousel: {
-    previous: "Previous cards",
-    next: "More cards",
+    /**
+     * Her knob (`384:20`), which is a scrubber rather than two buttons — so
+     * the label names the whole deck, and the control announces its own
+     * position within it through `aria-valuenow`.
+     */
+    knob: "Move through the deck",
+    first: "Jump to the first card",
+    last: "Jump to the last card",
   },
 
   closing: {

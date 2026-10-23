@@ -1,8 +1,11 @@
 "use client";
 
 import type { EmblaOptionsType } from "embla-carousel";
+import { useReducedMotion } from "motion/react";
 import { useMemo } from "react";
 
+import { CarouselKnob } from "@/components/viewing-room/CarouselKnob";
+import { useDrift } from "@/components/viewing-room/useDrift";
 import {
   Carousel,
   CarouselSlide,
@@ -23,21 +26,21 @@ import { thumbnailLabel } from "@/lib/viewing-room-access";
  * deck, not the whole deck**: twenty-two drift through it, which is what
  * continuous auto-scroll means and why she draws a left/right control beneath.
  *
- * ## It loops, and it does not drift
+ * ## It drifts, and it has ends
  *
- * **No auto-scroll.** The strip is a set to choose from rather than decoration
- * beside a value, and a row that moves on its own is a row a visitor has to
- * chase to click — the thing they are trying to do is pick a card. It wraps
- * instead: `loop` means the deck has no ends, so the arrows and a drag both
- * run forever in either direction without ever stopping at an edge.
+ * **Auto-scroll, no loop.** The drift is `MetaStripCarousel`'s configuration
+ * and its reasoning holds here — slow enough to read a card as it passes,
+ * pausing on hover and focus, and the plugin not passed at all under
+ * `prefers-reduced-motion` rather than merely slowed.
  *
- * Two more departures from the strips elsewhere on the site, for the same
- * reason:
+ * The deck does **not** wrap. Twenty-two cards in deck order are a sequence
+ * with a first and a last, not a carousel of equals: wrapping means The World
+ * sits next to The Fool with nothing to say they are the two ends, and the
+ * knob below has nowhere to point. With ends, the knob's seat on its rule is
+ * a real position.
  *
  * - **The selected card is marked**, visibly and with `aria-current`.
- * - **Manual controls exist.** Her frame draws one disc with both arrows; it
- *   is built as two buttons, because one control cannot be a previous *and* a
- *   next to a screen reader.
+ * - **The control is her knob** (`CarouselKnob`), not a pair of arrows.
  */
 export function ThumbnailCarousel({
   cards,
@@ -50,18 +53,28 @@ export function ThumbnailCarousel({
   selectedId: string;
   onSelect: (id: string) => void;
   hint: string;
-  labels: { previous: string; next: string };
+  labels: { knob: string; first: string; last: string };
 }) {
   const duration = useCarouselDuration();
+  const reducedMotion = useReducedMotion();
 
   const options: EmblaOptionsType = useMemo(
     () => ({
       align: "center",
-      /** The deck has no ends: the arrows and a drag both run forever. */
-      loop: true,
-      // A looping strip is a continuous band rather than a set of pages, so it
-      // is not held to its own edges.
-      containScroll: false,
+      /** Deck order has a first and a last; see the note above. */
+      loop: false,
+      // Held to its own edges, so the knob's rule has real ends to sit on.
+      containScroll: "trimSnaps",
+      /*
+        **Free dragging, because this strip drifts rather than paging.**
+
+        Without it Embla rounds to the nearest snap on release — and with
+        twenty-two slides centred, a short drag rounds back to the snap it
+        started from, which reads as the strip snapping back under your
+        hand. A drifting band has no pages to land on, so the release should
+        leave it where the hand left it and let the momentum run out.
+      */
+      dragFree: true,
       // Zeroed under `prefers-reduced-motion`, which Embla's rAF transform
       // would otherwise ignore — see `useCarouselDuration`.
       duration,
@@ -82,7 +95,24 @@ export function ThumbnailCarousel({
 
       <Carousel options={options}>
         <CarouselViewport>
-          <CarouselTrack className="flex items-center gap-[clamp(12px,1.7vw,32px)]">
+          {/*
+            **The gap is per-slide padding, not a flex `gap` on the track.**
+            Embla loops by translating slides around the ends, and a flex
+            `gap` is laid out between siblings in the DOM — so the seam where
+            the last card meets the first had no space in it and the deck
+            visibly butted together once per revolution. Padding travels with
+            the slide, so every join is the same.
+          */}
+          {/*
+            **A lead-in before the first card.** With `align: "center"` and
+            `trimSnaps` the deck began hard against the left edge, so the
+            first card was already half out of frame as the drift started
+            and there was no moment where you could see the row begin.
+            Padding the track gives it that moment, and the matching
+            padding at the other end keeps the last card from sitting flush
+            against the right edge in the same way.
+          */}
+          <CarouselTrack className="flex items-center pl-[clamp(24px,8vw,160px)]">
             {cards.map((card) => (
               <CarouselSlide
                 key={card.id}
@@ -97,7 +127,7 @@ export function ThumbnailCarousel({
 
                   ~230px of her 1920 frame, so five sit across the band.
                 */
-                className="w-[clamp(132px,11.98vw,230px)] shrink-0 grow-0 basis-auto"
+                className="w-[clamp(132px,11.98vw,230px)] shrink-0 grow-0 basis-auto px-[clamp(6px,0.85vw,16px)]"
               >
                 <Thumbnail
                   card={card}
@@ -106,10 +136,25 @@ export function ThumbnailCarousel({
                 />
               </CarouselSlide>
             ))}
+
+            {/*
+              **A spacer slide, not trailing padding on the track.**
+
+              `containScroll: "trimSnaps"` ends the travel at the last
+              *slide* and trims any padding past it, so `pr-*` here was
+              ignored and the deck came to rest with the last card flush
+              against the right edge. A slide is part of the travel, so the
+              engine scrolls to it and the card gets room to sit in.
+            */}
+            <CarouselSlide
+              aria-hidden
+              className="w-[clamp(24px,8vw,160px)] shrink-0 grow-0 basis-auto"
+            />
           </CarouselTrack>
         </CarouselViewport>
 
-        <CarouselArrows labels={labels} />
+        <Drift enabled={!reducedMotion} />
+        <CarouselKnob labels={labels} />
       </Carousel>
     </section>
   );
@@ -165,53 +210,15 @@ function Thumbnail({
 }
 
 /**
- * Her one disc with two arrows, built as two buttons.
+ * Drives the strip's slow drift.
  *
- * `useCarousel` is the primitive's own context hook, so these drive the same
- * Embla instance the track does.
+ * A child rather than an effect in the parent, because the Embla instance
+ * lives in `Carousel`'s context and only its children can read it — the same
+ * reason `CarouselKnob` is one.
  */
-function CarouselArrows({ labels }: { labels: { previous: string; next: string } }) {
-  const { api } = useCarousel("CarouselArrows");
+function Drift({ enabled }: { enabled: boolean }) {
+  const { api } = useCarousel("Drift");
+  useDrift(api, { enabled });
 
-  return (
-    <div className="mt-4 flex items-center justify-center gap-4">
-      <ArrowButton label={labels.previous} onClick={() => api?.scrollPrev()} direction="prev" />
-      <ArrowButton label={labels.next} onClick={() => api?.scrollNext()} direction="next" />
-    </div>
-  );
-}
-
-function ArrowButton({
-  label,
-  onClick,
-  direction,
-}: {
-  label: string;
-  onClick: () => void;
-  direction: "prev" | "next";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      /* 44px: the tap target the ticket asks for, around her 43px disc. */
-      className={cn(
-        "grid size-11 place-items-center rounded-full",
-        "border border-[color:var(--gold-line,#d4b06a)]/60 text-[color:var(--gold,#d4b06a)]",
-        "transition-colors hover:border-[color:var(--gold,#d4b06a)]",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-      )}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className={cn("size-4 fill-none stroke-current stroke-2", direction === "next" && "rotate-180")}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M15 5l-7 7 7 7" />
-      </svg>
-    </button>
-  );
+  return null;
 }

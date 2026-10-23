@@ -15,6 +15,7 @@
     "assets:card": "node scripts/optimize-card-assets.mjs",
     "assets:packets": "node scripts/optimize-packet-assets.mjs",
     "assets:suits": "node scripts/optimize-suit-assets.mjs",
+    "assets:viewing-room": "node scripts/optimize-viewing-room-assets.mjs",
     "check:corners": "node scripts/check-shadow-corners.mjs",
     "check:shoot": "node scripts/shoot.mjs",
     "check:measure": "node scripts/measure.mjs",

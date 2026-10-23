@@ -114,7 +114,12 @@ export function PaywallModal({
         aria-modal="true"
         aria-labelledby={headingId}
         className={cn(
-          "relative w-full max-w-[772px]",
+          /*
+            Narrower than her 772px. That number is 40% of a 1920 artboard; on
+            a real screen the panel reads wider than it is tall, which is not
+            how she draws it — her panel is 772x713, almost square.
+          */
+          "relative w-full max-w-[560px]",
           /*
             **Her 713px is a third of a 2132px artboard, not of a screen.**
             Transcribing her type sizes literally made the panel 66% of a
@@ -129,13 +134,14 @@ export function PaywallModal({
           */
           "max-h-[min(88dvh,640px)] overflow-y-auto",
           "rounded-[18px] border border-[color:var(--gold-line,#d4b06a)]/60",
-          "bg-[#0b1522]/95 px-[clamp(20px,3.4vw,50px)] py-[clamp(20px,2.2vw,36px)]",
+          // Her panel colour, read off the PSD: #0a1a2d at 88%.
+          "bg-[#0a1a2d]/[0.88] px-[clamp(20px,3vw,44px)] py-[clamp(20px,2.2vw,36px)]",
           "shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-sm",
         )}
       >
         <h2
           id={headingId}
-          className="text-center font-display text-[clamp(24px,2.1vw,34px)] leading-tight text-[#f9f3d0]"
+          className="text-center font-sans text-[clamp(24px,2.1vw,34px)] leading-tight text-[#f9f3d0]"
         >
           {heading}
         </h2>

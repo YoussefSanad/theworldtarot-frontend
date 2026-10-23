@@ -322,6 +322,33 @@ export const libraryCards = {
 } as const;
 
 /** Backgrounds referenced from CSS rather than markup, for the Library. */
+/**
+ * The Viewing Room's paywall marks (Figma `384:28`), at her own pixel sizes.
+ *
+ * Her four deliveries, converted by `npm run assets:viewing-room`. They were
+ * drawn here as inline SVG first, which was wrong twice: the shapes are hers
+ * rather than generic, and a redrawn infinity or key is a guess at artwork she
+ * has already made.
+ */
+export const viewingRoomMarks = {
+  cards: asset("/figma/viewing-room-cards-icon.webp", 71, 71),
+  infinity: asset("/figma/viewing-room-infinity-icon.webp", 69, 69),
+  star: asset("/figma/viewing-room-star-icon.webp", 74, 76),
+  /** The rule with a key through it, under the panel's heading (`384:40`). */
+  keyDivider: asset("/figma/viewing-room-key-divider.webp", 452, 38),
+  /**
+   * The carousel's knob (`384:23`).
+   *
+   * **The dotted rule it rides is not here**, and deliberately: her export
+   * of it is 330px of dots whose spacing is not uniform (4-6px wide, 3-5px
+   * apart), so tiling it across a rule of any other width broke the rhythm
+   * every tile and the seams read as holes. `CarouselKnob` draws the line
+   * with a gradient instead, in her colour and at her pitch — a gradient
+   * cannot have a seam.
+   */
+  knob: asset("/figma/viewing-room-knob.webp", 43, 43),
+} as const;
+
 export const librarySurfaces = {
   /** `.page-atmosphere-library` — the rotunda the cards hang in. */
   rotunda: "/figma/library-rotunda.webp",

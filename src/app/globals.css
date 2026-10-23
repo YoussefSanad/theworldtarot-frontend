@@ -1453,11 +1453,67 @@
     out of frame rather than the ceiling being cropped away.
   */
   .page-atmosphere-viewing-room {
-    background-color: var(--color-night, #05080d);
-    background-image: url("/figma/viewing-room-bg.png");
-    background-position: center top;
+    /*
+      **The room crosses the footer's top margin.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither
+      box — so between this artwork's bottom edge and the footer's own scrim
+      there is a strip of the layout column with nothing painted in it,
+      showing flat colour as a thin bar across the foot of the page. Measured
+      10.22px at 1400, which is exactly that clamp.
+
+      This is the readings parlour's `--parlour-drop`, the World Tarot path's
+      `--path-drop` and the Library rotunda's `--room-drop` under a fourth
+      name; see any of them for the full account. It is a **gap**, not an
+      edge: no fade covers it, because there is nothing there to fade — only
+      reaching across it does.
+
+      2rem is past the margin at every width so the crossing is never
+      hairline-exact, and no more than that because the surplus lands under a
+      scrim that is 77% rather than opaque.
+    */
+    --room-drop: 2rem;
+    /*
+      Black rather than `--color-night`: her second export carries the base
+      painted in, and the navy every other page sits on read as a blue cast
+      against it. This colour is only seen past the artwork's own aspect.
+    */
+    background-color: #000;
+    /*
+      **No `overflow: clip`**, for the reason the parlour and the World Tarot
+      block both record: a clip on this element eats `--room-drop`, which is
+      the overhang covering the margin above, and then no value of the drop
+      appears to work. `overflow-y-clip` on the layout column is what stops an
+      overhang lengthening the document, and it is untouched.
+    */
+  }
+
+  /*
+    The room itself, anchored to the floor like the parlour's, so
+    `--room-drop` carries the picture across the footer's margin rather than
+    leaving its last rows short of it.
+
+    **It fills the box rather than being capped to its own aspect.** The
+    parlour can write `min(171.51vw, 100%)` because its artwork is far taller
+    than its page, so the cap always bites and the box is always covered.
+    Hers is 2132/1920 — only 111.04vw — which at 1400px wide is 1554px
+    against an 1823px page, and the shortfall showed as a black band across
+    the top with the title sitting in it.
+
+    So the height is the box, and `cover` scales the picture to fill it,
+    cropping width-wise at the sides where there is only wall. The feather at
+    the top edge is what makes that honest: rather than the artwork ending on
+    a line under the masthead, it dissolves into the black beneath it.
+  */
+  .page-atmosphere-viewing-room::after {
+    background-image: url("/figma/viewing-room-bg.webp");
+    background-position: center bottom;
     background-repeat: no-repeat;
     background-size: cover;
+    content: "";
+    inset: 0 0 calc(-1 * var(--room-drop)) 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 7%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 7%));
+    position: absolute;
   }
 
   .page-atmosphere-library {
