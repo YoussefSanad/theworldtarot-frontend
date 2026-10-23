@@ -182,6 +182,7 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
           {screen === "unlock" ? (
             <UnlockPanel
               state={state}
+              pretendAccount={devState && !customer ? PRETEND_ACCOUNT : undefined}
               onBuy={() => setScreen("payment")}
               labels={viewingRoom.panel.account}
             />
@@ -196,6 +197,19 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
     </>
   );
 }
+
+/**
+ * The account `?state=no-pass` names, since that switch signs nobody in.
+ *
+ * Only ever reached through the dev override — a real no-pass visitor has a
+ * session, and the line reads their own address from it.
+ */
+const PRETEND_ACCOUNT = {
+  id: 0,
+  name: null,
+  email: "someone@example.com",
+  hasViewingRoomAccess: false,
+} as const;
 
 /** The first card with a film, so the player never opens on a locked one. */
 function firstPlayable(cards: readonly ViewingRoomCard[]): string {
