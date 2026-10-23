@@ -232,13 +232,34 @@ function subscribeToNothing(): () => void {
   return () => {};
 }
 
+/**
+ * Whether `?state=` may override what `/me` said.
+ *
+ * **Development always, and staging when the deploy asks for it.** Phase one
+ * has no way to buy the pass, so without this nobody can look at the member's
+ * room on staging — which is the thing the client is actually approving.
+ *
+ * `NEXT_PUBLIC_ALLOW_STATE_OVERRIDE` is inlined at build time, so production
+ * builds strip this whole path as dead code rather than carrying a flag that
+ * could be flipped at runtime. An env var rather than a hostname check
+ * because the exception then lives in the deploy config, where it is visible,
+ * instead of in a string that outlives the reason for it.
+ *
+ * **It overrides presentation only.** The video endpoint decides access on
+ * every call, so this cannot play a film for somebody without the pass — it
+ * only chooses which panel is drawn. Deleted in phase two.
+ */
+const STATE_OVERRIDE_ALLOWED =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ALLOW_STATE_OVERRIDE === "1";
+
 /** The server snapshot: a build machine has no URL and nobody is signed in. */
 function readNothing(): AccessState | null {
   return null;
 }
 
 function readDevState(): AccessState | null {
-  if (process.env.NODE_ENV === "production") return null;
+  if (!STATE_OVERRIDE_ALLOWED) return null;
 
   const value = new URLSearchParams(window.location.search).get("state");
 
