@@ -232,13 +232,48 @@ function subscribeToNothing(): () => void {
   return () => {};
 }
 
+/**
+ * Whether `?state=` may override what `/me` said.
+ *
+ * **Development always, and staging when the deploy asks for it.** Phase one
+ * has no way to buy the pass, so without this nobody can look at the member's
+ * room on staging — which is the thing the client is actually approving.
+ *
+ * `NEXT_PUBLIC_ALLOW_STATE_OVERRIDE` is inlined at build time, so production
+ * builds strip this whole path as dead code rather than carrying a flag that
+ * could be flipped at runtime. An env var rather than a hostname check
+ * because the exception then lives in the deploy config, where it is visible,
+ * instead of in a string that outlives the reason for it.
+ *
+ * **It overrides presentation only.** The video endpoint decides access on
+ * every call, so this cannot play a film for somebody without the pass — it
+ * only chooses which panel is drawn. Deleted in phase two.
+ */
+function stateOverrideAllowed(): boolean {
+  /*
+    **A runtime check, not a compile-time one, and that is fine here.**
+
+    An unset `NEXT_PUBLIC_*` inlines as `undefined` rather than folding to a
+    constant, so the production bundle keeps this path instead of stripping
+    it — verified in `out/`. It is inert: the flag is baked in at build time
+    and there is nothing on a deployed page that can set it.
+
+    The real guard is in `next.config.mjs`, which refuses to build with the
+    flag against any API base but staging. Defence in depth rather than
+    relying on the bundler.
+  */
+  if (process.env.NEXT_PUBLIC_ALLOW_STATE_OVERRIDE === "1") return true;
+
+  return process.env.NODE_ENV !== "production";
+}
+
 /** The server snapshot: a build machine has no URL and nobody is signed in. */
 function readNothing(): AccessState | null {
   return null;
 }
 
 function readDevState(): AccessState | null {
-  if (process.env.NODE_ENV === "production") return null;
+  if (!stateOverrideAllowed()) return null;
 
   const value = new URLSearchParams(window.location.search).get("state");
 

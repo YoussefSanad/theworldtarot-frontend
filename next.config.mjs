@@ -51,6 +51,32 @@ function assertDeployableApiBase() {
   );
 }
 
+/**
+ * The Viewing Room's `?state=` override is for staging, never for production.
+ *
+ * It only chooses which panel is drawn — the video endpoint still decides
+ * access on every call, so it cannot play a film for somebody without the
+ * pass. But it does let anyone who finds the parameter walk past the paywall
+ * visually, and that is not a thing the public site should offer.
+ *
+ * Pinned to the API base rather than trusted on its own, the same rule the
+ * Stripe key follows: the flag is only honoured against the staging API.
+ */
+function assertStateOverrideIsStagingOnly() {
+  if (process.env.NEXT_PUBLIC_ALLOW_STATE_OVERRIDE !== "1") return;
+
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
+  if (!apiBase.includes("staging-api.theworldtarot.com")) {
+    throw new Error(
+      "NEXT_PUBLIC_ALLOW_STATE_OVERRIDE=1 is set on a build that is not pointed at " +
+        "staging. That flag lets `?state=member` draw the Viewing Room past its paywall, " +
+        "which is for client review on staging and must never ship to the public site. " +
+        `This build's API base is "${apiBase || "(unset)"}".`,
+    );
+  }
+}
+
 function assertStripeKeyMatchesApi() {
   const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -120,6 +146,7 @@ export default (phase) => {
   if (phase === 'phase-production-build') {
     assertDeployableApiBase();
     assertStripeKeyMatchesApi();
+    assertStateOverrideIsStagingOnly();
   }
 
   return nextConfig;
