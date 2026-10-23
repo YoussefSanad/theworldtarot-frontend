@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useSignedIn } from "@/components/account/useSignedIn";
-import { customerLabel, signOut } from "@/lib/session";
+import { type Customer, customerLabel, signOut } from "@/lib/session";
 
 /**
  * Which account is signed in, and the way out of it.
@@ -21,9 +21,25 @@ import { customerLabel, signOut } from "@/lib/session";
  * because the design asked for it, so it takes the sign-in line's type and
  * sits beside it rather than competing with the button.
  */
-export function AccountLine({ labels }: { labels: { signedInAs: string; switch: string } }) {
-  const { customer, setCustomer } = useSignedIn();
+export function AccountLine({
+  labels,
+  pretend,
+}: {
+  labels: { signedInAs: string; switch: string };
+  /**
+   * A stand-in account, for the dev `?state=no-pass` override only.
+   *
+   * That switch changes which panel is drawn without signing anybody in, so
+   * there is no real customer to name and this line rendered as nothing —
+   * the one state it exists for was the one state you could not review. A
+   * real no-pass visitor always has a session, so this is never set in
+   * production.
+   */
+  pretend?: Customer;
+}) {
+  const { customer: signedIn, setCustomer } = useSignedIn();
   const [leaving, setLeaving] = useState(false);
+  const customer = signedIn ?? pretend;
 
   if (!customer) return null;
 

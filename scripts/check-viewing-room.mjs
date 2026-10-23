@@ -215,6 +215,18 @@ console.log("\nSigned in without the pass:");
   expect("no-pass", "a way to switch", await page.getByRole("button", { name: SWITCH }).isVisible(), true);
   expect("no-pass", "no sign-in link", await page.getByRole("link", { name: SIGN_IN }).count(), 0);
 
+  /*
+    The real session must name the real address, never the stand-in the dev
+    override uses — if that placeholder ever reached a signed-in customer it
+    would be telling them they are somebody else.
+  */
+  expect(
+    "no-pass",
+    "the stand-in account is nowhere near a real session",
+    await dialog.getByText("someone@example.com").count(),
+    0,
+  );
+
   await context.close();
 }
 

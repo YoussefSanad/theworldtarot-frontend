@@ -7,6 +7,7 @@ import { AccountLine } from "@/components/viewing-room/AccountLine";
 import { viewingRoom } from "@/content/viewing-room";
 import { viewingRoomMarks as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import type { Customer } from "@/lib/session";
 import type { AccessState } from "@/lib/viewing-room-access";
 
 const { panel } = viewingRoom;
@@ -27,10 +28,13 @@ export function UnlockPanel({
   state,
   onBuy,
   labels,
+  pretendAccount,
 }: {
   state: AccessState;
   onBuy: () => void;
   labels: { signedInAs: string; switch: string };
+  /** Dev `?state=no-pass` only; see `AccountLine`. */
+  pretendAccount?: Customer;
 }) {
   return (
     <div className="mt-4 flex flex-col items-center">
@@ -121,7 +125,7 @@ export function UnlockPanel({
       )}
 
       {/* Signed in without the pass: say which account, and offer the way out. */}
-      {state === "no-pass" && <AccountLine labels={labels} />}
+      {state === "no-pass" && <AccountLine labels={labels} pretend={pretendAccount} />}
     </div>
   );
 }
