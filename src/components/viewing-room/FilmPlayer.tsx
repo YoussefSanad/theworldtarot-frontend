@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ReplayControl } from "@/components/viewing-room/ReplayControl";
 import type { ViewingRoomCard } from "@/content/viewing-room";
 import { cn } from "@/lib/cn";
+import { currentLocale } from "@/lib/locale";
 import { createRequestGuard } from "@/lib/video-request";
 import { attachVideoSource, type VideoSource } from "@/lib/video-source";
 import {
@@ -59,7 +60,7 @@ export function FilmPlayer({
    * Carries the card it happened to, so the room never has to guess which
    * selection a late refusal belongs to.
    */
-  onRefused: (failure: PlaybackFailure, cardId: string) => void;
+  onRefused: (failure: PlaybackFailure, cardId: number) => void;
   labels: {
     play: string;
     resume: string;
@@ -152,7 +153,10 @@ export function FilmPlayer({
       // this never hands the player a URL that dies mid-manifest.
       if (recovering || !playback || hasExpired(playback)) {
         try {
-          playback = await fetchVideoUrl(card.id, { signal: request.signal });
+          playback = await fetchVideoUrl(card.id, {
+            locale: currentLocale(),
+            signal: request.signal,
+          });
         } catch (error) {
           // An abort is the ordinary case — the visitor moved on — and is not
           // a failure anybody should see.

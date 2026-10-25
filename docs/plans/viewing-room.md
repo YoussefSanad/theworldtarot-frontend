@@ -4,11 +4,17 @@
 > film player over the rotunda floor, a band of card thumbnails beneath it, and a paywall panel
 > over the whole room for anybody who has not bought the pass.
 >
-> **This plan builds the presentation and nothing else in wired form.** The client needs to see and
-> approve the room before it is worth connecting to anything, so the deck comes from the cards
-> already in this repo, every card plays the one bundled film, and the two seams that will later
-> talk to the backend — the card list and the signed playback URL — are written to their real
-> shapes and left unwired. Phase two connects them, and is a separate issue.
+> **This plan built the presentation first and the wiring second.** The client needed to see and
+> approve the room before it was worth connecting to anything, so phase one took the deck from the
+> cards already in this repo, played one bundled film for every card, and wrote the two seams that
+> would later talk to the backend — the card list and the signed playback URL — to their real
+> shapes, unwired.
+>
+> **Phase two is done, on 25 October 2026**, and both seams are live: the deck comes from
+> `GET /{locale}/cards` and the film from `GET /{locale}/cards/{id}/video`. See *What phase two
+> was* below for what changed and for the two items still open. Everything above that section
+> describes the design and still stands; where it says the deck is bundled or a seam is stubbed,
+> read it as the history it is.
 >
 > It also retires `/living-tarot`, a URL on three links in the masthead and footer that has never
 > had a page behind it, and renames the nav item to VIEWING ROOM.
@@ -340,14 +346,37 @@ Known limits of the scaffold, to say out loud at handover: **every card plays th
 switching cards replays The Star; and the one bundled file is 19MB, which is fine for one cached
 file and is not what twenty-two will look like.
 
-### What phase two is
+### What phase two was — **done, 25 October 2026**
 
-Not in this plan, and listed so the seam is not mistaken for the whole: `fetchCards()` added to
-`api.ts`; `ApiCard` exported or mapped (it is private today, and still declares the `video` and
-`poster` fields the contract has removed from the listing); `fetchVideoUrl` pointed at
-`/{locale}/cards/{id}/video`; the dev switch deleted; and the deployed response headers checked for
-`Referrer-Policy: no-referrer`, which makes Bunny answer 403 and which must not be set on this page
-or by a host default.
+Listed here when it was still ahead, so the seam was not mistaken for the whole. What landed:
+
+- **`fetchCards()` in `api.ts`**, answering the wire shape. `ApiCard` is exported and is now the
+  *listing* shape — it no longer declares `video`, and `poster` is gone rather than optional; the
+  draw extends it as `ApiDrawnCard`, which is the only response that carries a credential. The
+  types were the wrong way round before: the listing was `Omit<ApiCard, "video">`, which read as
+  though a card ordinarily came with a playback URL.
+- **`fetchVideoUrl` pointed at `/{locale}/cards/{id}/video`**, with `credentials: "include"` —
+  which is what makes it the access check — and `cache: "no-store"`. Refusals throw
+  `PlaybackRefused`, carrying the `playbackFailure` property `FilmPlayer` was already written to
+  read and which nothing had ever set.
+- **The deck is fetched in the browser**, through `useViewingRoomDeck` in `lib/viewing-room-deck.ts`,
+  and `content/viewing-room.ts` no longer holds a deck at all. **The API is the only source**: the
+  derivation from `content/library.ts` and its hand-picked `FILMS_NOT_READY` set are both gone.
+- **Card identity is the backend's integer**, not the Library's slug. The contract is explicit that
+  a card has no slug, so the integer is the only handle — and it is what the video endpoint is
+  addressed with.
+- **Three deck states the frame never drew**: loading, empty and unreachable, with words in
+  `content/viewing-room.ts` and a retry on the last one only. An empty deck is the backend's
+  considered answer and asking again will not finish a film.
+
+Two things deliberately **not** done, and they are the open items:
+
+- **The dev `?state=` switch is kept.** The plan said to delete it. It is still the only way to see
+  the member's room without a real pass on staging, it only chooses which panel is drawn, and the
+  video endpoint refuses regardless. Delete it once a pass can be bought on staging.
+- **`Referrer-Policy: no-referrer` has not been checked on the deployed headers.** Bunny answers
+  403 with no referrer, measured, so this must not be set on this page or by a host default. It
+  cannot be verified from here — it needs a look at the deployed response.
 
 ---
 
