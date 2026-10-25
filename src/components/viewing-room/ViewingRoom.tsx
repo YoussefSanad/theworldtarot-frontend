@@ -162,18 +162,20 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
       {/*
         **The veil covers the page, and stays under the panel.**
 
-        It was `absolute inset-0` inside the player's own wrapper, so it
-        dimmed the card and nothing else — the room either side of it stayed
-        bright behind a panel that is meant to be the only thing you can use.
-        Fixed to the viewport instead, and shown for the whole time the room
-        is out of reach rather than only during the half-second `asking`.
+        Fixed to the viewport rather than scoped to the player, so it holds
+        its place while the page scrolls and the room is dimmed wherever you
+        are on it.
 
-        `z-40` sits above the room and below the panel's own `z-50`.
+        `z-20`: above the room, below the panel, and **below the masthead
+        (`z-50`) and the footer (`z-10` in its own stacking context)**. A
+        paywall should block the content, never the way off the page —
+        before this it covered the whole viewport and a visitor who could
+        not or would not buy had no exit but the back button.
       */}
       {(state === "asking" || modal) && (
         <div
           aria-hidden
-          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[3px]"
+          className="fixed inset-0 z-20 bg-black/55 backdrop-blur-[3px]"
         />
       )}
 

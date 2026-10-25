@@ -176,7 +176,7 @@ console.log("\nSigned out (401):");
   const veil = await page.evaluate(() => {
     const el = [...document.querySelectorAll("div[aria-hidden=true]")].find((d) => {
       const style = getComputedStyle(d);
-      return style.position === "fixed" && style.zIndex === "40";
+      return style.position === "fixed" && style.zIndex === "20";
     });
     if (!el) return null;
 
@@ -190,6 +190,41 @@ console.log("\nSigned out (401):");
   });
   expect("signed-out", "the veil covers the page", veil?.covers, true);
   expect("signed-out", "and sits under the panel", veil?.underPanel, true);
+
+  /*
+    **A paywall blocks the content, never the way off the page.** The veil
+    and the panel both used to cover the whole viewport, so a visitor who
+    could not or would not buy was stuck with the back button — the nav was
+    unreachable by pointer and the focus trap closed the keyboard route too.
+    The masthead is the exit; the footer stays under the veil by choice.
+  */
+  const exits = await page.evaluate(() => {
+    const onTop = (el) => {
+      const box = el.getBoundingClientRect();
+      const top = document.elementsFromPoint(box.x + box.width / 2, box.y + box.height / 2)[0];
+      return !!top && (el === top || el.contains(top));
+    };
+
+    // The nav is tested at the top of the page, the footer at the bottom —
+    // scrolling between them, because neither is on screen at the other's
+    // scroll position.
+    window.scrollTo(0, 0);
+    const nav = document.querySelector("header a[href]");
+    const navOk = !!nav && onTop(nav);
+
+    window.scrollTo(0, document.body.scrollHeight);
+    const foot = document.querySelector("footer a[href]");
+
+    return { nav: navOk, footer: !!foot && onTop(foot) };
+  });
+  /*
+    The masthead is the way out and stays above the veil. The footer is
+    **deliberately covered**: it is not an escape route, and leaving it
+    under the veil keeps the panel reading as modal rather than as a banner
+    the page happens to be wearing.
+  */
+  expect("signed-out", "the masthead is still clickable", exits.nav, true);
+  expect("signed-out", "the footer is covered", exits.footer, false);
 
   expect("signed-out", "no account line", await page.getByText(SWITCH).count(), 0);
   expect("signed-out", "nothing was requested", videoRequests.length, 0);
@@ -284,7 +319,7 @@ console.log("\nMember:");
       () =>
         [...document.querySelectorAll("div[aria-hidden=true]")].filter((d) => {
           const style = getComputedStyle(d);
-          return style.position === "fixed" && style.zIndex === "40";
+          return style.position === "fixed" && style.zIndex === "20";
         }).length,
     ),
     0,

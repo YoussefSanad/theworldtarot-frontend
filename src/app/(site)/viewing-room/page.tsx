@@ -30,7 +30,7 @@ export const metadata: Metadata = {
  */
 export default function ViewingRoomPage() {
   return (
-    <main className="relative pt-[clamp(32px,5vw,102px)]">
+    <main data-page="viewing-room" className="relative pt-[clamp(32px,5vw,102px)]">
       <PageAtmosphere variant="viewing-room" />
       <ViewingRoom cards={viewingRoomDeck} />
     </main>
