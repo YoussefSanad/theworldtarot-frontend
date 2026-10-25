@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 
 import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Button } from "@/components/ui/Button";
 import { afterSignIn, loginCopy } from "@/content/login";
+import { safeReturnPath } from "@/lib/return-path";
 import { readSignInFailure, requestPasswordLink, signIn, type SignInFailure } from "@/lib/session";
 
 /**
@@ -26,6 +27,7 @@ import { readSignInFailure, requestPasswordLink, signIn, type SignInFailure } fr
  */
 export function SignInForm() {
   const router = useRouter();
+  const returnTo = safeReturnPath(useSearchParams().get("next"));
   const { setCustomer } = useSignedIn();
   const fieldId = useId();
 
@@ -59,7 +61,11 @@ export function SignInForm() {
         nothing would make it read `/me` again on the other side.
       */
       setCustomer(await signIn({ email, password }));
-      router.push(afterSignIn);
+      /*
+        The path is pushed exactly as
+        `safeReturnPath` returned it — decoding it here would undo its checks.
+      */
+      router.push(returnTo ?? afterSignIn);
     } catch (cause: unknown) {
       setFailure(readSignInFailure(cause));
       setBusy(false);

@@ -149,7 +149,7 @@ async function open({ login, me = () => api({ message: "Unauthenticated." }, 401
   await page.route("**/api/v1/logout", (route) => route.fulfill(api(null, 204)));
   await page.route("**/api/v1/login", (route) => {
     sent.push({ path: "/login", body: JSON.parse(route.request().postData() ?? "null") });
-    return route.fulfill(login ?? api(CUSTOMER));
+    return route.fulfill(typeof login === "function" ? login(sent.filter((s) => s.path === "/login").length) : (login ?? api(CUSTOMER)));
   });
   await page.route("**/api/v1/forgot-password", (route) => {
     sent.push({ path: "/forgot-password", body: JSON.parse(route.request().postData() ?? "null") });
@@ -413,6 +413,64 @@ console.log("\na mistyped address is answered by the panel that asked for it");
   const said = (await page.textContent(ALERT)).trim();
   expect("mistyped", "the panel answers about the address", said, INVALID_ADDRESS);
   expect("mistyped", "and never the sign in's refusal", said === REFUSED, false);
+  await page.close();
+}
+
+/**
+ * Opens `/login/` + `query`, signs in, waits for the URL to leave `/login/`
+ * and answers where it ended up.
+ */
+async function landing(query, { login } = {}) {
+  const { page } = await open({ login });
+  /* A hostile target must never reach the real network, only be seen trying. */
+  await page.route((url) => url.hostname === "evil.com", (route) => route.abort());
+  await page.goto(`${LOGIN}${query}`, { waitUntil: "networkidle" });
+  try {
+    await signIn(page);
+    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 5000 });
+    return page.url();
+  } finally {
+    await page.close();
+  }
+}
+
+console.log("\nsigning in returns to where the customer was going (#132)");
+{
+  const origin = `http://localhost:${PORT}`;
+
+  expect("next", "a same-site path is honoured", await landing("?next=%2Fviewing-room%2F"), `${origin}/viewing-room/`);
+
+  for (const hostile of ["//evil.com", "https://evil.com", "javascript:alert(1)", "/.//evil.com"]) {
+    let url;
+    try {
+      url = new URL(await landing(`?next=${encodeURIComponent(hostile)}`));
+    } catch (error) {
+      failures.push(`next: ${hostile} did not settle: ${error.message.split("\n")[0]}`);
+      console.log(`  ✗ ${hostile} did not settle`);
+      continue;
+    }
+    expect("next", `${hostile} stays on this origin`, url.origin, origin);
+    expect("next", `${hostile} lands on the default`, url.pathname, "/readings/");
+  }
+
+  expect("next", "no next lands on the default", await landing(""), `${origin}/readings/`);
+
+  const { page } = await open({
+    /* The first attempt is refused, the second succeeds. `attempt` is 1-based. */
+    login: (attempt) =>
+      attempt === 1
+        ? api({ message: "These credentials do not match our records.", errors: { email: ["x"] } }, 422)
+        : api(CUSTOMER),
+  });
+  await page.goto(`${LOGIN}?next=%2Fviewing-room%2F`, { waitUntil: "networkidle" });
+  await signIn(page);
+  await page.waitForSelector(ALERT);
+  const kept = new URL(page.url());
+  expect("next", "a refused sign in stays on the page", kept.pathname, "/login/");
+  expect("next", "and keeps where it was going", kept.searchParams.get("next"), "/viewing-room/");
+  await signIn(page);
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 5000 });
+  expect("next", "the retry lands where it was going", page.url(), `${origin}/viewing-room/`);
   await page.close();
 }
 

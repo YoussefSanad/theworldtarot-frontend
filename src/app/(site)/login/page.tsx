@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { SignInForm } from "@/components/account/SignInForm";
 import { loginCopy } from "@/content/login";
@@ -29,8 +30,14 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   /*
-    No Suspense boundary, unlike the password pages: nothing here reads the
-    query string, so there is no client-only hook to hold the route dynamic.
+    `?next=` is read with `useSearchParams`, which is client-side only under a
+    static export, so the form sits inside a Suspense boundary rather than
+    making the route dynamic — the same shape the redeem and password pages use.
+    The fallback is blank: the form renders as soon as the params resolve.
   */
-  return <SignInForm />;
+  return (
+    <Suspense fallback={null}>
+      <SignInForm />
+    </Suspense>
+  );
 }
