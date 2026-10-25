@@ -5,7 +5,7 @@ import { createRequestGuard } from "./video-request.ts";
 
 test("a single request is current", () => {
   const guard = createRequestGuard();
-  const first = guard.begin("1");
+  const first = guard.begin(1);
 
   assert.equal(first.isCurrent(), true);
   assert.equal(first.signal.aborted, false);
@@ -13,8 +13,8 @@ test("a single request is current", () => {
 
 test("beginning a second request retires the first", () => {
   const guard = createRequestGuard();
-  const first = guard.begin("1");
-  const second = guard.begin("2");
+  const first = guard.begin(1);
+  const second = guard.begin(2);
 
   assert.equal(first.isCurrent(), false, "a stale response must be droppable");
   assert.equal(first.signal.aborted, true, "and the request itself aborted");
@@ -28,7 +28,7 @@ test("beginning a second request retires the first", () => {
 */
 test("rapid switching leaves exactly one survivor", () => {
   const guard = createRequestGuard();
-  const requests = ["1", "2", "3", "4"].map((id) => guard.begin(id));
+  const requests = [1, 2, 3, 4].map((id) => guard.begin(id));
 
   const current = requests.filter((request) => request.isCurrent());
   assert.equal(current.length, 1);
@@ -41,7 +41,7 @@ test("rapid switching leaves exactly one survivor", () => {
 
 test("aborting retires everything, so nothing plays after a teardown", () => {
   const guard = createRequestGuard();
-  const request = guard.begin("1");
+  const request = guard.begin(1);
 
   guard.abort();
 
@@ -51,8 +51,8 @@ test("aborting retires everything, so nothing plays after a teardown", () => {
 
 test("the same card selected twice still retires the first attempt", () => {
   const guard = createRequestGuard();
-  const first = guard.begin("1");
-  const second = guard.begin("1");
+  const first = guard.begin(1);
+  const second = guard.begin(1);
 
   assert.equal(first.isCurrent(), false, "identity is the attempt, not the card id");
   assert.equal(second.isCurrent(), true);
@@ -64,14 +64,14 @@ test("the same card selected twice still retires the first attempt", () => {
 */
 test("a response that resolves after being overtaken is droppable", async () => {
   const guard = createRequestGuard();
-  const slow = guard.begin("1");
+  const slow = guard.begin(1);
 
   const arrived = Promise.resolve("the first card's url").then((url) => ({
     url,
     stillWanted: slow.isCurrent(),
   }));
 
-  guard.begin("2");
+  guard.begin(2);
   const result = await arrived;
 
   assert.equal(result.stillWanted, false, "the player must drop this, not play it");
@@ -79,10 +79,10 @@ test("a response that resolves after being overtaken is droppable", async () => 
 
 test("aborting twice is harmless, as a teardown after a teardown is", () => {
   const guard = createRequestGuard();
-  guard.begin("1");
+  guard.begin(1);
 
   guard.abort();
   guard.abort();
 
-  assert.equal(guard.begin("2").isCurrent(), true, "the guard still works afterwards");
+  assert.equal(guard.begin(2).isCurrent(), true, "the guard still works afterwards");
 });
