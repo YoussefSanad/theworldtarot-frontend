@@ -3,10 +3,8 @@
 import { ExpressCheckout } from "@/components/reading/ExpressCheckout";
 import { HostedCheckoutButton } from "@/components/reading/HostedCheckoutButton";
 import { viewingRoom } from "@/content/viewing-room";
+import { PASS, passPriceLineFrom, usePassPriceLine } from "@/lib/pass-price";
 import { useProduct } from "@/lib/product";
-
-/** The backend's key for the pass. The same string the homepage tile keys to. */
-const PASS = "viewing-room-pass";
 
 /**
  * Screen two: the wallet step behind her gold button.
@@ -42,13 +40,40 @@ export function PaymentPanel({
   labels: { back: string; unavailable: string; loading: string };
 }) {
   const offer = useProduct(PASS);
+  /*
+    The line for `loading` and `unreachable`, neither of which has money of its
+    own. The catalogue may already have priced the pass for the homepage's tile
+    — so a visitor who arrived that way sees the right number here before this
+    screen's own fetch lands, and sees it still if that fetch fails.
+  */
+  const catalogueLine = usePassPriceLine(viewingRoom.panel.price, viewingRoom.panel.priceNote);
 
   return (
     <div className="mt-4 flex flex-col items-center">
-      {/* Magically, as on screen one. */}
-      <p className="text-center font-display text-[clamp(16px,1.5vw,24px)] tracking-[0.36px] text-white">
-        {viewingRoom.panel.price}
-      </p>
+      {/*
+        Magically, as on screen one.
+
+        **The price is the one the button below charges.** On `live` the line is
+        formatted from `offer.money` — the same value `ExpressCheckout` and
+        `HostedCheckoutButton` are handed — rather than from a second lookup
+        that could answer differently. This line sits directly above the wallet
+        sheet, so quoting a number from anywhere else is how a visitor comes to
+        be charged something they were not shown.
+      */}
+      {/*
+        **Withdrawn prints nothing at all.** The body below replaces the
+        checkout with "cannot be bought right now", and a price above that
+        sentence is the contradiction the bundled string used to be: a number
+        for something not on sale, which nobody can be charged and nobody has
+        verified today. The heading carries the panel on its own.
+      */}
+      {offer.status !== "withdrawn" && (
+        <p className="text-center font-display text-[clamp(16px,1.5vw,24px)] tracking-[0.36px] text-white">
+          {offer.status === "live"
+            ? passPriceLineFrom(offer.money, viewingRoom.panel.priceNote)
+            : catalogueLine}
+        </p>
+      )}
 
       <div className="mt-6 w-full max-w-[340px]">
         {offer.status === "loading" && (

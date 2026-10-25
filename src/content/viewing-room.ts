@@ -73,7 +73,22 @@ export const viewingRoom = {
       { lines: ["MOTION,", "LIGHT & SOUND"] },
     ],
     action: "ENTER THE VIEWING ROOM",
-    price: "$29 — One-time payment",
+    /**
+     * The price line, carried as two pieces because only the first is ours to
+     * replace.
+     *
+     * The panel prints `price + priceNote`, with `price` swapped for whatever
+     * the backend holds for `viewing-room-pass` in the visitor's currency as
+     * soon as it answers — see `lib/pass-price.ts`. The bundled `$29` is
+     * fallback copy and never funds a payment: it is what the exported HTML
+     * ships and what stays on screen if the API cannot be reached.
+     *
+     * Kept apart rather than templated into one string because the suffix is
+     * the client's wording and the number is not, and a `{price}` placeholder
+     * in copy she proofreads is a thing to get wrong.
+     */
+    price: "$29",
+    priceNote: " — One-time payment",
     /** Two clauses because only the second is the link. */
     signIn: { lead: "Already Have Access? ", link: "Sign in Here." },
 

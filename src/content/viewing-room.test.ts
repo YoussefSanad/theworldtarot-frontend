@@ -13,7 +13,9 @@ import { viewingRoom } from "./viewing-room.ts";
 
 test("the copy is the client's, including the corrected artefacts", () => {
   assert.equal(viewingRoom.title, "The Living Tarot");
-  assert.equal(viewingRoom.panel.price, "$29 — One-time payment");
+  // The two pieces still read as the one line she wrote; the split is for
+  // `lib/pass-price.ts`, which replaces the number and keeps the suffix.
+  assert.equal(viewingRoom.panel.price + viewingRoom.panel.priceNote, "$29 — One-time payment");
   assert.equal(viewingRoom.closing.action, "GET A READING");
   assert.ok(!viewingRoom.closing.action.includes("  "), "the double space is corrected");
 });
