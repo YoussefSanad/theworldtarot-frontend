@@ -53,7 +53,7 @@ export function ThumbnailCarousel({
   selectedId: string;
   onSelect: (id: string) => void;
   hint: string;
-  labels: { knob: string; first: string; last: string };
+  labels: { knob: string };
 }) {
   const duration = useCarouselDuration();
   const reducedMotion = useReducedMotion();

@@ -127,8 +127,6 @@ export const viewingRoom = {
      * position within it through `aria-valuenow`.
      */
     knob: "Move through the deck",
-    first: "Jump to the first card",
-    last: "Jump to the last card",
   },
 
   closing: {
