@@ -380,6 +380,16 @@ at our `/set-password/`, and it is the reason that page has to exist before the
 first real payment.
 _Avoid_: activation link, welcome email, invite
 
+**Return path**:
+Where a visitor goes after signing in, carried as `?next=` on `/login/` and passed
+on by `/set-password/` and `/reset-password/` to their sign-in link. It is checked
+by `safeReturnPath` (`src/lib/return-path.ts`), an allow-list of same-origin paths,
+and anything else falls back to `/readings/`. The claim link itself does not carry
+one yet: backend #102 is to add a single fixed value to it, and these pages already
+read it when it arrives.
+_Avoid_: redirect, callback URL, returnTo (`return_to` is the checkout's product
+key and means something else)
+
 ### Environments
 
 **Integration origin**:
