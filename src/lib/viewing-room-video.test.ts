@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, beforeEach, test } from "node:test";
 
 import { fetchVideoUrl, hasExpired, readPlaybackFailure } from "./viewing-room-video.ts";
 
-const at = (iso: string) => ({ cardId: "1", url: "https://example.test/x.m3u8", expiresAt: iso });
+const at = (iso: string) => ({ cardId: 1, url: "https://example.test/x.m3u8", expiresAt: iso });
 
 test("a URL with time left has not expired", () => {
   const now = new Date("2026-10-22T12:00:00Z");
@@ -59,17 +59,111 @@ test("403 and 404 never collapse into one another", () => {
   assert.notEqual(readPlaybackFailure(403), readPlaybackFailure(404));
 });
 
-test("the stub answers a playable source for any card", async () => {
-  const playback = await fetchVideoUrl("1", {});
+/*
+  The wired seam, against a stubbed `fetch`, following `api.test.ts`'s harness.
+  What is worth asserting here is not that `fetch` was called — it is the
+  handling the contract makes load-bearing, all of which is invisible at the
+  call site: the credentialed request, the no-store, and a refusal arriving as
+  something `FilmPlayer` can read rather than as a bare Error.
+*/
+const BASE = "https://staging-api.theworldtarot.com";
 
-  assert.equal(playback.cardId, "1");
-  assert.ok(playback.url.length > 0);
-  assert.equal(hasExpired(playback, new Date()), false, "a fresh stub is not born expired");
+let calls: { url: string; init: RequestInit }[] = [];
+const realFetch = globalThis.fetch;
+
+function stubFetch(response: Response): void {
+  globalThis.fetch = ((url: string, init: RequestInit = {}) => {
+    calls.push({ url: String(url), init });
+    return Promise.resolve(response);
+  }) as typeof fetch;
+}
+
+const PLAYBACK = {
+  card_id: 17,
+  url: "https://vz-test.b-cdn.net/bcdn_token=abc/playlist.m3u8",
+  expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+beforeEach(() => {
+  calls = [];
+  process.env.NEXT_PUBLIC_API_BASE_URL = BASE;
+});
+
+after(() => {
+  globalThis.fetch = realFetch;
+});
+
+test("a signed URL comes back mapped out of the wire's snake_case", async () => {
+  stubFetch(json(PLAYBACK));
+
+  const playback = await fetchVideoUrl(17, {});
+
+  assert.equal(playback.cardId, 17);
+  assert.equal(playback.url, PLAYBACK.url);
+  assert.equal(playback.expiresAt, PLAYBACK.expires_at);
+  assert.equal(hasExpired(playback, new Date()), false, "a fresh URL is not born expired");
+});
+
+/*
+  The website is the cookie flow, so the session rides on this request and the
+  backend decides access from it. Without the cookie every call is a 401 and
+  the room is locked for the members who paid for it — which makes this the one
+  assertion here whose failure is silent in development, where nobody is signed
+  in anyway.
+*/
+test("the request carries the session and refuses to be cached", async () => {
+  stubFetch(json(PLAYBACK));
+
+  await fetchVideoUrl(17, {});
+
+  assert.equal(calls[0].init.credentials, "include", "without the cookie a member gets a 401");
+  assert.equal(calls[0].init.cache, "no-store", "a cached credential outlives its own expiry");
+});
+
+test("the card id and the locale are both in the path", async () => {
+  stubFetch(json(PLAYBACK));
+
+  await fetchVideoUrl(17, { locale: "es" });
+
+  assert.equal(calls[0].url, `${BASE}/api/v1/es/cards/17/video`);
+});
+
+/*
+  The refusal has to arrive carrying `playbackFailure`, because that is the
+  property `FilmPlayer.readFailure` reads and nothing else. A plain Error gets
+  there as "something went wrong" and the room draws a dead player instead of
+  the panel that would let the visitor fix it — sign in, or buy the pass.
+*/
+test("a refusal is thrown in the shape the player reads", async () => {
+  for (const [status, failure] of [
+    [401, "signed-out"],
+    [403, "no-pass"],
+    [404, "not-ready"],
+    [429, "unknown"],
+  ] as const) {
+    stubFetch(json({ message: "no" }, status));
+
+    await assert.rejects(
+      () => fetchVideoUrl(17, {}),
+      (error: unknown) => {
+        assert.equal((error as { playbackFailure?: string }).playbackFailure, failure);
+        return true;
+      },
+      `${status} should arrive as ${failure}`,
+    );
+  }
 });
 
 test("the seam honours an abort signal, as the race guard needs it to", async () => {
   const controller = new AbortController();
   controller.abort();
 
-  await assert.rejects(() => fetchVideoUrl("1", { signal: controller.signal }));
+  await assert.rejects(() => fetchVideoUrl(1, { signal: controller.signal }));
 });

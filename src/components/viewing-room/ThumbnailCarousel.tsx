@@ -2,7 +2,7 @@
 
 import type { EmblaOptionsType } from "embla-carousel";
 import { useReducedMotion } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { CarouselKnob } from "@/components/viewing-room/CarouselKnob";
 import { useDrift } from "@/components/viewing-room/useDrift";
@@ -50,13 +50,14 @@ export function ThumbnailCarousel({
   labels,
 }: {
   cards: readonly ViewingRoomCard[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+  selectedId: number;
+  onSelect: (id: number) => void;
   hint: string;
-  labels: { knob: string; first: string; last: string };
+  labels: { knob: string };
 }) {
   const duration = useCarouselDuration();
   const reducedMotion = useReducedMotion();
+  const [overflows, setOverflows] = useState(true);
 
   const options: EmblaOptionsType = useMemo(
     () => ({
@@ -112,7 +113,24 @@ export function ThumbnailCarousel({
             padding at the other end keeps the last card from sitting flush
             against the right edge in the same way.
           */}
-          <CarouselTrack className="flex items-center pl-[clamp(24px,8vw,160px)]">
+          <CarouselTrack
+            className={cn(
+              "flex items-center",
+              /*
+                **The runway is only for a deck that scrolls.**
+
+                The lead-in and the trailing spacer exist so a drifting row
+                has somewhere to begin and end. A deck too short to overflow
+                has no travel to absorb them, so they stop being runway and
+                become a left margin — three cards sat 402px right of centre,
+                measured, with the strip starting at x=863 on a 1440 screen.
+
+                Short decks centre instead, which is what `align: "center"`
+                was always going to do if nothing pushed against it.
+              */
+              overflows ? "pl-[clamp(24px,8vw,160px)]" : "justify-center",
+            )}
+          >
             {cards.map((card) => (
               <CarouselSlide
                 key={card.id}
@@ -146,15 +164,23 @@ export function ThumbnailCarousel({
               against the right edge. A slide is part of the travel, so the
               engine scrolls to it and the card gets room to sit in.
             */}
-            <CarouselSlide
-              aria-hidden
-              className="w-[clamp(24px,8vw,160px)] shrink-0 grow-0 basis-auto"
-            />
+            {overflows && (
+              <CarouselSlide
+                aria-hidden
+                className="w-[clamp(24px,8vw,160px)] shrink-0 grow-0 basis-auto"
+              />
+            )}
           </CarouselTrack>
         </CarouselViewport>
 
-        <Drift enabled={!reducedMotion} />
-        <CarouselKnob labels={labels} />
+        <Drift enabled={!reducedMotion && overflows} />
+        <MeasureOverflow onMeasure={setOverflows} />
+        {/*
+          No scrubber for a strip that cannot scroll. With three cards the
+          whole deck is on screen, and a knob that cannot move is a control
+          that looks broken.
+        */}
+        {overflows && <CarouselKnob labels={labels} />}
       </Carousel>
     </section>
   );
@@ -167,7 +193,7 @@ function Thumbnail({
 }: {
   card: ViewingRoomCard;
   selected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: number) => void;
 }) {
   const locked = !card.inViewingRoom;
 
@@ -219,6 +245,35 @@ function Thumbnail({
 function Drift({ enabled }: { enabled: boolean }) {
   const { api } = useCarousel("Drift");
   useDrift(api, { enabled });
+
+  return null;
+}
+
+/**
+ * Reports whether the deck is long enough to scroll.
+ *
+ * A child rather than a measurement in the parent, because Embla's own
+ * answer lives in its context — and `canScrollNext()` at the first card is
+ * exactly the question: a deck that fits has nowhere to go.
+ *
+ * Re-asked on `reInit`, which Embla fires on resize: three cards overflow a
+ * phone and not a desktop, so this is a breakpoint away from changing.
+ */
+function MeasureOverflow({ onMeasure }: { onMeasure: (overflows: boolean) => void }) {
+  const { api } = useCarousel("MeasureOverflow");
+
+  useEffect(() => {
+    if (!api) return;
+
+    const measure = () => onMeasure(api.canScrollNext() || api.canScrollPrev());
+
+    measure();
+    api.on("reInit", measure);
+
+    return () => {
+      api.off("reInit", measure);
+    };
+  }, [api, onMeasure]);
 
   return null;
 }

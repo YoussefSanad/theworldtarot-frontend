@@ -63,24 +63,40 @@ function baseUrl(): string {
   return API_BASE.replace(/\/$/, "");
 }
 
-type ApiCard = {
+/**
+ * One card as `/cards` and `/cards/{id}` answer it — **with no film attached**.
+ *
+ * This is the base shape, and the draw extends it rather than the other way
+ * round. It used to be the reverse: `ApiCard` declared `video` as required and
+ * the listing was `Omit<ApiCard, "video">`, which read as though a card
+ * ordinarily carried a playback URL and the listing were the exception. Only
+ * `/cards/draw` carries one, and only because the reveal plays it immediately.
+ *
+ * `poster` is gone rather than optional. It was removed from the backend on 7
+ * August 2026 and nothing ever read it, so declaring it only invited somebody
+ * to try.
+ */
+export type ApiCard = {
   id: number;
   number: number;
   name: string;
   short_description: string;
   long_description: string;
   image: string;
-  in_viewing_room: boolean;
   /**
-   * Optional because it is being removed from the backend. Nothing here reads
-   * it, so it can disappear without breaking anything.
+   * Whether a film exists for this card.
+   *
+   * **Not an access check**, and `API_CONTRACT.md` is emphatic about the
+   * distinction: it says a film exists, never that this visitor may watch it.
+   * `true` for somebody without a pass is expected rather than a mistake —
+   * `/cards/{id}/video` decides that, on every call. False means the film is
+   * still being prepared, so a card never advertises a video that would 404.
    */
-  poster?: string | null;
-  video: { url: string; expires_at: string };
+  in_viewing_room: boolean;
 };
 
-/** What `/cards/{id}` returns. The same card, with no film attached. */
-type CardWithoutVideo = Omit<ApiCard, "video">;
+/** What `/cards/draw` returns: the card, plus the credential to play it with. */
+type ApiDrawnCard = ApiCard & { video: { url: string; expires_at: string } };
 
 /**
  * The deck is fixed at twenty-two, so a table beats arithmetic. The Fool is 0
@@ -92,7 +108,7 @@ const ROMAN = [
   "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI",
 ] as const;
 
-function toTarotCard(card: ApiCard | CardWithoutVideo): TarotCard {
+function toTarotCard(card: ApiCard | ApiDrawnCard): TarotCard {
   return {
     // The API addresses cards by integer id. Kept as a string because it is an
     // opaque handle here, and it is what goes into sessionStorage for the
@@ -145,7 +161,7 @@ export async function drawCard(
     throw new Error(`The draw failed with ${response.status}.`);
   }
 
-  return toTarotCard((await response.json()) as ApiCard);
+  return toTarotCard((await response.json()) as ApiDrawnCard);
 }
 
 /**
@@ -176,7 +192,66 @@ export async function fetchCard(
     throw new Error(`Fetching card ${id} failed with ${response.status}.`);
   }
 
-  return toTarotCard((await response.json()) as CardWithoutVideo);
+  return toTarotCard((await response.json()) as ApiCard);
+}
+
+/**
+ * The whole deck, in deck order — **the Viewing Room's one request**.
+ *
+ * `API_CONTRACT.md` designs the listing for exactly this: it carries the full
+ * copy, unlike the readings listing, so the room renders all twenty-two with
+ * their artwork and their `in_viewing_room` state from a single call and
+ * selecting a card costs no round trip. The whole deck is roughly 25KB of text
+ * before compression.
+ *
+ * **Answers `ApiCard[]` rather than `TarotCard[]`, deliberately.** `TarotCard`
+ * is the reveal's shape: it carries the Roman numeral as its `number` and
+ * drops the integer id, and the Viewing Room needs both — the integer to ask
+ * `/cards/{id}/video` with, the numeral for the roundel. So the room maps the
+ * wire shape itself, in `lib/viewing-room-deck.ts`, and this stays the wire.
+ *
+ * **No `cache: "no-store"`.** Unlike the draw this carries no credential: a
+ * listing of which films exist is the same for every visitor and is safe to
+ * cache. It is also not fetched at build time — see this file's header — but
+ * for the ordinary reason that an export has no server, not because the body
+ * is sensitive.
+ *
+ * Throws on a broken API, so an unreachable backend stays loud. **There is no
+ * empty-deck case to special-case here**: an empty array is a real answer (a
+ * freshly seeded site, or no card finished in this language) and the caller is
+ * what decides the room has nothing to show.
+ */
+export async function fetchCards(
+  { locale = DEFAULT_LOCALE, signal }: { locale?: Locale; signal?: AbortSignal } = {},
+): Promise<ApiCard[]> {
+  const response = await fetch(`${baseUrl()}/api/v1/${locale}/cards`, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetching the deck failed with ${response.status}.`);
+  }
+
+  const body: unknown = await response.json();
+
+  /*
+    Checked rather than cast, as `fetchLanguages` and `fetchCurrencies` are.
+    A body shaped some other way answers an empty deck, which the room draws
+    as "nothing to show" — the safe way to be wrong about a list.
+  */
+  if (!Array.isArray(body)) return [];
+
+  return body.filter(
+    (entry): entry is ApiCard =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as ApiCard).id === "number" &&
+      typeof (entry as ApiCard).number === "number" &&
+      typeof (entry as ApiCard).name === "string" &&
+      typeof (entry as ApiCard).image === "string" &&
+      typeof (entry as ApiCard).in_viewing_room === "boolean",
+  );
 }
 
 /**

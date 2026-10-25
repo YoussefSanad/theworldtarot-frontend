@@ -22,8 +22,17 @@ export type VideoRequest = {
 };
 
 export type RequestGuard = {
-  /** Retires whatever was in flight and hands back a fresh attempt. */
-  begin(cardId: string): VideoRequest;
+  /**
+   * Retires whatever was in flight and hands back a fresh attempt.
+   *
+   * `cardId` is the backend's integer and is **taken but not read** — see the
+   * note on identity below: a fresh attempt retires the previous one whether
+   * or not it was for the same card. It stays in the signature because the
+   * call site reads better for naming what it is asking about, and because a
+   * guard that one day wants to coalesce by card should not have to change its
+   * callers to get the argument back.
+   */
+  begin(cardId: number): VideoRequest;
   /** Retires everything. For teardown, and for leaving the page. */
   abort(): void;
 };

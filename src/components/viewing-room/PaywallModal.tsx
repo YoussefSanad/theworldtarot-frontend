@@ -73,32 +73,22 @@ export function PaywallModal({
     focusableWithin(panel)[0]?.focus();
   }, [screen, state]);
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Tab") return;
+  /*
+    **No focus trap, deliberately.**
 
-      const focusable = focusableWithin(panelRef.current);
-      if (focusable.length === 0) return;
+    A trap is the right answer for a dialog you can dismiss — it keeps the
+    keyboard on the task and Escape is the way out. This panel cannot be
+    dismissed, so trapping meant a visitor who could not or would not buy
+    had no exit at all: the masthead was unreachable by pointer and by Tab.
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
+    Instead the room behind is `inert`, which takes it out of the tab order
+    entirely, and Tab walks from the panel to the masthead and footer the
+    same way it would on any page. The two things a visitor can still do —
+    navigate away, or sign in — are exactly the two the panel leaves open.
 
-      // Wrapping by hand rather than letting the browser walk out of the
-      // dialog: the room behind is `inert` to a pointer but a stray Tab would
-      // still reach the masthead.
-      if (event.shiftKey && (active === first || !panelRef.current?.contains(active))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+    `aria-modal` stays: a screen reader is told this is the thing to deal
+    with, while the browser's own focus order still offers the way out.
+  */
 
   return (
     <div
@@ -106,7 +96,13 @@ export function PaywallModal({
         No `onClick` here. A backdrop that dismisses would strand the visitor
         in an inert room — see the note above.
       */
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overscroll-contain p-4"
+      /*
+        Nudged below centre on desktop so the room's own title and the top of
+        the card stay visible above it — dead-centre put the panel over the
+        part of the page it is selling. Centred again on a phone, where
+        there is no room either side of it to give away.
+      */
+      className="fixed inset-0 z-30 grid place-items-center overflow-y-auto overscroll-contain p-4 lg:items-start lg:pt-[20vh]"
     >
       <div
         ref={panelRef}

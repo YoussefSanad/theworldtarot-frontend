@@ -29,7 +29,7 @@ import { viewingRoomMarks as marks } from "@/lib/assets";
 export function CarouselKnob({
   labels,
 }: {
-  labels: { knob: string; first: string; last: string };
+  labels: { knob: string };
 }) {
   const { api, snapCount } = useCarousel("CarouselKnob");
   const railRef = useRef<HTMLDivElement | null>(null);
@@ -201,30 +201,6 @@ export function CarouselKnob({
     },
     [seekToRatio],
   );
-
-  /**
-   * Jump to one end of the deck, travelling rather than teleporting.
-   *
-   * The same eased branch a press on the rule takes — these are the same
-   * gesture with the destination fixed.
-   */
-  const seekToEnd = useCallback(
-    (edge: "first" | "last") => {
-      /*
-        The same engine seek the rule uses, with the ratio pinned to an end.
-
-        **Not `api.scrollTo`**, which looks like the obvious choice for
-        "go to the first card" and is wrong here: it moves to where Embla
-        thinks that snap is, and `useDrift` has been moving `location`
-        without ever updating Embla's snap index — so the two disagree and
-        the jump landed a full viewport past the start, measured at +1396.
-        Everything that moves this strip speaks in positions, not indices.
-      */
-      seekToRatio(edge === "first" ? 0 : 1, { animate: true });
-    },
-    [seekToRatio],
-  );
-
 
   /**
    * Follow the pointer until it is released.
@@ -411,65 +387,6 @@ export function CarouselKnob({
           </button>
       </div>
 
-      {/*
-        Below the rule rather than flanking it, so the dotted line runs
-        unbroken from end to end and the knob has the whole of it.
-      */}
-      <div className="mt-[clamp(8px,0.9vw,14px)] flex items-center gap-[clamp(14px,1.4vw,22px)]">
-        <SkipControl edge="first" label={labels.first} onSkip={seekToEnd} />
-        <SkipControl edge="last" label={labels.last} onSkip={seekToEnd} />
-      </div>
     </div>
-  );
-}
-
-/**
- * A small double-chevron either side of the rule: jump to the first or the
- * last card.
- *
- * The rule is a scrubber, so its two ends are meaningful places — these are
- * the shortcut to them, in the same gold as the knob and deliberately
- * smaller than it, since they are the lesser control.
- */
-function SkipControl({
-  edge,
-  label,
-  onSkip,
-}: {
-  edge: "first" | "last";
-  label: string;
-  onSkip: (edge: "first" | "last") => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={() => onSkip(edge)}
-      className={[
-        "grid size-[26px] shrink-0 cursor-pointer place-items-center rounded-full",
-        "text-[color:var(--gold,#d4b06a)]/60",
-        "transition-[color,filter,scale] duration-200 ease-out",
-        // The glow is a drop-shadow on the mark rather than a ring on the
-        // box: there is no box to speak of, just the chevrons on the floor.
-        "hover:text-[color:var(--gold,#d4b06a)] hover:drop-shadow-[0_0_6px_rgba(212,176,106,0.65)]",
-        "focus-visible:text-[color:var(--gold,#d4b06a)] focus-visible:drop-shadow-[0_0_6px_rgba(212,176,106,0.65)]",
-        "active:scale-90 active:duration-75",
-        "focus-visible:outline-none",
-      ].join(" ")}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className={[
-          "size-[14px] fill-none stroke-current stroke-[2.2]",
-          edge === "last" ? "rotate-180" : "",
-        ].join(" ")}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M18 5l-7 7 7 7" />
-        <path d="M11 5l-7 7 7 7" />
-      </svg>
-    </button>
   );
 }

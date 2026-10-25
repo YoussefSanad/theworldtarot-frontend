@@ -46,6 +46,38 @@ const MEMBER = {
 };
 const NO_PASS = { ...MEMBER, has_viewing_room_access: false };
 
+/**
+ * The deck, as `GET /{locale}/cards` answers it.
+ *
+ * **Faked here because the page now fetches it**, where phase one bundled it
+ * into the export. That moves two things into this check's hands that used to
+ * be facts about the build: which cards exist, and which of them have films.
+ *
+ * `in_viewing_room: false` on three of them, spread through the deck rather
+ * than bunched at the end, so the coming-soon treatment is exercised in
+ * passing rather than only at one edge. The names are the Major Arcana's; the
+ * ids are deliberately **not** `number + 1`, so a mapping that confused the
+ * two would fail here rather than look right by coincidence.
+ */
+const DECK = [
+  "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor",
+  "The High Priest", "The Lovers", "The Chariot", "Strength", "The Hermit",
+  "The Wheel", "Justice", "The Hangman", "Death", "Temperance",
+  "The Devil", "The Tower", "The Star", "The Moon", "The Sun",
+  "Judgement", "The World",
+].map((name, number) => ({
+  id: 100 + number,
+  number,
+  name,
+  short_description: `${name}, briefly.`,
+  long_description: `The longer meaning of ${name}.`,
+  image: `/cards/library/${number}.webp`,
+  in_viewing_room: !["The Hangman", "The Tower", "Judgement"].includes(name),
+}));
+
+/** The card the player opens on: the first with a film, which is The Fool. */
+const FIRST_PLAYABLE = DECK[0];
+
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
   ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml",
@@ -98,12 +130,64 @@ function api(body, status = 200) {
 }
 
 /**
- * A page with `/me` answered, and every video request recorded.
+ * What the faked API answers for one URL.
+ *
+ * **One table, shared by `openRoom` and the two cases that route for
+ * themselves.** Those two need an init script or a viewport set before they
+ * navigate, so they cannot use `openRoom` — and they used to answer `api([])`
+ * to everything but `/me`, which was harmless while the deck was bundled and
+ * silently emptied the room the moment it was fetched. That is exactly the bug
+ * this table exists to make impossible to reintroduce.
+ *
+ * `deck` is `"full"`, `"empty"` or `"unreachable"`.
+ */
+function answerFor(url, me, { deck = "full" } = {}) {
+  /*
+    **Refused, and first.** `openRoom` intercepts this before calling here, so
+    it is reached only from the two cases that route for themselves — neither
+    of which presses play today. It refuses rather than falling through to the
+    catch-all's `[]`, because a player handed an empty array fails as a parse
+    error somewhere inside the HLS source and reads as a broken player rather
+    than as a mock nobody taught about this endpoint.
+  */
+  if (url.endsWith("/video")) {
+    return api({ message: "Unauthenticated." }, 401);
+  }
+
+  if (url.endsWith("/api/v1/me")) {
+    return me === null ? api({ message: "Unauthenticated." }, 401) : api(me);
+  }
+
+  /*
+    **Checked after `/me` and before the catch-all**, and note that `/video`
+    also lives under `/cards/` — the caller tests for that one first, because
+    answering a playback request with a list of cards fails in a way that looks
+    like the CDN rather than like a mock.
+  */
+  if (url.endsWith("/cards")) {
+    if (deck === "unreachable") return api({ message: "Nope." }, 503);
+
+    return api(deck === "empty" ? [] : DECK);
+  }
+
+  // Everything else the page may ask for (products, currencies, languages)
+  // answers empty rather than reaching the network, so no state is ever
+  // waiting on an unrelated call.
+  return api([]);
+}
+
+/**
+ * A page with `/me` and `/cards` answered, and every video request recorded.
  *
  * The recorder is the point of several cases below: "no film was requested" is
  * only provable by watching the network, not by looking at the DOM.
+ *
+ * `deck` is `"full"`, `"empty"` or `"unreachable"`. It exists because the deck
+ * is fetched now rather than bundled, so "the carousel has cards in it" became
+ * a fact about the network — and the two ways it can have none are states the
+ * page draws different words for.
  */
-async function openRoom({ me, meStatus = 200, viewport }) {
+async function openRoom({ me, meStatus = 200, viewport, deck = "full" }) {
   const context = await browser.newContext(viewport ? { viewport } : {});
   const page = await context.newPage();
   const videoRequests = [];
@@ -121,21 +205,13 @@ async function openRoom({ me, meStatus = 200, viewport }) {
     (route) => {
       const url = route.request().url();
 
+      // First, and before the deck: `/video` lives under `/cards/` too.
       if (url.endsWith("/video")) {
         videoRequests.push(url);
         return route.fulfill(api({ message: "Unauthenticated." }, 401));
       }
 
-      if (url.endsWith("/api/v1/me")) {
-        return route.fulfill(
-          meStatus === 401 ? api({ message: "Unauthenticated." }, 401) : api(me),
-        );
-      }
-
-      // Everything else the page may ask for (products, currencies, languages)
-      // answers empty rather than reaching the network, so no state is ever
-      // waiting on an unrelated call.
-      return route.fulfill(api([]));
+      return route.fulfill(answerFor(url, meStatus === 401 ? null : me, { deck }));
     },
   );
 
@@ -176,7 +252,7 @@ console.log("\nSigned out (401):");
   const veil = await page.evaluate(() => {
     const el = [...document.querySelectorAll("div[aria-hidden=true]")].find((d) => {
       const style = getComputedStyle(d);
-      return style.position === "fixed" && style.zIndex === "40";
+      return style.position === "fixed" && style.zIndex === "20";
     });
     if (!el) return null;
 
@@ -190,6 +266,41 @@ console.log("\nSigned out (401):");
   });
   expect("signed-out", "the veil covers the page", veil?.covers, true);
   expect("signed-out", "and sits under the panel", veil?.underPanel, true);
+
+  /*
+    **A paywall blocks the content, never the way off the page.** The veil
+    and the panel both used to cover the whole viewport, so a visitor who
+    could not or would not buy was stuck with the back button — the nav was
+    unreachable by pointer and the focus trap closed the keyboard route too.
+    The masthead is the exit; the footer stays under the veil by choice.
+  */
+  const exits = await page.evaluate(() => {
+    const onTop = (el) => {
+      const box = el.getBoundingClientRect();
+      const top = document.elementsFromPoint(box.x + box.width / 2, box.y + box.height / 2)[0];
+      return !!top && (el === top || el.contains(top));
+    };
+
+    // The nav is tested at the top of the page, the footer at the bottom —
+    // scrolling between them, because neither is on screen at the other's
+    // scroll position.
+    window.scrollTo(0, 0);
+    const nav = document.querySelector("header a[href]");
+    const navOk = !!nav && onTop(nav);
+
+    window.scrollTo(0, document.body.scrollHeight);
+    const foot = document.querySelector("footer a[href]");
+
+    return { nav: navOk, footer: !!foot && onTop(foot) };
+  });
+  /*
+    The masthead is the way out and stays above the veil. The footer is
+    **deliberately covered**: it is not an escape route, and leaving it
+    under the veil keeps the panel reading as modal rather than as a banner
+    the page happens to be wearing.
+  */
+  expect("signed-out", "the masthead is still clickable", exits.nav, true);
+  expect("signed-out", "the footer is covered", exits.footer, false);
 
   expect("signed-out", "no account line", await page.getByText(SWITCH).count(), 0);
   expect("signed-out", "nothing was requested", videoRequests.length, 0);
@@ -269,7 +380,7 @@ console.log("\nMember:");
   await page.route(
     (url) => url.pathname.includes("/api/v1/"),
     (route) =>
-      route.fulfill(route.request().url().endsWith("/api/v1/me") ? api(MEMBER) : api([])),
+      route.fulfill(answerFor(route.request().url(), MEMBER)),
   );
   await page.goto(ROOM, { waitUntil: "networkidle" });
 
@@ -277,6 +388,16 @@ console.log("\nMember:");
   expect("member", "no panel ever", everSawModal, false);
   expect("member", "the room is usable", await page.locator("[data-viewing-room]").getAttribute("inert"), null);
   expect("member", "the carousel is there", await page.getByText(HINT).isVisible(), true);
+  expect("member", "all twenty-two arrived", await page.getByRole("button", { name: /tarot card from The World Tarot/ }).count(), DECK.length);
+
+  /*
+    **The player opens on a card with a film.** The deck's order is the
+    backend's and its first card may be locked, so this is the one selection
+    the page makes on the visitor's behalf and it must not open on a card
+    whose play button refuses.
+  */
+  const opened = await page.locator('[aria-current="true"]').first().getAttribute("aria-label");
+  expect("member", "it opens on a playable card", opened, `${FIRST_PLAYABLE.name} tarot card from The World Tarot`);
   expect(
     "member",
     "no veil over the room",
@@ -284,7 +405,7 @@ console.log("\nMember:");
       () =>
         [...document.querySelectorAll("div[aria-hidden=true]")].filter((d) => {
           const style = getComputedStyle(d);
-          return style.position === "fixed" && style.zIndex === "40";
+          return style.position === "fixed" && style.zIndex === "20";
         }).length,
     ),
     0,
@@ -479,7 +600,7 @@ console.log("\nThe player keeps the card's shape at every width:");
     await page.route(
       (url) => url.pathname.includes("/api/v1/"),
       (route) =>
-        route.fulfill(route.request().url().endsWith("/api/v1/me") ? api(MEMBER) : api([])),
+        route.fulfill(answerFor(route.request().url(), MEMBER)),
     );
     await page.goto(ROOM, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
@@ -517,6 +638,66 @@ console.log("\n360px with the keyboard up (Review Focus #5):");
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
   expect("360px", "no horizontal page scroll", scrollsSideways, false);
+
+  await context.close();
+}
+
+/* ------------------------------------------------------------------ */
+/*
+  The deck's own states, which are new with the wiring: it is fetched in the
+  browser now rather than bundled into the export, so "there are cards" stopped
+  being a fact about the build.
+
+  **Both are checked for a member**, who is the only visitor who would notice:
+  a signed-out one has the panel over the room either way. And both assert the
+  page is still a page — the title and the closing call to action owe the
+  backend nothing and must not vanish with the deck.
+*/
+console.log("\nA deck the backend has nothing in:");
+{
+  const { context, page, videoRequests } = await openRoom({ me: MEMBER, deck: "empty" });
+
+  expect("empty-deck", "the room still says what it is", await page.getByText("The Living Tarot").first().isVisible(), true);
+  expect("empty-deck", "it says the deck is coming", await page.getByText("The deck is being prepared.").isVisible(), true);
+  expect("empty-deck", "no carousel to drag", await page.getByText(HINT).count(), 0);
+  expect("empty-deck", "no player with no card to play", await page.locator("video").count(), 0);
+  expect("empty-deck", "nothing was requested", videoRequests.length, 0);
+
+  /*
+    No retry here, deliberately: an empty deck is the backend's considered
+    answer and asking again will not finish a film. A retry that cannot help
+    is a button that teaches people the page is broken.
+  */
+  expect("empty-deck", "and no retry that could not help", await page.getByRole("button", { name: "Try again" }).count(), 0);
+
+  await context.close();
+}
+
+console.log("\nA deck the backend could not answer:");
+{
+  const { context, page } = await openRoom({ me: MEMBER, deck: "unreachable" });
+
+  expect("broken-deck", "the room still says what it is", await page.getByText("The Living Tarot").first().isVisible(), true);
+  expect("broken-deck", "it says so", await page.getByText("The deck could not be loaded.").isVisible(), true);
+
+  const retry = page.getByRole("button", { name: "Try again" });
+  expect("broken-deck", "a retry is offered", await retry.isVisible(), true);
+
+  /*
+    And the retry actually re-asks. The route is rewritten to a working deck
+    first, so this proves the request happens again rather than that the
+    button merely exists — the failure mode being a retry wired to nothing,
+    which looks identical until somebody presses it.
+  */
+  await page.route(
+    (url) => url.pathname.includes("/api/v1/"),
+    (route) => route.fulfill(answerFor(route.request().url(), MEMBER)),
+  );
+  await retry.click();
+
+  await page.getByText(HINT).waitFor({ timeout: 5000 });
+  expect("broken-deck", "pressing it brings the deck back", await page.getByText(HINT).isVisible(), true);
+  expect("broken-deck", "and the player with it", await page.locator("video").count(), 1);
 
   await context.close();
 }

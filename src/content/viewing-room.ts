@@ -1,24 +1,25 @@
 /**
- * The Viewing Room's words and its deck (Figma `384:2`, "VIEWING ROOM 10_16").
+ * The Viewing Room's words (Figma `384:2`, "VIEWING ROOM 10_16").
  *
  * **The copy is the client's, transcribed from her frame.** Two artefacts are
  * corrected deliberately and both are layout rather than language: she writes
  * "GET A  READING" with a double space, and her closing line carries a `~`
  * where the line breaks. Neither is a character anybody is meant to read.
  *
- * ## The deck is derived, not restated
+ * ## The deck is not here any more
  *
- * `content/library.ts` already holds all twenty-two in deck order with their
- * numerals, their names and their artwork — and those names are the client's
- * *with her typos corrected*, a history that file documents at length. A second
- * hand-written list here would be a second place for a card to be called
- * something, and the two would drift the first time she renames one.
+ * It was, through phase one: derived from `content/library.ts` with three
+ * cards marked unplayable by hand, so the room and its coming-soon treatment
+ * could be reviewed before anything was wired. **The backend is the only
+ * source now** — `GET /{locale}/cards` says which cards are on the website,
+ * what they are called, what they look like and which of them have films, and
+ * a list kept here beside it would be a second place for a card to be called
+ * something. `lib/viewing-room-deck.ts` is where it comes from.
  *
- * So this maps hers rather than repeating it. What this page adds is the one
- * fact the Library has no use for: whether a film exists yet.
+ * `ViewingRoomCard` stays in this file because it is the shape the page's
+ * components are written against, and they import their words from here
+ * already.
  */
-
-import { majorArcana } from "./library.ts";
 
 /**
  * One card as the Viewing Room needs it.
@@ -29,8 +30,17 @@ import { majorArcana } from "./library.ts";
  * `number`, which is why this page does not reuse that type.
  */
 export type ViewingRoomCard = {
-  /** The Library's slug. Opaque here — a handle for selection, nothing more. */
-  readonly id: string;
+  /**
+   * **The backend's integer id**, and the thing `/cards/{id}/video` is
+   * addressed with.
+   *
+   * It was the Library's slug through phase one, when the deck was bundled.
+   * The contract is explicit that a card has no slug — "a card is never
+   * reached by a URL a person reads" — so the integer is the only handle the
+   * backend offers, and carrying a slug beside it would mean two identities
+   * for one card and a join to keep in step.
+   */
+  readonly id: number;
   /** The number on the card, 0–21, and the order the deck is shown in. */
   readonly number: number;
   /** Roman numeral, as the roundel draws it. The Fool's is "0". */
@@ -48,32 +58,6 @@ export type ViewingRoomCard = {
   readonly inViewingRoom: boolean;
 };
 
-/**
- * The cards whose films are not ready.
- *
- * **Scaffold data, and deliberately not empty.** Phase one has no backend to
- * say which films exist, and a deck where every card is playable leaves the
- * coming-soon treatment unreviewed until after it is wired — which is exactly
- * the state nobody looks at and everybody ships. Three of them, spread through
- * the deck rather than bunched at the end, so the carousel shows the state in
- * passing rather than only at one edge.
- *
- * Deleted in phase two, when `in_viewing_room` arrives from the API.
- */
-const FILMS_NOT_READY: ReadonlySet<string> = new Set(["the-hangman", "the-tower", "judgement"]);
-
-export const viewingRoomDeck: readonly ViewingRoomCard[] = majorArcana.map((card, index) => ({
-  id: card.slug,
-  // The Library lists the deck in order and draws its own numerals, so position
-  // is the number. Taken from the index rather than parsed back out of the
-  // Roman numeral, which would be arithmetic to recover something already known.
-  number: index,
-  numeral: card.numeral,
-  name: card.name,
-  image: card.image,
-  inViewingRoom: !FILMS_NOT_READY.has(card.slug),
-}));
-
 export const viewingRoom = {
   title: "The Living Tarot",
   subtitle: "CINEMATIC TAROT CARDS AS MOVING ART",
@@ -89,7 +73,22 @@ export const viewingRoom = {
       { lines: ["MOTION,", "LIGHT & SOUND"] },
     ],
     action: "ENTER THE VIEWING ROOM",
-    price: "$29 — One-time payment",
+    /**
+     * The price line, carried as two pieces because only the first is ours to
+     * replace.
+     *
+     * The panel prints `price + priceNote`, with `price` swapped for whatever
+     * the backend holds for `viewing-room-pass` in the visitor's currency as
+     * soon as it answers — see `lib/pass-price.ts`. The bundled `$29` is
+     * fallback copy and never funds a payment: it is what the exported HTML
+     * ships and what stays on screen if the API cannot be reached.
+     *
+     * Kept apart rather than templated into one string because the suffix is
+     * the client's wording and the number is not, and a `{price}` placeholder
+     * in copy she proofreads is a thing to get wrong.
+     */
+    price: "$29",
+    priceNote: " — One-time payment",
     /** Two clauses because only the second is the link. */
     signIn: { lead: "Already Have Access? ", link: "Sign in Here." },
 
@@ -127,8 +126,27 @@ export const viewingRoom = {
      * position within it through `aria-valuenow`.
      */
     knob: "Move through the deck",
-    first: "Jump to the first card",
-    last: "Jump to the last card",
+  },
+
+  /**
+   * The deck's own states, which her frame does not draw because it draws a
+   * deck that is simply there.
+   *
+   * It is fetched in the browser now — the backend says which films exist, and
+   * a static export cannot ask at build time — so there is a moment before it
+   * arrives and a case where it never does. Both are words rather than a blank
+   * band: a carousel that is empty for a second and a carousel that is empty
+   * for good look identical, and only one of them is worth waiting through.
+   */
+  deck: {
+    loading: "Summoning the deck…",
+    /**
+     * The backend answered, and has nothing on the website in this language
+     * yet. A real state, not a failure — a freshly seeded site reaches it.
+     */
+    empty: "The deck is being prepared.",
+    unreachable: "The deck could not be loaded.",
+    retry: "Try again",
   },
 
   closing: {

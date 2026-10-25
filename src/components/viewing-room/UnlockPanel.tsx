@@ -7,6 +7,7 @@ import { AccountLine } from "@/components/viewing-room/AccountLine";
 import { viewingRoom } from "@/content/viewing-room";
 import { viewingRoomMarks as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import { usePassPriceLine } from "@/lib/pass-price";
 import type { Customer } from "@/lib/session";
 import type { AccessState } from "@/lib/viewing-room-access";
 
@@ -36,6 +37,18 @@ export function UnlockPanel({
   /** Dev `?state=no-pass` only; see `AccountLine`. */
   pretendAccount?: Customer;
 }) {
+  /*
+    The same `/products` answer the homepage's tiles read, so this screen adds
+    no request of its own — `lib/catalogue.ts` asks once per currency however
+    many surfaces read it, and the pass is already in that answer because the
+    VIEWING ROOM tile keys to it.
+
+    Screen two prices off its own `useProduct(PASS)` fetch, which is the one the
+    checkout is built from; see `PaymentPanel`. Here there is nothing to buy
+    yet, so the catalogue is both enough and cheaper.
+  */
+  const priceLine = usePassPriceLine(panel.price, panel.priceNote);
+
   return (
     <div className="mt-4 flex flex-col items-center">
       {/* Her key divider (`384:40`), 452x38, as delivered. */}
@@ -102,9 +115,16 @@ export function UnlockPanel({
         {panel.action}
       </Button>
 
-      {/* The one line in Magically; everything else in the panel is Gill Sans. */}
+      {/*
+        The one line in Magically; everything else in the panel is Gill Sans.
+
+        The number is the backend's once it has answered, and the bundled `$29`
+        until then — the button above leads to a checkout in the visitor's own
+        currency, so a line that always said `$29` was the wrong price for
+        anyone outside the US. See `lib/pass-price.ts`.
+      */}
       <p className="mt-3 text-center font-display text-[clamp(16px,1.5vw,24px)] tracking-[0.36px] text-white">
-        {panel.price}
+        {priceLine}
       </p>
 
       {/*

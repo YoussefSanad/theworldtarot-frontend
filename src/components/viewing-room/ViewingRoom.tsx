@@ -13,27 +13,51 @@ import { UnlockPanel } from "@/components/viewing-room/UnlockPanel";
 import { viewingRoom, type ViewingRoomCard } from "@/content/viewing-room";
 import { cn } from "@/lib/cn";
 import { accessStateOf, roomIsInert, type AccessState } from "@/lib/viewing-room-access";
+import { useViewingRoomDeck } from "@/lib/viewing-room-deck";
 import type { PlaybackFailure } from "@/lib/viewing-room-video";
 
 /**
  * The Viewing Room itself (Figma `384:2`).
  *
- * **The room renders at once and the panel arrives over it.** The deck is
- * public, so there is nothing to wait for before drawing it — only a brief
- * veil while `/me` answers, because a member who sees one frame of the paywall
- * has been told they did not buy what they bought.
+ * **The room renders at once and the panel arrives over it.** The page's own
+ * words — the title, the closing call to action — owe the backend nothing and
+ * draw immediately, under a brief veil while `/me` answers: a member who sees
+ * one frame of the paywall has been told they did not buy what they bought.
+ *
+ * **Two requests, and neither blocks the other.** `/me` decides which panel is
+ * drawn, `/cards` fills the player and the carousel, and the deck is public
+ * either way — a signed-out visitor sees the room they are being sold. So the
+ * deck is not gated on the session and the panel does not wait for the deck.
  *
  * `inert` on the room is presentation and never the gate: with it removed in
  * dev tools the video endpoint still refuses, every time, which is where
  * access is actually decided.
  */
-export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
+export function ViewingRoom() {
   const { customer } = useSignedIn();
   const devState = useDevState();
 
   const state: AccessState = devState ?? accessStateOf(customer);
 
-  const [selectedId, setSelectedId] = useState(() => firstPlayable(cards));
+  /**
+   * The deck, from the backend. **Fetched here rather than passed in**, which
+   * is the change phase two made: through phase one the page handed down a
+   * bundled list, and this component's own doc called that call site the seam.
+   * A static export cannot fetch it at build time, so it is asked for in the
+   * browser and the carousel says so while it is in flight.
+   */
+  const deckState = useViewingRoomDeck();
+  const cards = deckState.status === "live" ? deckState.cards : EMPTY_DECK;
+
+  /**
+   * The card the **visitor** has picked, and null until they pick one.
+   *
+   * Not "the card on the player", which is `selected` below: this is only the
+   * choice, and the default is derived rather than written here. Through phase
+   * one it was seeded with `useState(() => firstPlayable(cards))`, which cannot
+   * work now — the deck is empty on the first render and the seed would stick.
+   */
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [screen, setScreen] = useState<PaywallScreen>("unlock");
 
   /**
@@ -43,7 +67,7 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
    * list said otherwise, so the card joins the coming-soon ones rather than
    * leaving a player that refuses to start with no explanation.
    */
-  const [notReady, setNotReady] = useState<ReadonlySet<string>>(() => new Set());
+  const [notReady, setNotReady] = useState<ReadonlySet<number>>(() => new Set());
 
   const deck = useMemo(
     () =>
@@ -55,10 +79,25 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
     [cards, notReady],
   );
 
-  const selected = deck.find((card) => card.id === selectedId) ?? deck[0];
+  /**
+   * The card on the player, or null while there is no deck.
+   *
+   * **Derived, with the default folded into the derivation** rather than
+   * written into state by an effect once the deck lands. An effect would have
+   * to `setState` synchronously on the render the deck arrives on, which
+   * cascades renders and which this repo's lint rules refuse — and it would
+   * also mean one render where there is a deck and no selection, which is a
+   * frame of the empty room for everybody.
+   *
+   * `selectedId` stays null until the visitor picks something, and
+   * `firstPlayable` answers for them until they do. Falling back to the first
+   * card also covers a selection that is no longer in the deck, which is what
+   * a refreshed deck that dropped a card leaves behind.
+   */
+  const selected = deck.find((card) => card.id === selectedId) ?? firstPlayable(deck);
 
   /** A refusal from the video endpoint, answered with a modal, never a dead player. */
-  const onRefused = useCallback((failure: PlaybackFailure, cardId: string) => {
+  const onRefused = useCallback((failure: PlaybackFailure, cardId: number) => {
     if (failure === "not-ready") {
       setNotReady((previous) => new Set(previous).add(cardId));
       return;
@@ -103,19 +142,35 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
           </header>
 
           <div className="relative mt-[clamp(44px,6vw,88px)] w-full">
-            <FilmPlayer card={selected} onRefused={onRefused} labels={viewingRoom.player} />
+            {/*
+              **The player waits for a card and the room does not.** The
+              title, the atmosphere and the closing call to action are the
+              page's own and owe the backend nothing, so they draw at once —
+              only the two blocks the deck fills hold a placeholder.
 
+              The placeholder keeps the player's exact aspect, so the carousel
+              below it does not jump when the deck lands.
+            */}
+            {selected ? (
+              <FilmPlayer card={selected} onRefused={onRefused} labels={viewingRoom.player} />
+            ) : (
+              <PlayerPlaceholder />
+            )}
           </div>
         </Container>
 
         <div className="mt-[clamp(32px,5vw,64px)] w-full bg-white/[0.03] py-[clamp(20px,3vw,46px)]">
-          <ThumbnailCarousel
-            cards={deck}
-            selectedId={selected.id}
-            onSelect={setSelectedId}
-            hint={viewingRoom.carouselHint}
-            labels={viewingRoom.carousel}
-          />
+          {selected ? (
+            <ThumbnailCarousel
+              cards={deck}
+              selectedId={selected.id}
+              onSelect={setSelectedId}
+              hint={viewingRoom.carouselHint}
+              labels={viewingRoom.carousel}
+            />
+          ) : (
+            <DeckNotice state={deckState} labels={viewingRoom.deck} />
+          )}
         </div>
 
         <Container className="mt-[clamp(40px,6vw,96px)] flex flex-col items-center text-center">
@@ -162,18 +217,20 @@ export function ViewingRoom({ cards }: { cards: readonly ViewingRoomCard[] }) {
       {/*
         **The veil covers the page, and stays under the panel.**
 
-        It was `absolute inset-0` inside the player's own wrapper, so it
-        dimmed the card and nothing else — the room either side of it stayed
-        bright behind a panel that is meant to be the only thing you can use.
-        Fixed to the viewport instead, and shown for the whole time the room
-        is out of reach rather than only during the half-second `asking`.
+        Fixed to the viewport rather than scoped to the player, so it holds
+        its place while the page scrolls and the room is dimmed wherever you
+        are on it.
 
-        `z-40` sits above the room and below the panel's own `z-50`.
+        `z-20`: above the room, below the panel, and **below the masthead
+        (`z-50`) and the footer (`z-10` in its own stacking context)**. A
+        paywall should block the content, never the way off the page —
+        before this it covered the whole viewport and a visitor who could
+        not or would not buy had no exit but the back button.
       */}
       {(state === "asking" || modal) && (
         <div
           aria-hidden
-          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[3px]"
+          className="fixed inset-0 z-20 bg-black/55 backdrop-blur-[3px]"
         />
       )}
 
@@ -211,9 +268,101 @@ const PRETEND_ACCOUNT = {
   hasViewingRoomAccess: false,
 } as const;
 
-/** The first card with a film, so the player never opens on a locked one. */
-function firstPlayable(cards: readonly ViewingRoomCard[]): string {
-  return (cards.find((card) => card.inViewingRoom) ?? cards[0]).id;
+/**
+ * A stable empty deck, so a render before the backend answers does not make a
+ * new array every time and re-run everything that depends on one.
+ */
+const EMPTY_DECK: readonly ViewingRoomCard[] = [];
+
+/**
+ * The player's shape with nothing in it yet.
+ *
+ * **The sizing classes are `FilmPlayer`'s own, copied deliberately.** They are
+ * the one measurement on this page that has to survive every breakpoint
+ * intact — a 3:5 card capped by height rather than width, for the reasons that
+ * component documents at length — and a placeholder that got them even
+ * slightly wrong would move the carousel the moment the deck landed. Copied
+ * rather than extracted because there are two of them and a shared wrapper
+ * would be indirection in the middle of the page's only real layout rule.
+ */
+function PlayerPlaceholder() {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "relative mx-auto overflow-hidden rounded-[4px]",
+        "aspect-[509/842] w-full",
+        "max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]",
+        // The rotunda showing through, rather than a grey box: the page's own
+        // atmosphere is already behind this and should stay visible.
+        "border border-white/5 bg-white/[0.02]",
+      )}
+    />
+  );
+}
+
+/**
+ * What the carousel's band says when there is no deck in it.
+ *
+ * **Three states and three sentences**, because a band that is empty for a
+ * second and one that is empty for good look identical — and only one of them
+ * is worth waiting through. `live` never reaches here; the room draws the real
+ * carousel then.
+ */
+function DeckNotice({
+  state,
+  labels,
+}: {
+  state: ReturnType<typeof useViewingRoomDeck>;
+  labels: { loading: string; empty: string; unreachable: string; retry: string };
+}) {
+  const message =
+    state.status === "loading"
+      ? labels.loading
+      : state.status === "empty"
+        ? labels.empty
+        : labels.unreachable;
+
+  return (
+    <div className="flex min-h-[clamp(132px,11.98vw,230px)] flex-col items-center justify-center gap-4 px-6 text-center">
+      {/*
+        `role="status"` so the wait is announced rather than being a silent
+        empty region — and it carries the failure too, which is the same kind
+        of news arriving for the same reader.
+      */}
+      <p role="status" className="font-sans text-sm tracking-wide text-[#f9f3d0]/70">
+        {message}
+      </p>
+
+      {/*
+        A retry only where retrying means anything. An empty deck is the
+        backend's considered answer, and asking again will not finish a film.
+      */}
+      {state.status === "unreachable" && (
+        <button
+          type="button"
+          onClick={state.retry}
+          className="rounded-full border border-[color:var(--gold-line,#d4b06a)]/70 px-5 py-2 font-sans text-sm tracking-wide text-[color:var(--gold,#d4b06a)] transition hover:border-[color:var(--gold,#d4b06a)]"
+        >
+          {labels.retry}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The first card with a film, so the player never opens on a locked one.
+ *
+ * Null for an empty deck, which is the state before the backend answers. A
+ * deck where *every* card is unplayable still answers its first card rather
+ * than null: the room then shows a card whose play button refuses, which is
+ * better than showing nothing at all.
+ */
+function firstPlayable(cards: readonly ViewingRoomCard[]): ViewingRoomCard | null {
+  if (cards.length === 0) return null;
+
+  return cards.find((card) => card.inViewingRoom) ?? cards[0];
 }
 
 /**
