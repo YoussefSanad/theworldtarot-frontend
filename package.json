@@ -26,6 +26,7 @@
     "check:confirmation": "node scripts/check-confirmation.mjs",
     "check:redeem": "node scripts/check-redeem.mjs",
     "check:login": "node scripts/check-login.mjs",
+    "check:set-password": "node scripts/check-set-password.mjs",
     "check:viewing-room": "node scripts/check-viewing-room.mjs"
   },
   "volta": {

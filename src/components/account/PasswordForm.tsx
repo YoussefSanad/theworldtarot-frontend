@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,7 @@ import {
   resetPasswordCopy,
   setPasswordCopy,
 } from "@/content/passwords";
+import { safeReturnPath } from "@/lib/return-path";
 import {
   claimAccount,
   type PasswordFailure,
@@ -54,12 +55,27 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
   const token = searchParams.get("token") ?? "";
   const email = searchParams.get("email") ?? "";
 
+  /*
+    `next` is read on its own, not as part of the link: it is where the person
+    was going before sign in, and it only rides on to the sign in link. It never
+    goes in the write. `safeReturnPath` returns it already normalised, so it is
+    encoded once here and not decoded.
+  */
+  const next = safeReturnPath(searchParams.get("next"));
+  const signInHref = next === null ? signInPath : `${signInPath}?next=${encodeURIComponent(next)}`;
+
   const fieldId = useId();
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [failure, setFailure] = useState<PasswordFailure | null>(null);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const doneHeading = useRef<HTMLHeadingElement>(null);
+
+  // The form unmounts on success, so focus would fall to <body>.
+  useEffect(() => {
+    if (done) doneHeading.current?.focus();
+  }, [done]);
 
   /*
     A link missing either half is dead before anything is typed, and it reads as
@@ -94,8 +110,20 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
   if (done) {
     return (
       <Panel>
-        <h1 className="font-display text-h2 text-champagne">{copy.successHeading}</h1>
+        <h1
+          ref={doneHeading}
+          tabIndex={-1}
+          className="font-display text-h2 text-champagne outline-none"
+        >
+          {copy.successHeading}
+        </h1>
         <p className="mt-4 text-note text-ash">{copy.successBody}</p>
+        <Link
+          href={signInHref}
+          className="mt-4 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
+        >
+          {copy.signInPrompt}
+        </Link>
       </Panel>
     );
   }
@@ -152,7 +180,7 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
       */}
       {failure?.kind === "link" ? (
         <Link
-          href={signInPath}
+          href={signInHref}
           className="mt-4 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
         >
           {copy.signInPrompt}
