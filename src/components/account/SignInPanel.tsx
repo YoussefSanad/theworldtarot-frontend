@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { SignInForm } from "@/components/account/SignInForm";
 import { useSignedIn } from "@/components/account/useSignedIn";
-import { landingFor, readReturnPath } from "@/lib/return-path";
+import { landingFor, safeReturnPath } from "@/lib/return-path";
 import type { Customer } from "@/lib/session";
 
 /**
@@ -27,7 +27,13 @@ export function SignInPanel() {
   const searchParams = useSearchParams();
   const { customer } = useSignedIn();
 
-  const next = readReturnPath(searchParams.get("next"));
+  /*
+    `safeReturnPath` is staging's guard (PR #152), kept over the one this file
+    first used: it refuses the two password pages and any `token`/`email` query
+    as targets, which mine did not — a `next` pointing at `/set-password/` would
+    show a victim a planted claim form immediately after they authenticated.
+  */
+  const next = safeReturnPath(searchParams.get("next"));
 
   /*
     **Already signed in, and somebody sent them here to get somewhere.**

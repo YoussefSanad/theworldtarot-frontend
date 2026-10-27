@@ -34,14 +34,19 @@ export default function SetPasswordPage() {
     there is nothing true to say, and a heading that flashes into a different
     heading reads as a fault.
   */
+  /*
+    A `div`, not a `main`: `(site)/layout.tsx` already renders the page's one
+    `<main>`, and a second nested inside it is invalid HTML — it also made
+    `getByRole("main")` ambiguous and broke `check:set-password`.
+  */
   return (
-    <main data-page="account" className="relative">
+    <div data-page="account" className="relative">
       {/* The same ground the sign in page takes: these three are one surface
           to a visitor, and two of them had no atmosphere at all. */}
       <PageAtmosphere variant="card-reference" />
       <Suspense fallback={null}>
         <PasswordForm flow="claim" />
       </Suspense>
-    </main>
+    </div>
   );
 }

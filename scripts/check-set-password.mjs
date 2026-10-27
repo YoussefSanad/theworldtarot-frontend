@@ -320,17 +320,39 @@ for (const { name, path, endpoint } of FLOWS) {
   }
 }
 
-/** The masthead's account control, as in `check-login.mjs`. */
-const SIGN_IN_ICON = 'header a[aria-label="Sign in"]';
-const SIGNED_IN_NAME = "header span[title]";
+/*
+  The masthead's account control, as in `check-login.mjs` — and both moved
+  together.
+
+  It was `header a[aria-label="Sign in"]` beside a `header span[title]`, and
+  neither survives: the control is a dropdown trigger (a `button`, whose
+  accessible name becomes the customer's own) and the name it used to print
+  beside the mark now lives inside the panel. A nameless buyer's label is their
+  address, which is far longer than the masthead row can spare.
+
+  So `signIn` reads the trigger's name, and `name` opens the panel to read the
+  account — leaving it exactly as it was found.
+*/
+const ACCOUNT_TRIGGER = 'header [data-account-menu="row"]';
+const SIGNED_IN_NAME = 'header [aria-labelledby] p span[title]';
 
 async function masthead(page) {
-  return {
-    signIn: await page.locator(SIGN_IN_ICON).count(),
-    name: (await page.locator(SIGNED_IN_NAME).count())
-      ? (await page.locator(SIGNED_IN_NAME).first().textContent()).trim()
-      : "",
-  };
+  const trigger = page.locator(ACCOUNT_TRIGGER);
+  const label = (await trigger.count()) ? await trigger.getAttribute("aria-label") : null;
+
+  if (label === null) return { signIn: 0, name: "" };
+  if (label === "Sign in") return { signIn: 1, name: "" };
+
+  const wasOpen = (await trigger.getAttribute("aria-expanded")) === "true";
+  if (!wasOpen) await trigger.click();
+
+  const name = (await page.locator(SIGNED_IN_NAME).count())
+    ? (await page.locator(SIGNED_IN_NAME).first().textContent()).trim()
+    : "";
+
+  if (!wasOpen) await page.keyboard.press("Escape");
+
+  return { signIn: 0, name };
 }
 
 const ORIGIN_PATH = (page) => new URL(page.url()).pathname;

@@ -32,23 +32,6 @@ export type PasswordPageCopy = {
    * one string for a translator.
    */
   signInPrompt: string;
-  /**
-   * The way onward from a success, which is a different errand from the way out
-   * of a dead link.
-   *
-   * **`signInPrompt` above could not be reused for it.** That one is written for
-   * somebody whose link has died and who is being sent to try something else;
-   * this one is written for somebody who has just succeeded and simply has
-   * nowhere to go next. Until this existed the success panel drew a heading, a
-   * sentence telling them they could sign in whenever they liked, and nothing
-   * at all to do it with.
-   *
-   * It carries no return path. The link in the mail is the backend's to build
-   * and it brings none, so these two pages cannot know where their reader was
-   * heading — `landingFor` answers instead, which for a pass buyer is the
-   * Viewing Room, and that is where the claim mail's reader was going anyway.
-   */
-  successSignInPrompt: string;
   rateLimited: string;
   unknownFailure: string;
 };
@@ -72,9 +55,6 @@ export const setPasswordCopy: PasswordPageCopy = {
   linkFailure:
     "This link is no longer valid. If you have already set a password, sign in with it. If not, ask for a new link from the sign in page.",
   signInPrompt: "Go to the sign in page",
-  // Their first sign in, not another one: this account has existed since their
-  // order settled but nobody has ever signed into it.
-  successSignInPrompt: "Sign in to your account",
   rateLimited: "That is a few too many tries. Wait a moment and try once more.",
   unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
 };
@@ -92,9 +72,6 @@ export const resetPasswordCopy: PasswordPageCopy = {
   linkFailure:
     "This link is no longer valid. Reset links last an hour and work once. Ask for a new one from the sign in page.",
   signInPrompt: "Go to the sign in page",
-  // "with it" rather than "to your account": they know the account is theirs,
-  // and what is new is the password they just chose.
-  successSignInPrompt: "Sign in with your new password",
   rateLimited: "That is a few too many tries. Wait a moment and try once more.",
   unknownFailure: "Something went wrong at our end. Your password has not been changed. Try again in a moment.",
 };
