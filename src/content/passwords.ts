@@ -36,6 +36,9 @@ export type PasswordPageCopy = {
   unknownFailure: string;
 };
 
+/** Shown on a claim so the person can see which account the link names. */
+export const claimEmailPrompt = "Setting a password for";
+
 export const setPasswordCopy: PasswordPageCopy = {
   title: "Set your password",
   heading: "Set your password",
