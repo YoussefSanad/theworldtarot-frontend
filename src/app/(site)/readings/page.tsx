@@ -36,10 +36,17 @@ export default function ReadingsPage() {
     ~83px at 375 and ~90px at 1023, and 6rem cleared that; the wordmark lost its
     starfield and with it two thirds of its height, so what sets the masthead
     below `lg` is now the menu button opposite it — 2.75em of `text-note`, which
-    floors at 14px — plus the masthead's own `pt-5 pb-2`, so about 66px at every
-    width down here. 5rem is the same clearance over that as 6rem was over the
-    old one. It is the element that
-    moves rather than the sky inside it,
+    floors at 14px, so 38.5px — plus the masthead's own `py-5`, giving 78.5px at
+    every width down here. 5rem (80px) clears that by 1.5px.
+
+    **That margin used to be 13.5px.** The masthead's padding was `pt-5 pb-2`
+    and is now even, which added 12px of header and spent almost all the slack
+    this number had. Nothing is clipped and 5rem is still the right value, but
+    it is no longer the comfortable fit it was: if `SiteHeader`'s padding or its
+    menu button grows again, this has to grow with it. See the docblock there,
+    which carries the same warning.
+
+    It is the element that moves rather than the sky inside it,
     because the atmosphere clips its own overflow. No artwork is lost either
     way — what ends 6rem higher is the layer's reach, not the top of the
     picture. The site column clips the block axis, so this does not lengthen

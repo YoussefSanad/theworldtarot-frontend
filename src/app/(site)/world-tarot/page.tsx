@@ -52,18 +52,26 @@ export default function WorldTarotPage() {
         about the mobile sky. That layer hangs from this element's top edge,
         which starts under a masthead that is transparent so artwork can run
         behind it — so left flush the sky would open on a hard horizontal edge
-        at the header's bottom. 5rem clears the header at every width below
-        `lg` (about 66px down here: the menu button's 2.75em of `text-note`,
-        which floors at 14px, plus the masthead's own `pt-5 pb-2`).
+        at the header's bottom. 5rem (80px) clears the header at every width
+        below `lg`, which is 78.5px down here: the menu button's 2.75em of
+        `text-note`, which floors at 14px for 38.5px, plus the masthead's own
+        `py-5`. That is a 1.5px margin, where the old `pt-5 pb-2` left 13.5px —
+        still correct, but anything further added to the header's height
+        crosses it. See `SiteHeader`'s docblock.
 
         It is the element that moves, not the artwork inside it — the sky is
         `cover` on a width-driven box, so a taller box shows more of the top of
         the picture rather than zooming it, and nothing is lost off the bottom
         because the layer fades out there anyway.
 
-        Above `lg` this is inert and the path keeps `--path-rise`, which does
-        the same job for the artwork itself. Below `lg` that rise is spent to
-        zero in globals.css, so the two never both push at once.
+        **Above `lg` nothing happens here, and nothing happens to the path
+        either.** This used to say the path kept `--path-rise` above `lg` and
+        did the same job for the artwork — that rise is now zero at every
+        width. It was what carried the photograph up behind the masthead, and
+        its top feather landed mid-header as a gradient across the nav, which
+        is why this page's header looked unlike every other page's. The path
+        now starts at this wrapper's top edge like the Library's and the
+        Viewing Room's do. See `.page-atmosphere-world-tarot` in globals.css.
       */}
       <PageAtmosphere variant="world-tarot" className="max-lg:-top-20" />
       <WorldTarotIntro />

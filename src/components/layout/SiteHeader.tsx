@@ -43,14 +43,29 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  * and below it the menu button's 2.75em does. The masthead is now as tall as
  * whatever is opposite the logo, so at the old `py-1.5` a phone got about 50px
  * of masthead where the old mark gave it 83px — the row went slack at the top,
- * which is what `pt-5 pb-2` buys back. Top-weighted rather than even: the logo
- * wants air above it more than the hero below wants pushing down. That puts a
- * phone at roughly 66px.
+ * which is what the vertical padding buys back.
  *
- * Anything tuned to clear this header wants re-measuring when these change.
- * Two things are: the `max-lg:-top-20` on the atmosphere in `readings/page.tsx`
- * and the one in `readings/month-ahead/page.tsx`, both lifting a mobile sky's
- * top edge clear of this masthead. Both carry the same note.
+ * **It is even now (`py-5`), where it used to be top-weighted (`pt-5 pb-2`).**
+ * The old split was deliberate — the logo wants air above it more than the
+ * hero below wants pushing down — but it reads as the masthead sitting low in
+ * its own box, the row crowding whatever is beneath it rather than being
+ * centred in a band of its own. Matching the bottom to the top costs 12px of
+ * height everywhere and gives the header the same air on both sides, which is
+ * what makes it read as one consistent band across every page. A phone goes
+ * from roughly 66px to 78px.
+ *
+ * Anything tuned to clear this header wants re-measuring when these change,
+ * and this change is one of them. Four things are tuned to it: the
+ * `max-lg:-top-20` on the atmosphere in `readings/page.tsx`, `library/page.tsx`
+ * and `world-tarot/page.tsx`, plus the one in `readings/month-ahead/page.tsx`
+ * — all lifting a mobile sky's top edge clear of this masthead.
+ *
+ * **5rem (80px) still clears it, but only just, and that is worth knowing.**
+ * Below `lg` the menu button sets the height: `text-note` floors at 14px, so
+ * 2.75em is 38.5px, and `py-5` adds 40px for 78.5px total. The old `pt-5 pb-2`
+ * left 13.5px of slack under those skies; there is now 1.5px. Nothing is
+ * clipped and none of the four needed changing, but any further growth here
+ * crosses them — add to this padding and those offsets have to grow with it.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -154,7 +169,7 @@ export function SiteHeader() {
       on top of an open drawer.
     */
     <header className="relative z-50">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-5">
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
             src={brand.logo.src}
