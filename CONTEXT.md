@@ -381,8 +381,13 @@ first real payment.
 _Avoid_: activation link, welcome email, invite
 
 **Return path**:
-Where a visitor goes after signing in, carried as `?next=` on `/login/` and passed
-on by `/set-password/` and `/reset-password/` to their sign-in link. It is checked
+Where a visitor goes after signing in, carried as `?next=` on `/login/` and ~~passed
+on by `/set-password/` and `/reset-password/` to their sign-in link~~. **Amended
+27 October 2026** (#150): a claim with a safe next signs in automatically with
+the password just set and replaces the route with next, but only after a fresh
+session read confirms nobody is signed in. No automatic sign in happens if a
+session already exists or its state is still unknown. Reset and the claim's
+sign-in-failure fallback still pass next to their sign-in link. It is checked
 by `safeReturnPath` (`src/lib/return-path.ts`), an allow-list of same-origin paths,
 and anything else falls back to `/readings/`. The claim link itself does not carry
 one yet: backend #102 is to add a single fixed value to it, and these pages already

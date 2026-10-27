@@ -42,3 +42,11 @@ export function safeReturnPath(raw: string | null | undefined): string | null {
   if (params.has("token") || params.has("email")) return null;
   return url.pathname + url.search + url.hash;
 }
+
+/** Only a claim with a safe destination continues straight to sign in. */
+export function afterClaimDestination(
+  flow: "claim" | "reset",
+  next: string | null | undefined,
+): string | null {
+  return flow === "claim" ? safeReturnPath(next) : null;
+}
