@@ -381,10 +381,30 @@ async function drive(state, { stored, redeemed, query, answer, settle = 400, rea
     /*
       The night sky, read as a fact about the rendered page rather than about
       the source. It is one class on one element, so a state that lost its
-      `<ReadingBackdrop>` — or a screen that grew a ninth state outside the
-      panel — shows up here and nowhere else.
+      artwork — or a screen that grew a state outside the panel — shows up here
+      and nowhere else.
+
+      **`library`, not `reading`.** This screen drew `<ReadingBackdrop>` until
+      the panel landed, and that backdrop is floor-anchored: above `lg` the
+      observatory stands at the bottom of the page and nothing reaches the top,
+      so a short centred panel left the masthead in a band of flat
+      `--color-night`. The rotunda is top-anchored and reaches the header the
+      way the Library, World Tarot and Viewing Room mastheads do. The selector
+      follows the component; `Panel` in `CheckoutComplete.tsx` argues the swap.
     */
-    sky: (await page.locator("main .page-atmosphere-reading").count()) > 0,
+    sky: (await page.locator("main .page-atmosphere-library").count()) > 0,
+    /*
+      Where this screen offers to send somebody next, as rendered.
+
+      Added with the pass screen, which is the first state to offer two doors:
+      every other one has a single BACK TO READINGS ghost button, so until now
+      the destination was not a thing a run could get wrong. Read as hrefs
+      rather than as labels because the label is the client's copy and may be
+      reworded, while the address is the behaviour.
+    */
+    hrefs: await page.locator("main a[href]").evaluateAll((links) =>
+      links.map((link) => new URL(link.href).pathname),
+    ),
   });
 
   /** What the customer sees while the backend is still being asked. */
@@ -581,6 +601,51 @@ const runs = [
       expect("unsold reading", "and never renders the key itself", /one-card/i.test(shown.text), false);
       // The one name this build does know, on a screen that was not sold it.
       expect("unsold reading", "nor some other reading's name", /Month Ahead/i.test(shown.text), false);
+    },
+  },
+  {
+    state: "The Viewing Room pass was bought, which is not a reading and is not delivered",
+    /*
+      **The run this screen was missing, and the gap was not theoretical.**
+
+      `PaymentPanel` buys the pass through `ExpressCheckout` and
+      `HostedCheckoutButton` — the reading pages' own two roads, reused because
+      they take a product key and know nothing about readings — so a pass buyer
+      landed on `received` like everybody else and was told their *reading* was
+      on its way and would arrive *within 24 hours*. Neither is true of a pass:
+      nothing is written, nothing is sent, and the access is already theirs.
+      The product also has no `ReadingPage`, so `unnamedReading` named it
+      "reading" into the bargain, and BACK TO READINGS was the only way on.
+
+      `claimsTheReading: false` is the assertion that matters most here, and it
+      is the file's own rule rather than a new one: this screen is on the side
+      of the line that may not make the promise, and the shared check above
+      proves it against every spelling in `FULFILMENT_CLAIMS`.
+    */
+    input: { stored: record(FIRST, "viewing-room-pass"), query: { session_id: FIRST.sessionId } },
+    claimsTheReading: false,
+    assert: ({ painted, shown }) => {
+      expect("pass", "says the pass is ready", /pass is ready/i.test(painted.heading), true);
+      expect("pass", "and still does once the backend has answered", /pass is ready/i.test(shown.heading), true);
+      // The card road's optimism applies here as it does to a reading: Stripe
+      // reached `success_url`, so the money moved and the amount is restated.
+      expect("pass", "restates the amount that was paid", /€49/.test(shown.text), true);
+      expect("pass", "promises the access that was bought", /lifetime access/i.test(shown.text), true);
+      /*
+        The two falsehoods this run exists for. The delivery window belongs to
+        a reading that gets written and sent; a pass is neither.
+      */
+      expect("pass", "never promises delivery within 24 hours", /24 hours/i.test(shown.text), false);
+      expect("pass", "and never renders the key itself", /viewing-room-pass/i.test(shown.text), false);
+      /*
+        The next steps are the backend's own behaviour: `API_CONTRACT.md`
+        sends the set-password claim mail only for an order granting Viewing
+        Room access, so this is the one screen that can state it.
+      */
+      expect("pass", "tells them to expect the claim email", /choose a password/i.test(shown.text), true);
+      // The door. A reading cannot be opened here and a pass can.
+      expect("pass", "offers the Viewing Room as the way on", shown.hrefs.includes("/viewing-room/"), true);
+      expect("pass", "and keeps readings as the quiet second", shown.hrefs.includes("/readings/"), true);
     },
   },
   {
