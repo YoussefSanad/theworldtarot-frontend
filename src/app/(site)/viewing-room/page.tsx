@@ -33,11 +33,40 @@ export const metadata: Metadata = {
  * server component. **The real gate is the video endpoint**, which refuses on
  * every play.
  */
+/**
+ * **The wrapper is a `div`, not a second `<main>`, and that is what puts the
+ * room behind the masthead.**
+ *
+ * This page used to return `<main data-page="viewing-room" className="relative
+ * …">`, which nested a `<main>` inside the layout's own one — invalid HTML on
+ * its own account, a document gets one — but the visible cost was the header.
+ *
+ * `PageAtmosphere` is `absolute inset-0`, so it fills the nearest *positioned*
+ * ancestor. On every other page that is the layout column in
+ * `src/app/(site)/layout.tsx`, which is `relative isolate` and spans header,
+ * main and footer — so the artwork paints behind all three, which is the whole
+ * reason `SiteHeader` is transparent. Here the inner `<main>` carried its own
+ * `relative`, so the atmosphere resolved against *that* and began at `main`'s
+ * top edge, below the header. Nothing was painted behind the masthead at all
+ * and it fell through to `body`'s `--color-night` (#081525), while this page's
+ * own ground is `#000` — so the header read as a navy band sitting on a black
+ * page, with a seam along its bottom edge. It was reported as "the header is a
+ * different colour in the viewing room", and it was.
+ *
+ * `relative isolate` on a plain `div` is the arrangement `readings/page.tsx`,
+ * `library/page.tsx` and `world-tarot/page.tsx` all use. `isolate` matters for
+ * the same reason the layout's does: the atmosphere is `-z-10`, so without a
+ * stacking context here it would resolve against the layout's instead — which
+ * happens to work, but only by accident of there being nothing between them.
+ *
+ * **It is `relative` and not positioned-static** so `ViewingRoom`'s own
+ * absolutely positioned children keep the containing block they had.
+ */
 export default function ViewingRoomPage() {
   return (
-    <main data-page="viewing-room" className="relative pt-[clamp(32px,5vw,102px)]">
+    <div data-page="viewing-room" className="relative isolate pt-[clamp(32px,5vw,102px)]">
       <PageAtmosphere variant="viewing-room" />
       <ViewingRoom />
-    </main>
+    </div>
   );
 }

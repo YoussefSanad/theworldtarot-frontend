@@ -1375,14 +1375,31 @@
     negative `top` — and `overflow: clip` on the layout column stops the
     overhang from lengthening the document.
 
-    `3rem` reaches into the masthead without going behind all of it — the
-    header runs about 90px on a desktop and 66px on a phone, so the path
-    climbs roughly half of it and the wordmark keeps flat colour behind its
-    own line. It was 6rem first, which cleared the whole header and read as
-    too high against the copy; this is that value tuned back down by eye
-    against the rendered page, which is the only way this particular number
-    can be settled. Anything that changes `SiteHeader`'s height wants
-    re-checking here.
+    **It is spent to zero now, at every width, and the masthead is why.**
+    The rise was `3rem` — far enough into the header to climb roughly half of
+    it, leaving the wordmark on flat colour and the nav row over the
+    photograph. That is what reads as "the header has a fade at its bottom" on
+    this page: the header itself paints nothing anywhere on the site, so the
+    gradient a viewer sees across its lower half is this artwork's own
+    `--path-feather` dissolving into `--color-ink`, landing mid-masthead
+    because the rise put it there.
+
+    No other page does this. The Library's rotunda and the Viewing Room's room
+    both begin at their wrapper's top edge, so their feathers sit below the
+    masthead rather than across it, and the header reads as flat colour on
+    both. Keeping the rise here would mean the header looks like one thing on
+    this page and another everywhere else — and the client's note is that it
+    should look the same everywhere.
+
+    So the client's "reach up behind the masthead" composition is given up on
+    purpose. What is lost is small: the box is 3rem shorter, so a little less
+    of the canopy shows above the path. What is gained is that the top of this
+    page now matches every other page's.
+
+    Left as a variable rather than deleted because it is still the lever — put
+    a length back here and the path climbs again, and the feather returns to
+    the masthead with it. Anything that changes `SiteHeader`'s height no
+    longer needs re-checking against this.
 
     The picture keeps its own aspect throughout: it is `cover` on a box whose
     height is capped at `171.77vw`, so it scales on width and nothing is
@@ -1398,7 +1415,8 @@
       opaque — hence "a little" and not "generous".
     */
     --path-drop: 2rem;
-    --path-rise: 3rem;
+    /* See the note above: zero so the feather stays clear of the masthead. */
+    --path-rise: 0rem;
     background-color: var(--color-ink);
     /*
       **No `overflow: clip` here, unlike the two blocks above**, and that is
@@ -1447,10 +1465,17 @@
     The Viewing Room's own room (Figma `384:3`, her two BACKGROUND layers
     flattened to one delivery).
 
-    `cover` from the top, like the Library's rotunda: her artboard is
-    1920x2132 and the real page is taller once a header and a footer it does
-    not draw are added, so the image is anchored at the top and the floor runs
-    out of frame rather than the ceiling being cropped away.
+    Her artboard is 1920x2132 and the real page is taller once a header and a
+    footer she does not draw are added, so the picture is scaled to fill the
+    box and cropped at the sides, where there is only wall. See the `::after`
+    note below for why it fills rather than being capped to its own aspect.
+
+    **This element spans header, main and footer**, like every other page's
+    atmosphere, because the page wraps in `relative isolate` and the layer is
+    `absolute inset-0`. It did not always: the page used to nest its own
+    positioned `<main>`, which cut the artwork off at the masthead's bottom
+    edge and left the header on the wrong ground entirely. The docblock in
+    `viewing-room/page.tsx` has the full account.
   */
   .page-atmosphere-viewing-room {
     /*
@@ -1500,9 +1525,38 @@
     the top with the title sitting in it.
 
     So the height is the box, and `cover` scales the picture to fill it,
-    cropping width-wise at the sides where there is only wall. The feather at
-    the top edge is what makes that honest: rather than the artwork ending on
-    a line under the masthead, it dissolves into the black beneath it.
+    cropping width-wise at the sides where there is only wall.
+
+    **There is no feather on the top edge any more, and the masthead is why.**
+    It was `--room-feather: 7%`, dissolving the artwork's top edge into the
+    black beneath it rather than ending it on a line under the masthead — which
+    was sound while this element stopped at `main`'s top edge, because the
+    whole fade then happened *below* the header and the header had its own
+    (wrong) ground.
+
+    The page now wraps in `relative isolate` like every other page, so this
+    element spans header, main and footer — see the docblock in
+    `viewing-room/page.tsx` for why it had to. That moves the top edge up to
+    the top of the document, and a *percentage* feather scales with the box:
+    7% of a 2400px page is 168px, against a masthead of about 79-90px. The
+    fade would have run well past the header's bottom edge, so the nav would
+    have sat on half-transparent artwork with `#000` showing through it — the
+    exact gradient-across-the-header that `.page-atmosphere-world-tarot` gave
+    up `--path-rise` to stop. Fixing the ground and then feathering across it
+    would have traded one version of the fault for another.
+
+    So the artwork now reaches the top of the page at full opacity and the
+    masthead sits on solid room, which is what makes the header read the same
+    here as everywhere else. Nothing is lost by dropping it: the feather
+    existed to hide a *horizontal edge* under the masthead, and there is no
+    edge to hide once the picture starts above the masthead rather than at it.
+    `cover` on a box this tall crops the artwork's sides, where there is only
+    wall, rather than letting the ceiling run out.
+
+    The knob is kept, defaulting to `0%`, because it is still the lever: give
+    it a length and the top edge fades again. A *length* rather than a
+    percentage is what it would want if it ever comes back, so the fade cannot
+    outgrow the header the way the percentage did.
   */
   .page-atmosphere-viewing-room::after {
     background-image: url("/figma/viewing-room-bg.webp");
@@ -1511,8 +1565,8 @@
     background-size: cover;
     content: "";
     inset: 0 0 calc(-1 * var(--room-drop)) 0;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 7%));
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 7%));
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 0%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 0%));
     position: absolute;
   }
 
@@ -2588,13 +2642,17 @@
     same floor anchor, same top feather dissolving into the colour above it.
     What changes is only how much of the page the box claims.
 
-    **`--path-rise` is spent to zero with it.** The rise carries the path up
-    behind the masthead on desktop, which is the client's composition. Below
-    `lg` the path is nowhere near the masthead — the sky is what is up there —
-    so it has nothing left to lift, and against a floor-anchored box it would
-    only push the artwork down off its own floor. The header clearance moves to
-    the wrapper (`max-lg:-top-20` in world-tarot/page.tsx), the readings index's
-    arrangement exactly: the element moves, the artwork inside it does not.
+    **`--path-rise` is spent to zero here, and the base rule now spends it
+    too** — so this override is a no-op as it stands. It is kept rather than
+    deleted because the two zeros are held for different reasons: the base
+    one keeps the feather off the masthead (see the note there), this one is
+    about the mobile layout. Below `lg` the path is nowhere near the masthead
+    — the sky is what is up there — so it has nothing to lift, and against a
+    floor-anchored box a rise would only push the artwork down off its own
+    floor. If the base rise is ever restored, this line is what keeps a phone
+    correct. The header clearance stays on the wrapper (`max-lg:-top-20` in
+    world-tarot/page.tsx), the readings index's arrangement exactly: the
+    element moves, the artwork inside it does not.
 
     **`overflow: clip` still must not be added to the parent**, for the reason
     the base rule gives — `--path-drop` is an overhang and a clip would cut it
@@ -2608,10 +2666,10 @@
 
     /*
       The base rule now uses this same floor-anchored construction at every
-      width (see the note there), so all this block still has to do is spend
-      the rise — which `--path-rise: 0rem` above already does, and which the
-      base `block-size` reads. The `block-size`/`inset` pair that used to be
-      repeated here is gone because it is no longer an override.
+      width (see the note there), so the only thing this block ever had left
+      to do was spend the rise — and the base rule now spends it too. The
+      `block-size`/`inset` pair that used to be repeated here is gone because
+      it is no longer an override.
     */
 
     .page-atmosphere-world-tarot::before {

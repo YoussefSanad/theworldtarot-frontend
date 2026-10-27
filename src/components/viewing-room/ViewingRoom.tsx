@@ -141,7 +141,54 @@ export function ViewingRoom() {
             </p>
           </header>
 
-          <div className="relative mt-[clamp(44px,6vw,88px)] w-full">
+          {/*
+            **The gap that keeps the card out of the arch, and the floor is the
+            part that matters.**
+
+            The lit arch is painted into the background, which
+            `.page-atmosphere-viewing-room::after` draws with `background-size:
+            cover` against a box that is the whole document plus `--room-drop`.
+            On any real page the height is what binds, so the rim's position is
+            a function of the document's length — and it is the *flow above
+            this div* that decides where the card meets it.
+
+            Desktop spends about 393px above the card and the rim finishes
+            around 351px, so the arch sweeps over it in clear black. On a phone
+            `6vw` is 25px, the 44px floor took over, and the space above the
+            card collapsed to 238px — against a rim that still reaches 245px.
+            The card's top border then crossed the brightest part of the rim,
+            and the arch read as a bar struck through the player rather than as
+            the frame around it. It was reported as the arch being cut off by
+            the card, and from the only side you can see it, it was.
+
+            **So only the floor moves.** The fault is confined to the widths
+            where the floor wins; wherever `6vw` or the 88px cap is already in
+            charge the framing matched her frame, and raising the cap would
+            move a composition that is correct.
+
+            **20px (`mt-5` on top of the 44px floor → 80px) is chosen against
+            the desktop clearance, not against the 7px overlap.** 1280 clears
+            the rim by 42px and 1920 by 20px, so the room above the card is
+            part of the composition rather than a safety margin — matching it
+            is what makes the phone read like the frame. 80px measures 22-25px
+            clear from 360 to 768, which sits inside that range.
+
+            Pushing the card down does lengthen the document, which scales the
+            background up and brings the rim down after it, so the two chase
+            each other — but only just: the rim moves about 1px per 8px of
+            margin here, so there is no need to over-spend against it. A first
+            pass at 96px did, and read as a gap rather than as framing.
+
+            **Split at `lg` because no single expression says this.**
+            `clamp(80px, 6vw, 88px)` would hold 80px up to 1467px wide, well
+            past where the fault stops, and `max(80px, …)` is the same mistake
+            without the clamp. The overlap runs from 360 to 768 and is gone by
+            1280, so `lg` is where the old clamp comes back untouched. See the
+            arch check in `scripts/check-viewing-room.mjs`, which computes the
+            rim the way the browser does rather than trusting a page
+            coordinate.
+          */}
+          <div className="relative mt-20 w-full lg:mt-[clamp(44px,6vw,88px)]">
             {/*
               **The player waits for a card and the room does not.** The
               title, the atmosphere and the closing call to action are the

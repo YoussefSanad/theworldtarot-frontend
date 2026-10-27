@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { safeReturnPath } from "./return-path.ts";
+import { landingFor, safeReturnPath } from "./return-path.ts";
+import type { Customer } from "./session.ts";
 
 test("same-origin relative paths are returned unchanged", () => {
   for (const path of [
@@ -162,4 +163,21 @@ test("genuinely different lookalike pages are still accepted", () => {
   for (const raw of ["/login-help/", "/loginx/", "/readings/login/", "/viewing-room/?x=1"]) {
     assert.equal(safeReturnPath(raw), raw, raw);
   }
+});
+
+/*
+  `landingFor` is the other half of this seam: where somebody goes when no
+  `next` asked for anywhere in particular. It is deliberately not folded into
+  `safeReturnPath` — see that function's note.
+*/
+function customer(hasViewingRoomAccess: boolean): Customer {
+  return { id: 1, name: null, email: "jane@example.com", hasViewingRoomAccess };
+}
+
+test("a pass holder lands in the Viewing Room", () => {
+  assert.equal(landingFor(customer(true)), "/viewing-room/");
+});
+
+test("everybody else lands on the homepage", () => {
+  assert.equal(landingFor(customer(false)), "/");
 });

@@ -118,8 +118,10 @@ all worth knowing before someone "corrects" them back:
   artwork, so this is pixels and not a token — see the note on
   `worldTarotArtwork.skyStone` in `src/lib/assets.ts` for what was changed and
   why re-exporting from `asset dump/` would undo it.
-- **The backdrop's two overhangs**, `--path-rise` and `--path-drop`, which
-  the frame cannot describe because it draws no site chrome.
+- **The backdrop's bottom overhang**, `--path-drop`, which the frame cannot
+  describe because it draws no site chrome. There was a matching top overhang,
+  `--path-rise`, carrying the path up behind the masthead; it is now zero at
+  every width — see "The rise is spent, and the header is why" below.
 - **The closing block's rule** is the 538px `heroWide`, where both readings
   frames draw 448px — which is why `ClosingSaying` took a `rule` prop rather
   than being copied.
@@ -291,13 +293,14 @@ width), fading downwards into the flat colour the path fades up into. See the
 "mobile sky" note in globals.css for why it keeps its own scale rather than
 stretching to meet the path.
 
-**`--path-rise` is spent to zero with it.** The rise carries the path up behind
-the masthead on desktop, which is the client's composition. On a phone the path
-is nowhere near the masthead — the sky is what is up there — so it has nothing
-left to lift, and against a floor-anchored box it would only push the artwork
-down off its own floor. The header clearance moves to `max-lg:-top-20` on the
-atmosphere in `world-tarot/page.tsx`, the readings index's arrangement exactly:
-the element moves, the artwork inside it does not.
+**`--path-rise` is spent to zero here too**, though it is now zero at every
+width for a different reason (see the next section). On a phone the path is
+nowhere near the masthead — the sky is what is up there — so it has nothing to
+lift, and against a floor-anchored box a rise would only push the artwork down
+off its own floor. The `@media` block keeps its own zero so a phone stays
+correct if the base rise is ever restored. The header clearance is
+`max-lg:-top-20` on the atmosphere in `world-tarot/page.tsx`, the readings
+index's arrangement exactly: the element moves, the artwork inside it does not.
 
 **`overflow: clip` still must not go on the parent**, for the reason the base
 rule gives: `--path-drop` is an overhang and a clip would cut it off. A
@@ -314,16 +317,36 @@ padding, which is that 904/1920 exactly, with `ClosingSaying`'s own
 room-space sitting inside it. If the page gains content above the fold, that
 padding is the number to revisit, not the backdrop's sizing.
 
-**It reaches up into the masthead and down under the footer**, and both
-overhangs are deliberate. Above `lg`, `--path-rise` (3rem) carries the top edge
-about half way up the header, so the path climbs behind the chrome instead of
-starting hard at its bottom edge; `--path-drop` (2rem) carries the bottom past
-the footer's top margin, which is 14px at its clamp maximum. Both are tuned by
-eye against the rendered page — they are the two values on this page that cannot
-be derived from the frame, since the frame draws neither a header nor a footer.
+## The rise is spent, and the header is why
 
-Below `lg` the rise goes to zero and the mobile sky takes the masthead instead;
-the drop is unchanged at every width. See the section above.
+**It reaches down under the footer, and no longer up into the masthead.**
+`--path-drop` (2rem) carries the bottom edge past the footer's top margin, which
+is 14px at its clamp maximum; it is tuned by eye against the rendered page, and
+is the one value on this page that cannot be derived from the frame, since the
+frame draws neither a header nor a footer.
+
+`--path-rise` was its opposite number — 3rem above `lg`, carrying the top edge
+about half way up the header so the path climbed behind the chrome instead of
+starting hard at its bottom edge. **It is now zero at every width**, and the
+client's composition is given up on purpose.
+
+The reason is the masthead. `SiteHeader` paints nothing — it is transparent
+everywhere on the site so artwork can run behind it — so the only thing that can
+put a gradient inside it is a page's own atmosphere. The rise did exactly that:
+it lifted this photograph into the header, and the photograph's top edge carries
+`--path-feather`, so the feather dissolved into `--color-ink` across the lower
+half of the nav. Read from outside, that is "the header has a fade at its
+bottom", and it was reported as one.
+
+No other page does it. The Library's rotunda and the Viewing Room's room both
+begin at their wrapper's top edge, so their feathers sit below the masthead and
+the header reads as flat colour on both. Keeping the rise meant the header
+looked like one thing here and another everywhere else.
+
+What is lost is small — the box is 3rem shorter, so slightly less of the canopy
+shows above the path. The variable is kept rather than deleted because it is
+still the lever: put a length back and the path climbs again, and the feather
+returns to the masthead with it.
 
 **The gap above the footer had three causes, and they had to be fixed in
 order.** It took several passes because closing one left the other two

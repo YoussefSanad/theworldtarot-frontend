@@ -1,3 +1,5 @@
+import type { Customer } from "./session.ts";
+
 const MAX_LENGTH = 512;
 const BASE = "https://x.invalid";
 
@@ -49,4 +51,29 @@ export function afterClaimDestination(
   next: string | null | undefined,
 ): string | null {
   return flow === "claim" ? safeReturnPath(next) : null;
+}
+
+/**
+ * Where a signed-in customer belongs when nothing asked for anywhere special.
+ *
+ * **A pass holder goes to the room they bought.** The common reason to sign in
+ * on this site is to watch a film, and the Viewing Room is the only place a
+ * session visibly changes what a person can do. `signIn` already answers with
+ * the `Customer`, so this costs no extra call and no guess.
+ *
+ * Everybody else goes to the homepage rather than to `/readings/`, which this
+ * replaced. That was never a decision so much as the only page a signed-in
+ * visitor could be sent to before the Viewing Room existed, and it answered a
+ * question nobody asked: somebody who signs in from the masthead has not told
+ * us they want to buy a reading.
+ *
+ * **Separate from `safeReturnPath` above rather than folded into it**, because
+ * the two answer different questions and only one caller asks both. The sign in
+ * page has a `next` to weigh; the masthead's dropdown never does — somebody
+ * signing in from the header is already standing where they chose to be — so a
+ * single function taking both would have to be handed an argument its
+ * commonest caller does not have.
+ */
+export function landingFor(customer: Customer): string {
+  return customer.hasViewingRoomAccess ? "/viewing-room/" : "/";
 }
