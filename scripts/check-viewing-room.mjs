@@ -702,6 +702,78 @@ console.log("\nA deck the backend could not answer:");
   await context.close();
 }
 
+
+/* ------------------------------------------------------------------ */
+console.log("\nThe card clears the golden arch (mobile framing):");
+{
+  /*
+    **The arch is painted into the background, and nothing in the flow knows
+    where it is.** `.page-atmosphere-viewing-room::after` draws her 1920x2132
+    room with `background-size: cover` against a box that is the whole
+    document plus `--room-drop` — so on any real page the height is what
+    binds, the picture is scaled by it, and the width is cropped at the sides.
+
+    The arch's lit rim is a bright curve across the top of her artwork. It is
+    a *curve*, so where it matters is its lowest point — and that is at the
+    artwork's horizontal centre, row 272 of 2132, measured off the source PNG
+    (it rises to row 226 by x=480 and runs off the top by the edges). The
+    player is centred too, so the rim's lowest point is exactly the part the
+    card has to clear, which makes 275 the worst case rather than an average.
+
+    Scaled by that same cover factor the rim lands a couple of hundred pixels
+    down the document, while the card's top edge is set by the flow above it —
+    which on a phone was less than half what it is on a desktop. That was the
+    fault: the rim barely moves and the card did, so from 360 through 768 the
+    card's top border crossed the brightest part of the rim and the arch read
+    as a bar struck through the player rather than as the frame around it.
+    Measured 6-7px of overlap there, against 20-42px of clearance at 1280 and
+    1920, which is the composition her frame draws.
+
+    The check computes the rim's position the way the browser does, from the
+    rendered background box, rather than hard-coding a page coordinate that
+    the next spacing change would quietly invalidate.
+  */
+  const ARCH_ROWS = 275;
+  const ART = { width: 1920, height: 2132 };
+
+  for (const [width, height] of [[360, 780], [390, 844], [412, 915], [430, 932]]) {
+    const { context, page } = await openRoom({ me: MEMBER, viewport: { width, height } });
+
+    const geometry = await page.evaluate(
+      ({ art, archRows }) => {
+        const layer = document.querySelector(".page-atmosphere-viewing-room");
+        const box = layer.getBoundingClientRect();
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        const raw = getComputedStyle(layer).getPropertyValue("--room-drop").trim();
+        const drop = raw.endsWith("rem") ? parseFloat(raw) * rem : parseFloat(raw) || 0;
+
+        /* The ::after box: `inset: 0 0 calc(-1 * var(--room-drop)) 0`. */
+        const boxHeight = box.height + drop;
+        const scale = Math.max(box.width / art.width, boxHeight / art.height);
+
+        const player = document.querySelector("video").parentElement;
+        const card = player.getBoundingClientRect();
+
+        return {
+          archBottom:
+            box.top + window.scrollY + (boxHeight - art.height * scale) + archRows * scale,
+          cardTop: card.top + window.scrollY,
+        };
+      },
+      { art: ART, archRows: ARCH_ROWS },
+    );
+
+    expect(
+      `${width}x${height}`,
+      `the card starts below the arch (card ${Math.round(geometry.cardTop)}, arch ends ${Math.round(geometry.archBottom)})`,
+      geometry.cardTop >= geometry.archBottom,
+      true,
+    );
+
+    await context.close();
+  }
+}
+
 await browser.close();
 server.close();
 
