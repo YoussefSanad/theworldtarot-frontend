@@ -96,6 +96,24 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
       <Panel>
         <h1 className="font-display text-h2 text-champagne">{copy.successHeading}</h1>
         <p className="mt-4 text-note text-ash">{copy.successBody}</p>
+        {/*
+          **The way onward, which this panel went without until now.** It drew
+          the heading above and a sentence telling somebody they could sign in
+          whenever they liked, and then offered them nothing to do it with — on
+          a page reached from a mail, in a tab that knows nothing about where
+          they were going.
+
+          `successSignInPrompt` rather than the `signInPrompt` below: that one
+          is written for a dead link and is a different errand. Where they land
+          after signing in is `landingFor`'s, which for a pass buyer — the only
+          person the claim mail is sent to — is the Viewing Room.
+        */}
+        <Link
+          href={signInPath}
+          className="mt-6 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
+        >
+          {copy.successSignInPrompt}
+        </Link>
       </Panel>
     );
   }
@@ -139,8 +157,14 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
           errors={fieldErrors.password_confirmation}
         />
 
-        <Button type="submit" size="md" disabled={busy} className="self-start lowercase">
-          {busy ? copy.busyLabel : copy.submitLabel}
+        <Button
+          type="submit"
+          size="md"
+          busy={busy}
+          busyLabel={copy.busyLabel}
+          className="self-start lowercase"
+        >
+          {copy.submitLabel}
         </Button>
       </form>
 

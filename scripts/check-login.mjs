@@ -30,10 +30,53 @@ const root = join(process.cwd(), "out");
 const PORT = 4323;
 const LOGIN = `http://localhost:${PORT}/login/`;
 
-/** The masthead's account control in each of its two states. */
-const SIGN_IN_ICON = 'header a[aria-label="Sign in"]';
-const SIGNED_IN_NAME = "header span[title]";
-const SIGN_OUT = 'header button:has-text("Sign out")';
+/*
+  The masthead's account control, which is a dropdown trigger rather than a
+  link since the account menu landed.
+
+  **`data-account-menu` rather than the label or the element.** This used to be
+  `header a[aria-label="Sign in"]`, and both halves of that stopped being true:
+  it is a `button` now, and its accessible name is the customer's own once
+  somebody is signed in. The attribute is the hook the component carries for
+  exactly this, the way `LocaleMenu` and the checkout button do — the words are
+  copy, and copy changes.
+
+  `="row"` is the desktop rendering. `SiteHeader` draws a second one inside the
+  mobile drawer with `="drawer"`, and only one of the two is on screen at a
+  time, so an unqualified attribute selector would match both.
+*/
+const ACCOUNT_TRIGGER = 'header [data-account-menu="row"]';
+/*
+  The account's name, which lives **inside the open panel** and no longer beside
+  the trigger. The masthead printed it next to the mark until the panel took
+  the job over: a nameless buyer's label is their address, far longer than the
+  row can spare, and it arrived truncated and shoving its neighbours about.
+  Reading it now costs a press, which is the trade.
+*/
+const SIGNED_IN_NAME = 'header [aria-labelledby] p span[title]';
+/*
+  Signing out, which is two presses now: the control, then the confirmation.
+
+  **Both buttons read exactly "Sign out"** — `loginCopy.menu.signOut` and
+  `signOutConfirm.confirm` are the same two words, deliberately, because the
+  second is the first carried out. They are never on screen together, since the
+  confirmation replaces the contents it was opened from, so one text selector
+  would do for both; they are named apart here so a test reads as the two steps
+  a person takes. `text-is` rather than `has-text` to avoid also matching the
+  question above them, which contains the same words.
+*/
+/*
+  Signing out is one button that confirms itself: pressed once it arms —
+  the word fades to a door mark and the glow turns amber — and pressed again
+  it goes. There is no second control to cancel with; it disarms on a timer.
+
+  Matched on `data-sign-out` rather than on its text, because the text is one
+  of three stacked faces and is `opacity-0` in two of them. The attribute also
+  carries which face is showing, so the middle state can be asserted rather
+  than guessed at from a colour.
+*/
+const SIGN_OUT = "header [data-sign-out]";
+const SIGN_OUT_ARMED = 'header [data-sign-out="armed"]';
 
 /*
   Every one of these is scoped to `main`, and both scopes are load-bearing
@@ -168,15 +211,40 @@ async function signIn(page, { email = "jane@example.com", password = "a long one
   await page.click(SUBMIT);
 }
 
-/** What the masthead is drawing, in one shape for either state. */
+/**
+ * What the masthead is drawing, in one shape for either state.
+ *
+ * `signIn` reads the trigger's name rather than counting a link, because the
+ * control is always present now and its *name* is what says which state it is
+ * in — `aria-label` is the customer's own once there is a session.
+ *
+ * **`signOut` counts a real control, which means opening the panel.** A review
+ * caught an earlier version deriving it from the same label as `signIn`, so it
+ * only ever meant "the name is not 'Sign in'" — a build that drew the signed-in
+ * panel with no way out of it would still have reported a sign out and passed.
+ * The panel is left exactly as it was found, so a caller that was not expecting
+ * it to open does not see one.
+ */
 async function masthead(page) {
-  return {
-    signIn: await page.locator(SIGN_IN_ICON).count(),
-    name: (await page.locator(SIGNED_IN_NAME).count())
-      ? (await page.locator(SIGNED_IN_NAME).first().textContent()).trim()
-      : "",
-    signOut: await page.locator(SIGN_OUT).count(),
-  };
+  const trigger = page.locator(ACCOUNT_TRIGGER);
+  const label = (await trigger.count()) ? await trigger.getAttribute("aria-label") : null;
+
+  if (label === null) return { signIn: 0, name: "", signOut: 0 };
+  if (label === "Sign in") return { signIn: 1, name: "", signOut: 0 };
+
+  /* Both the name and the way out are behind the panel now, so one open
+     answers for both rather than opening twice. */
+  const wasOpen = (await trigger.getAttribute("aria-expanded")) === "true";
+  if (!wasOpen) await trigger.click();
+
+  const signOut = await page.locator(SIGN_OUT).count();
+  const name = (await page.locator(SIGNED_IN_NAME).count())
+    ? (await page.locator(SIGNED_IN_NAME).first().textContent()).trim()
+    : "";
+
+  if (!wasOpen) await page.keyboard.press("Escape");
+
+  return { signIn: 0, name, signOut };
 }
 
 console.log("\nthe page exists and the masthead reaches it");
@@ -184,13 +252,24 @@ console.log("\nthe page exists and the masthead reaches it");
   const { page } = await open();
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: "networkidle" });
 
-  const href = await page.getAttribute(SIGN_IN_ICON, "href");
-  expect("signed out", "the masthead's account control points at the built route", href, "/login/");
+  /*
+    **The masthead opens a panel rather than going to a page.** It was a link to
+    `/login/` until the account menu landed, and the panel is the point: a
+    visitor signs in without leaving whatever they were reading.
+  */
+  expect("signed out", "the masthead's account control is a button, not a link",
+    await page.locator('header a[aria-label="Sign in"]').count(), 0);
 
-  await page.click(SIGN_IN_ICON);
-  await page.waitForURL(LOGIN);
-  expect("signed out", "and reaches it", page.url(), LOGIN);
-  expect("signed out", "which asks for an address and a password", await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
+  await page.click(ACCOUNT_TRIGGER);
+  await page.waitForSelector(`header ${PASSWORD.replace("main ", "")}`);
+  expect("signed out", "it opens a panel in place", page.url(), `http://localhost:${PORT}/`);
+  expect("signed out", "which asks for an address and a password",
+    await page.locator(`header input[type="email"], header input[type="password"]`).count(), 2);
+
+  /* The page is still there for the links that arrive cold. */
+  await page.goto(LOGIN, { waitUntil: "networkidle" });
+  expect("signed out", "and the page still exists for a link to reach",
+    await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
   await page.close();
 }
 
@@ -205,7 +284,9 @@ console.log("\na claimed account signs in, and the masthead says so");
   });
 
   await signIn(page);
-  await page.waitForURL(`http://localhost:${PORT}/readings/`);
+  /* `landingFor`: no pass on this fixture, so the homepage. `/readings/` was
+     where everybody landed before the landing rule existed. */
+  await page.waitForURL(`http://localhost:${PORT}/`);
   signedIn = true;
 
   /*
@@ -217,13 +298,36 @@ console.log("\na claimed account signs in, and the masthead says so");
   expect("signing in", "the write carries the pair and nothing else", sent, [
     { path: "/login", body: { email: "jane@example.com", password: "a long one" } },
   ]);
-  expect("signing in", "and lands where a signed-in customer has somewhere to be", page.url(), `http://localhost:${PORT}/readings/`);
+  expect("signing in", "and lands where the landing rule sends somebody with no pass",
+    page.url(), `http://localhost:${PORT}/`);
   expect("signing in", "the masthead now shows the customer", await masthead(page), {
     signIn: 0, name: "Jane Doe", signOut: 1,
   });
 
+  /*
+    Signing out is three presses now: open the panel, ask, confirm. The
+    confirmation is deliberate — the control sits one slip away from a
+    customer's own name, in a panel they opened to read it.
+  */
+  await page.click(ACCOUNT_TRIGGER);
   await page.click(SIGN_OUT);
-  await page.waitForSelector(SIGN_IN_ICON);
+  await page.waitForSelector(SIGN_OUT_ARMED);
+  /*
+    **The account line is still there, and that is the point.** The
+    confirmation used to replace it with a question, which took away the one
+    thing the panel exists to show — which account is signed in — at the exact
+    moment somebody was deciding whether to leave it. The button now carries
+    its own confirmation instead: it arms in place, the line never moves.
+  */
+  expect("signing out", "asks before it acts, without taking the account away", await masthead(page), {
+    signIn: 0, name: "Jane Doe", signOut: 1,
+  });
+
+  await page.click(SIGN_OUT);
+  await page.waitForFunction(
+    (selector) => document.querySelector(selector)?.getAttribute("aria-label") === "Sign in",
+    ACCOUNT_TRIGGER,
+  );
   expect("signing out", "and goes back to offering a sign in", await masthead(page), {
     signIn: 1, name: "", signOut: 0,
   });
@@ -245,25 +349,42 @@ console.log("\na buyer with no name is still somebody, and the masthead says who
   await page.goto(LOGIN, { waitUntil: "networkidle" });
 
   await signIn(page, { email: "jennifer@example.com" });
-  await page.waitForURL(`http://localhost:${PORT}/readings/`);
+  /* `landingFor`: no pass on this fixture, so the homepage. `/readings/` was
+     where everybody landed before the landing rule existed. */
+  await page.waitForURL(`http://localhost:${PORT}/`);
   signedIn = true;
-  await page.waitForSelector(SIGN_OUT);
+  /* Waiting on the trigger's own name rather than on a sign-out button: that
+     one lives inside the panel now and does not exist until it is opened. */
+  await page.waitForFunction(
+    (selector) => document.querySelector(selector)?.getAttribute("aria-label") !== "Sign in",
+    ACCOUNT_TRIGGER,
+  );
 
   expect("no name", "the masthead falls back to the address", await masthead(page), {
     signIn: 0, name: "jennifer@example.com", signOut: 1,
   });
 
   /*
-    Both halves matter. The slot must not be blank, and it must not read
-    "null" — the wire says `null` and a component that interpolated it would
-    put that word in the header of every claimed customer on the site.
+    Both halves matter, and they moved into the panel with the name itself.
+    The slot must not be blank, and it must not read "null" — the wire says
+    `null` for a buyer who was never asked a name, and a component that
+    interpolated it would put that word in front of every claimed customer on
+    the site. The risk did not go away when the header stopped printing the
+    label; it followed the label into the panel, so the guard follows too.
   */
+  await page.click(ACCOUNT_TRIGGER);
+  await page.waitForSelector(SIGNED_IN_NAME);
+
   const title = await page.getAttribute(SIGNED_IN_NAME, "title");
   expect("no name", "and its title is the same string rather than empty", title, "jennifer@example.com");
-  expect("no name", "the word null is nowhere in the masthead", (await page.textContent("header")).includes("null"), false);
+  expect("no name", "the word null is nowhere in the panel", (await page.textContent("header")).includes("null"), false);
 
   await page.click(SIGN_OUT);
-  await page.waitForSelector(SIGN_IN_ICON);
+  await page.click(SIGN_OUT);
+  await page.waitForFunction(
+    (selector) => document.querySelector(selector)?.getAttribute("aria-label") === "Sign in",
+    ACCOUNT_TRIGGER,
+  );
   expect("no name", "and they can still leave", await masthead(page), { signIn: 1, name: "", signOut: 0 });
   await page.close();
 }
@@ -413,6 +534,65 @@ console.log("\na mistyped address is answered by the panel that asked for it");
   const said = (await page.textContent(ALERT)).trim();
   expect("mistyped", "the panel answers about the address", said, INVALID_ADDRESS);
   expect("mistyped", "and never the sign in's refusal", said === REFUSED, false);
+  await page.close();
+}
+
+console.log("\nthe page returns somebody to where they were sent from");
+{
+  /*
+    `?next=` is the half of this road that survives the dropdown: a visitor who
+    arrives at the page from a link — a mail, or the paywall on a phone — still
+    has to be put back where they came from. `lib/return-path.ts` decides what
+    counts; these are the two answers a person actually sees.
+  */
+  const { page } = await open();
+  await page.goto(`${LOGIN}?next=/library/`, { waitUntil: "networkidle" });
+  await signIn(page);
+  await page.waitForURL(`http://localhost:${PORT}/library/`);
+  expect("return path", "a signed-out visitor is sent on to the next they carried",
+    page.url(), `http://localhost:${PORT}/library/`);
+  await page.close();
+}
+
+{
+  /* A `next` that leaves this site is refused, and the landing rule answers
+     instead — the page must never be a way to bounce somebody off the domain. */
+  const { page } = await open();
+  await page.goto(`${LOGIN}?next=https://elsewhere.example/`, { waitUntil: "networkidle" });
+  await signIn(page);
+  await page.waitForURL(`http://localhost:${PORT}/`);
+  expect("return path", "and an off-site next is dropped for the default",
+    page.url(), `http://localhost:${PORT}/`);
+  await page.close();
+}
+
+{
+  /*
+    **Already signed in, with a next: go straight there.** Somebody sent them
+    here to get somewhere and they already hold the right to be there, so making
+    them type a password they have already typed would be asking twice.
+  */
+  const { page } = await open({ me: () => api(CUSTOMER) });
+  await page.goto(`${LOGIN}?next=/library/`, { waitUntil: "networkidle" });
+  await page.waitForURL(`http://localhost:${PORT}/library/`);
+  expect("return path", "a signed-in visitor with a next skips the form",
+    page.url(), `http://localhost:${PORT}/library/`);
+  await page.close();
+}
+
+{
+  /*
+    **Already signed in, without one: draw the form.** The only reason to open
+    `/login/` while signed in is to become somebody else, so a redirect here
+    would take away the one thing they came for.
+  */
+  const { page } = await open({ me: () => api(CUSTOMER) });
+  await page.goto(LOGIN, { waitUntil: "networkidle" });
+  await page.waitForSelector(EMAIL);
+  expect("return path", "a signed-in visitor with no next still gets the form",
+    page.url(), LOGIN);
+  expect("return path", "which is how they switch accounts",
+    await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
   await page.close();
 }
 

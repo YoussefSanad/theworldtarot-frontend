@@ -23,6 +23,20 @@ import { type Customer, currentCustomer } from "@/lib/session";
  * is different for every caller, and a `localStorage` copy of it is one
  * customer's name waiting for the next person on a shared machine. This lives
  * in memory for as long as the tab does and is re-read on every load.
+ *
+ * ## `?signedin=` for review
+ *
+ * There is no way to sign in on staging without a real account, so there is a
+ * switch for looking at the signed-in masthead, drawer and paywall:
+ *
+ * - `?signedin=1` — a customer with no pass, named by their address, which is
+ *   the ordinary case for somebody whose account a purchase created
+ * - `?signedin=member` — the same customer holding a Viewing Room pass
+ *
+ * Development always, staging when the API base says so, never production.
+ * `sessionOverrideAllowed` has the gate and the reasoning; it is presentation
+ * only and grants no access to anything, because every endpoint still decides
+ * for itself.
  */
 
 /** `undefined` until `/me` has answered, which is not the same as nobody being signed in. */
@@ -106,13 +120,84 @@ function ask(): void {
     });
 }
 
+/**
+ * A stand-in customer for `?signedin=1`, and for `?signedin=member` with the
+ * pass. Never reachable in production; see `sessionOverrideAllowed`.
+ *
+ * The name is absent on purpose in the plain case, because that is the ordinary
+ * one: a buyer whose account checkout made for them has never been asked their
+ * name, so `customerLabel` falls back to their address. Reviewing the masthead
+ * with "Jane Doe" in it would hide the layout question that actually matters —
+ * an address is much longer than a name.
+ */
+const PRETEND_CUSTOMER: Customer = {
+  id: 1,
+  name: null,
+  email: "jennifer@example.com",
+  hasViewingRoomAccess: false,
+};
+
+/**
+ * Whether `?signedin=` may stand in for what `/me` said.
+ *
+ * **Development always, and staging when the deploy asks for it**, which is the
+ * gate `ViewingRoom`'s `?state=` switch already uses and for its reason: there
+ * is no way to buy the pass yet, so without this nobody can look at the
+ * signed-in masthead on staging — which is the thing being approved.
+ *
+ * Derived from `NEXT_PUBLIC_API_BASE_URL` rather than a flag of its own because
+ * that variable is already set in every environment and is already what tells
+ * the builds apart. On production this is false.
+ *
+ * **Presentation only.** It publishes a customer into this tab's store and
+ * nothing else — no cookie, no session. Every endpoint still decides for
+ * itself, so this cannot read anybody's readings or play a film.
+ */
+function sessionOverrideAllowed(): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+
+  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").includes("staging-api.theworldtarot.com");
+}
+
+/** The pretend customer `?signedin=` asks for, or null for no override. */
+function readSessionOverride(): Customer | null {
+  if (!sessionOverrideAllowed()) return null;
+
+  const value = new URLSearchParams(window.location.search).get("signedin");
+
+  if (value === null || value === "0" || value === "false") return null;
+
+  return value === "member"
+    ? { ...PRETEND_CUSTOMER, hasViewingRoomAccess: true }
+    : PRETEND_CUSTOMER;
+}
+
 export function useSignedIn(): {
   customer: Snapshot;
   setCustomer: (customer: Customer | null) => void;
 } {
   const customer = useSyncExternalStore(subscribe, read, readOnServer);
 
-  useEffect(ask, []);
+  /*
+    Read after mount, never during render. This is a static export: the HTML is
+    built on a machine with no URL, so a render that read `window.location`
+    would produce different markup than the one it is adopting. `ViewingRoom`'s
+    own `?state=` switch goes to the same trouble for the same reason.
+
+    It publishes rather than short-circuiting the return, so every reader of the
+    store agrees — the masthead, the drawer and the paywall are all looking at
+    one answer, which is the whole point of the store.
+  */
+  useEffect(() => {
+    const pretend = readSessionOverride();
+
+    if (pretend) {
+      publish(pretend);
+      return;
+    }
+
+    ask();
+  }, []);
 
   return { customer, setCustomer: publish };
 }

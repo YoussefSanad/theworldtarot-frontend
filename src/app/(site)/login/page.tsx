@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { SignInForm } from "@/components/account/SignInForm";
+import { SignInPanel } from "@/components/account/SignInPanel";
+import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { loginCopy } from "@/content/login";
 import { siteName } from "@/content/site";
 
@@ -29,8 +31,24 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   /*
-    No Suspense boundary, unlike the password pages: nothing here reads the
-    query string, so there is no client-only hook to hold the route dynamic.
+    **A Suspense boundary, like the password pages, and for their reason.**
+
+    This page carried a comment saying it needed none because nothing here read
+    the query string. That stopped being true when `?next=` arrived: `SignInPanel`
+    reads it with `useSearchParams`, which is client-only under a static export,
+    so the boundary is what keeps this route static instead of making the whole
+    thing dynamic.
+
+    The fallback is blank on purpose, as it is there: for the fraction of a
+    second before the query string is read there is nothing true to say, and a
+    heading that flashes into a different heading reads as a fault.
   */
-  return <SignInForm />;
+  return (
+    <main data-page="account" className="relative">
+      <PageAtmosphere variant="card-reference" />
+      <Suspense fallback={null}>
+        <SignInPanel />
+      </Suspense>
+    </main>
+  );
 }

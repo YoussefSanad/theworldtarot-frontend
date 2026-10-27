@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { PasswordForm } from "@/components/account/PasswordForm";
+import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { setPasswordCopy } from "@/content/passwords";
 import { siteName } from "@/content/site";
 
@@ -34,8 +35,13 @@ export default function SetPasswordPage() {
     heading reads as a fault.
   */
   return (
-    <Suspense fallback={null}>
-      <PasswordForm flow="claim" />
-    </Suspense>
+    <main data-page="account" className="relative">
+      {/* The same ground the sign in page takes: these three are one surface
+          to a visitor, and two of them had no atmosphere at all. */}
+      <PageAtmosphere variant="card-reference" />
+      <Suspense fallback={null}>
+        <PasswordForm flow="claim" />
+      </Suspense>
+    </main>
   );
 }
