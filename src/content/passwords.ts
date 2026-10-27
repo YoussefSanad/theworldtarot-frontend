@@ -25,7 +25,7 @@ export type PasswordPageCopy = {
   /** Shown for a dead link, and never accompanied by the reason. */
   linkFailure: string;
   /**
-   * The way out of a dead link, and the only one there is. Both `linkFailure`
+   * The way out of a dead link, also offered on the done panel. Both `linkFailure`
    * sentences send somebody to the sign in page, which **exists since #49** —
    * before it did, this was an instruction to visit a 404. Rendered as a link
    * beside the failure rather than woven into the sentence, so the copy stays
@@ -52,6 +52,9 @@ export type PasswordPageCopy = {
   rateLimited: string;
   unknownFailure: string;
 };
+
+/** Shown on a claim so the person can see which account the link names. */
+export const claimEmailPrompt = "Setting a password for";
 
 export const setPasswordCopy: PasswordPageCopy = {
   title: "Set your password",

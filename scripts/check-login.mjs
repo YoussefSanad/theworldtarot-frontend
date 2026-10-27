@@ -192,7 +192,7 @@ async function open({ login, me = () => api({ message: "Unauthenticated." }, 401
   await page.route("**/api/v1/logout", (route) => route.fulfill(api(null, 204)));
   await page.route("**/api/v1/login", (route) => {
     sent.push({ path: "/login", body: JSON.parse(route.request().postData() ?? "null") });
-    return route.fulfill(login ?? api(CUSTOMER));
+    return route.fulfill(typeof login === "function" ? login(sent.filter((s) => s.path === "/login").length) : (login ?? api(CUSTOMER)));
   });
   await page.route("**/api/v1/forgot-password", (route) => {
     sent.push({ path: "/forgot-password", body: JSON.parse(route.request().postData() ?? "null") });
@@ -537,62 +537,84 @@ console.log("\na mistyped address is answered by the panel that asked for it");
   await page.close();
 }
 
-console.log("\nthe page returns somebody to where they were sent from");
+/**
+ * Opens `/login/` + `query`, signs in, waits for the URL to leave `/login/`
+ * and answers where it ended up.
+ */
+async function landing(query, { login } = {}) {
+  const { page } = await open({ login });
+  /* A hostile target must never reach the real network, only be seen trying. */
+  await page.route((url) => url.hostname === "evil.com", (route) => route.abort());
+  await page.goto(`${LOGIN}${query}`, { waitUntil: "networkidle" });
+  try {
+    await signIn(page);
+    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 5000 });
+    return page.url();
+  } finally {
+    await page.close();
+  }
+}
+
+console.log("\nsigning in returns to where the customer was going (#132)");
 {
-  /*
-    `?next=` is the half of this road that survives the dropdown: a visitor who
-    arrives at the page from a link — a mail, or the paywall on a phone — still
-    has to be put back where they came from. `lib/return-path.ts` decides what
-    counts; these are the two answers a person actually sees.
-  */
-  const { page } = await open();
-  await page.goto(`${LOGIN}?next=/library/`, { waitUntil: "networkidle" });
+  const origin = `http://localhost:${PORT}`;
+
+  expect("next", "a same-site path is honoured", await landing("?next=%2Fviewing-room%2F"), `${origin}/viewing-room/`);
+
+  for (const hostile of ["//evil.com", "https://evil.com", "javascript:alert(1)", "/.//evil.com"]) {
+    let url;
+    try {
+      url = new URL(await landing(`?next=${encodeURIComponent(hostile)}`));
+    } catch (error) {
+      failures.push(`next: ${hostile} did not settle: ${error.message.split("\n")[0]}`);
+      console.log(`  ✗ ${hostile} did not settle`);
+      continue;
+    }
+    expect("next", `${hostile} stays on this origin`, url.origin, origin);
+    /* `landingFor`: CUSTOMER holds no pass, so the default is the homepage.
+         `/readings/` was where everybody landed before the landing rule. */
+      expect("next", `${hostile} lands on the default`, url.pathname, "/");
+  }
+
+  expect("next", "no next lands on the default", await landing(""), `${origin}/`);
+
+  const { page } = await open({
+    /* The first attempt is refused, the second succeeds. `attempt` is 1-based. */
+    login: (attempt) =>
+      attempt === 1
+        ? api({ message: "These credentials do not match our records.", errors: { email: ["x"] } }, 422)
+        : api(CUSTOMER),
+  });
+  await page.goto(`${LOGIN}?next=%2Fviewing-room%2F`, { waitUntil: "networkidle" });
   await signIn(page);
-  await page.waitForURL(`http://localhost:${PORT}/library/`);
-  expect("return path", "a signed-out visitor is sent on to the next they carried",
-    page.url(), `http://localhost:${PORT}/library/`);
-  await page.close();
-}
-
-{
-  /* A `next` that leaves this site is refused, and the landing rule answers
-     instead — the page must never be a way to bounce somebody off the domain. */
-  const { page } = await open();
-  await page.goto(`${LOGIN}?next=https://elsewhere.example/`, { waitUntil: "networkidle" });
+  await page.waitForSelector(ALERT);
+  const kept = new URL(page.url());
+  expect("next", "a refused sign in stays on the page", kept.pathname, "/login/");
+  expect("next", "and keeps where it was going", kept.searchParams.get("next"), "/viewing-room/");
   await signIn(page);
-  await page.waitForURL(`http://localhost:${PORT}/`);
-  expect("return path", "and an off-site next is dropped for the default",
-    page.url(), `http://localhost:${PORT}/`);
-  await page.close();
-}
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 5000 });
+  expect("next", "the retry lands where it was going", page.url(), `${origin}/viewing-room/`);
 
-{
   /*
-    **Already signed in, with a next: go straight there.** Somebody sent them
-    here to get somewhere and they already hold the right to be there, so making
-    them type a password they have already typed would be asking twice.
+    Already signed in, which staging's suite does not reach. With a `next` the
+    page sends them straight on — they already hold the right to be there, so
+    asking for a password they have already given would be asking twice.
+    Without one it draws the form, because the only reason to open `/login/`
+    while signed in is to become somebody else.
   */
-  const { page } = await open({ me: () => api(CUSTOMER) });
-  await page.goto(`${LOGIN}?next=/library/`, { waitUntil: "networkidle" });
-  await page.waitForURL(`http://localhost:${PORT}/library/`);
-  expect("return path", "a signed-in visitor with a next skips the form",
-    page.url(), `http://localhost:${PORT}/library/`);
-  await page.close();
-}
+  {
+    const { page: onward } = await open({ me: () => api(CUSTOMER) });
+    await onward.goto(`${LOGIN}?next=%2Flibrary%2F`, { waitUntil: "networkidle" });
+    await onward.waitForURL(`${origin}/library/`);
+    expect("next", "a signed-in visitor with a next skips the form", onward.url(), `${origin}/library/`);
+    await onward.close();
 
-{
-  /*
-    **Already signed in, without one: draw the form.** The only reason to open
-    `/login/` while signed in is to become somebody else, so a redirect here
-    would take away the one thing they came for.
-  */
-  const { page } = await open({ me: () => api(CUSTOMER) });
-  await page.goto(LOGIN, { waitUntil: "networkidle" });
-  await page.waitForSelector(EMAIL);
-  expect("return path", "a signed-in visitor with no next still gets the form",
-    page.url(), LOGIN);
-  expect("return path", "which is how they switch accounts",
-    await page.locator(`${EMAIL}, ${PASSWORD}`).count(), 2);
+    const { page: stay } = await open({ me: () => api(CUSTOMER) });
+    await stay.goto(LOGIN, { waitUntil: "networkidle" });
+    await stay.waitForSelector(EMAIL);
+    expect("next", "a signed-in visitor with no next still gets the form", stay.url(), LOGIN);
+    await stay.close();
+  }
   await page.close();
 }
 

@@ -106,14 +106,15 @@ function ask(): void {
 
   asking = currentCustomer({ signal: AbortSignal.timeout(ANSWER_DEADLINE_MS) })
     .then(
-      (customer) => publish(customer),
+      // A sign in or sign out may have published while this read was in flight.
+      (customer) => { if (!asked) publish(customer); },
       // A 401 already answered `null` rather than throwing, so this is a broken
       // API or a browser with no network. Both are answered the same way and
       // neither is worth a red line in the console of somebody who was only
       // reading the homepage: the masthead cannot act on the difference between
       // "signed out" and "we could not tell", and offering to sign in is the
       // right thing to draw in both.
-      () => publish(null),
+      () => { if (!asked) publish(null); },
     )
     .finally(() => {
       asking = null;

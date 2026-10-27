@@ -1,132 +1,56 @@
-/**
- * Where a visitor goes once they are signed in.
- *
- * A seam of its own rather than a corner of the sign in form, for the reason
- * `viewing-room-access.ts` gives for being one: the mapping is pure, it is the
- * piece of this road most likely to be got subtly wrong, and it is testable
- * without a DOM. Everything around it is layout and navigation.
- *
- * **Two functions rather than one taking both halves.** The sign in page has a
- * `next` to consider and the masthead's dropdown never does — somebody signing
- * in from the header is already standing where they chose to be — so a single
- * `landingFor({ next, customer })` would have to be handed an argument its
- * commonest caller does not have. The page composes the two; the dropdown calls
- * the second alone.
- */
-
 import type { Customer } from "./session.ts";
 
-/**
- * The sign in page's own path, as a destination to refuse rather than to link.
- *
- * Not imported from `content/login.ts`: that module is copy, this is a rule,
- * and `lib` does not reach into `content`.
- */
-const SIGN_IN_PATH = "/login/";
+const MAX_LENGTH = 512;
+const BASE = "https://x.invalid";
 
 /**
- * A `next` as somewhere this site can actually send somebody, or null.
- *
- * **The value is attacker-supplied.** It arrives in a link anybody can write
- * and hand to anybody else, so the question is not "is this tidy" but "can
- * this leave our origin". A `next` of `https://elsewhere.example/login/` would
- * turn our own sign in link into a way to land a visitor on a convincing copy
- * of this page that asks for their password, and the referrer would say we sent
- * them. So this answers null for everything it is not certain of, and the
- * caller falls through to `landingFor`.
- *
- * What survives: a path on this site, with its own query string and fragment
- * intact, so `/library/?card=3#notes` arrives whole.
- *
- * What does not, and why each one is here rather than merely implied:
- *
- * - **`//host` and `/\host`.** Both read as a path to a person and as a host
- *   to a browser — `//elsewhere.example` is a protocol-relative URL, and
- *   several browsers normalise the backslash to a slash before resolving. This
- *   is the one refusal that is not obvious from looking at the string.
- * - **Any `..` segment**, because the string we are handed is not the address
- *   the browser will go to. `/..//evil.example` begins `/.` and so walks
- *   straight past the rule above, and then resolves to `//evil.example` — a
- *   protocol-relative URL, a different origin, and exactly the redirect this
- *   function exists to refuse. `/login/../admin/` is the milder version: not
- *   off-origin, but not the path it looks like either. A segment that merely
- *   *contains* dots (`/the-fool.v2/`) is untouched; it is the whole segment
- *   being `..` that moves.
- * - **Anything with a scheme**, which `javascript:` and `data:` are the point
- *   of. Covered by requiring a leading `/`, and tested in its own right
- *   because a later "improvement" to this guard would quietly let them back.
- * - **A relative path.** `viewing-room/` resolves against wherever the visitor
- *   happens to be, which is not a destination this seam can promise.
- * - **Control characters.** A newline in a value that reaches a header or an
- *   attribute is how one string becomes two.
- * - **The sign in page itself**, matched on the path portion rather than by
- *   equality, so `/login/?next=/login/` cannot build a loop either.
- *
- * Surrounding whitespace is trimmed instead of refused: mail clients and chat
- * apps add it to a URL they have wrapped, and a space is not an attack.
+ * Open-redirect guard for the `?next=` return path on /login/ and
+ * /set-password/. Allow-list only: returns the URL-normalised
+ * `pathname + search + hash` of a same-origin relative path with a single
+ * leading `/`, otherwise null. The result is already normalised and must not
+ * be decoded again by callers.
+ * Rejects absolute URLs, `//host`, backslashes, javascript:/data: schemes,
+ * Unicode whitespace and ASCII/C1 control characters (browsers strip these
+ * into `//host`), anything longer than 512 characters, and targets on
+ * /login, /set-password and /reset-password (including index.html/.txt
+ * variants, percent-encoded and mixed-case spellings), plus any query with a
+ * `token` or `email` param. Those pages would loop back after sign-in, or
+ * show the victim a planted reset/claim form straight after authenticating.
+ * Normalising closes bypasses such as `/.//evil.com`, which passes the
+ * leading-slash check but collapses to the protocol-relative `//evil.com`.
  */
-export function readReturnPath(raw: string | null): string | null {
-  if (raw === null) return null;
+export function safeReturnPath(raw: string | null | undefined): string | null {
+  if (!raw || raw.length > MAX_LENGTH) return null;
+  if (raw[0] !== "/" || raw[1] === "/") return null;
+  if (/[\\\s\u0000-\u001f\u007f-\u009f]/.test(raw)) return null;
 
-  const next = raw.trim();
-
-  if (next === "") return null;
-  // A path on this site and nothing else. This is also what refuses every
-  // scheme, since `javascript:` and `https:` have no leading slash.
-  if (!next.startsWith("/")) return null;
-  // `//host` and `/\host` are a host wearing a path's clothes.
-  if (next[1] === "/" || next[1] === "\\") return null;
-  if (/[\u0000-\u001f\u007f]/.test(next)) return null;
-
-  /*
-    **Now stop reading the string and ask what it resolves to.**
-
-    Everything above is a cheap rejection of a value that is obviously not a
-    path. What it cannot do is tell you where a path *goes*, and that is the
-    question. `/.//evil.example` passes every test above — it begins with a
-    single slash, its second character is a dot, it holds no control
-    characters — and a browser resolves it to `//evil.example`, which is a
-    protocol-relative URL and therefore another origin.
-    `/%2e%2e//evil.example` does the same while hiding the dots from any string
-    match, and there is no finite list of spellings to block: `%2E`, `.%2e`,
-    `/./..`, and a nesting of them all arrive at the same place.
-    A code review found exactly this hole in a guard that matched a literal
-    `..` segment, and proved it end to end against a real phishing page.
-
-    So resolution is the test. The value is resolved against a base that is
-    nobody's real origin, and anything that does not land back on that base is
-    refused. The `pathname` check is the other half: a path of `//host` keeps
-    the origin of whatever it was resolved against, so it passes an origin
-    comparison and is still read as a host the moment it reaches `router.push`.
-
-    What comes back is rebuilt from the resolved parts rather than returned as
-    it arrived, so the caller is handed the address the browser would have gone
-    to and not the shorthand somebody wrote for it.
-  */
-  const base = "https://return-path.invalid";
-
-  let resolved: URL;
-
+  let url: URL;
   try {
-    resolved = new URL(next, `${base}/`);
+    url = new URL(raw, BASE);
   } catch {
     return null;
   }
+  if (url.origin !== BASE) return null;
+  if (url.pathname.startsWith("//")) return null;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(url.pathname);
+  } catch {
+    return null;
+  }
+  decoded = decoded.toLowerCase().replace(/\/{2,}/g, "/");
+  if (/^\/(login|set-password|reset-password)(\/|\.|$)/.test(decoded)) return null;
+  const params = new URLSearchParams(url.search);
+  if (params.has("token") || params.has("email")) return null;
+  return url.pathname + url.search + url.hash;
+}
 
-  if (resolved.origin !== base) return null;
-  if (resolved.pathname.startsWith("//")) return null;
-
-  /*
-    The sign in page, however it is spelled. `trailingSlash` is on, so `/login`
-    is a redirect to `/login/` and the loop merely gains a hop; case is folded
-    because a visitor who writes `/Login/` means the page, and whether the host
-    agrees depends on the host.
-  */
-  const normalised = resolved.pathname.toLowerCase().replace(/\/$/, "");
-
-  if (normalised === SIGN_IN_PATH.replace(/\/$/, "")) return null;
-
-  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+/** Only a claim with a safe destination continues straight to sign in. */
+export function afterClaimDestination(
+  flow: "claim" | "reset",
+  next: string | null | undefined,
+): string | null {
+  return flow === "claim" ? safeReturnPath(next) : null;
 }
 
 /**
@@ -142,6 +66,13 @@ export function readReturnPath(raw: string | null): string | null {
  * visitor could be sent to before the Viewing Room existed, and it answered a
  * question nobody asked: somebody who signs in from the masthead has not told
  * us they want to buy a reading.
+ *
+ * **Separate from `safeReturnPath` above rather than folded into it**, because
+ * the two answer different questions and only one caller asks both. The sign in
+ * page has a `next` to weigh; the masthead's dropdown never does — somebody
+ * signing in from the header is already standing where they chose to be — so a
+ * single function taking both would have to be handed an argument its
+ * commonest caller does not have.
  */
 export function landingFor(customer: Customer): string {
   return customer.hasViewingRoomAccess ? "/viewing-room/" : "/";
