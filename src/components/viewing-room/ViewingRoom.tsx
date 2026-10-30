@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { FilmPlayer } from "@/components/viewing-room/FilmPlayer";
 import { PaymentPanel } from "@/components/viewing-room/PaymentPanel";
 import { PaywallModal, type PaywallScreen } from "@/components/viewing-room/PaywallModal";
+import { RuneField } from "@/components/viewing-room/RuneField";
 import { ThumbnailCarousel } from "@/components/viewing-room/ThumbnailCarousel";
 import { UnlockPanel } from "@/components/viewing-room/UnlockPanel";
 import { viewingRoom, type ViewingRoomCard } from "@/content/viewing-room";
@@ -123,7 +124,7 @@ export function ViewingRoom() {
         // A stable hook for the browser check, which must not depend on this
         // being a particular child of `main` — `PageAtmosphere` is one too.
         data-viewing-room=""
-        className={cn(modal && "pointer-events-none select-none")}
+        className={cn("overflow-x-clip", modal && "pointer-events-none select-none")}
       >
         <Container className="flex flex-col items-center">
           <header className="mt-[clamp(16px,2.2vw,40px)] text-center">
@@ -189,20 +190,24 @@ export function ViewingRoom() {
             coordinate.
           */}
           <div className="relative mt-20 w-full lg:mt-[clamp(44px,6vw,88px)]">
-            {/*
-              **The player waits for a card and the room does not.** The
-              title, the atmosphere and the closing call to action are the
-              page's own and owe the backend nothing, so they draw at once —
-              only the two blocks the deck fills hold a placeholder.
+            {/* The stage copies the player's width cap, like the placeholder below. */}
+            <div data-rune-stage className="relative isolate mx-auto w-full max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]">
+              <RuneField />
+              {/*
+                **The player waits for a card and the room does not.** The
+                title, the atmosphere and the closing call to action are the
+                page's own and owe the backend nothing, so they draw at once —
+                only the two blocks the deck fills hold a placeholder.
 
-              The placeholder keeps the player's exact aspect, so the carousel
-              below it does not jump when the deck lands.
-            */}
-            {selected ? (
-              <FilmPlayer card={selected} onRefused={onRefused} labels={viewingRoom.player} />
-            ) : (
-              <PlayerPlaceholder />
-            )}
+                The placeholder keeps the player's exact aspect, so the carousel
+                below it does not jump when the deck lands.
+              */}
+              {selected ? (
+                <FilmPlayer card={selected} onRefused={onRefused} labels={viewingRoom.player} />
+              ) : (
+                <PlayerPlaceholder />
+              )}
+            </div>
           </div>
         </Container>
 
