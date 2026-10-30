@@ -3116,6 +3116,34 @@
     animation: none;
   }
 
+  @keyframes rune-pulse {
+    0%,
+    100% {
+      opacity: 0.12;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .rune-field {
+    --rune-base: clamp(14px, 1.6vw, 28px);
+  }
+
+  .rune-field__rune {
+    color: var(--color-champagne);
+    filter: drop-shadow(0 0 4px rgba(223, 200, 148, 0.55)); /* static */
+    opacity: 0.35;
+    animation: rune-pulse var(--dur, 5s) var(--ease-veil) var(--delay, 0s) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rune-field__rune {
+      animation: none;
+      opacity: 0.35;
+    }
+  }
+
   /* Header selectors ------------------------------------------------------- */
   /*
     The language and currency pills are `.btn-ghost`s, and the menu one opens is
