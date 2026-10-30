@@ -1,8 +1,11 @@
 "use client";
 
-import { openAccountMenu } from "@/components/account/account-menu-store";
+import { useRouter } from "next/navigation";
+
+import { openAccountMenu, visibleSurface } from "@/components/account/account-menu-store";
 import { Button } from "@/components/ui/Button";
 import { AccountLine } from "@/components/viewing-room/AccountLine";
+import { signInPath } from "@/content/login";
 import { viewingRoom } from "@/content/viewing-room";
 import { viewingRoomMarks as marks } from "@/lib/assets";
 import { cn } from "@/lib/cn";
@@ -11,6 +14,15 @@ import type { Customer } from "@/lib/session";
 import type { AccessState } from "@/lib/viewing-room-access";
 
 const { panel } = viewingRoom;
+
+/**
+ * Where `?next=` sends a phone back to, slashed for `trailingSlash`.
+ *
+ * Written here rather than imported because this is the one page that is
+ * always its own destination: the panel is *in* the Viewing Room, so there is
+ * nothing to resolve and nothing a caller could pass that would be right.
+ */
+const viewingRoomPath = "/viewing-room/";
 
 /**
  * Screen one of the paywall (`384:28`), built as the client drew it.
@@ -47,6 +59,8 @@ export function UnlockPanel({
     yet, so the catalogue is both enough and cheaper.
   */
   const priceLine = usePassPriceLine(panel.price, panel.priceNote);
+  /** Only the phone's road uses it; see the sign-in line below. */
+  const router = useRouter();
 
   return (
     <div className="mt-4 flex flex-col items-center">
@@ -129,27 +143,45 @@ export function UnlockPanel({
       {/*
         Signed out: the way back in for somebody who already owns the pass.
 
-        **It opens the masthead's account menu rather than going to `/login/`.**
-        This line used to be a link carrying `?next=/viewing-room/`, which meant
-        somebody who had already bought the pass had to leave the room they had
-        paid for in order to prove they had paid for it, and then be sent back.
-        Now they never move: the panel above them re-decides the moment the
-        session exists, because it reads the same store the sign in writes to.
+        **It opens the masthead's panel on desktop and goes to `/login/` on a
+        phone**, and the split is the drawer's doing rather than this panel's.
 
-        The header is `z-50` and this panel `z-30`, so the menu opens above it
-        with no stacking work. On a phone the same press opens the drawer, which
-        is why the scroll lock had to become one shared seam first — see
-        `lib/scroll-lock.ts`.
+        The desktop row still hides a real `SignInForm` behind its account
+        mark, so there the original reasoning holds in full: somebody who has
+        already bought the pass should not have to leave the room they paid for
+        in order to prove they paid for it. They never move, and the panel above
+        them re-decides the moment the session exists, because it reads the same
+        store the sign in writes to.
 
-        `openAccountMenu` picks the visible one of the masthead's two account
-        controls; this panel does not need to know which.
+        The drawer has no form to open since 30 October 2026 — it is a button to
+        `/login/` now, for the reasons on `AccountDrawerSection`. Opening it
+        would put a visitor in front of a drawer holding a second button to
+        press, so the phone takes the trip directly and `?next=` brings them
+        back to this room. One navigation each way, against two presses and the
+        same navigation.
+
+        The header is `z-50` and this panel `z-30`, so the desktop menu opens
+        above it with no stacking work.
       */}
       {state === "signed-out" && (
         <p className="mt-4 text-center font-sans text-[clamp(13px,1.05vw,17px)] tracking-[0.75px] text-[#d4b06a]">
           {panel.signIn.lead}
           <button
             type="button"
-            onClick={openAccountMenu}
+            onClick={() => {
+              /*
+                Read at the press rather than at render: a resize across
+                `desktop-nav` between the two would otherwise send a phone to
+                the dropdown that is `display: none` on it, which is the fault
+                `visibleSurface` exists to avoid.
+              */
+              if (visibleSurface() === "row") {
+                openAccountMenu();
+                return;
+              }
+
+              router.push(`${signInPath}?next=${encodeURIComponent(viewingRoomPath)}`);
+            }}
             className="cursor-pointer underline decoration-from-font underline-offset-2"
           >
             {panel.signIn.link}

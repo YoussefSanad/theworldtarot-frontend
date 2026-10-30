@@ -130,6 +130,15 @@ export function registerDrawerOpener(opener: () => void): () => void {
  * control does not exist until it does. The surface is published either way, so
  * the control opens its panel as soon as it mounts and the visitor arrives at a
  * sign in form rather than at an open drawer they have to read.
+ *
+ * **The `"drawer"` branch is unreachable from 30 October 2026**, and is kept
+ * rather than deleted because what made it unreachable is a decision about the
+ * drawer rather than about this store. The drawer holds no form any more — it
+ * is a button to `/login/`, see `AccountDrawerSection` — so the paywall, this
+ * module's only outside caller, tests `visibleSurface()` itself and takes a
+ * phone straight to that page instead of asking for a panel that is not there.
+ * Everything below still works; nothing currently asks it to. If a form ever
+ * returns to the drawer, this is the seam that already knows how to reach it.
  */
 export function openAccountMenu(): void {
   const surface = visibleSurface();

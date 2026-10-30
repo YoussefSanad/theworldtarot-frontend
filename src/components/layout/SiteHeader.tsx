@@ -7,7 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { closeAccountMenu, registerDrawerOpener } from "@/components/account/account-menu-store";
 import { AccountControl } from "@/components/account/AccountControl";
-import { AccountDrawerSection } from "@/components/account/AccountDrawerSection";
+import { AccountDrawerLine, AccountDrawerSection } from "@/components/account/AccountDrawerSection";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
@@ -352,17 +352,49 @@ export function SiteHeader() {
                 />
               </Link>
 
-              <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm">
-                <ButtonLink
-                  href={headerActions.cta.href}
-                  variant="ghost"
-                  size="fluid"
-                  className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
-                  onClick={closeMenu}
-                >
-                  {headerActions.cta.label}
-                </ButtonLink>
+              {/*
+                **The drawer's two controls, and the account line under them.**
 
+                A column of two rows rather than one wrapping row. The buttons
+                are one row and are centred in it; the address, when there is
+                one, is a row of its own beneath. That split is the fix for a
+                layout that put three different kinds of thing on one line — a
+                destination, a status and a session action — where the address
+                set the row's width and outranked the call to action beside it.
+
+                `items-center` on the column is what centres the pair as a
+                group; `justify-center` on the row centres them against each
+                other. The line below inherits that centring rather than
+                setting its own.
+              */}
+              <div className="flex flex-col items-center gap-[0.6em]">
+                <div className="flex flex-wrap items-center justify-center gap-[0.93em] text-nav-sm">
+                  <ButtonLink
+                    href={headerActions.cta.href}
+                    variant="ghost"
+                    size="fluid"
+                    className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
+                    onClick={closeMenu}
+                  >
+                    {headerActions.cta.label}
+                  </ButtonLink>
+
+                  {/*
+                    **The way in, beside the way to buy.** These are the two
+                    things the masthead can do, and this row is where a visitor
+                    already looks for them — which is the whole reason the sign
+                    in moved up here out of the panel's foot. See
+                    `AccountDrawerSection`, which is a button now rather than
+                    the form it used to be.
+
+                    Signed in it is the sign out instead, drawn at the CTA's own
+                    height so the two read as one pair; see its `fit`.
+                  */}
+                  <AccountDrawerSection onNavigate={closeMenu} />
+                </div>
+
+                {/* Nothing at all when signed out. */}
+                <AccountDrawerLine />
               </div>
 
               {/*
@@ -427,41 +459,19 @@ export function SiteHeader() {
               {/*
                 Last, at the foot of the panel: settings rather than
                 destinations, so they sit below the places to go rather than
-                among them. The account section above shares that reasoning and
-                now shares the `mt-auto` that carries out — see its note.
+                among them.
 
                 Flat here instead of the desktop icon's panel — a menu opening
                 inside a drawer is a second layer over a first, and with seven
                 options in total there is nothing to save by hiding them.
+
+                **The account section used to sit above this**, sharing the
+                `mt-auto` that pushes the pair to the foot. It moved up to the
+                CTA row on 30 October 2026 when it stopped being a form; the
+                `mt-auto` stays here, now carrying the locale block alone.
               */}
-              {/*
-                **The account section, not an account icon**, and it sits with
-                the settings rather than above the destinations.
-
-                The desktop row hides its sign in form behind the account mark
-                because a masthead row has nowhere to put a form. This drawer is
-                a full-height panel the visitor opened deliberately, so the same
-                icon here is a second thing to find and press — sitting in a row
-                of other icons, where it reads as decoration rather than as the
-                way in. The form is simply part of the drawer instead.
-
-                It goes directly above the language and currency block for the
-                reason that block gives for being last: these are settings, not
-                places to go, so they belong below the list of destinations
-                rather than among them. `mt-auto` moves up here so the pair are
-                pushed to the foot together as one group.
-
-                A resize across `desktop-nav` closes the drawer and would drop a
-                half-typed form with it. Left as it is: it takes a deliberate
-                resize mid-sign-in, and the alternative is carrying form state
-                between two renderings of the masthead.
-              */}
-              <div className="mt-auto flex flex-col gap-5">
-                <AccountDrawerSection onNavigate={closeMenu} />
-
-                <div className="flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
-                  <LocaleControls selection={localeSelection} />
-                </div>
+              <div className="mt-auto flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
+                <LocaleControls selection={localeSelection} />
               </div>
             </div>
           </motion.aside>
