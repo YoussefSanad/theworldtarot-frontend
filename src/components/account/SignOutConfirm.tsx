@@ -60,6 +60,7 @@ export function SignOutConfirm({
   onConfirmed,
   className,
   tone = "site",
+  fit = false,
 }: {
   /** Called after the local session is cleared, however the API answered. */
   onConfirmed?: () => void;
@@ -73,6 +74,21 @@ export function SignOutConfirm({
    * a grey from a different family.
    */
   tone?: "site" | "panel";
+  /**
+   * Whether to keep the 44px floor.
+   *
+   * **It is on by default and off in the drawer's button row**, which is the
+   * one place this control stands beside another button rather than alone.
+   * `min-h-11` against the CTA's `min-h-[2.03em]` — about 28px at the phone's
+   * type floor — made the pair read as a button and a bigger button, which is
+   * exactly the mismatch the row was rebuilt to remove.
+   *
+   * A prop rather than a class passed in, because `cn` is a plain join: both
+   * `min-h` classes would ship and the cascade, not the caller, would pick the
+   * winner. Nothing in the drawer loses a tap target by it — the row's own
+   * buttons set the height there, and they are the same height.
+   */
+  fit?: boolean;
 }) {
   const { setCustomer } = useSignedIn();
   const [armed, setArmed] = useState(false);
@@ -144,7 +160,13 @@ export function SignOutConfirm({
           A full-width button would have hidden that rather than demonstrated
           it.
         */
-        "w-fit px-[1.1em] py-[0.35em]",
+        /*
+          `fit` takes the drawer row's padding rather than this one's, for the
+          reason on the prop: the two buttons in that row have to be one
+          shape, and `cn` is a join rather than a merge, so a caller cannot
+          override a utility that is already here.
+        */
+        fit ? "w-fit px-[1.4em] py-[0.2em]" : "w-fit px-[1.1em] py-[0.35em]",
         /*
           **The same 44px tap target in all three places.** The paywall's panel
           is height-capped and this button costs it more than the one-line link
@@ -153,8 +175,12 @@ export function SignOutConfirm({
           four percent. See `check-viewing-room.mjs`, which records the new
           number and why.
         */
-        "min-h-11",
-        tone === "panel" ? "text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]" : "text-note",
+        fit ? "min-h-[2.03em]" : "min-h-11",
+        tone === "panel"
+          ? "text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]"
+          : fit
+            ? "text-nav-sm"
+            : "text-note",
         /*
           **Amber while armed, the site's gold otherwise.** A warmer light for
           "this press is the one that does it", kept as a glow rather than a

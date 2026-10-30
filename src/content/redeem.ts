@@ -231,7 +231,7 @@ export const redeemCopy = {
   lost: {
     heading: "We Cannot Show You This Redemption",
     body:
-      "There is nothing here for us to look up — this page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts.",
+      "There is nothing here for us to look up. This page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts.",
   },
 
   /** The way back, in the same capitals the rest of the site sets this control in. */

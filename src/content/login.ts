@@ -99,6 +99,19 @@ export const loginCopy = {
     accountOf: "Account:",
     /** Followed by whatever `customerLabel` answers for them. */
     signedInAs: "Signed in as",
+    /**
+     * The drawer's sign in button, which replaced the form that used to sit
+     * there.
+     *
+     * **In the client's capitals, because it stands beside GET MY READING** in
+     * the same row and the two read as a pair. The icon beside it is
+     * `headerActions.account.icon`, the mark the desktop row already uses for
+     * this, so the two surfaces name the same thing the same way.
+     *
+     * It is a link to `/login/` rather than a form: see the note on
+     * `AccountDrawerSection`, where the form used to be.
+     */
+    drawerAction: "SIGN IN",
   },
 
   /**

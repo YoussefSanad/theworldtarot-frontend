@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { newsletter } from "@/content/site";
+import { NEWSLETTER_ANCHOR, newsletter } from "@/content/site";
 import {
   type NewsletterFailure,
   readNewsletterFailure,
@@ -149,7 +149,18 @@ export function NewsletterForm() {
   const fadeLabel = { duration: reducedMotion ? 0 : LABEL_FADE_SECONDS };
 
   return (
-    <form onSubmit={onSubmit} className="flex w-full max-w-[36.25rem] flex-col items-center gap-[0.6em]">
+    <form
+      onSubmit={onSubmit}
+      /*
+        The anchor the Learn page's "JOIN THE LIST" points at, and the reason it
+        sits on the form rather than on the footer: landing on the footer's top
+        edge puts the signup below the fold again on a short viewport, which is
+        the one thing the jump exists to avoid. `scroll-mt` keeps the heading
+        clear of the fixed masthead on arrival.
+      */
+      id={NEWSLETTER_ANCHOR}
+      className="flex w-full max-w-[36.25rem] scroll-mt-24 flex-col items-center gap-[0.6em]"
+    >
       <h2 className="font-display text-h2 text-ash">{newsletter.heading}</h2>
 
       <div className="grid w-full grid-cols-1 items-center gap-x-[0.5em] gap-y-[0.3em] lg:grid-cols-[auto_1fr]">

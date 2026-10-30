@@ -309,7 +309,7 @@ function focusableWithin(root: HTMLElement | null): HTMLElement[] {
  * noticeably lighter than a filled shape — `stroke-width` is the lever if the
  * pair ever look uneven.
  */
-function AccountIcon({ className }: { className?: string }) {
+export function AccountIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
       <path

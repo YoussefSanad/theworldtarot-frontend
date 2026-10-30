@@ -60,6 +60,13 @@
   --color-gold-soft: #c9b87c;
   --color-champagne: #fff3d7;
   --color-cream: #fdf4da;
+  /*
+    The Learn page's eyebrow on its cream bands — a warm dark gold-brown, and
+    the one ink on the site that is neither the blue nor the gold. It is hers,
+    sampled from the PSD, and it reads as a quieter gold against cream where
+    `--color-gold` would wash out at that size.
+  */
+  --color-bronze: #483e20;
   --color-mist: #d0d1d4;
   --color-mist-dim: #bfc4c8;
   --color-ash: #cac8c8;
