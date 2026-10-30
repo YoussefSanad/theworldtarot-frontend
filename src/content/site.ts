@@ -85,6 +85,7 @@ export const primaryNav: NavItem[] = [
     href: "/library/",
     children: [majorArcanaNav, ...suits.map(({ label, href }) => ({ label, href }))],
   },
+  { label: "LEARN", href: "/learn/" },
   { label: "FAQ", href: "/faq" },
 ];
 
@@ -118,6 +119,7 @@ export const footerNav: NavLink[] = [
   { label: "Viewing Room", href: "/viewing-room/" },
   { label: "Readings", href: "/readings/" },
   { label: "Library", href: "/library/" },
+  { label: "Learn", href: "/learn/" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
   { label: "Terms & Conditions", href: "/terms" },
@@ -150,6 +152,14 @@ export const socialLinks: { label: string; href: string; icon: SocialIconName }[
  * line: the endpoint answers a new address and one already on the list
  * identically, so that arm cannot be reached and must not be written.
  */
+/**
+ * The footer signup's anchor, named here because two places need to agree on it:
+ * the form that carries the `id` and any page that sends a visitor to it. The
+ * Learn page's "JOIN THE LIST" is the first such caller — it has no form of its
+ * own and hands the visitor to this one.
+ */
+export const NEWSLETTER_ANCHOR = "stay-connected";
+
 export const newsletter = {
   heading: "STAY CONNECTED:",
   blurb: ["Receive occasional reflections and", "readings from sacred places around the world."],

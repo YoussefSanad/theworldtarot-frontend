@@ -349,6 +349,52 @@ export const viewingRoomMarks = {
   knob: asset("/figma/viewing-room-knob.webp", 43, 43),
 } as const;
 
+/**
+ * The Learn page's artwork, written by `scripts/optimize-learn-assets.mjs`.
+ *
+ * **Every one of these arrives pre-composed and is drawn as delivered.** The
+ * postcards carry their own rotation, their rounded corners and the play glyph
+ * in their pixels, so `PostcardFan` only ever translates them — anything that
+ * rotated them here would tilt artwork that is already tilted. The laptop
+ * carries its own darkness out to a transparent left edge, which is what lets
+ * it dissolve into the night band rather than ending on a seam.
+ *
+ * The dimensions are the delivery's own, and the optimize script prints them on
+ * every run so the two can be checked against each other: `next/image` reserves
+ * each box from the numbers here, so a number that drifts from the file is a
+ * layout shift that only shows once the image loads.
+ *
+ * No `learnSurfaces` companion: nothing on this page is painted from CSS.
+ */
+export const learnArtwork = {
+  /** The hero's laptop, bleeding off the right edge above `lg`. */
+  computer: asset("/figma/learn-computer.webp", 1606, 960),
+
+  /** The three course postcards, fanned beside "Discover. Explore. Understand." */
+  postcardSun: asset("/figma/learn-postcard-sun.webp", 518, 341),
+  postcardChariot: asset("/figma/learn-postcard-chariot.webp", 487, 314),
+  postcardStar: asset("/figma/learn-postcard-star.webp", 467, 280),
+
+  /** The four gold discs on the "78 cards" band. */
+  markFilm: asset("/figma/learn-mark-film.webp", 107, 109),
+  markBook: asset("/figma/learn-mark-book.webp", 107, 109),
+  markStar: asset("/figma/learn-mark-star.webp", 107, 109),
+  markCards: asset("/figma/learn-mark-cards.webp", 109, 109),
+
+  /**
+   * The three navy line icons on "A map of the tarot".
+   *
+   * Note these are near-black line art rather than gold, because they sit on the
+   * cream band — the one place on this page where the site's usual polarity is
+   * inverted. They are drawn at a common width, not at their native sizes, which
+   * differ (161, 161 and 191 square); the Minor Arcana's star is the widest
+   * because its points reach further, not because it is meant to read larger.
+   */
+  mapMajor: asset("/figma/learn-map-major.webp", 161, 161),
+  mapCourt: asset("/figma/learn-map-court.webp", 161, 159),
+  mapMinor: asset("/figma/learn-map-minor.webp", 191, 191),
+} as const;
+
 export const librarySurfaces = {
   /** `.page-atmosphere-library` — the rotunda the cards hang in. */
   rotunda: "/figma/library-rotunda.webp",
