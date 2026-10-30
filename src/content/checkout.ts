@@ -102,7 +102,7 @@ export const checkoutCompleteCopy = {
     unpaid: {
       heading: "No payment was taken",
       body: () =>
-        "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again — a different card, or the same one a moment later.",
+        "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again: a different card, or the same one a moment later.",
       amountLabel: "Still to pay",
     },
     unfinished: {
@@ -210,7 +210,7 @@ export const checkoutCompleteCopy = {
       than a catalogue lookup — the pass is one product and always this one.
     */
     body: () =>
-      "Thank you. You now have lifetime access to The Living Tarot — all 22 Major Arcana in motion, light and sound.",
+      "Thank you. You now have lifetime access to The Living Tarot, all 22 Major Arcana in motion, light and sound.",
     amountLabel: "Payment received:",
     /** Introduces the pair below. */
     stepsLead: "What happens next",
@@ -222,7 +222,7 @@ export const checkoutCompleteCopy = {
      */
     steps: [
       "We have emailed you a link to choose a password and claim your account.",
-      "Sign in with it and the Viewing Room opens — on this device and any other.",
+      "Sign in with it and the Viewing Room opens, on this device and any other.",
     ],
     /**
      * The gold button, in the client's capitals and in her own words for this
@@ -280,7 +280,7 @@ export const checkoutCompleteCopy = {
    */
   unknownHeading: "We cannot show you this payment",
   unknownBody:
-    "There is nothing here for us to look up — this page shows a payment made in this tab, and that is not what brought you here. If you have just paid, your receipt will arrive by email and is the record that counts. If you were part-way through, go back to the reading and start again.",
+    "There is nothing here for us to look up. This page shows a payment made in this tab, and that is not what brought you here. If you have just paid, your receipt will arrive by email and is the record that counts. If you were part-way through, go back to the reading and start again.",
 
   /** Stripe answered, but not with an intent. Nothing to report either way. */
   errorHeading: "We could not check your payment",
