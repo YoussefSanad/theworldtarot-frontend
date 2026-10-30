@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { ReadingBackdrop } from "@/components/reading/ReadingBackdrop";
+import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
 import { checkoutCompleteCopy } from "@/content/checkout";
@@ -22,6 +22,7 @@ import type { ApiProduct } from "@/lib/api";
 import { useCatalogue } from "@/lib/catalogue";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
+import { PASS } from "@/lib/pass-price";
 import { formatPrice, type Money } from "@/lib/price";
 import { resolveReadingName } from "@/lib/reading-prices";
 
@@ -498,7 +499,7 @@ export function CheckoutComplete() {
           question is the one thing on this screen in cream — it is what the
           querent wrote, and the rest is what we are telling them.
         */}
-        <blockquote className="mt-2 font-serif text-body leading-[1.19] tracking-[-0.01em] text-cream">
+        <blockquote className="mt-2 font-sans text-body leading-[1.19] tracking-[-0.01em] text-cream">
           {asked.question}
         </blockquote>
 
@@ -538,15 +539,35 @@ export function CheckoutComplete() {
   }
 
   /*
-    **The gift variant is `received`'s alone.** The other six report unfinished
-    money and have nothing gift-shaped to say — four of them say no payment was
-    taken, and hedging about a payment while naming who a present went to is
-    two screens in one. So the branch is here, at the one outcome it applies to,
-    rather than a second `outcomes` table keyed by mode.
+    **Three variants of `received`, and the other six outcomes have none.**
+
+    A gift buyer bought a present, a pass buyer bought access, and everybody
+    else bought a reading — three different things, three different next
+    steps. The six outcomes that report unfinished money are untouched by all
+    of it: four of them say no payment was taken, and a screen hedging about a
+    payment has nothing to add about who a present went to or what a pass
+    unlocks. So the branch is here, at the one outcome it applies to, rather
+    than a second `outcomes` table keyed by mode.
+
+    **The pass is read off the record's product key and never off the
+    catalogue.** `subjectOf` already carries the key, it is written before the
+    browser leaves for Stripe, and it survives a tab that never reaches the
+    network — where `ApiProduct.type === "pass"` would need `/products` to have
+    answered before this screen could tell a pass buyer from a reading buyer.
+    The one product this applies to is the one `PASS` names.
+
+    **Gift wins over pass**, in the order below, and the case cannot arise:
+    `API_CONTRACT.md` has `is_giftable` false for the pass, and `PaymentPanel`
+    draws no gift control. If it ever did, a present is the thing the buyer
+    needs the address of, and that screen is the one to show.
   */
-  const copy =
-    result.gift && result.outcome === "received"
-      ? checkoutCompleteCopy.giftReceived
+  const isPass = result.outcome === "received" && result.subject.productKey === PASS;
+  const isGift = result.gift && result.outcome === "received";
+
+  const copy = isGift
+    ? checkoutCompleteCopy.giftReceived
+    : isPass
+      ? checkoutCompleteCopy.passReceived
       : checkoutCompleteCopy.outcomes[result.outcome];
 
   return (
@@ -568,7 +589,47 @@ export function CheckoutComplete() {
 
       <p className={`mt-4 ${BODY}`}>{copy.body(subjectNameOf(result.subject, catalogue))}</p>
 
-      <Back />
+      {/*
+        **The steps, on the two screens that have a next step to give.**
+
+        A pass buyer's are the backend's own behaviour — the claim mail, then
+        the room — and a reading buyer's say where the reading will appear. The
+        six unfinished-money outcomes get none: their body already says the
+        only thing to do, which is to try the payment again. A gift buyer gets
+        none either, because the next move is the recipient's and not theirs.
+      */}
+      {isPass ? (
+        <NextSteps lead={checkoutCompleteCopy.passReceived.stepsLead} steps={checkoutCompleteCopy.passReceived.steps} />
+      ) : !isGift && result.outcome === "received" ? (
+        <NextSteps
+          lead={checkoutCompleteCopy.receivedSteps.lead}
+          steps={checkoutCompleteCopy.receivedSteps.steps}
+        />
+      ) : null}
+
+      {/*
+        **The pass screen's door, and the one place this screen offers a gold
+        button.**
+
+        Everywhere else `Back` is the only control, because there is nowhere
+        else to send somebody: a reading arrives by mail and cannot be opened
+        here. A pass can — the room is a page on this site and the buyer has
+        just paid to enter it — so the primary action is the room and BACK TO
+        READINGS drops to the quiet second place it already occupies.
+      */}
+      {isPass ? (
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <ButtonLink href={checkoutCompleteCopy.passReceived.enterHref} variant="gold" size="md">
+            {checkoutCompleteCopy.passReceived.enterLabel}
+          </ButtonLink>
+
+          <ButtonLink href={checkoutCompleteCopy.backHref} variant="ghost" size="md">
+            {checkoutCompleteCopy.backLabel}
+          </ButtonLink>
+        </div>
+      ) : (
+        <Back />
+      )}
     </Panel>
   );
 }
@@ -652,14 +713,26 @@ function Back() {
  * its first element (`src/app/(site)/layout.tsx` says why the column is the box
  * it fills); this one stood on flat colour.
  *
- * `ReadingBackdrop` rather than a `PageAtmosphere` of its own, because the
- * `-top-20` inside it is tuned to `SiteHeader`'s padding and has to move when
- * the header does. That component exists to be the one place it moves.
+ * **The rotunda, and the plain `PageAtmosphere` every other page writes.** It
+ * was `ReadingBackdrop` with the observatory behind it, on the reasoning that
+ * the `-top-20` is tuned to `SiteHeader`'s padding and wants one home. That is
+ * true and it is still one line — but the observatory is *floor-anchored*
+ * (`inset: auto 0 …`), so above `lg` it stands at the bottom of the page and
+ * nothing reaches the top. On a reading that is the composition; here the page
+ * is a short centred panel, so the masthead sat in a band of flat
+ * `--color-night` while the World Tarot, Library and Viewing Room mastheads all
+ * have artwork behind theirs.
+ *
+ * The rotunda is `inset: 0 0 auto 0` — top-anchored — so it reaches the header
+ * the way those three do, and it is the Library page's own line copied without
+ * changes, `max-lg:-top-20` included. Nothing new was added for this screen:
+ * no variant, no flag, no CSS. `ReadingBackdrop` is left alone because the
+ * three reading screens that share it are not wrong.
  *
  * The measure is still the password pages' — `FormPanel`'s `Panel` is the same
  * `max-w-[36.25rem] px-6 py-24` column — but nothing else is any more: they are
  * left aligned and stand on flat colour, and this screen is centred under the
- * observatory.
+ * rotunda.
  *
  * **`aria-live` is load-bearing and predates all of this.** The card road
  * paints `received` and may correct itself under somebody already reading it;
@@ -667,14 +740,87 @@ function Back() {
  */
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <ReadingBackdrop>
+    <div className="relative isolate">
+      <PageAtmosphere variant="library" className="max-lg:-top-20" />
+
+      {/*
+        **A made panel, not a column of text on the sky.**
+
+        This was `max-w-[36.25rem] px-6 py-24 text-center` and nothing else,
+        which is why this screen read as unfinished in the same way the three
+        account pages did: the type was always the site's, but there was no
+        object holding it — a heading, a rule and two sentences sat directly on
+        the rotunda with the masthead above them and a lot of air either side.
+
+        **The treatment is `FormPanel`'s, deliberately and down to the
+        numbers** — the gold hairline at 60%, the deep blue at 88% so the
+        artwork shows through it, the 18px radius and the soft drop. That is
+        already the house style for a panel somebody has to deal with: the
+        Viewing Room paywall wears it, the sign in page took it on, and a
+        payment confirmation is the same kind of surface. Copying the metrics
+        rather than importing the component is the narrow call here — that
+        `Panel` is an account-form column with its own padding scale and no
+        `aria-live`, and the two would have to be parameterised past the point
+        of being one thing to share this.
+
+        The column keeps its own width and `text-center`, which are this
+        screen's and not the forms': those are left aligned because a label
+        above an input has to be, and this is a short centred statement under a
+        hero rule.
+
+        **`aria-live` is load-bearing and predates all of this.** The card road
+        paints `received` and may correct itself under somebody already reading
+        it; this attribute is the only reason a screen reader hears the
+        correction. It stays on the section that holds the words, not on the
+        wrapper.
+      */}
       <section
-        className="mx-auto w-full max-w-[36.25rem] px-6 py-24 text-center"
+        className="mx-auto w-full max-w-[36.25rem] px-6 py-[clamp(3rem,8vw,6rem)]"
         aria-live="polite"
       >
-        {children}
+        <div className="rounded-[18px] border border-[color:var(--gold-line,#d4b06a)]/60 bg-[#0a1a2d]/[0.88] px-[clamp(1.5rem,4vw,2.75rem)] py-[clamp(2rem,5vw,3rem)] text-center shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+          {children}
+        </div>
       </section>
-    </ReadingBackdrop>
+    </div>
+  );
+}
+
+/**
+ * The ordered pair of next steps, on the two `received` screens that have
+ * them.
+ *
+ * **Numbered, and an `<ol>` rather than two paragraphs**, because the order is
+ * the content: a pass buyer must claim the account before the room will open
+ * for them, and a list that could be read in either order would lose the one
+ * thing these sentences are arranged to say.
+ *
+ * **Left aligned inside a centred panel.** Everything else on this screen is
+ * centred and these are not, which is deliberate: centred prose is readable
+ * for one line and tiring for two, and a numbered list with a ragged left edge
+ * makes the numbers stop lining up — the column of markers is what carries the
+ * sequence. So the block is centred and its contents are not.
+ *
+ * The markers are drawn rather than left to the browser: a default `<ol>`
+ * marker takes the list's colour and sits in a gutter this panel has no room
+ * for at phone width, and the champagne is the same lift the amount line uses.
+ */
+function NextSteps({ lead, steps }: { lead: string; steps: readonly string[] }) {
+  return (
+    <div className="mt-8 text-left">
+      <p className="text-note uppercase tracking-[0.12em] text-ash">{lead}</p>
+
+      <ol className="mt-3 flex list-none flex-col gap-3 p-0">
+        {steps.map((step, index) => (
+          <li key={step} className="flex gap-3">
+            <span aria-hidden className={`${BODY} shrink-0 text-champagne`}>
+              {index + 1}.
+            </span>
+            <span className={BODY}>{step}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -688,12 +834,18 @@ function Panel({ children }: { children: React.ReactNode }) {
  *
  * One component for the pair rather than a heading class repeated at four call
  * sites: the divider is part of the treatment and not decoration beside it, and
- * a state that grew a heading without one would be the drift this replaces.
+ * a state that grew a heading without one would be the drift this replaces. *
+ * **In Gill, not the display face, from 27 October 2026.** Every other `<h1>`
+ * on the site is `font-display` — Magically over Cinzel — and this one is the
+ * deliberate exception: the client asked for the whole confirmation screen in
+ * the sans. The size and the hero rule are unchanged, so it still reads as the
+ * page's title; only the family moved.
  */
+
 function Heading({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <h1 className="font-display text-h1 leading-none tracking-[-0.01em] text-cream">{children}</h1>
+      <h1 className="font-sans text-h1 leading-none tracking-[-0.01em] text-cream">{children}</h1>
 
       <Divider variant="hero" className="mt-[clamp(0.125rem,0.16vw,0.1875rem)]" />
     </>
@@ -701,7 +853,13 @@ function Heading({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * A sentence this screen says, in the redeem page's serif and gold.
+ * A sentence this screen says, in Gill and gold.
+ *
+ * **Gill rather than the redeem page's Cinzel, from 27 October 2026.** The
+ * whole screen is set in the sans now — the heading included — on the client's
+ * instruction. `.btn` carries its own `font-family: var(--font-serif)` in
+ * `globals.css`, so the two buttons below are untouched by this and stay in
+ * the house serif; that is why no caller here has to opt out of anything.
  *
  * The typography only, with no margin in it. The four callers do not want the
  * same one — the amount line sits further from the divider than a paragraph
@@ -711,4 +869,4 @@ function Heading({ children }: { children: React.ReactNode }) {
  * and not of the class list. So each caller writes its own, and this constant
  * carries the half they share.
  */
-const BODY = "font-serif text-body leading-[1.19] tracking-[-0.01em] text-gold";
+const BODY = "font-sans text-body leading-[1.19] tracking-[-0.01em] text-gold";

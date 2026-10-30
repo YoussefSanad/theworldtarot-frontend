@@ -1,14 +1,19 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 
 import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Button } from "@/components/ui/Button";
-import { afterSignIn, loginCopy } from "@/content/login";
-import { safeReturnPath } from "@/lib/return-path";
-import { readSignInFailure, requestPasswordLink, signIn, type SignInFailure } from "@/lib/session";
+import { loginCopy } from "@/content/login";
+import { cn } from "@/lib/cn";
+import {
+  type Customer,
+  readSignInFailure,
+  requestPasswordLink,
+  signIn,
+  type SignInFailure,
+} from "@/lib/session";
 
 /**
  * Signing in, and asking for a link when that is not possible yet.
@@ -25,11 +30,36 @@ import { readSignInFailure, requestPasswordLink, signIn, type SignInFailure } fr
  * separated them would answer a question about a customer that the API refuses
  * to.
  */
-export function SignInForm() {
-  const router = useRouter();
-  const returnTo = safeReturnPath(useSearchParams().get("next"));
+/** Which box the form is being drawn in. Spacing and type scale, nothing else. */
+export type SignInFormVariant = "page" | "compact";
+
+export function SignInForm({
+  onSignedIn,
+  variant = "page",
+}: {
+  /**
+   * Called once the session exists, with the customer it belongs to.
+   *
+   * **The form does not navigate, and must not learn to.** Its two callers want
+   * opposite things from a success: the sign in page sends somebody onward by
+   * the landing rule, and the masthead's dropdown deliberately stays put,
+   * because somebody signing in from the header is already standing where they
+   * chose to be. A form that pushed a route would be wrong for one of them
+   * whichever route it chose.
+   *
+   * It also keeps `useSearchParams` out of here, which matters more than it
+   * looks: the dropdown is rendered by `SiteHeader`, which is the root layout's
+   * chrome on *every* route. A component reading the query string there would
+   * either hold every route dynamic under `output: "export"` or need a Suspense
+   * boundary in the masthead. Reading `next` belongs to the page, which is the
+   * only caller that has one.
+   */
+  onSignedIn?: (customer: Customer) => void;
+  variant?: SignInFormVariant;
+}) {
   const { setCustomer } = useSignedIn();
   const fieldId = useId();
+  const compact = variant === "compact";
 
   const [asking, setAsking] = useState(false);
   /* Shared across the swap. Somebody who has just been refused should not have
@@ -56,16 +86,15 @@ export function SignInForm() {
 
     try {
       /*
-        The header is told before the navigation, not after: `SiteHeader` is
-        rendered by the layout and survives a client-side route change, so
-        nothing would make it read `/me` again on the other side.
+        The store is told first, and that is what makes a success arrive
+        everywhere at once: `SiteHeader` is rendered by the layout and survives
+        a client-side route change, so nothing would make it read `/me` again
+        on the other side — and the Viewing Room's paywall, which reads the same
+        store, re-decides on the spot without a reload.
       */
-      setCustomer(await signIn({ email, password }));
-      /*
-        The path is pushed exactly as
-        `safeReturnPath` returned it — decoding it here would undo its checks.
-      */
-      router.push(returnTo ?? afterSignIn);
+      const customer = await signIn({ email, password });
+      setCustomer(customer);
+      onSignedIn?.(customer);
     } catch (cause: unknown) {
       setFailure(readSignInFailure(cause));
       setBusy(false);
@@ -97,21 +126,25 @@ export function SignInForm() {
 
   if (asking && asked) {
     return (
-      <Panel>
-        <h1 className="font-display text-h2 text-champagne">{loginCopy.forgot.heading}</h1>
-        <p className="mt-4 text-note text-ash">{loginCopy.forgot.sent}</p>
-        <Prompt onClick={() => swapTo(false)}>{loginCopy.forgot.backPrompt}</Prompt>
+      <Panel bare={compact}>
+        <Heading compact={compact}>{loginCopy.forgot.heading}</Heading>
+        <p className={cn("text-note text-ash", compact ? "mt-2" : "mt-4")}>
+          {loginCopy.forgot.sent}
+        </p>
+        <Prompt compact={compact} onClick={() => swapTo(false)}>
+          {loginCopy.forgot.backPrompt}
+        </Prompt>
       </Panel>
     );
   }
 
   return (
-    <Panel>
-      <h1 className="font-display text-h2 text-champagne">{copy.heading}</h1>
-      <p className="mt-4 text-note text-ash">{copy.intro}</p>
+    <Panel bare={compact}>
+      <Heading compact={compact}>{copy.heading}</Heading>
+      <p className={cn("text-note text-ash", compact ? "mt-2" : "mt-4")}>{copy.intro}</p>
 
       <form
-        className="mt-8 flex flex-col gap-6"
+        className={cn("flex flex-col", compact ? "mt-5 gap-4" : "mt-8 gap-6")}
         onSubmit={asking ? onAskForLink : onSignIn}
         noValidate
       >
@@ -140,27 +173,69 @@ export function SignInForm() {
           />
         )}
 
-        <Button type="submit" size="md" disabled={busy} className="self-start lowercase">
-          {busy ? copy.busyLabel : copy.submitLabel}
+        <Button
+          type="submit"
+          /* `fluid` is the seam's own way of saying "the caller supplies the
+             metrics"; there is no `sm`, and a dropdown wants a full-width
+             button rather than `md`'s `w-fit`. */
+          size={compact ? "fluid" : "md"}
+          className={cn(
+            "lowercase",
+            compact
+              ? "min-h-[44px] w-full justify-center px-[1em] py-[0.4em] text-nav-sm"
+              : "self-start",
+          )}
+          busy={busy}
+          busyLabel={copy.busyLabel}
+        >
+          {copy.submitLabel}
         </Button>
       </form>
 
-      <Refusal failure={failure} wording={(refusal) => failureWording(refusal, asking)} />
+      <Refusal compact={compact} failure={failure} wording={(refusal) => failureWording(refusal, asking)} />
 
-      <Prompt onClick={() => swapTo(!asking)}>
+      <Prompt compact={compact} onClick={() => swapTo(!asking)}>
         {asking ? loginCopy.forgot.backPrompt : loginCopy.forgotPrompt}
       </Prompt>
     </Panel>
   );
 }
 
+/**
+ * The panel's own heading.
+ *
+ * `h1` on the page, where it is the page's subject. `h2` in the dropdown, which
+ * hangs off a page that already has an `h1` of its own — a second `h1` in a
+ * popover would tell a screen reader the page had changed subject.
+ */
+function Heading({ compact, children }: { compact: boolean; children: React.ReactNode }) {
+  if (compact) {
+    /* `text-h3` is the smallest heading step this site defines; there is no
+       `h4` token to reach for. */
+    return <h2 className="font-display text-h3 text-champagne">{children}</h2>;
+  }
+
+  return <h1 className="font-display text-h2 text-champagne">{children}</h1>;
+}
+
 /** The quiet control that swaps the panel for the other half of the errand. */
-function Prompt({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function Prompt({
+  compact,
+  onClick,
+  children,
+}: {
+  compact: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="mt-6 block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
+      className={cn(
+        "block cursor-pointer text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold",
+        compact ? "mt-4" : "mt-6",
+      )}
     >
       {children}
     </button>

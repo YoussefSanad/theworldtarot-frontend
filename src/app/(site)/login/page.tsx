@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { SignInForm } from "@/components/account/SignInForm";
+import { SignInPanel } from "@/components/account/SignInPanel";
+import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { loginCopy } from "@/content/login";
 import { siteName } from "@/content/site";
 
@@ -30,14 +31,29 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   /*
-    `?next=` is read with `useSearchParams`, which is client-side only under a
-    static export, so the form sits inside a Suspense boundary rather than
-    making the route dynamic — the same shape the redeem and password pages use.
-    The fallback is blank: the form renders as soon as the params resolve.
+    **A Suspense boundary, like the password pages, and for their reason.**
+
+    This page carried a comment saying it needed none because nothing here read
+    the query string. That stopped being true when `?next=` arrived: `SignInPanel`
+    reads it with `useSearchParams`, which is client-only under a static export,
+    so the boundary is what keeps this route static instead of making the whole
+    thing dynamic.
+
+    The fallback is blank on purpose, as it is there: for the fraction of a
+    second before the query string is read there is nothing true to say, and a
+    heading that flashes into a different heading reads as a fault.
+  */
+  /*
+    A `div`, not a `main`: `(site)/layout.tsx` already renders the page's one
+    `<main>`, and a second nested inside it is invalid HTML — it also made
+    `getByRole("main")` ambiguous and broke `check:set-password`.
   */
   return (
-    <Suspense fallback={null}>
-      <SignInForm />
-    </Suspense>
+    <div data-page="account" className="relative">
+      <PageAtmosphere variant="card-reference" />
+      <Suspense fallback={null}>
+        <SignInPanel />
+      </Suspense>
+    </div>
   );
 }

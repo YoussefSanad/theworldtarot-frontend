@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from "react";
 
 import { cn } from "@/lib/cn";
+import { lockScroll } from "@/lib/scroll-lock";
 
 /** Which of the panel's two screens is showing. */
 export type PaywallScreen = "unlock" | "payment";
@@ -51,15 +52,16 @@ export function PaywallModal({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const headingId = useId();
 
-  /* The body does not scroll behind a dialog there is no way to dismiss. */
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+  /*
+    The body does not scroll behind a dialog there is no way to dismiss.
 
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
+    Through `lockScroll` rather than by saving `overflow` here, because the
+    masthead's drawer locks the page too and can be open over this panel. Two
+    components each restoring their own snapshot of one property is how the page
+    is left unscrollable with nothing on top of it; see that seam for the order
+    that does it.
+  */
+  useEffect(() => lockScroll(), []);
 
   /*
     Focus starts inside, so the first Tab is already within the trap — and is

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-
+import { openAccountMenu } from "@/components/account/account-menu-store";
 import { Button } from "@/components/ui/Button";
 import { AccountLine } from "@/components/viewing-room/AccountLine";
 import { viewingRoom } from "@/content/viewing-room";
@@ -129,18 +128,32 @@ export function UnlockPanel({
 
       {/*
         Signed out: the way back in for somebody who already owns the pass.
-        `next` brings them back here rather than to the homepage — the return
-        path itself is #132's, and this is the link it will honour.
+
+        **It opens the masthead's account menu rather than going to `/login/`.**
+        This line used to be a link carrying `?next=/viewing-room/`, which meant
+        somebody who had already bought the pass had to leave the room they had
+        paid for in order to prove they had paid for it, and then be sent back.
+        Now they never move: the panel above them re-decides the moment the
+        session exists, because it reads the same store the sign in writes to.
+
+        The header is `z-50` and this panel `z-30`, so the menu opens above it
+        with no stacking work. On a phone the same press opens the drawer, which
+        is why the scroll lock had to become one shared seam first — see
+        `lib/scroll-lock.ts`.
+
+        `openAccountMenu` picks the visible one of the masthead's two account
+        controls; this panel does not need to know which.
       */}
       {state === "signed-out" && (
         <p className="mt-4 text-center font-sans text-[clamp(13px,1.05vw,17px)] tracking-[0.75px] text-[#d4b06a]">
           {panel.signIn.lead}
-          <Link
-            href="/login/?next=/viewing-room/"
-            className="underline decoration-from-font underline-offset-2"
+          <button
+            type="button"
+            onClick={openAccountMenu}
+            className="cursor-pointer underline decoration-from-font underline-offset-2"
           >
             {panel.signIn.link}
-          </Link>
+          </button>
         </p>
       )}
 

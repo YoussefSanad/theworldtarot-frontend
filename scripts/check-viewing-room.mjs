@@ -33,7 +33,18 @@ const HEADING = "Unlock the Viewing Room";
 const ACTION = "ENTER THE VIEWING ROOM";
 const PRICE = "$29 — One-time payment";
 const SIGN_IN = "Sign in Here.";
-const SWITCH = "Sign out / switch account";
+/*
+  The paywall's account row is the signed-in address and, below it, one button
+  that signs out. It used to be a "switch account" link woven into the
+  sentence, which swapped the whole line for a question when pressed — so the
+  one thing that panel exists to show, *which* account is signed in,
+  disappeared exactly when somebody was deciding whether to leave it.
+
+  Matched on `data-sign-out` because the button's words are one of three
+  stacked faces and are `opacity-0` in two of them.
+*/
+const SIGN_OUT = "[data-sign-out]";
+const SIGN_OUT_ARMED = '[data-sign-out="armed"]';
 const HINT = "Click any card to experience the Living Tarot";
 const COMING_SOON = "coming soon";
 
@@ -235,10 +246,15 @@ console.log("\nSigned out (401):");
   expect("signed-out", "heading", await page.locator(`${modalSelector} h2`).innerText(), HEADING);
   expect("signed-out", "the buy button", await page.getByRole("button", { name: ACTION }).isVisible(), true);
   expect("signed-out", "the price", await page.getByText(PRICE, { exact: true }).isVisible(), true);
-  expect("signed-out", "the sign-in link", await page.getByRole("link", { name: SIGN_IN }).isVisible(), true);
+  /*
+    **The sign-in line is a button that opens the masthead's account menu**, not
+    a link to `/login/?next=/viewing-room/` as it was. The visitor never leaves
+    the room: the panel above re-decides as soon as a session exists, because it
+    reads the same store the sign in writes to.
+  */
+  expect("signed-out", "the sign-in control", await page.getByRole("button", { name: SIGN_IN }).isVisible(), true);
+  expect("signed-out", "it no longer navigates away", await page.getByRole("link", { name: SIGN_IN }).count(), 0);
 
-  const signIn = await page.getByRole("link", { name: SIGN_IN }).getAttribute("href");
-  expect("signed-out", "sign-in returns to the room", signIn, "/login/?next=/viewing-room/");
 
   // The room is behind an inert container, so nothing in it is reachable.
   const roomInert = await page.evaluate(
@@ -293,8 +309,14 @@ console.log("\nSigned out (401):");
 
     window.scrollTo(0, document.body.scrollHeight);
     const foot = document.querySelector("footer a[href]");
+    const footerOk = !!foot && onTop(foot);
 
-    return { nav: navOk, footer: !!foot && onTop(foot) };
+    /* Hand the page back at the top. Everything after this block presses
+       things, and a page left at the bottom gives those presses to the
+       footer's newsletter form instead. */
+    window.scrollTo(0, 0);
+
+    return { nav: navOk, footer: footerOk };
   });
   /*
     The masthead is the way out and stays above the veil. The footer is
@@ -303,9 +325,90 @@ console.log("\nSigned out (401):");
     the page happens to be wearing.
   */
   expect("signed-out", "the masthead is still clickable", exits.nav, true);
-  expect("signed-out", "the footer is covered", exits.footer, false);
+  /*
+    **The footer is now out of reach rather than merely covered**, and that is
+    the scroll lock doing its job for the first time.
 
-  expect("signed-out", "no account line", await page.getByText(SWITCH).count(), 0);
+    This asserted `footer: false` — the footer under the veil — on the strength
+    of a `window.scrollTo` that actually moved the page. The paywall used to
+    lock `body.overflow` alone, which on this site locks nothing: `html` carries
+    `overflow-x: hidden` and is therefore the viewport's scrolling box, so the
+    page went on scrolling behind an undismissable dialog. `SiteHeader`'s drawer
+    had already learned that and locked the root; `lib/scroll-lock.ts` is now
+    the one seam both use, so the paywall locks the root too.
+
+    With the page genuinely held still the scroll never happens, the footer
+    stays below the fold, and `elementsFromPoint` at its coordinates is asking
+    about a point outside the viewport. So the assertion becomes the thing
+    actually worth holding: the page behind the panel does not scroll.
+  */
+  /*
+    **Driven with the wheel, not with `scrollTo`.**
+
+    A review caught the first version of this asserting nothing at all. It
+    asked whether `window.scrollTo(0, scrollHeight)` moved the page — but the
+    block above had already scrolled to the bottom, so the answer was "no"
+    because there was nowhere left to go, and it passed just as happily with
+    the lock removed entirely. `overflow: hidden` is also the wrong thing to
+    probe that way: per spec it stops a *user* scrolling a box, while
+    `scrollTo` still moves it programmatically.
+
+    So this does what a visitor does. The wheel is the input the lock exists to
+    refuse, and a page that moves under it is a page scrolling behind a dialog
+    with no way out.
+  */
+  const locked = await page.evaluate(() => {
+    const root = document.documentElement;
+
+    return {
+      rootOverflow: getComputedStyle(root).overflowY,
+      bodyOverflow: getComputedStyle(document.body).overflowY,
+    };
+  });
+  /*
+    **The root, not just the body.** This site puts `overflow-x: hidden` on
+    `<html>`, which makes the root the viewport's scrolling box — so a lock on
+    `body` alone locks nothing and the page scrolls behind a dialog that has no
+    way out. The paywall did exactly that until `lib/scroll-lock.ts` became the
+    one seam it and the drawer share.
+
+    Asserted on the computed style rather than by driving the wheel, which is
+    the mistake two earlier versions of this check made: the panel's own
+    `fixed inset-0` container swallows a wheel event whether or not anything is
+    locked, so the page not moving proves nothing. Disabling the lock turns
+    this `hidden` back into `auto`, which is what makes the assertion mean
+    something.
+  */
+  expect("signed-out", "the root is locked behind the panel", locked.rootOverflow, "hidden");
+  expect("signed-out", "and the body with it", locked.bodyOverflow, "hidden");
+
+  /*
+    **The account menu, last in this block on purpose.** Opening it scrolls
+    nothing and moves nothing, but it does take and release the shared scroll
+    lock, and the stacking assertions above read `elementsFromPoint` against a
+    page at a known scroll position. Asserting it here leaves those untouched.
+  */
+  /*
+    A real click, which is the point: `dispatchEvent` skips hit-testing,
+    `pointer-events` and overlay interception, and this panel is a stack of
+    fixed layers under a `z-50` header — so something drifting over this line
+    is exactly the regression worth catching, and only a trusted press catches
+    it. It needed the scroll reset above to work; see that block.
+  */
+  await page.getByRole("button", { name: SIGN_IN }).click();
+  expect("signed-out", "it opens the account menu over the panel",
+    await page.locator('header [data-account-menu="row"][aria-expanded="true"]').count(), 1);
+  expect("signed-out", "which asks for an address and a password",
+    await page.locator('header input[type="email"], header input[type="password"]').count(), 2);
+  expect("signed-out", "and the visitor is still in the room", page.url().includes("/viewing-room/"), true);
+
+  /* Escape closes the menu and leaves the paywall where it was: the menu is
+     dismissable because the paywall behind it is something to act on. */
+  await page.keyboard.press("Escape");
+  expect("signed-out", "closing the menu leaves the paywall up",
+    await page.locator(modalSelector).isVisible(), true);
+
+  expect("signed-out", "no account line", await page.locator(SIGN_OUT).count(), 0);
   expect("signed-out", "nothing was requested", videoRequests.length, 0);
 
   // No <video> may carry a source in this state.
@@ -326,8 +429,8 @@ console.log("\nSigned in without the pass:");
   // Scoped to the dialog: the masthead names the same address once signed in.
   const dialog = page.locator(modalSelector);
   expect("no-pass", "the account is named", await dialog.getByText(NO_PASS.email).isVisible(), true);
-  expect("no-pass", "a way to switch", await page.getByRole("button", { name: SWITCH }).isVisible(), true);
-  expect("no-pass", "no sign-in link", await page.getByRole("link", { name: SIGN_IN }).count(), 0);
+  expect("no-pass", "a way out of the account", await page.locator(SIGN_OUT).isVisible(), true);
+  expect("no-pass", "no sign-in control", await page.getByRole("button", { name: SIGN_IN }).count(), 0);
 
   /*
     The real session must name the real address, never the stand-in the dev
@@ -523,7 +626,17 @@ for (const logoutWorks of [true, false]) {
   await page.goto(ROOM, { waitUntil: "networkidle" });
 
   const label = logoutWorks ? "logout succeeds" : "logout fails";
-  await page.getByRole("button", { name: SWITCH }).click();
+  /*
+    **Two presses, because signing out asks first now.** The control sits one
+    slip away from the account's own name, in a panel opened to read it, so
+    `SignOutConfirm` stands between the two — and it replaces the line rather
+    than opening over it, since there is nothing above this panel to put a
+    dialog in.
+  */
+  /* Two presses: the first arms the button, the second signs out. */
+  await page.locator(SIGN_OUT).click();
+  await page.waitForSelector(SIGN_OUT_ARMED);
+  await page.locator(SIGN_OUT).click();
   await page.waitForTimeout(400);
 
   const dialog = page.locator(modalSelector);
@@ -535,7 +648,7 @@ for (const logoutWorks of [true, false]) {
     old account named is the state the contract warns about — somebody buying
     a second pass under an address they were trying to leave.
   */
-  expect(label, "the sign-in link is offered", await dialog.getByRole("link", { name: SIGN_IN }).count(), 1);
+  expect(label, "the sign-in control is offered", await dialog.getByRole("button", { name: SIGN_IN }).count(), 1);
   expect(label, "the old account is no longer named", await dialog.getByText(NO_PASS.email).count(), 0);
 
   const focusInside = await page.evaluate(
@@ -571,7 +684,29 @@ console.log("\nThe panel stays a panel, not a page:");
 
     const box = await page.locator(modalSelector).boundingBox();
     const share = box.height / height;
-    expect(`${width}x${height}`, "the panel is about half the screen", share < 0.62, true);
+    /*
+      **0.66, raised from 0.62 on 27 October 2026, and the reason is recorded
+      because the number is a judgement rather than a measurement.**
+
+      The cap exists because transcribing her type sizes literally made this
+      panel 66% of a 1080p viewport and 89% of a 1280x800 laptop — it read as a
+      page rather than as something laid over a room, which is the whole point
+      of a paywall you can see the room behind. 0.62 was the line that held
+      once the type was scaled to the viewport instead.
+
+      What moved it: the account row's "sign out" went from a one-line text
+      link to a real button, so that a visitor signing out of the wrong account
+      meets the same control here as in the masthead and the drawer. A bordered
+      44px target costs about 30px more than the link did, which put 1280x800
+      at 0.628 — over a cap that had only ~3% of headroom.
+
+      The alternative was a different, smaller control in this one place, and
+      one sign-out shape across the site was judged worth the four percent. The
+      panel still reads as a panel: 0.66 is where it sat *before* the type was
+      rescaled only on the smallest laptop, and every larger screen is well
+      under it.
+    */
+    expect(`${width}x${height}`, "the panel is about half the screen", share < 0.66, true);
 
     // And it fits, rather than hiding its own button behind a scrollbar.
     const fits = await page.evaluate(() => {
@@ -906,6 +1041,77 @@ console.log("\nRunes:");
     expect(state, "there are runes to read", styles.length >= 24, true);
     expect(state, "no rune animates", [...new Set(styles.map((r) => r.name))], ["none"]);
     expect(state, "every rune rests at 0.35", [...new Set(styles.map((r) => r.opacity))], ["0.35"]);
+
+    await context.close();
+  }
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\nThe card clears the golden arch (mobile framing):");
+{
+  /*
+    **The arch is painted into the background, and nothing in the flow knows
+    where it is.** `.page-atmosphere-viewing-room::after` draws her 1920x2132
+    room with `background-size: cover` against a box that is the whole
+    document plus `--room-drop` — so on any real page the height is what
+    binds, the picture is scaled by it, and the width is cropped at the sides.
+
+    The arch's lit rim is a bright curve across the top of her artwork. It is
+    a *curve*, so where it matters is its lowest point — and that is at the
+    artwork's horizontal centre, row 272 of 2132, measured off the source PNG
+    (it rises to row 226 by x=480 and runs off the top by the edges). The
+    player is centred too, so the rim's lowest point is exactly the part the
+    card has to clear, which makes 275 the worst case rather than an average.
+
+    Scaled by that same cover factor the rim lands a couple of hundred pixels
+    down the document, while the card's top edge is set by the flow above it —
+    which on a phone was less than half what it is on a desktop. That was the
+    fault: the rim barely moves and the card did, so from 360 through 768 the
+    card's top border crossed the brightest part of the rim and the arch read
+    as a bar struck through the player rather than as the frame around it.
+    Measured 6-7px of overlap there, against 20-42px of clearance at 1280 and
+    1920, which is the composition her frame draws.
+
+    The check computes the rim's position the way the browser does, from the
+    rendered background box, rather than hard-coding a page coordinate that
+    the next spacing change would quietly invalidate.
+  */
+  const ARCH_ROWS = 275;
+  const ART = { width: 1920, height: 2132 };
+
+  for (const [width, height] of [[360, 780], [390, 844], [412, 915], [430, 932]]) {
+    const { context, page } = await openRoom({ me: MEMBER, viewport: { width, height } });
+
+    const geometry = await page.evaluate(
+      ({ art, archRows }) => {
+        const layer = document.querySelector(".page-atmosphere-viewing-room");
+        const box = layer.getBoundingClientRect();
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        const raw = getComputedStyle(layer).getPropertyValue("--room-drop").trim();
+        const drop = raw.endsWith("rem") ? parseFloat(raw) * rem : parseFloat(raw) || 0;
+
+        /* The ::after box: `inset: 0 0 calc(-1 * var(--room-drop)) 0`. */
+        const boxHeight = box.height + drop;
+        const scale = Math.max(box.width / art.width, boxHeight / art.height);
+
+        const player = document.querySelector("video").parentElement;
+        const card = player.getBoundingClientRect();
+
+        return {
+          archBottom:
+            box.top + window.scrollY + (boxHeight - art.height * scale) + archRows * scale,
+          cardTop: card.top + window.scrollY,
+        };
+      },
+      { art: ART, archRows: ARCH_ROWS },
+    );
+
+    expect(
+      `${width}x${height}`,
+      `the card starts below the arch (card ${Math.round(geometry.cardTop)}, arch ends ${Math.round(geometry.archBottom)})`,
+      geometry.cardTop >= geometry.archBottom,
+      true,
+    );
 
     await context.close();
   }

@@ -5,13 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { closeAccountMenu, registerDrawerOpener } from "@/components/account/account-menu-store";
 import { AccountControl } from "@/components/account/AccountControl";
+import { AccountDrawerSection } from "@/components/account/AccountDrawerSection";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import { lockScroll } from "@/lib/scroll-lock";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
@@ -43,14 +46,32 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  * and below it the menu button's 2.75em does. The masthead is now as tall as
  * whatever is opposite the logo, so at the old `py-1.5` a phone got about 50px
  * of masthead where the old mark gave it 83px — the row went slack at the top,
- * which is what `pt-5 pb-2` buys back. Top-weighted rather than even: the logo
- * wants air above it more than the hero below wants pushing down. That puts a
- * phone at roughly 66px.
+ * which is what the vertical padding buys back.
  *
- * Anything tuned to clear this header wants re-measuring when these change.
- * Two things are: the `max-lg:-top-20` on the atmosphere in `readings/page.tsx`
- * and the one in `readings/month-ahead/page.tsx`, both lifting a mobile sky's
- * top edge clear of this masthead. Both carry the same note.
+ * **It is even now (`py-5`), where it used to be top-weighted (`pt-5 pb-2`).**
+ * The old split was deliberate — the logo wants air above it more than the
+ * hero below wants pushing down — but it reads as the masthead sitting low in
+ * its own box, the row crowding whatever is beneath it rather than being
+ * centred in a band of its own. Matching the bottom to the top costs 12px of
+ * height everywhere and gives the header the same air on both sides, which is
+ * what makes it read as one consistent band across every page. A phone goes
+ * from roughly 66px to 78px.
+ *
+ * Anything tuned to clear this header wants re-measuring when these change,
+ * and this change is one of them. Four places carry the `-top-20` that lifts a
+ * sky's top edge clear of this masthead: the atmospheres in `readings/page.tsx`,
+ * `library/page.tsx` and `world-tarot/page.tsx`, plus `ReadingBackdrop`, which
+ * is the single copy for every reading page, `/redeem/` and
+ * `/checkout/complete/` — those four screens each held their own before it was
+ * made one component, so changing the header means editing four files and not
+ * seven.
+ *
+ * **5rem (80px) still clears it, but only just, and that is worth knowing.**
+ * Below `lg` the menu button sets the height: `text-note` floors at 14px, so
+ * 2.75em is 38.5px, and `py-5` adds 40px for 78.5px total. The old `pt-5 pb-2`
+ * left 13.5px of slack under those skies; there is now 1.5px. Nothing is
+ * clipped and none of the four needed changing, but any further growth here
+ * crosses them — add to this padding and those offsets have to grow with it.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,8 +88,24 @@ export function SiteHeader() {
   const panelId = useId();
   const labelId = useId();
 
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    /* The drawer going away takes its account panel with it, so the store must
+       not go on claiming one is open — the next `openAccountMenu` would publish
+       the same surface and change nothing. */
+    closeAccountMenu();
+  }, []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
+
+  /*
+    **How something outside the masthead opens the drawer.**
+
+    The Viewing Room's paywall offers a sign in, and on a phone the only account
+    control is the one inside this drawer — which is not mounted until the drawer
+    is open. So the store is told how to open it, rather than being left to
+    publish a surface that nothing is listening on. See `openAccountMenu`.
+  */
+  useEffect(() => registerDrawerOpener(() => setMenuOpen(true)), []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -78,32 +115,25 @@ export function SiteHeader() {
     };
 
     /*
-      On `<html>`, not just `<body>`. The root element carries `overflow-x:
-      hidden` (see the root layout), which makes it the scrolling box for the
-      viewport rather than passing that role down — so the old `body` lock
-      clipped a box that was already auto-height and the page went on
-      scrolling underneath the open drawer. Padding the root by the scrollbar's
-      width keeps the layout from jumping sideways as that scrollbar goes; the
-      drawer is below `lg` only, but a narrow desktop window still gets here.
-    */
-    const root = document.documentElement;
-    const previous = {
-      rootOverflow: root.style.overflow,
-      rootPaddingRight: root.style.paddingRight,
-      bodyOverflow: document.body.style.overflow,
-    };
-    const scrollbarWidth = window.innerWidth - root.clientWidth;
+      On `<html>`, not just `<body>`, and padded by the scrollbar's width —
+      both of which now live in `lockScroll`, along with the reasoning: the
+      root carries `overflow-x: hidden` (see the root layout), which makes it
+      the scrolling box for the viewport rather than passing that role down, so
+      a `body`-only lock clipped a box that was already auto-height and the page
+      went on scrolling underneath the open drawer.
 
-    root.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) root.style.paddingRight = `${scrollbarWidth}px`;
+      **Through the seam rather than inline, because this drawer is not the only
+      thing that locks the page.** The Viewing Room's paywall locks it too and
+      can be underneath an open drawer; each component restoring its own
+      snapshot of one property is how the page ends up unscrollable with nothing
+      on top of it to explain why.
+    */
+    const releaseScroll = lockScroll();
 
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      root.style.overflow = previous.rootOverflow;
-      root.style.paddingRight = previous.rootPaddingRight;
-      document.body.style.overflow = previous.bodyOverflow;
+      releaseScroll();
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen, closeMenu]);
@@ -154,7 +184,7 @@ export function SiteHeader() {
       on top of an open drawer.
     */
     <header className="relative z-50">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-5">
         <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
           <Image
             src={brand.logo.src}
@@ -333,7 +363,6 @@ export function SiteHeader() {
                   {headerActions.cta.label}
                 </ButtonLink>
 
-                <AccountControl onNavigate={closeMenu} />
               </div>
 
               {/*
@@ -396,15 +425,43 @@ export function SiteHeader() {
               </nav>
 
               {/*
-                Last, and pushed to the foot of the panel: settings rather than
+                Last, at the foot of the panel: settings rather than
                 destinations, so they sit below the places to go rather than
-                among them. Flat here instead of the desktop icon's panel — a
-                menu opening inside a drawer is a second layer over a first, and
-                with seven options in total there is nothing to save by hiding
-                them.
+                among them. The account section above shares that reasoning and
+                now shares the `mt-auto` that carries out — see its note.
+
+                Flat here instead of the desktop icon's panel — a menu opening
+                inside a drawer is a second layer over a first, and with seven
+                options in total there is nothing to save by hiding them.
               */}
-              <div className="mt-auto flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
-                <LocaleControls selection={localeSelection} />
+              {/*
+                **The account section, not an account icon**, and it sits with
+                the settings rather than above the destinations.
+
+                The desktop row hides its sign in form behind the account mark
+                because a masthead row has nowhere to put a form. This drawer is
+                a full-height panel the visitor opened deliberately, so the same
+                icon here is a second thing to find and press — sitting in a row
+                of other icons, where it reads as decoration rather than as the
+                way in. The form is simply part of the drawer instead.
+
+                It goes directly above the language and currency block for the
+                reason that block gives for being last: these are settings, not
+                places to go, so they belong below the list of destinations
+                rather than among them. `mt-auto` moves up here so the pair are
+                pushed to the foot together as one group.
+
+                A resize across `desktop-nav` closes the drawer and would drop a
+                half-typed form with it. Left as it is: it takes a deliberate
+                resize mid-sign-in, and the alternative is carrying form state
+                between two renderings of the masthead.
+              */}
+              <div className="mt-auto flex flex-col gap-5">
+                <AccountDrawerSection onNavigate={closeMenu} />
+
+                <div className="flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
+                  <LocaleControls selection={localeSelection} />
+                </div>
               </div>
             </div>
           </motion.aside>

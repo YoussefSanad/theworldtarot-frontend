@@ -72,10 +72,75 @@ export const loginCopy = {
     unknownFailure: "Something went wrong at our end. No link has been sent. Try again in a moment.",
     backPrompt: "Back to sign in",
   },
-} as const;
 
-/** Where a signed-in customer lands. There is no member area to land in yet. */
-export const afterSignIn = "/readings/";
+  /**
+   * The masthead's dropdown, which is where most people sign in now.
+   *
+   * It shares every sentence above that it can — the fields, the refusals, the
+   * forgot-password panel are the same words in a smaller box, because they are
+   * the same errand. What is here is only what the page has no need of: a name
+   * for the trigger, and the signed-in state the page never draws.
+   */
+  menu: {
+    /**
+     * The trigger's accessible name while nobody is signed in, and the panel's
+     * while it is holding the sign in form.
+     */
+    triggerLabel: "Sign in",
+    /**
+     * The first half of the trigger's name once somebody is signed in, and the
+     * panel's name in that state: "Account: jane@example.com".
+     *
+     * **Without it a screen reader hears only the customer's own name** on that
+     * button — "Jane Doe, button, collapsed" — which says who they are and
+     * nothing about what pressing it does. The signed-out link it replaced
+     * always said "Sign in", so this keeps that promise in the other state.
+     */
+    accountOf: "Account:",
+    /** Followed by whatever `customerLabel` answers for them. */
+    signedInAs: "Signed in as",
+  },
+
+  /**
+   * The sign out button, which carries its own confirmation.
+   *
+   * **It shows one word and two pictures**, and the two pictures are why there
+   * are only three strings here: armed, it is a door mark and a warmer glow;
+   * working, a spinner. Neither is text, so neither changes the button's width
+   * — see `SignOutConfirm`, where that is the whole point of the arrangement.
+   *
+   * **No warning language, deliberately.** Signing out of this site costs
+   * nothing: no unsaved work, no member area to be thrown out of, and the way
+   * back in is the same two fields it always was. Copy that said "are you
+   * sure?" would dress a harmless action up as a dangerous one.
+   */
+  signOutConfirm: {
+    /**
+     * The button at rest.
+     *
+     * The only words this control ever shows. Armed, it swaps them for a door
+     * mark and a warmer glow; working, for a spinner. Both of those are
+     * pictures, so both are announced through the two strings below rather
+     * than drawn as text — which is also what lets the button hold one width
+     * through the whole journey.
+     */
+    idle: "Sign out",
+    /**
+     * What a screen reader hears once the button is armed, in place of the
+     * amber it cannot see.
+     *
+     * The confirmation is a second press rather than a question, because
+     * signing out of this site costs nothing — no unsaved work, and the way
+     * back in is two fields. A sentence putting the question to them, with a
+     * "stay signed in" to decline, dressed a harmless action up as a dangerous
+     * one. It is guarded at all because the control sits one slip away from a
+     * signed-in customer's own name.
+     */
+    armedHint: "Press again to confirm signing out",
+    /** Announced while the sign out is in flight; the button shows a spinner. */
+    busyLabel: "Signing out…",
+  },
+} as const;
 
 /**
  * The sign in page's own address, exported so the three places that send people

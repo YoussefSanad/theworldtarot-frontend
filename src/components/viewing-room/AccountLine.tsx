@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-
+import { SignOutConfirm } from "@/components/account/SignOutConfirm";
 import { useSignedIn } from "@/components/account/useSignedIn";
-import { type Customer, customerLabel, signOut } from "@/lib/session";
+import { type Customer, customerLabel } from "@/lib/session";
 
 /**
  * Which account is signed in, and the way out of it.
@@ -37,40 +36,43 @@ export function AccountLine({
    */
   pretend?: Customer;
 }) {
-  const { customer: signedIn, setCustomer } = useSignedIn();
-  const [leaving, setLeaving] = useState(false);
+  const { customer: signedIn } = useSignedIn();
   const customer = signedIn ?? pretend;
 
   if (!customer) return null;
 
+  /*
+    **Tighter than the masthead's `gap-4`, and the panel's height is why.**
+    `PaywallModal` is capped so it reads as something laid over a room rather
+    than as a page — `check:viewing-room` holds it under 62% of the viewport —
+    and this row sits at the bottom of the tallest screen it draws. At `gap-4`
+    plus the button's own box it pushed 1280x800 and 1440x900 over that line.
+    `gap-2` keeps the air the button needs against the text and gives the cap
+    its margin back.
+  */
   return (
-    <p className="mt-4 text-center font-sans text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]/70">
-      {labels.signedInAs}{" "}
-      <span title={customer.email} className="text-[#f9f3d0]">
-        {customerLabel(customer)}
-      </span>
-      {". "}
-      <button
-        type="button"
-        disabled={leaving}
-        onClick={async () => {
-          setLeaving(true);
-          try {
-            await signOut();
-          } catch {
-            // A failed sign-out still clears this tab's idea of the session:
-            // the alternative is a panel stuck naming an account the visitor
-            // has asked to leave. The cookie outliving it is the backend's to
-            // answer on the next call, which it will.
-          }
-          // Publishing null drops the modal back to its signed-out screen with
-          // no reload, because every reader of the store sees it at once.
-          setCustomer(null);
-        }}
-        className="underline decoration-from-font underline-offset-2 hover:text-[#d4b06a] disabled:opacity-50"
-      >
-        {labels.switch}
-      </button>
-    </p>
+    <div className="mt-3 flex flex-col items-center gap-2">
+      <p className="text-center font-sans text-[clamp(12px,0.95vw,15px)] text-[#f9f3d0]/70">
+        {labels.signedInAs}{" "}
+        <span title={customer.email} className="text-[#f9f3d0]">
+          {customerLabel(customer)}
+        </span>
+        {"."}
+      </p>
+
+      {/*
+        **The way out, under the account rather than inside the sentence.**
+
+        It was a "switch account" link woven into the line above, which swapped
+        the whole line for a question when pressed — so the one thing this
+        panel exists to show, *which* account is signed in, disappeared at the
+        moment somebody was deciding whether to leave it. The control now sits
+        below and arms itself instead; the line never moves.
+
+        `tone="panel"` because the paywall draws from the PSD's own champagne
+        and gold rather than the site tokens. See `SignOutConfirm`.
+      */}
+      <SignOutConfirm tone="panel" />
+    </div>
   );
 }
