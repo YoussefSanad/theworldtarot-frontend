@@ -15,6 +15,42 @@ import {
   type PlaybackUrl,
 } from "@/lib/viewing-room-video";
 
+/*
+  **The width is capped from the height, and that is what keeps the
+  shape.** A 3:5 portrait is taller than a laptop screen, so the height
+  has to be bounded — but `max-height` alone loses the argument with
+  `width: 100%`: the box keeps the full width, takes the capped height,
+  and quietly becomes a landscape frame with the card drawn small in
+  the middle of it. Measured 1333x630 at 1920 before this line, which
+  is the letterboxing the spec forbids, turned on its side.
+
+  So the cap is expressed as a width instead — the widest the card can
+  be and still fit the height — and `aspect-ratio` supplies the height
+  from it. The player then narrows on a short screen rather than
+  spreading, which is what `docs/plans/viewing-room.md` asks for.
+
+  509/842 is the reciprocal of the aspect; 86dvh is the height cap.
+*/
+/*
+  **Bigger than her 509px, which is a measurement off a 1920 artboard
+  rather than a size.** Pinned at 509 the card stopped growing past a
+  laptop and read small in the middle of a wide room.
+
+  `clamp` rather than a `vw` share: a share alone shrinks the card on
+  a narrow screen, where the opposite is wanted — 34vw put it at
+  133px on a phone. So it is at least 300px, grows with the viewport,
+  and tops out at 640px.
+
+  **The height cap is the one that actually binds on a desktop**, not
+  the width: a 3:5 card 640px wide wants 1059px of height, which no
+  laptop has. So 86dvh is what sets the size on most screens, and the
+  width clamp only takes over on a short, wide window. The carousel
+  is in its own band below and need not share the fold with the card.
+*/
+// The player, rune stage, and placeholder must match so the runes and
+// placeholder are as wide as the player.
+export const PLAYER_WIDTH_CAP = "max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]";
+
 /**
  * The featured player: one card's film, at the size the frame draws it
  * (`384:24`, 509x842).
@@ -280,40 +316,8 @@ export function FilmPlayer({
         // Her 509x842. The ratio, never a height: this is the one measurement
         // that has to survive every breakpoint intact.
         "aspect-[509/842]",
-        /*
-          **The width is capped from the height, and that is what keeps the
-          shape.** A 3:5 portrait is taller than a laptop screen, so the height
-          has to be bounded — but `max-height` alone loses the argument with
-          `width: 100%`: the box keeps the full width, takes the capped height,
-          and quietly becomes a landscape frame with the card drawn small in
-          the middle of it. Measured 1333x630 at 1920 before this line, which
-          is the letterboxing the spec forbids, turned on its side.
-
-          So the cap is expressed as a width instead — the widest the card can
-          be and still fit the height — and `aspect-ratio` supplies the height
-          from it. The player then narrows on a short screen rather than
-          spreading, which is what `docs/plans/viewing-room.md` asks for.
-
-          509/842 is the reciprocal of the aspect. 70dvh leaves the carousel
-          reachable on a phone without a scroll.
-        */
-        /*
-          **Bigger than her 509px, which is a measurement off a 1920 artboard
-          rather than a size.** Pinned at 509 the card stopped growing past a
-          laptop and read small in the middle of a wide room.
-
-          `clamp` rather than a `vw` share: a share alone shrinks the card on
-          a narrow screen, where the opposite is wanted — 34vw put it at
-          133px on a phone. So it is at least 300px, grows with the viewport,
-          and tops out at 640px.
-
-          **The height cap is the one that actually binds on a desktop**, not
-          the width: a 3:5 card 640px wide wants 1059px of height, which no
-          laptop has. So 86dvh is what sets the size on most screens, and the
-          width clamp only takes over on a short, wide window. The carousel
-          is in its own band below and need not share the fold with the card.
-        */
-        "w-full max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]",
+        "w-full",
+        PLAYER_WIDTH_CAP,
       )}
     >
       {/* The card rests on its own artwork, which is what the poster used to be. */}
