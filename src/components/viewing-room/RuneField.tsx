@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import { RUNE_GLYPHS, RUNE_OVERHANG, RUNE_PLACEMENTS, RUNE_VIEWBOX } from "@/lib/viewing-room-runes";
+import { RUNE_FIELD_EXTENT, RUNE_GLYPHS, RUNE_PLACEMENTS, RUNE_VIEWBOX } from "@/lib/viewing-room-runes";
 
 export function RuneField() {
   return (
@@ -9,10 +9,11 @@ export function RuneField() {
       data-rune-field
       className="rune-field pointer-events-none absolute -z-10"
       style={{
-        left: `${-RUNE_OVERHANG.x * 100}%`,
-        right: `${-RUNE_OVERHANG.x * 100}%`,
-        top: `${-RUNE_OVERHANG.y * 100}%`,
-        bottom: `${-RUNE_OVERHANG.y * 100}%`,
+        left: "50%",
+        width: "100vw",
+        translate: "-50% 0",
+        top: `${-RUNE_FIELD_EXTENT.above * 100}%`,
+        bottom: `${RUNE_FIELD_EXTENT.inset * 100}%`,
       }}
     >
       {RUNE_PLACEMENTS.map((placement, index) => (
