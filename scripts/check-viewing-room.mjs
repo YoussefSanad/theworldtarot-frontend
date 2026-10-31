@@ -841,6 +841,9 @@ console.log("\nA deck the backend could not answer:");
 }
 
 /* ------------------------------------------------------------------ */
+// Her room artwork, shared by the rune floor check and the arch check below.
+const ART = { width: 1920, height: 2132 };
+
 console.log("\nRunes:");
 {
   /*
@@ -856,8 +859,16 @@ console.log("\nRunes:");
     [360, 800], [390, 844], [430, 932], [768, 1024], [1024, 768], [1280, 900], [1920, 1080],
   ];
 
+  /*
+    The floor's top edge is measured off the source PNG at row 1098 of 2132 at
+    the artwork's centre (its highest point) and row 1180 at the sides. Row
+    1098 is the conservative single line: a rune above it is above the floor
+    everywhere across the width.
+  */
+  const FLOOR_ROWS = 1098;
+
   /** Everything the criteria need, read in one pass so the layout cannot move between reads. */
-  const measure = () => {
+  const measure = ({ art, floorRows }) => {
     const rect = (el) => {
       const { left, right, top, bottom, width, height } = el.getBoundingClientRect();
       return { left, right, top, bottom, width, height };
@@ -869,9 +880,22 @@ console.log("\nRunes:");
     const header = document.querySelector("[data-viewing-room] header");
     const runes = [...field.children].filter((el) => el.tagName.toLowerCase() === "svg");
 
+    /* The same cover arithmetic as the arch check, to find the floor in document coordinates. */
+    const layer = document.querySelector(".page-atmosphere-viewing-room");
+    const layerBox = layer.getBoundingClientRect();
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const rawDrop = getComputedStyle(layer).getPropertyValue("--room-drop").trim();
+    const drop = rawDrop.endsWith("rem") ? parseFloat(rawDrop) * rem : parseFloat(rawDrop) || 0;
+    const boxHeight = layerBox.height + drop;
+    const scale = Math.max(layerBox.width / art.width, boxHeight / art.height);
+    const floorY = layerBox.top + window.scrollY + (boxHeight - art.height * scale) + floorRows * scale;
+
     return {
       vw: window.innerWidth,
       vh: window.innerHeight,
+      scrollY: window.scrollY,
+      floorY,
+      fieldBox: rect(field),
       stage: rect(stage),
       player: rect(player),
       band: rect(band),
@@ -907,11 +931,31 @@ console.log("\nRunes:");
     await page.locator("[data-rune-stage] video").first().waitFor({ state: "attached", timeout: 5000 });
     await page.waitForTimeout(600);
 
-    const m = await page.evaluate(measure);
+    const m = await page.evaluate(measure, { art: ART, floorRows: FLOOR_ROWS });
 
     // 1
-    expect(state, "24 to 32 runes", m.runes.length >= 24 && m.runes.length <= 32, true);
+    expect(state, "exactly 56 runes", m.runes.length, 56);
     expect(state, "the field holds nothing but runes", await page.locator("[data-rune-field] > *:not(svg)").count(), 0);
+
+    // The field is full-bleed: it spans the viewport (headless, so no scrollbar).
+    expect(
+      state,
+      `the field spans the viewport (left ${Math.round(m.fieldBox.left)}, width ${Math.round(m.fieldBox.width)} of ${m.vw})`,
+      Math.abs(m.fieldBox.left) <= 2 && Math.abs(m.fieldBox.width - m.vw) <= 2,
+      true,
+    );
+
+    // Nothing crosses the player's bottom edge, and every rune sits above the floor.
+    expect(state, "no rune crosses the player's bottom edge", m.runes.filter((r) => crossesBottom(r, m.player)).length, 0);
+
+    const floorMargin = Math.min(...m.runes.map((r) => m.floorY - (r.bottom + m.scrollY)));
+
+    expect(
+      state,
+      `every rune is above the floor (least margin ${Math.round(floorMargin)}px, floor at ${Math.round(m.floorY)})`,
+      floorMargin > 0,
+      true,
+    );
 
     // 5
     expect(state, "the carousel band was found", m.bandIsFullWidth && m.band.width >= m.vw - 1, true);
@@ -934,22 +978,25 @@ console.log("\nRunes:");
       const left = m.runes.filter((r) => r.right <= m.player.left && r.left >= 0 && r.top >= 0 && r.bottom <= m.vh);
       const right = m.runes.filter((r) => r.left >= m.player.right && r.right <= m.vw && r.top >= 0 && r.bottom <= m.vh);
 
-      expect(state, "3 or more runes wholly left of the player", left.length >= 3, true);
-      expect(state, "3 or more runes wholly right of the player", right.length >= 3, true);
+      expect(state, `8 or more runes wholly left of the player (${left.length})`, left.length >= 8, true);
+      expect(state, `8 or more runes wholly right of the player (${right.length})`, right.length >= 8, true);
       expect(state, "2 or more runes cross the player's top edge", m.runes.filter((r) => crossesTop(r, m.player)).length >= 2, true);
-      expect(state, "2 or more runes cross the player's bottom edge", m.runes.filter((r) => crossesBottom(r, m.player)).length >= 2, true);
+
+      // Built from the viewport-bounded arrays above, so an off-screen rune cannot count.
+      const farLeft = left.filter((r) => r.right <= 0.15 * m.vw);
+      const farRight = right.filter((r) => r.left >= 0.85 * m.vw);
+
+      expect(state, `3 or more runes in the far left of the viewport (${farLeft.length})`, farLeft.length >= 3, true);
+      expect(state, `3 or more runes in the far right of the viewport (${farRight.length})`, farRight.length >= 3, true);
     }
 
     // 4
     if (width <= 390) {
       const over = m.runes.filter(
-        (r) =>
-          (crossesTop(r, m.player) || crossesBottom(r, m.player)) &&
-          (r.left + r.right) / 2 >= 0 &&
-          (r.left + r.right) / 2 <= m.vw,
+        (r) => crossesTop(r, m.player) && (r.left + r.right) / 2 >= 0 && (r.left + r.right) / 2 <= m.vw,
       );
 
-      expect(state, "3 or more runes cross the player's top or bottom edge", over.length >= 3, true);
+      expect(state, `3 or more runes cross the player's top edge (${over.length})`, over.length >= 3, true);
     }
 
     // 2
@@ -958,6 +1005,10 @@ console.log("\nRunes:");
 
       expect(state, "every rune pulses", before.every((r) => r.name === "rune-pulse"), true);
       expect(state, "4 or more distinct durations", new Set(before.map((r) => r.duration)).size >= 4, true);
+
+      const seconds = before.map((r) => parseFloat(r.duration));
+
+      expect(state, "every duration is 5 to 10 s", seconds.every((s) => s >= 5 && s <= 10), true);
 
       // Read late, and again 1.2 s on: with several durations and delays, something has moved.
       await page.waitForTimeout(600);
@@ -1038,7 +1089,7 @@ console.log("\nRunes:");
     await page.waitForTimeout(600);
     const styles = await page.evaluate(runeStyles);
 
-    expect(state, "there are runes to read", styles.length >= 24, true);
+    expect(state, "there are runes to read", styles.length >= 56, true);
     expect(state, "no rune animates", [...new Set(styles.map((r) => r.name))], ["none"]);
     expect(state, "every rune rests at 0.35", [...new Set(styles.map((r) => r.opacity))], ["0.35"]);
 
@@ -1077,7 +1128,6 @@ console.log("\nThe card clears the golden arch (mobile framing):");
     the next spacing change would quietly invalidate.
   */
   const ARCH_ROWS = 275;
-  const ART = { width: 1920, height: 2132 };
 
   for (const [width, height] of [[360, 780], [390, 844], [412, 915], [430, 932]]) {
     const { context, page } = await openRoom({ me: MEMBER, viewport: { width, height } });
