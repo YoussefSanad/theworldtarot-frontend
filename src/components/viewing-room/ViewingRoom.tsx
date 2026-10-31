@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { Container } from "@/components/layout/Section";
 import { ButtonLink } from "@/components/ui/Button";
-import { FilmPlayer } from "@/components/viewing-room/FilmPlayer";
+import { FilmPlayer, PLAYER_WIDTH_CAP } from "@/components/viewing-room/FilmPlayer";
 import { PaymentPanel } from "@/components/viewing-room/PaymentPanel";
 import { PaywallModal, type PaywallScreen } from "@/components/viewing-room/PaywallModal";
 import { RuneField } from "@/components/viewing-room/RuneField";
@@ -124,7 +124,7 @@ export function ViewingRoom() {
         // A stable hook for the browser check, which must not depend on this
         // being a particular child of `main` — `PageAtmosphere` is one too.
         data-viewing-room=""
-        className={cn("overflow-x-clip", modal && "pointer-events-none select-none")}
+        className={cn(modal && "pointer-events-none select-none")}
       >
         <Container className="flex flex-col items-center">
           <header className="mt-[clamp(16px,2.2vw,40px)] text-center">
@@ -190,8 +190,7 @@ export function ViewingRoom() {
             coordinate.
           */}
           <div className="relative mt-20 w-full lg:mt-[clamp(44px,6vw,88px)]">
-            {/* The stage copies the player's width cap, like the placeholder below. */}
-            <div data-rune-stage className="relative isolate mx-auto w-full max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]">
+            <div data-rune-stage className={cn("relative isolate mx-auto w-full", PLAYER_WIDTH_CAP)}>
               <RuneField />
               {/*
                 **The player waits for a card and the room does not.** The
@@ -329,13 +328,11 @@ const EMPTY_DECK: readonly ViewingRoomCard[] = [];
 /**
  * The player's shape with nothing in it yet.
  *
- * **The sizing classes are `FilmPlayer`'s own, copied deliberately.** They are
- * the one measurement on this page that has to survive every breakpoint
- * intact — a 3:5 card capped by height rather than width, for the reasons that
- * component documents at length — and a placeholder that got them even
- * slightly wrong would move the carousel the moment the deck landed. Copied
- * rather than extracted because there are two of them and a shared wrapper
- * would be indirection in the middle of the page's only real layout rule.
+ * **The sizing matches `FilmPlayer`.** It is the one measurement on this page
+ * that has to survive every breakpoint intact — a 3:5 card capped by height
+ * rather than width, for the reasons that component documents at length — and
+ * a placeholder that got it even slightly wrong would move the carousel the
+ * moment the deck landed.
  */
 function PlayerPlaceholder() {
   return (
@@ -344,7 +341,7 @@ function PlayerPlaceholder() {
       className={cn(
         "relative mx-auto overflow-hidden rounded-[4px]",
         "aspect-[509/842] w-full",
-        "max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]",
+        PLAYER_WIDTH_CAP,
         // The rotunda showing through, rather than a grey box: the page's own
         // atmosphere is already behind this and should stay visible.
         "border border-white/5 bg-white/[0.02]",
