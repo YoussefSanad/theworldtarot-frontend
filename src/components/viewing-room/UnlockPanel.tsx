@@ -78,15 +78,24 @@ export function UnlockPanel({
       </p>
 
       {/*
-        Three benefits across at every width down to the phone, where they
-        stack: her row is three short captions, and squeezing them onto one
-        line on a 360 would shrink the type below the rest of the panel.
+        **Three benefits across at every width, including the smallest phone.**
+
+        They used to stack below 420px, on the reasoning that three captions
+        on a 360 would shrink the type below the rest of the panel. Stacking
+        cost more than it saved: three rows of icon-over-caption added about
+        180px to a panel already capped at `88dvh`, so on a short phone the
+        row the panel is selling scrolled out of sight beneath the fold.
+
+        Across, the squeeze is in the gap and the tracking rather than in the
+        glyphs — the type only drops to 9px at the very bottom, which is the
+        same size her captions read at on a desktop. `LIGHT & SOUND` is the
+        widest line; it wraps on its own at 360 and the rest still fit.
       */}
-      <ul className="mt-6 grid w-full max-w-[380px] list-none grid-cols-3 gap-4 p-0 max-[420px]:grid-cols-1">
+      <ul className="mt-6 grid w-full max-w-[380px] list-none grid-cols-3 gap-4 p-0 max-[420px]:gap-2">
         {panel.benefits.map((benefit) => (
-          <li key={benefit.lines.join(" ")} className="flex flex-col items-center gap-3 text-center">
+          <li key={benefit.lines.join(" ")} className="flex flex-col items-center gap-3 text-center max-[420px]:gap-2">
             <BenefitMark name={benefit.lines[0]} />
-            <span className="font-sans text-[clamp(10px,0.78vw,13px)] leading-[1.25] tracking-[0.9px] text-[#f9f3d0]">
+            <span className="font-sans text-[clamp(10px,0.78vw,13px)] leading-[1.25] tracking-[0.9px] text-[#f9f3d0] max-[420px]:text-[9px] max-[420px]:tracking-[0.3px]">
               {benefit.lines.map((line) => (
                 <span key={line} className="block">
                   {line}
@@ -251,8 +260,15 @@ function BenefitMark({ name }: { name: string }) {
       alt=""
       width={mark.width}
       height={mark.height}
-      /* Her 69-76px, held to one box so three different sources line up. */
-      className="h-[clamp(34px,3.1vw,48px)] w-auto"
+      /*
+        Her 69-76px, held to one box so three different sources line up.
+
+        Smaller on the narrowest phone, where the three sit side by side with
+        about 85px of column each: at 34px the marks were taller than their
+        own captions and the row read as three pictures with labels under
+        them rather than as one line of benefits.
+      */
+      className="h-[clamp(34px,3.1vw,48px)] w-auto max-[420px]:h-[26px]"
     />
   );
 }
