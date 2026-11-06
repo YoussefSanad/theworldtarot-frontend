@@ -54,7 +54,7 @@ Measured against that setting, only one name does not fit:
 | THE WHEEL | 52% |
 | JUDGEMENT | 55% |
 | TEMPERANCE | 61% |
-| THE HANGED MAN | 79% |
+| THE HANGMAN | 65% |
 | THE HIGH PRIEST | 85% — the client's own reference |
 | **THE HIGH PRIESTESS** | **103% — the only overflow** |
 
@@ -102,7 +102,7 @@ deck-specific naming.**
 | IX | The Hermit | `09-the-hermit` | |
 | X | The Wheel | `10-the-wheel` | **deck's own name**, not Wheel of Fortune |
 | XI | Justice | `11-justice` | |
-| XII | The Hanged Man | `12-the-hangman` | typo fixed |
+| XII | The Hangman | `12-the-hangman` | **deck's own name** (renamed back 26 Sep 2026; was read as a typo for The Hanged Man) |
 | XIII | Death | `13-death` | |
 | XIV | Temperance | `14-temperance` | |
 | XV | The Devil | `15-the-devil` | |

@@ -24,13 +24,14 @@ import { cn } from "@/lib/cn";
  * edge, so it shares a `.stack` cell with the whole panel rather than sitting
  * inside it.
  */
-export type OrnateFrameVariant = "card" | "panel" | "column" | "inset";
+export type OrnateFrameVariant = "card" | "panel" | "column" | "inset" | "sphere";
 
 const VARIANT_CLASS: Record<OrnateFrameVariant, string> = {
   card: "ornate-frame--card",
   panel: "ornate-frame--panel",
   column: "ornate-frame--column",
   inset: "ornate-frame--inset",
+  sphere: "ornate-frame--sphere",
 };
 
 export function OrnateFrame({
@@ -38,6 +39,7 @@ export function OrnateFrame({
   legend,
   legendMark = false,
   marks,
+  marksClassName,
   crest = false,
   className,
   bodyClassName,
@@ -58,6 +60,12 @@ export function OrnateFrame({
    * lands in the middle. Works on an open frame and a closed one alike.
    */
   marks?: ReactNode;
+  /**
+   * Given, replaces the row those marks sit in. `.panel-marks` spaces a *pair*
+   * out at the fifths, which is what the readings panels draw; a frame with one
+   * centred mark passes `panel-marks--single` to drop that padding.
+   */
+  marksClassName?: string;
   /** Draws the trio astride the top edge below `lg`. Closed panels only. */
   crest?: boolean;
   /** Sits on the `@container` wrapper. */
@@ -84,7 +92,7 @@ export function OrnateFrame({
         <span aria-hidden className="ornate-frame__ring panel-hover__frame" />
         {crest ? <OrnateCrest /> : null}
         {marks ? (
-          <span aria-hidden className="panel-marks">
+          <span aria-hidden className={cn("panel-marks", marksClassName)}>
             {marks}
           </span>
         ) : null}
@@ -127,7 +135,7 @@ export function OrnateFrame({
 
         {/* And the marks over the border, which is what they sit on. */}
         {marks ? (
-          <span aria-hidden className="panel-marks">
+          <span aria-hidden className={cn("panel-marks", marksClassName)}>
             {marks}
           </span>
         ) : null}

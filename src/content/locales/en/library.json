@@ -12,7 +12,7 @@
     "the-hermit": "The Hermit",
     "the-wheel": "The Wheel",
     "justice": "Justice",
-    "the-hanged-man": "The Hanged Man",
+    "the-hangman": "The Hangman",
     "death": "Death",
     "temperance": "Temperance",
     "the-devil": "The Devil",
@@ -26,10 +26,22 @@
   "cardAlt": "{card} tarot card from The World Tarot",
   "majorArcanaNav": "MAJOR ARCANA",
   "suits": {
-    "swords": { "label": "SWORDS", "title": "Swords" },
-    "cups": { "label": "CUPS", "title": "Cups" },
-    "wands": { "label": "WANDS", "title": "Wands" },
-    "pentacles": { "label": "PENTACLES", "title": "Pentacles" }
+    "swords": {
+      "label": "SWORDS",
+      "title": "Swords"
+    },
+    "cups": {
+      "label": "CUPS",
+      "title": "Cups"
+    },
+    "wands": {
+      "label": "WANDS",
+      "title": "Wands"
+    },
+    "pentacles": {
+      "label": "PENTACLES",
+      "title": "Pentacles"
+    }
   },
   "sectionsLabel": "Library sections",
   "library": {

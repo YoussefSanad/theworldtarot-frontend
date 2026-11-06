@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
-import { fetchCurrencies, fetchLanguages, fetchProduct, fetchProducts } from "./api.ts";
+import { fetchCards, fetchCurrencies, fetchLanguages, fetchProduct, fetchProducts } from "./api.ts";
 
 const realFetch = globalThis.fetch;
 
@@ -167,4 +167,77 @@ test("a broken languages endpoint throws, and the caller draws no switcher", asy
   stubFetch(json([], 503));
 
   await assert.rejects(() => fetchLanguages());
+});
+
+/*
+  The deck, which the Viewing Room renders from one request. The listing shape
+  is the thing to pin: it carries the full copy and `in_viewing_room`, and
+  `video` is NOT among its fields — only `/cards/draw` carries a credential,
+  and a listing that was read as though it did would put twenty-two live
+  playback URLs in a page that asked for none.
+*/
+const card = {
+  id: 18,
+  number: 17,
+  name: "The Star",
+  short_description: "Hope.",
+  long_description: "The longer meaning of the card.",
+  image: "https://media.theworldtarot.com/cards/the-star.jpg",
+  in_viewing_room: true,
+};
+
+test("the deck is one request inside the locale segment", async () => {
+  stubFetch(json([card]));
+
+  await fetchCards();
+
+  assert.equal(calls[0], `${BASE}/api/v1/en/cards`);
+});
+
+test("a language travels on the deck request, since a card is only in the ones it is finished in", async () => {
+  stubFetch(json([card]));
+
+  await fetchCards({ locale: "es" });
+
+  assert.equal(calls[0], `${BASE}/api/v1/es/cards`);
+});
+
+test("the listing comes back whole, with the one fact the Viewing Room adds", async () => {
+  stubFetch(json([card]));
+
+  const deck = await fetchCards();
+
+  assert.equal(deck.length, 1);
+  assert.equal(deck[0].id, 18, "the integer the video endpoint is addressed with");
+  assert.equal(deck[0].number, 17);
+  assert.equal(deck[0].in_viewing_room, true);
+});
+
+/*
+  An empty deck is a real answer — a freshly seeded site, or no card finished
+  in this language — and is not the same as a broken one. The room says
+  different things about them, so this seam must not turn one into the other.
+*/
+test("an empty deck is answered as itself, not as a failure", async () => {
+  stubFetch(json([]));
+
+  assert.deepEqual(await fetchCards(), []);
+});
+
+test("a card missing the fields the room draws from is dropped rather than cast", async () => {
+  stubFetch(json([card, { id: 19, name: "Nameless" }]));
+
+  const deck = await fetchCards();
+
+  assert.deepEqual(
+    deck.map((entry) => entry.id),
+    [18],
+    "a card with no number has no place in the deck's order",
+  );
+});
+
+test("a broken deck endpoint throws, so an unreachable backend stays loud", async () => {
+  stubFetch(json([], 503));
+
+  await assert.rejects(() => fetchCards());
 });

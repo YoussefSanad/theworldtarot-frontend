@@ -1,4 +1,5 @@
 import type { SocialIconName } from "@/components/ui/SocialIcon";
+import { majorArcanaNav, suits } from "./library.ts";
 import { signInPath } from "./login.ts";
 import { icons } from "../lib/assets.ts";
 import { pickCopy } from "../lib/copy.ts";
@@ -61,40 +62,78 @@ export type NavLink = { label: string; href: string };
  */
 export type NavGroupLink = NavLink & { productKey?: string };
 
-/** A nav item that opens a dropdown of links instead of navigating itself. */
-export type NavGroup = { label: string; children: readonly NavGroupLink[] };
+/**
+ * A nav item that carries a dropdown of links. The label is itself a
+ * destination — `href` is the group's own page, the one its children sit
+ * under — so the group navigates *and* opens, rather than only opening. That
+ * is why READINGS no longer lists an OVERVIEW child: the label is the
+ * overview link, and a row repeating it under the same label was the same
+ * destination offered twice.
+ */
+export type NavGroup = { label: string; href: string; children: readonly NavGroupLink[] };
 
 export type NavItem = NavLink | NavGroup;
 
-const PRIMARY_NAV_HREFS = ["/world-tarot/", "/living-tarot", null, "/library/", "/faq"] as const;
+/**
+ * The top-level destinations, by position against `primaryNav` in `locales/`.
+ *
+ * A `children` entry makes the item a group: its label still navigates to
+ * `href`, and the panel offers the children. READINGS' rows are matched to
+ * `readingsChildren` by position; LIBRARY's are built in `library.ts`, whose
+ * labels are already in the reader's language.
+ */
+type PrimaryNavSlot = { href: string; children?: readonly NavGroupLink[] };
 
 /** `/readings/one-card` is dead until the AI One-Card Experience ships; see `signature` in `content/readings.ts`. */
 /**
- * The dropdown's rows, by position against `readingsChildren` in `locales/`.
+ * The READINGS dropdown's rows, by position against `readingsChildren` in
+ * `locales/`.
  *
- * `productKey` is what `useReadingName` asks `/products` for; Overview has none,
- * naming a page rather than something sold.
+ * `productKey` is what `useReadingName` asks `/products` for. There is no
+ * OVERVIEW row: the READINGS label is itself that link — see `NavGroup`.
  */
 const READINGS_ROWS: readonly { href: string; productKey?: string }[] = [
-  { href: "/readings/" },
   { href: "/readings/one-card", productKey: "one-card" },
   { href: "/readings/three-card/", productKey: "three-card" },
   { href: "/readings/month-ahead/", productKey: "month-ahead" },
   { href: "/readings/in-depth/", productKey: "in-depth" },
 ];
 
-export const primaryNav: NavItem[] = PRIMARY_NAV_HREFS.map((href, index) => {
+const PRIMARY_NAV: readonly PrimaryNavSlot[] = [
+  { href: "/world-tarot/" },
+  { href: "/viewing-room/" },
+  {
+    href: "/readings/",
+    children: READINGS_ROWS.map((row, index) => ({ label: copy.readingsChildren[index], ...row })),
+  },
+  {
+    /*
+      **The label navigates and the panel opens**, the arrangement READINGS
+      already has: LIBRARY goes to the grid, hovering it offers the four suits.
+
+      **The first row is a deliberate redundancy**, asked for by the client.
+      The note on `NavGroup` above records that READINGS dropped its OVERVIEW
+      child because a row repeating the group's own destination was that
+      destination offered twice — which this row is. It is labelled MAJOR
+      ARCANA rather than LIBRARY so it reads as the thing it points at, the
+      grid, rather than as an echo of the label above it. That is also what
+      `SuitNav` calls the same link.
+
+      The children are built from `majorArcanaNav` and `suits` rather than
+      written out, so this panel and the strip above the grid cannot drift
+      apart — and so the suits' SEO URLs are spelled in `library.ts` alone.
+    */
+    href: "/library/",
+    children: [majorArcanaNav, ...suits.map(({ label, href }) => ({ label, href }))],
+  },
+  { href: "/learn/" },
+  { href: "/faq" },
+];
+
+export const primaryNav: NavItem[] = PRIMARY_NAV.map(({ href, children }, index) => {
   const label = copy.primaryNav[index];
 
-  return href === null
-    ? {
-        label,
-        children: READINGS_ROWS.map((row, child) => ({
-          label: copy.readingsChildren[child],
-          ...row,
-        })),
-      }
-    : { label, href };
+  return children ? { label, href, children } : { label, href };
 });
 
 /**
@@ -124,9 +163,10 @@ export const headerActions = {
 
 const FOOTER_HREFS = [
   "/world-tarot/",
-  "/living-tarot",
+  "/viewing-room/",
   "/readings/",
   "/library/",
+  "/learn/",
   "/faq",
   "/contact",
   "/terms",
@@ -171,6 +211,14 @@ export const socialHeading = copy.socialHeading;
  * line: the endpoint answers a new address and one already on the list
  * identically, so that arm cannot be reached and must not be written.
  */
+/**
+ * The footer signup's anchor, named here because two places need to agree on it:
+ * the form that carries the `id` and any page that sends a visitor to it. The
+ * Learn page's "JOIN THE LIST" is the first such caller — it has no form of its
+ * own and hands the visitor to this one.
+ */
+export const NEWSLETTER_ANCHOR = "stay-connected";
+
 export const newsletter = {
   heading: copy.newsletter.heading,
   /*

@@ -24,7 +24,7 @@ export default function ThreeCardReadingPage() {
           price: threeCard.price,
         })}
       />
-      <ReadingForSale productKey={threeCard.productKey} />
+      <ReadingForSale scaled productKey={threeCard.productKey} />
     </>
   );
 }

@@ -29,5 +29,16 @@
     "rateLimitedBriefly": "That is a few too many asks. Wait a moment and try once more.",
     "unknownFailure": "Something went wrong at our end. No link has been sent. Try again in a moment.",
     "backPrompt": "Back to sign in"
+  },
+  "menu": {
+    "triggerLabel": "Sign in",
+    "accountOf": "Account:",
+    "signedInAs": "Signed in as",
+    "drawerAction": "SIGN IN"
+  },
+  "signOutConfirm": {
+    "idle": "Sign out",
+    "armedHint": "Press again to confirm signing out",
+    "busyLabel": "Signing out…"
   }
 }

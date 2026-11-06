@@ -19,7 +19,12 @@ export type ContainerWidth =
   /** The props row on a reading page, which is wider than the rest of it below `lg`. */
   | "readingProps"
   | "worldTarot"
-  | "library";
+  | "library"
+  /** A card's reference page: its prose column, and the wider one its panels take. */
+  | "card"
+  | "cardWide"
+  /** That page's closing line, whose narrow box is what breaks it onto two lines. */
+  | "cardClosing";
 
 const WIDTH_CLASS: Record<ContainerWidth, string> = {
   page: "shell--page",
@@ -32,6 +37,9 @@ const WIDTH_CLASS: Record<ContainerWidth, string> = {
   readingProps: "shell--reading-props",
   worldTarot: "shell--world-tarot",
   library: "shell--library",
+  card: "shell--card",
+  cardWide: "shell--card-wide",
+  cardClosing: "shell--card-closing",
 };
 
 export function Container({

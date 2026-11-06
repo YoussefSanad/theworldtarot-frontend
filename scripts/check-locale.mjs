@@ -37,9 +37,10 @@ const PAGES = [
   "/",
   "/readings/",
   "/readings/in-depth/",
+  "/readings/month-ahead/",
   "/world-tarot/",
   "/library/",
-  "/library/the-fool/",
+  "/library/the-fool-tarot-meaning/",
   "/login/",
   "/404.html",
 ];
@@ -55,8 +56,8 @@ const OPEN_MENU = { en: "Open menu", es: "Abrir menú" };
  * a reading page came to read "Tu Lectura" over English items.
  *
  * The World Tarot and Library lines include each page's closing saying and a
- * card page's message, because those are exactly that case: a route passing
- * copy to a client component.
+ * card page's name, because those are exactly that case: a route passing copy
+ * to a client component.
  */
 const PAGE_LINES = {
   "/readings/in-depth/": {
@@ -71,9 +72,10 @@ const PAGE_LINES = {
     en: ["AN ARCHIVE OF THE SYMBOL AND MEANING", "The library - worlds without end"],
     es: ["UN ARCHIVO DE SÍMBOLOS Y SIGNIFICADOS", "La biblioteca: mundos sin fin"],
   },
-  "/library/the-fool/": {
-    en: ["This card's full reference is being written."],
-    es: ["Estamos escribiendo la ficha de esta carta."],
+  /* The card's name is from `library.json`; the reference copy under it is English-only for now. */
+  "/library/the-fool-tarot-meaning/": {
+    en: ["The Fool"],
+    es: ["El Loco"],
   },
 };
 

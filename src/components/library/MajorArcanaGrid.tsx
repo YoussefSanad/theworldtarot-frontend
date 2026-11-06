@@ -19,6 +19,20 @@ import { majorArcana } from "@/content/library";
  *
  * A list, because that is what it is: twenty-two links to twenty-two pages, in
  * a deliberate order that a screen reader should announce the length of.
+ *
+ * **It is a grid at every width, and that is the client's instruction.** This
+ * deck was a swipeable carousel below `sm` for a while, on the reasoning that
+ * twenty-two full-height cards is four screens of scrolling on a phone and a
+ * carousel turns that back into one card. She asked for it removed by name —
+ * "keep the responsive grid with two columns, rather than a horizontal
+ * carousel. No horizontal scrolling." — so the deck now folds to two columns
+ * and is simply long on a phone, which is the trade she has chosen. Two
+ * columns rather than one is what keeps that length in hand: it halves the
+ * scroll against the old one-card layout, and the narrower tiles are why
+ * `.library-card__name`'s `cqw` type had to grow with it.
+ *
+ * This component stays on the server, which is what keeps `next/image` and
+ * `next/link` off the client entirely now that nothing here needs JavaScript.
  */
 export function MajorArcanaGrid() {
   return (

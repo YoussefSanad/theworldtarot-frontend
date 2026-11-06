@@ -2,7 +2,10 @@
   "pageTitle": "Canjear un Regalo",
   "entry": {
     "heading": "Canjear un Regalo",
-    "body": ["Alguien te ha regalado una lectura.", "Introduce el código de tu correo para abrirla."],
+    "body": [
+      "Alguien te ha regalado una lectura.",
+      "Introduce el código de tu correo para abrirla."
+    ],
     "label": "Tu código de regalo",
     "placeholder": "Introduce tu código de regalo…",
     "submit": "BUSCAR MI REGALO",
@@ -14,11 +17,23 @@
   "throttled": "Han sido muchos intentos en poco tiempo. Espera un minuto e inténtalo otra vez.",
   "ask": {
     "heading": "Haz Tu Pregunta",
-    "body": ["Esta lectura es tuya.", "Haz tu pregunta y se escribirá para ti."],
+    "body": [
+      "Esta lectura es tuya.",
+      "Haz tu pregunta y se escribirá para ti."
+    ],
     "codeLabel": "Código de regalo",
-    "question": { "label": "Tu pregunta", "placeholder": "Escribe tu pregunta…" },
-    "email": { "label": "Dónde enviarte tu lectura", "placeholder": "Tu dirección de correo…" },
-    "name": { "label": "Tu nombre (opcional)", "placeholder": "Tu nombre…" },
+    "question": {
+      "label": "Tu pregunta",
+      "placeholder": "Escribe tu pregunta…"
+    },
+    "email": {
+      "label": "Dónde enviarte tu lectura",
+      "placeholder": "Tu dirección de correo…"
+    },
+    "name": {
+      "label": "Tu nombre (opcional)",
+      "placeholder": "Tu nombre…"
+    },
     "submit": "QUIERO MI LECTURA",
     "asking": "Pidiendo tu lectura…",
     "failed": "No hemos podido pedir tu lectura, y tu código sigue sin usar. Inténtalo de nuevo."
@@ -37,7 +52,7 @@
   },
   "lost": {
     "heading": "No Podemos Mostrarte Este Canje",
-    "body": "Aquí no hay nada que podamos consultar: esta página muestra un regalo canjeado en esta pestaña, y no es eso lo que te ha traído hasta aquí. Si acabas de canjear uno, no se ha perdido nada: el correo que lo confirma va de camino a la dirección que nos diste, y ese correo es el justificante que cuenta."
+    "body": "Aquí no hay nada que podamos consultar. Esta página muestra un regalo canjeado en esta pestaña, y no es eso lo que te ha traído hasta aquí. Si acabas de canjear uno, no se ha perdido nada: el correo que lo confirma va de camino a la dirección que nos diste, y ese correo es el justificante que cuenta."
   },
   "backLabel": "VOLVER A LAS LECTURAS"
 }

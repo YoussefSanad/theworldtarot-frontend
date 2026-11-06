@@ -5,13 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { closeAccountMenu, registerDrawerOpener } from "@/components/account/account-menu-store";
 import { AccountControl } from "@/components/account/AccountControl";
+import { AccountDrawerLine, AccountDrawerSection } from "@/components/account/AccountDrawerSection";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
 import { chrome, headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
+import { lockScroll } from "@/lib/scroll-lock";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
 
@@ -43,14 +46,32 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  * and below it the menu button's 2.75em does. The masthead is now as tall as
  * whatever is opposite the logo, so at the old `py-1.5` a phone got about 50px
  * of masthead where the old mark gave it 83px — the row went slack at the top,
- * which is what `pt-5 pb-2` buys back. Top-weighted rather than even: the logo
- * wants air above it more than the hero below wants pushing down. That puts a
- * phone at roughly 66px.
+ * which is what the vertical padding buys back.
  *
- * Anything tuned to clear this header wants re-measuring when these change.
- * Two things are: the `max-lg:-top-20` on the atmosphere in `readings/page.tsx`
- * and the one in `readings/month-ahead/page.tsx`, both lifting a mobile sky's
- * top edge clear of this masthead. Both carry the same note.
+ * **It is even now (`py-5`), where it used to be top-weighted (`pt-5 pb-2`).**
+ * The old split was deliberate — the logo wants air above it more than the
+ * hero below wants pushing down — but it reads as the masthead sitting low in
+ * its own box, the row crowding whatever is beneath it rather than being
+ * centred in a band of its own. Matching the bottom to the top costs 12px of
+ * height everywhere and gives the header the same air on both sides, which is
+ * what makes it read as one consistent band across every page. A phone goes
+ * from roughly 66px to 78px.
+ *
+ * Anything tuned to clear this header wants re-measuring when these change,
+ * and this change is one of them. Four places carry the `-top-20` that lifts a
+ * sky's top edge clear of this masthead: the atmospheres in `readings/page.tsx`,
+ * `library/page.tsx` and `world-tarot/page.tsx`, plus `ReadingBackdrop`, which
+ * is the single copy for every reading page, `/redeem/` and
+ * `/checkout/complete/` — those four screens each held their own before it was
+ * made one component, so changing the header means editing four files and not
+ * seven.
+ *
+ * **5rem (80px) still clears it, but only just, and that is worth knowing.**
+ * Below `lg` the menu button sets the height: `text-note` floors at 14px, so
+ * 2.75em is 38.5px, and `py-5` adds 40px for 78.5px total. The old `pt-5 pb-2`
+ * left 13.5px of slack under those skies; there is now 1.5px. Nothing is
+ * clipped and none of the four needed changing, but any further growth here
+ * crosses them — add to this padding and those offsets have to grow with it.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,8 +88,24 @@ export function SiteHeader() {
   const panelId = useId();
   const labelId = useId();
 
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    /* The drawer going away takes its account panel with it, so the store must
+       not go on claiming one is open — the next `openAccountMenu` would publish
+       the same surface and change nothing. */
+    closeAccountMenu();
+  }, []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
+
+  /*
+    **How something outside the masthead opens the drawer.**
+
+    The Viewing Room's paywall offers a sign in, and on a phone the only account
+    control is the one inside this drawer — which is not mounted until the drawer
+    is open. So the store is told how to open it, rather than being left to
+    publish a surface that nothing is listening on. See `openAccountMenu`.
+  */
+  useEffect(() => registerDrawerOpener(() => setMenuOpen(true)), []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -78,45 +115,49 @@ export function SiteHeader() {
     };
 
     /*
-      On `<html>`, not just `<body>`. The root element carries `overflow-x:
-      hidden` (see the root layout), which makes it the scrolling box for the
-      viewport rather than passing that role down — so the old `body` lock
-      clipped a box that was already auto-height and the page went on
-      scrolling underneath the open drawer. Padding the root by the scrollbar's
-      width keeps the layout from jumping sideways as that scrollbar goes; the
-      drawer is below `lg` only, but a narrow desktop window still gets here.
-    */
-    const root = document.documentElement;
-    const previous = {
-      rootOverflow: root.style.overflow,
-      rootPaddingRight: root.style.paddingRight,
-      bodyOverflow: document.body.style.overflow,
-    };
-    const scrollbarWidth = window.innerWidth - root.clientWidth;
+      On `<html>`, not just `<body>`, and padded by the scrollbar's width —
+      both of which now live in `lockScroll`, along with the reasoning: the
+      root carries `overflow-x: hidden` (see the root layout), which makes it
+      the scrolling box for the viewport rather than passing that role down, so
+      a `body`-only lock clipped a box that was already auto-height and the page
+      went on scrolling underneath the open drawer.
 
-    root.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) root.style.paddingRight = `${scrollbarWidth}px`;
+      **Through the seam rather than inline, because this drawer is not the only
+      thing that locks the page.** The Viewing Room's paywall locks it too and
+      can be underneath an open drawer; each component restoring its own
+      snapshot of one property is how the page ends up unscrollable with nothing
+      on top of it to explain why.
+    */
+    const releaseScroll = lockScroll();
 
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      root.style.overflow = previous.rootOverflow;
-      root.style.paddingRight = previous.rootPaddingRight;
-      document.body.style.overflow = previous.bodyOverflow;
+      releaseScroll();
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen, closeMenu]);
 
   /*
-    The drawer is `lg:hidden`, so widening past the breakpoint with it open
-    hides the panel while leaving the scroll lock on — a page that cannot be
-    scrolled and nothing on screen to explain why. Close it instead.
+    The drawer is hidden wherever the desktop nav shows, so crossing into that
+    state with the drawer open hides the panel while leaving the scroll lock on
+    — a page that cannot be scrolled and nothing on screen to explain why.
+    Close it instead.
+
+    **The query has to be `desktop-nav`'s own, not the width half of it.** When
+    this watched `(min-width: 64rem)` alone it fired on any rotation across
+    1024px — and an iPad Pro 13" is 1032 x 1376, so turning one with the drawer
+    open closed the drawer, kept the scroll lock, and showed no nav at all,
+    which is the exact failure this effect exists to prevent. Matching the
+    variant means it now fires only when the desktop nav is really there to
+    receive the user.
   */
   useEffect(() => {
     if (!menuOpen) return;
 
-    const desktop = window.matchMedia("(min-width: 64rem)");
+    const desktop = window.matchMedia(
+      "(min-width: 64rem) and (hover: hover) and (pointer: fine)",
+    );
     const onChange = () => {
       if (desktop.matches) closeMenu();
     };
@@ -143,7 +184,7 @@ export function SiteHeader() {
       on top of an open drawer.
     */
     <header className="relative z-50">
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter pt-5 pb-2">
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-5">
         <Link href="/" aria-label={chrome.homeLink} className="shrink-0">
           <Image
             src={brand.logo.src}
@@ -162,7 +203,7 @@ export function SiteHeader() {
           aria-expanded={menuOpen}
           aria-controls={panelId}
           aria-label={menuOpen ? chrome.closeMenu : chrome.openMenu}
-          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note lg:hidden"
+          className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note desktop-nav:hidden"
         >
           {/*
             One button that morphs into the X, rather than a close control
@@ -193,13 +234,13 @@ export function SiteHeader() {
           </span>
         </button>
 
-        <div className="hidden lg:flex lg:w-auto lg:flex-col lg:items-end lg:gap-6">
-          <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm lg:justify-end">
+        <div className="hidden desktop-nav:flex desktop-nav:w-auto desktop-nav:flex-col desktop-nav:items-end desktop-nav:gap-6">
+          <div className="flex flex-wrap items-center justify-end gap-[0.93em] text-nav-sm">
             <ButtonLink
               href={headerActions.cta.href}
               variant="ghost"
               size="fluid"
-              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
+              className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
             >
               {headerActions.cta.label}
             </ButtonLink>
@@ -214,7 +255,7 @@ export function SiteHeader() {
             <LocaleMenu selection={localeSelection} />
           </div>
 
-          <nav aria-label={chrome.primaryNavLabel} className="flex flex-col gap-4 text-nav-sm lg:flex-row lg:items-center lg:gap-[1.33em]">
+          <nav aria-label={chrome.primaryNavLabel} className="flex flex-row items-center gap-[1.33em] text-nav-sm">
             {primaryNav.map((item) =>
               "children" in item ? (
                 <NavDropdown key={item.label} group={item} />
@@ -222,7 +263,7 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                  className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                 >
                   {item.label}
                 </Link>
@@ -238,7 +279,7 @@ export function SiteHeader() {
             key="backdrop"
             type="button"
             aria-label={chrome.closeMenu}
-            className="fixed inset-0 z-50 touch-none bg-night/55 lg:hidden"
+            className="fixed inset-0 z-50 touch-none bg-night/55 desktop-nav:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -256,7 +297,7 @@ export function SiteHeader() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={labelId}
-            className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-[min(100vw,28rem)] flex-col overflow-hidden shadow-[-12px_0_48px_rgba(0,0,0,0.35)] lg:hidden"
+            className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-[min(100vw,28rem)] flex-col overflow-hidden shadow-[-12px_0_48px_rgba(0,0,0,0.35)] desktop-nav:hidden"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -278,7 +319,23 @@ export function SiteHeader() {
               the foot of the drawer bare over the page. An unscrolling panel
               keeps the veil pinned to the full height of the screen.
             */}
-            <div className="relative flex flex-1 flex-col gap-10 overflow-y-auto overscroll-contain px-gutter py-[max(1.25rem,var(--spacing-gutter))]">
+            {/*
+              **The drawer resets the masthead palette to the site's own.** The
+              `--header-*` tokens exist so a light page can recolour the nav
+              (see globals.css), but this panel is not the masthead — it paints
+              its own dark veil above the page, so its contents want the
+              cream-on-dark they have everywhere. Rebinding here rather than
+              reverting each utility means anything added to the drawer later
+              is right by default.
+            */}
+            <div
+              className="relative flex flex-1 flex-col gap-10 overflow-y-auto overscroll-contain px-gutter py-[max(1.25rem,var(--spacing-gutter))]"
+              style={{
+                ["--header-ink" as string]: "var(--color-mist-dim)",
+                ["--header-accent" as string]: "var(--color-gold)",
+                ["--header-cta" as string]: "var(--color-champagne)",
+              }}
+            >
               <Link
                 href="/"
                 id={labelId}
@@ -295,31 +352,90 @@ export function SiteHeader() {
                 />
               </Link>
 
-              <div className="flex flex-wrap items-center gap-[0.93em] text-nav-sm">
-                <ButtonLink
-                  href={headerActions.cta.href}
-                  variant="ghost"
-                  size="fluid"
-                  className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-champagne"
-                  onClick={closeMenu}
-                >
-                  {headerActions.cta.label}
-                </ButtonLink>
+              {/*
+                **The drawer's two controls, and the account line under them.**
 
-                <AccountControl onNavigate={closeMenu} />
+                A column of two rows rather than one wrapping row. The buttons
+                are one row and are centred in it; the address, when there is
+                one, is a row of its own beneath. That split is the fix for a
+                layout that put three different kinds of thing on one line — a
+                destination, a status and a session action — where the address
+                set the row's width and outranked the call to action beside it.
+
+                `items-center` on the column is what centres the pair as a
+                group; `justify-center` on the row centres them against each
+                other. The line below inherits that centring rather than
+                setting its own.
+              */}
+              <div className="flex flex-col items-center gap-[0.6em]">
+                <div className="flex flex-wrap items-center justify-center gap-[0.93em] text-nav-sm">
+                  <ButtonLink
+                    href={headerActions.cta.href}
+                    variant="ghost"
+                    size="fluid"
+                    className="min-h-[2.03em] px-[1.4em] py-[0.2em] text-nav-sm text-(--header-cta)"
+                    onClick={closeMenu}
+                  >
+                    {headerActions.cta.label}
+                  </ButtonLink>
+
+                  {/*
+                    **The way in, beside the way to buy.** These are the two
+                    things the masthead can do, and this row is where a visitor
+                    already looks for them — which is the whole reason the sign
+                    in moved up here out of the panel's foot. See
+                    `AccountDrawerSection`, which is a button now rather than
+                    the form it used to be.
+
+                    Signed in it is the sign out instead, drawn at the CTA's own
+                    height so the two read as one pair; see its `fit`.
+                  */}
+                  <AccountDrawerSection onNavigate={closeMenu} />
+                </div>
+
+                {/* Nothing at all when signed out. */}
+                <AccountDrawerLine />
               </div>
 
-              <nav aria-label={chrome.primaryNavLabel} className="flex flex-col gap-5 text-nav-sm">
+              {/*
+                **`gap-1` with 44px rows, not the `gap-5` this had.** These
+                rows were bare text, so each one's tap target was its own line
+                box — 16.8px at the phone floor, 29.7px on a tablet, against
+                the ~44px a fingertip needs. The height moves to the rows
+                themselves (`min-h-[44px]`, centred) so the targets meet and
+                tile the list instead of leaving dead gutters between them.
+
+                The gap comes down from `1.25rem` to `0.25rem` to pay for it:
+                the rows now carry their own height, so keeping the old gap
+                would add that space on top of boxes already three times their
+                text's height and push the list far looser than the client's
+                spacing. Visually this lands close to where it was; what
+                changed is that the space between labels is now tappable.
+              */}
+              <nav aria-label={chrome.primaryNavLabel} className="flex flex-col gap-1 text-nav-sm">
                 {primaryNav.map((item) =>
                   "children" in item ? (
-                    <div key={item.label} className="flex flex-col gap-5">
-                      <span className="text-mist-dim tracking-[0.01em]">{item.label}</span>
-                      <div className="flex flex-col gap-5 border-l border-(--edge-gold) pl-5">
+                    <div key={item.label} className="flex flex-col gap-1">
+                      {/*
+                        A link here too, not the inert label it used to be —
+                        the drawer has no hover and no dropdown, so if the
+                        group's own page is not reachable from its label it is
+                        not reachable at all now that OVERVIEW has gone from
+                        the children. See `NavGroup` in `content/site.ts`.
+                      */}
+                      <Link
+                        href={item.href}
+                        className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                        onClick={closeMenu}
+                      >
+                        {item.label}
+                      </Link>
+                      <div className="flex flex-col gap-1 border-l border-(--edge-gold) pl-5">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                            className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                             onClick={closeMenu}
                           >
                             <NavGroupLinkLabel link={child} />
@@ -331,7 +447,7 @@ export function SiteHeader() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
+                      className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
                       onClick={closeMenu}
                     >
                       {item.label}
@@ -341,12 +457,18 @@ export function SiteHeader() {
               </nav>
 
               {/*
-                Last, and pushed to the foot of the panel: settings rather than
+                Last, at the foot of the panel: settings rather than
                 destinations, so they sit below the places to go rather than
-                among them. Flat here instead of the desktop icon's panel — a
-                menu opening inside a drawer is a second layer over a first, and
-                with seven options in total there is nothing to save by hiding
-                them.
+                among them.
+
+                Flat here instead of the desktop icon's panel — a menu opening
+                inside a drawer is a second layer over a first, and with seven
+                options in total there is nothing to save by hiding them.
+
+                **The account section used to sit above this**, sharing the
+                `mt-auto` that pushes the pair to the foot. It moved up to the
+                CTA row on 30 October 2026 when it stopped being a form; the
+                `mt-auto` stays here, now carrying the locale block alone.
               */}
               <div className="mt-auto flex flex-col gap-5 border-t border-(--edge-gold) pt-7">
                 <LocaleControls selection={localeSelection} />

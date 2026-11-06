@@ -1,104 +1,29 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-
-import { useSignedIn } from "@/components/account/useSignedIn";
-import { headerActions } from "@/content/site";
-import { customerLabel, signOut } from "@/lib/session";
+import type { MenuSurface } from "@/components/account/account-menu-store";
+import { AccountMenu } from "@/components/account/AccountMenu";
 
 /**
- * The masthead's account control, in whichever of its two states applies.
+ * The masthead's account control.
  *
- * Somebody signed out gets the icon that has always been here, pointing at the
- * sign in page. A signed-in customer gets their own name and a way out. **That
- * is what makes signing in legible at all today**: there is no member area to
- * land in, so the header is the only place on the site that shows the session
- * exists.
+ * **A thin host since the dropdown arrived.** It used to be the whole thing: an
+ * icon linking to `/login/` when signed out, and a name beside a sign-out link
+ * when signed in. Both of those now live in `AccountMenu`, together with the
+ * panel that opens under them — the icon is a trigger rather than a link, and
+ * signing out asks first.
  *
- * **What it draws when there is no name is `customerLabel`'s and not this
- * component's**, because a buyer who claimed the account checkout made for them
- * has none and that is the ordinary case. Rendering the name straight through
- * left an empty span beside the sign out link, and an empty `title` with it.
- *
- * Rendered twice by `SiteHeader` — once on the desktop row and once in the
- * mobile drawer — which is why the answer it draws comes from a shared store
- * rather than from state of its own. Both instances ask; only one request goes
- * out.
+ * Kept as its own component rather than folded away because `SiteHeader` calls
+ * it twice, in the desktop row and in the mobile drawer, and `surface` is how
+ * the two tell themselves apart. Only one of them is on screen at a time, by
+ * CSS rather than by unmounting, so a request to open "the" account menu has to
+ * pick the visible one. See `account-menu-store.ts`.
  */
-export function AccountControl({ onNavigate }: { onNavigate?: () => void }) {
-  const { customer, setCustomer } = useSignedIn();
-  const [leaving, setLeaving] = useState(false);
-
-  async function onSignOut() {
-    if (leaving) return;
-
-    setLeaving(true);
-
-    /*
-      Caught rather than only `finally`-ed. `finally` runs the cleanup and then
-      lets the rejection carry on, and the sole caller below discards the
-      promise with `void` — so a refused sign out cleared the masthead and then
-      surfaced as an unhandled rejection, which is exactly the console noise
-      this swallow exists to prevent.
-    */
-    try {
-      await signOut();
-    } catch {
-      /*
-        Ignored on purpose. A refused sign out is almost always a session that
-        had already ended, and there is nothing a person could do with the
-        difference.
-      */
-    } finally {
-      /*
-        Cleared whether or not the API answered. A masthead still showing
-        somebody's name after they pressed this is the one outcome that would
-        be read as a fault. The next `/me` on the next page load is the truth
-        either way.
-      */
-      setCustomer(null);
-      setLeaving(false);
-    }
-  }
-
-  if (!customer) {
-    return (
-      <Link
-        href={headerActions.account.href}
-        aria-label={headerActions.account.label}
-        className="opacity-90 transition-opacity hover:opacity-100"
-        onClick={onNavigate}
-      >
-        <Image
-          src={headerActions.account.icon.src}
-          alt=""
-          width={headerActions.account.icon.width}
-          height={headerActions.account.icon.height}
-          className="h-[clamp(1.25rem,1.98vw,2.375rem)] w-auto"
-        />
-      </Link>
-    );
-  }
-
-  /* Their address when they have no name, so the slot is never blank. It is
-     longer than a name, which is what the truncation and the title are for. */
-  const label = customerLabel(customer);
-
-  return (
-    <span className="flex items-center gap-[0.6em]">
-      <span className="max-w-[10em] truncate text-mist-dim" title={label}>
-        {label}
-      </span>
-      <button
-        type="button"
-        onClick={() => void onSignOut()}
-        disabled={leaving}
-        className="text-mist-dim underline underline-offset-4 transition-colors hover:text-gold focus-visible:text-gold"
-      >
-        {headerActions.signOut.label}
-      </button>
-    </span>
-  );
+export function AccountControl({
+  surface = "row",
+  onNavigate,
+}: {
+  surface?: MenuSurface;
+  onNavigate?: () => void;
+}) {
+  return <AccountMenu surface={surface} onNavigate={onNavigate} />;
 }

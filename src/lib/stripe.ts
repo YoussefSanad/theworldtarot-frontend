@@ -115,7 +115,7 @@ export const walletAppearance: Appearance = {
     borderRadius: "12px",
     colorBackground: "#0b1626", // --color-ghost
     colorText: "#fffcf6", // --color-snow
-    colorPrimary: "#e4c46a", // --color-gold
+    colorPrimary: "#dfc894", // --color-gold
     colorDanger: "#d4af37", // --color-gold-deep; this site has no red
     fontFamily: '"Gill Sans", ui-sans-serif, system-ui, sans-serif',
   },

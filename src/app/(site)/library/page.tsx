@@ -34,10 +34,51 @@ export default function LibraryPage() {
       the background as possible" the World Tarot page carries extra padding
       for, and it is the number to move if she wants more of it or less.
 
-      740/1920 = 38.54vw. `ClosingSaying`'s own `lg:h-[…]` room-space sits
-      inside this, so this is the padding on top of what it already gives.
+      **Her 740 is not spent in full here, and that is a deliberate departure
+      from the frame.** The reason is the one `world-tarot/README.md` states
+      outright: *the frame draws neither a header nor a footer.* So the 740 is
+      air between the button and the bottom of her artboard — and the real page
+      then puts a 522px footer (at 1920) underneath it, which she never drew and
+      never budgeted for. Spending the number literally, as the World Tarot page
+      does with its own 904, stacked about 1008px of empty rotunda on top of that
+      footer and read as a hole in the page rather than as room.
+
+      Trimmed by eye against the rendered page to roughly 290px between the
+      button and the footer at 1920. **That 290 is the tuned number; the
+      padding below it is only whatever is left once the other contributors
+      are counted**, and which contributors exist changed when the button
+      moved up to meet the quote.
+
+      The room-space box used to supply 94px of it: `ClosingSaying` centred the
+      button in a `lg:h-[clamp(6rem,14vw,16rem)]` box, so half that box fell
+      below the button. `hugRule` collapses that box to `lg:h-0`, so
+      those 94px are gone and this padding has to carry them instead —
+      290 - 14 (`SiteFooter`'s own top margin) = 276px, and 276/1920 = 14.37vw.
+      It was 9.48vw while the box was doing the other half.
+
+      **The rise is `lg`-only, and has to be.** `lg:h-0` and the box it
+      replaces are both `lg`-prefixed, so below `lg` the button never sat in a
+      centred box and nothing about its placement has changed — raising the
+      shared clamp there would have added up to 50px of padding at 1023px to
+      compensate for a box that was never in play. The base clamp is untouched
+      and the phone page is byte-identical.
+
+      **So this is the knob, and 290px at 1920 is what it was tuned to.** Like
+      the World Tarot page's two overhangs, it cannot be read off the frame,
+      because what it compensates for is not in the frame.
+
+      The re-exported backdrop is what lets the column be this short without
+      going flat: the old 1280x2515 crop ran out of photograph partway down a
+      desktop page, so trimming the padding would have ended the page on bare
+      colour. The 1920x3772 export is her frame at full height, so the shorter
+      column still ends on rotunda.
+
+      **Below `lg` nothing changes.** The vw term only overtakes the 3rem floor
+      above about 506px wide, so phones keep exactly the padding they had; the
+      mobile page ends on the room by the backdrop's own floor anchor rather
+      than by this padding.
     */
-    <div className="relative isolate min-h-full pb-[clamp(3rem,38.54vw,46.25rem)]">
+    <div className="relative isolate min-h-full pb-[clamp(3rem,9.48vw,11.375rem)] lg:pb-[clamp(3rem,14.37vw,17.25rem)]">
       {/*
         `max-lg:-top-20` is the readings index's arrangement, carried here for
         the mobile sky that now opens this page below `lg` (see

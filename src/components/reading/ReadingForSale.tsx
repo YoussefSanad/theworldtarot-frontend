@@ -20,10 +20,13 @@ import { readingPageFor } from "@/content/reading-pages";
  * An unknown key is a route pointing at a page that does not exist, which is a
  * fault in this repository rather than an answer from the backend, so it
  * throws, and the export fails to build rather than shipping an empty page.
+ *
+ * `scaled` is `ReadingPresentation`'s, passed straight through: the reading
+ * routes opt into the `--reading-scale` sizing there.
  */
-export function ReadingForSale({ productKey }: { productKey: string }) {
+export function ReadingForSale({ productKey, scaled = false }: { productKey: string; scaled?: boolean }) {
   const reading = readingPageFor(productKey);
   if (!reading) throw new Error(`No reading page sells "${productKey}".`);
 
-  return <ReadingPresentation reading={reading} commerce={<ReadingOrder reading={reading} />} />;
+  return <ReadingPresentation scaled={scaled} reading={reading} commerce={<ReadingOrder reading={reading} />} />;
 }

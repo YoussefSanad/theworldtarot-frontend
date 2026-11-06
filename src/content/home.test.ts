@@ -47,7 +47,7 @@ test("the hero keeps both lengths of its body, which are different sentences", (
 test("both hero buttons keep their two lines, their mobile variants and their hrefs", () => {
   assert.deepEqual(hero.secondaryActions[0].label, ["explore the", "complete collection"]);
   assert.deepEqual(hero.secondaryActions[0].labelMobile, ["explore the", "collection"]);
-  assert.equal(hero.secondaryActions[0].href, "/living-tarot");
+  assert.equal(hero.secondaryActions[0].href, "/viewing-room/");
   assert.ok(hero.secondaryActions[0].icon.src.endsWith(".webp"));
 
   assert.deepEqual(hero.secondaryActions[1].label, ["ASK A QUESTION", "GET A PERSONAL READING"]);

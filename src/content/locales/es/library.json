@@ -12,7 +12,7 @@
     "the-hermit": "El Ermitaño",
     "the-wheel": "La Rueda",
     "justice": "La Justicia",
-    "the-hanged-man": "El Colgado",
+    "the-hangman": "El Colgado",
     "death": "La Muerte",
     "temperance": "La Templanza",
     "the-devil": "El Diablo",
@@ -26,10 +26,22 @@
   "cardAlt": "{card}, carta del tarot de The World Tarot",
   "majorArcanaNav": "ARCANOS MAYORES",
   "suits": {
-    "swords": { "label": "ESPADAS", "title": "Espadas" },
-    "cups": { "label": "COPAS", "title": "Copas" },
-    "wands": { "label": "BASTOS", "title": "Bastos" },
-    "pentacles": { "label": "OROS", "title": "Oros" }
+    "swords": {
+      "label": "ESPADAS",
+      "title": "Espadas"
+    },
+    "cups": {
+      "label": "COPAS",
+      "title": "Copas"
+    },
+    "wands": {
+      "label": "BASTOS",
+      "title": "Bastos"
+    },
+    "pentacles": {
+      "label": "OROS",
+      "title": "Oros"
+    }
   },
   "sectionsLabel": "Secciones de la Biblioteca",
   "library": {

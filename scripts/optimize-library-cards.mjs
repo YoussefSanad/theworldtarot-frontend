@@ -53,7 +53,7 @@ const SLUGS = {
   "09-the-hermit": "the-hermit",
   "10-the-wheel": "the-wheel",
   "11-justice": "justice",
-  "12-the-hangman": "the-hanged-man",
+  "12-the-hangman": "the-hangman",
   "13-death": "death",
   "14-temperance": "temperance",
   "15-the-devil": "the-devil",

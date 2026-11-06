@@ -2,7 +2,10 @@
   "pageTitle": "Redeem a Gift",
   "entry": {
     "heading": "Redeem a Gift",
-    "body": ["Someone has given you a reading.", "Enter the code from your email to open it."],
+    "body": [
+      "Someone has given you a reading.",
+      "Enter the code from your email to open it."
+    ],
     "label": "Your gift code",
     "placeholder": "Enter your gift code…",
     "submit": "FIND MY GIFT",
@@ -14,11 +17,23 @@
   "throttled": "That is a lot of tries in a short time. Please wait a minute and try again.",
   "ask": {
     "heading": "Ask Your Question",
-    "body": ["This reading is yours.", "Ask your question and it will be written for you."],
+    "body": [
+      "This reading is yours.",
+      "Ask your question and it will be written for you."
+    ],
     "codeLabel": "Gift code",
-    "question": { "label": "Your question", "placeholder": "Enter your question…" },
-    "email": { "label": "Where to send your reading", "placeholder": "Your email address…" },
-    "name": { "label": "Your name (optional)", "placeholder": "Your name…" },
+    "question": {
+      "label": "Your question",
+      "placeholder": "Enter your question…"
+    },
+    "email": {
+      "label": "Where to send your reading",
+      "placeholder": "Your email address…"
+    },
+    "name": {
+      "label": "Your name (optional)",
+      "placeholder": "Your name…"
+    },
     "submit": "GET MY READING",
     "asking": "Asking for your reading…",
     "failed": "We could not ask for your reading, and your code has not been used. Please try again."
@@ -37,7 +52,7 @@
   },
   "lost": {
     "heading": "We Cannot Show You This Redemption",
-    "body": "There is nothing here for us to look up — this page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts."
+    "body": "There is nothing here for us to look up. This page shows a gift redeemed in this tab, and that is not what brought you here. If you have just redeemed one, nothing has been lost: the email confirming it is on its way to the address you gave, and that mail is the record that counts."
   },
   "backLabel": "BACK TO READINGS"
 }

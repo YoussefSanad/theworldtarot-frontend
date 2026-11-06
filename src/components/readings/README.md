@@ -449,8 +449,11 @@ bottom third of a 375px screen, flat above it. That one rule reads correctly at
 every width — the only thing the viewport changes is how far up the page the
 room reaches. It is width-driven rather than `cover`-to-fill, because filling a
 page three times taller than the frame means cropping the room down to a
-vertical slice; nothing is cropped horizontally here and no edge is ever cut,
-since the feather is on the only edge that can meet flat colour.
+vertical slice; nothing is cropped horizontally here and no edge is ever cut.
+
+The feather is on the **top** edge, which is the only one that meets flat colour
+*within* the page. The bottom edge meets something else, and it took a second
+fix; see below.
 
 Three details are load-bearing. The image is a `::after` rather than a
 background on the element itself, so the feather can be a mask in the
@@ -463,6 +466,40 @@ to the page's own content, not the layout column — the client's mockups draw n
 site footer, and ours is opaque, so anchored to the column the artwork would
 spend its whole height behind the footer on a phone and never be seen. See the
 wrapper in `page.tsx`.
+
+### The bar above the footer was the footer's own margin
+
+Reported by the client as a visible bar between the footer and the content above
+it. The artwork's bottom edge is not feathered — it is the floor the room stands
+on — so the instinct is that the edge is seaming against the page colour, the way
+the Library rotunda's once did.
+
+It is not that. Sampling the parlour's last rows gives about `#050b16` against a
+`--color-ink` page of `#0a1421`: nearly the same colour, and if anything the
+artwork is the *darker* of the two, so there is no light-against-dark seam to
+see. The bar is **bare layout column** showing through `SiteFooter`'s
+`mt-[clamp(0.5rem,0.73vw,0.875rem)]`, a margin that belongs to neither box. It
+measured 8–11px, which is that clamp exactly.
+
+The cure is `--parlour-drop: 2rem` on the atmosphere, carrying the artwork's
+bottom edge past the margin and a little under the footer's scrim — the World
+Tarot path's `--path-drop` and the Library's `--room-drop` under a third name.
+**It also meant dropping `overflow: clip` from the element**, which is the trap
+those two pages already record: a clip cuts off exactly the overhang the drop
+creates, so while it is there no value of the drop can appear to work. The
+clip's stated reason ("the artwork runs taller than the page on a narrow
+desktop") could not happen anyway — the `::after` is capped at
+`min(171.51vw, 100%)`, and the second term is the element itself.
+
+A reading's own page (`.page-atmosphere-reading`) is floor-anchored the same way
+and had the same bar; it takes the same fix as `--observatory-drop`. The card
+reference page does not — it is top-anchored and fades out well above the
+footer.
+
+So the site now has two distinct faults on record with two different cures: an
+**edge** seaming against the page colour (cure: fade it out) and a **gap** with
+nothing painted in it (cure: reach across it). Sample the edge colour first to
+tell them apart.
 
 Figma's `IN DEPTH READING BLUE WINDOW PANE` (1508x299 at 45%) is dropped. It
 is a near-uniform `rgb(15, 26, 38)` wash behind the card row that resolves to

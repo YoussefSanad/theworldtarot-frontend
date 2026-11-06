@@ -1,11 +1,12 @@
 "use client";
 
+import { CardReferencePage } from "@/components/library/card/CardReferencePage";
 import { ComingSoonPage } from "@/components/library/ComingSoonPage";
 import { cardAlt, comingSoon, findMajorArcana } from "@/content/library";
 
 /**
- * A Major Arcana card's reference page, looked up by slug — **a placeholder for
- * now**, for the reasons `app/(site)/library/[card]/page.tsx` gives.
+ * A Major Arcana card's reference page, looked up by slug: the template when
+ * the card has content in `card-content.ts`, the placeholder while it does not.
  *
  * **It takes a slug rather than the card, and that is why it exists.** The
  * route is a server component, so a name, message and alt text it passed down
@@ -21,13 +22,17 @@ export function CardPage({ slug }: { slug: string }) {
     throw new Error(`Unknown card "${slug}"`);
   }
 
-  return (
-    <ComingSoonPage
-      heading={card.name}
-      eyebrow={card.numeral}
-      message={comingSoon.card}
-      image={card.image}
-      imageAlt={cardAlt(card)}
-    />
-  );
+  if (!card.content) {
+    return (
+      <ComingSoonPage
+        heading={card.name}
+        eyebrow={card.numeral}
+        message={comingSoon.card}
+        image={card.image}
+        imageAlt={cardAlt(card)}
+      />
+    );
+  }
+
+  return <CardReferencePage card={card} content={card.content} />;
 }

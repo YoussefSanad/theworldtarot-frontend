@@ -24,7 +24,7 @@ export const PRODUCTS_SECTION_ID = "choose-your-journey";
 
 /** Where each hero button goes, and its mark. The words are in `locales/`. */
 const SECONDARY_ACTIONS = [
-  { href: "/living-tarot", icon: icons.book },
+  { href: "/viewing-room/", icon: icons.book },
   { href: "/readings", icon: icons.talk },
 ];
 
@@ -161,7 +161,7 @@ const PRODUCT_STRUCTURE = [
     // for the merge to find it. The tile's own URL is `href` and is unaffected.
     key: "viewing-room-pass",
     price: "$29",
-    href: "/viewing-room",
+    href: "/viewing-room/",
     image: artwork.productViewingRoom,
   },
 ];

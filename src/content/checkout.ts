@@ -177,6 +177,109 @@ export const checkoutCompleteCopy = {
     amountLabel: copy.giftReceived.amountLabel,
   } satisfies OutcomeCopy,
 
+  /**
+   * The ninth screen: what `received` says when what was paid for was the
+   * **Viewing Room pass**.
+   *
+   * **A variant of `received`, exactly as `giftReceived` is, and for the same
+   * reason.** The other six outcomes report unfinished money and have nothing
+   * pass-shaped to add — four of them say no payment was taken, and a screen
+   * hedging about a payment while promising lifetime access is two screens in
+   * one. So this is chosen at render, on `received` alone.
+   *
+   * ## Why it had to exist
+   *
+   * The pass goes through `ExpressCheckout` and `HostedCheckoutButton` — the
+   * reading pages' own two roads, reused by `PaymentPanel` because they take a
+   * product key and know nothing about readings — and so landed on `received`
+   * like everything else. That screen said **"Your reading is on its way"** and
+   * **"will be delivered within 24 hours"** to somebody who had bought neither
+   * a reading nor anything that gets delivered, named it "reading" through
+   * `unnamedReading` because `viewing-room-pass` has no `ReadingPage`, and then
+   * offered BACK TO READINGS as the only way on. Four wrong answers on the one
+   * screen a buyer re-reads.
+   *
+   * **Nothing is delivered and nothing is written**, so the delivery window is
+   * absent here for `giftReceived`'s reason: there is no clock to start. What a
+   * pass buyer got is access, and access is already theirs.
+   *
+   * ## The steps are the backend's behaviour, not encouragement
+   *
+   * `API_CONTRACT.md` section 2: the claim mail that carries a set-password
+   * link **is sent only for an order that grants Viewing Room access**, and "in
+   * practice this is a pass buyer choosing their first password". A reading
+   * buyer is never sent one. So the one next step this screen can state is the
+   * one the backend actually performs, and it is stated in the order it
+   * happens: the mail, then the password, then the room.
+   *
+   * **`hasViewingRoomAccess` hangs off the account**, so a buyer who never
+   * claims one cannot watch anything — which is why the mail is named first and
+   * the room second, rather than a gold button on its own with the account step
+   * left for the buyer to discover at the paywall they just paid to pass.
+   *
+   * A buyer who already had an account and was signed in when they bought skips
+   * all of that; the room simply opens. The wording is written to be true for
+   * them as well, which is why step one says what has been sent rather than
+   * instructing them to go and do something.
+   */
+  passReceived: {
+    heading: copy.passReceived.heading,
+    /*
+      Takes the name and ignores it, so the shape still matches the other eight
+      and the renderer asks every screen the same question. The product is
+      named in the sentence itself: "The Living Tarot" is what the client calls
+      the collection on the Viewing Room page, and it is a fixed name rather
+      than a catalogue lookup — the pass is one product and always this one.
+    */
+    body: () => copy.passReceived.body,
+    amountLabel: copy.passReceived.amountLabel,
+    /** Introduces the pair below. */
+    stepsLead: copy.passReceived.stepsLead,
+    /**
+     * The two steps, in the order the backend performs them.
+     *
+     * Copy rather than markup so the client can change the words without
+     * touching a component, the way every other sentence on this screen can be.
+     */
+    steps: copy.passReceived.steps,
+    /**
+     * The gold button, in the client's capitals and in her own words for this
+     * control — `ENTER THE VIEWING ROOM` is what the paywall's button says, and
+     * a buyer who just pressed it should land on a screen offering the same
+     * door rather than a differently-worded one.
+     */
+    enterLabel: copy.passReceived.enterLabel,
+    enterHref: "/viewing-room/",
+  },
+
+  /**
+   * The reading buyer's next steps, under `received` and under nothing else.
+   *
+   * **Why a reading screen needs them at all.** `received` already makes the
+   * client's promise — the reading is coming, within 24 hours, and a
+   * confirmation mail is on its way — and that sentence is #51's and is not
+   * touched here. What it did not do was tell a buyer what to *do*, so the
+   * screen ended on a paragraph and a BACK TO READINGS ghost button and read
+   * as though it had stopped rather than finished. These are the same two
+   * beats the pass screen states, for the same reason: the buyer should not
+   * have to work out where the thing they paid for will appear.
+   *
+   * **They promise nothing new.** Step one restates the delivery already
+   * promised above as the place it will arrive, and step two is the one piece
+   * of advice this screen can give that the body does not: a reading arrives
+   * by mail, and mail goes astray. Nothing here claims a reading has been
+   * written — the backend settles the order, and `received` is already as far
+   * as this screen may go. See the file header.
+   *
+   * **`received` only.** The six outcomes that report unfinished money have no
+   * next step to offer but the one their own body already gives, which is to
+   * try the payment again.
+   */
+  receivedSteps: {
+    lead: copy.receivedSteps.lead,
+    steps: copy.receivedSteps.steps,
+  },
+
   /** While Stripe is being asked. Not a claim about anything. */
   checkingHeading: copy.checkingHeading,
 

@@ -1,13 +1,13 @@
 {
   "primaryNav": [
     "WORLD TAROT",
-    "LIVING TAROT",
+    "VIEWING ROOM",
     "READINGS",
     "LIBRARY",
+    "LEARN",
     "FAQ"
   ],
   "readingsChildren": [
-    "OVERVIEW",
     "1 CARD EXPERIENCE",
     "3 CARD",
     "MONTH AHEAD",
@@ -21,9 +21,10 @@
   },
   "footerNav": [
     "World Tarot",
-    "Living Tarot",
+    "Viewing Room",
     "Readings",
     "Library",
+    "Learn",
     "FAQ",
     "Contact",
     "Terms & Conditions",

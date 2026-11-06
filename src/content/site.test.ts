@@ -16,15 +16,15 @@ import { footerNav, headerActions, newsletter, primaryNav, socialHeading, social
 test("primary nav keeps its labels, its order, and its hrefs", () => {
   assert.deepEqual(
     primaryNav.map((item) => item.label),
-    ["WORLD TAROT", "LIVING TAROT", "READINGS", "LIBRARY", "FAQ"],
+    ["WORLD TAROT", "VIEWING ROOM", "READINGS", "LIBRARY", "LEARN", "FAQ"],
   );
 
   const readings = primaryNav.find((item) => item.label === "READINGS");
   assert.ok(readings && "children" in readings);
+  assert.equal(readings.href, "/readings/");
   assert.deepEqual(
     readings.children.map((child) => [child.label, child.href]),
     [
-      ["OVERVIEW", "/readings/"],
       ["1 CARD EXPERIENCE", "/readings/one-card"],
       ["3 CARD", "/readings/three-card/"],
       ["MONTH AHEAD", "/readings/month-ahead/"],
@@ -41,14 +41,15 @@ test("the masthead's call to action still points at the readings index", () => {
   assert.equal(headerActions.bag.label, "Your bag");
 });
 
-test("the footer keeps all nine links, in order", () => {
+test("the footer keeps all ten links, in order", () => {
   assert.deepEqual(
     footerNav.map((link) => [link.label, link.href]),
     [
       ["World Tarot", "/world-tarot/"],
-      ["Living Tarot", "/living-tarot"],
+      ["Viewing Room", "/viewing-room/"],
       ["Readings", "/readings/"],
       ["Library", "/library/"],
+      ["Learn", "/learn/"],
       ["FAQ", "/faq"],
       ["Contact", "/contact"],
       ["Terms & Conditions", "/terms"],

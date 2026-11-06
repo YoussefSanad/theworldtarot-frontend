@@ -34,7 +34,7 @@ test("the deck keeps its order, its numerals and the client's names", () => {
       ["the-hermit", "IX", "The Hermit"],
       ["the-wheel", "X", "The Wheel"],
       ["justice", "XI", "Justice"],
-      ["the-hanged-man", "XII", "The Hanged Man"],
+      ["the-hangman", "XII", "The Hangman"],
       ["death", "XIII", "Death"],
       ["temperance", "XIV", "Temperance"],
       ["the-devil", "XV", "The Devil"],
@@ -59,15 +59,16 @@ test("the suits keep their labels, titles and addresses, in order", () => {
   assert.deepEqual(
     suits.map((suit) => [suit.slug, suit.label, suit.title, suit.href]),
     [
-      ["swords", "SWORDS", "Swords", "/library/swords/"],
-      ["cups", "CUPS", "Cups", "/library/cups/"],
-      ["wands", "WANDS", "Wands", "/library/wands/"],
-      ["pentacles", "PENTACLES", "Pentacles", "/library/pentacles/"],
+      ["swords", "SWORDS", "Swords", "/library/swords-tarot-suit-meaning/"],
+      ["cups", "CUPS", "Cups", "/library/cups-tarot-suit-meaning/"],
+      ["wands", "WANDS", "Wands", "/library/wands-tarot-suit-meaning/"],
+      ["pentacles", "PENTACLES", "Pentacles", "/library/pentacles-tarot-suit-meaning/"],
     ],
   );
   assert.deepEqual(suitMeta("cups"), {
     title: "Cups",
-    description: "The suit of Cups in the Minor Arcana of The World Tarot.",
+    description:
+      "The suit of Cups in The World Tarot: emotion, intuition, connection. Cups speak to love, compassion, creativity, and the feelings that shape our experience.",
   });
 });
 

@@ -24,7 +24,7 @@ export default function InDepthReadingPage() {
           price: inDepth.price,
         })}
       />
-      <ReadingForSale productKey={inDepth.productKey} />
+      <ReadingForSale scaled productKey={inDepth.productKey} />
     </>
   );
 }

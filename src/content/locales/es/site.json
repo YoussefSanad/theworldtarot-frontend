@@ -1,13 +1,13 @@
 {
   "primaryNav": [
     "WORLD TAROT",
-    "LIVING TAROT",
+    "SALA DE PROYECCIÓN",
     "LECTURAS",
     "BIBLIOTECA",
+    "APRENDE",
     "PREGUNTAS"
   ],
   "readingsChildren": [
-    "RESUMEN",
     "EXPERIENCIA DE 1 CARTA",
     "3 CARTAS",
     "EL MES QUE VIENE",
@@ -21,9 +21,10 @@
   },
   "footerNav": [
     "World Tarot",
-    "Living Tarot",
+    "Sala de Proyección",
     "Lecturas",
     "Biblioteca",
+    "Aprende",
     "Preguntas frecuentes",
     "Contacto",
     "Términos y condiciones",

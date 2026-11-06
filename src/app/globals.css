@@ -1,6 +1,46 @@
 @import "tailwindcss";
 
 /*
+  **Who gets the desktop nav: a width AND a pointer that can hover.**
+
+  `SiteHeader` shows a label-plus-dropdown nav above this and a hamburger
+  drawer below it. That split used to be `lg:` alone, which asks the wrong
+  question — `NavDropdown` opens its panel on `pointerenter` and explicitly
+  ignores touch, so on a touchscreen wide enough to clear `lg` the panel's
+  only door is a 0.55em chevron. The iPad Pro 13" is 1032 x 1376, so *both*
+  its orientations landed there.
+
+  Width cannot tell that iPad from a 1024px laptop window, so the query asks
+  about the pointer instead. The drawer was already built for touch — flat
+  rows, no hover anywhere — so the fix is to let the device that needs it have
+  it, not to teach the dropdown a second interaction model.
+
+  A media query rather than `matchMedia`: this app is a static export, so a JS
+  check would paint the wrong nav before hydration and then flicker.
+
+  Known trade-off: a touchscreen laptop reports `pointer: coarse` and so takes
+  the drawer at full desktop width. That is the safe direction to fail — the
+  drawer works at every width — and it is why this is one variant rather than
+  a condition spelled out at each of the four call sites.
+*/
+/*
+  **One variant, not a complementary pair — and that is deliberate.**
+
+  The obvious shape here is a second `touch-nav` variant holding the De Morgan
+  inverse, `(max-width: ...), (hover: none), (pointer: coarse)`. Do not: in
+  Tailwind v4 a comma list inside `@custom-variant` compiles to its FIRST
+  condition only. The other two are dropped silently, with no build error, so
+  `touch-nav` degrades into a plain `max-width` — and an iPad Pro 13" at
+  1032px then matches neither variant and gets no nav control whatsoever.
+  Verified in the built CSS, not assumed.
+
+  So the drawer controls are visible unconditionally and this one query hides
+  them, which puts both branches of the split on the same compiled condition
+  and makes "no nav" unrepresentable.
+*/
+@custom-variant desktop-nav (@media (min-width: 64rem) and (hover: hover) and (pointer: fine));
+
+/*
   Design tokens for The World Tarot.
 
   Colours and type come from the client style sheet (TWT STYLE SHEET) and were
@@ -15,15 +55,48 @@
   --color-ink-deep: #101b2e; /* label ink on gold */
   --color-ghost: #0b1626; /* fill of every bordered control, and of the menus they open */
   --color-slate: #40484f; /* label ink on the product tile buttons */
-  --color-gold: #e4c46a;
+  --color-gold: #dfc894;
   --color-gold-deep: #d4af37;
   --color-gold-soft: #c9b87c;
   --color-champagne: #fff3d7;
   --color-cream: #fdf4da;
+  /*
+    The Learn page's eyebrow on its cream bands — a warm dark gold-brown, and
+    the one ink on the site that is neither the blue nor the gold. It is hers,
+    sampled from the PSD, and it reads as a quieter gold against cream where
+    `--color-gold` would wash out at that size.
+  */
+  --color-bronze: #483e20;
   --color-mist: #d0d1d4;
   --color-mist-dim: #bfc4c8;
   --color-ash: #cac8c8;
   --color-snow: #fffcf6;
+
+  /*
+    **The masthead's own palette, as tokens rather than fixed utilities.**
+
+    The header is shared chrome drawn once and rendered above every page, so it
+    cannot know what it sits on — but one page needs it in different colours.
+    A card's reference page is the site's only light ground, and the client's
+    note is that the masthead has to stay legible there. These three are what
+    the nav, the CTA and the account row actually resolve to; the default is
+    the site's existing cream-on-dark, and `.library-card-page` below is the
+    one place that rebinds them.
+
+    Why tokens and not a `.library-card-page &` override per component: the
+    colours are spread across `SiteHeader`, `NavDropdown`, `LocaleControls` and
+    `AccountControl` as `text-mist-dim` / `hover:text-gold` utilities, so an
+    override would have to be repeated in four files and re-found every time
+    someone adds a control. Rebinding a variable once catches all of them,
+    including anything added later.
+
+    **`-accent` is hover, focus and open state in one.** They are the same
+    colour everywhere in the masthead today, and keeping them one token is what
+    stops a future page rebinding three-quarters of a state.
+  */
+  --header-ink: var(--color-mist-dim); /* resting nav, account row */
+  --header-accent: var(--color-gold); /* hover, focus-visible, open */
+  --header-cta: var(--color-champagne); /* the CTA's label */
 
   /* Type families */
   --font-display: var(--font-magically), var(--font-cinzel), serif;
@@ -75,6 +148,108 @@
   --text-fine: clamp(0.75rem, 0.9375vw, 1.125rem); /* 18px */
   --text-fine--line-height: 1.15;
 
+  /*
+    The card reference page's own steps (Figma `357:261`).
+
+    Same derivation as every step above — the Figma pixel value is the clamp's
+    maximum and the vw term is that value / 19.2. They live here rather than
+    scoped to the page because Tailwind generates the `text-*` utilities from
+    this block and from nowhere else; a scoped custom property would set a
+    variable no utility reads.
+  */
+  --text-card-name: clamp(1.75rem, 2.5vw, 3rem); /* 48px */
+  --text-card-name--line-height: 1;
+  --text-card-lead: clamp(1.375rem, 1.875vw, 2.25rem); /* 36px */
+  --text-card-lead--line-height: 1.1;
+  /*
+    **The floors are the client's 18px/22px, not her frame's.** Each of these
+    still tops out at the size she drew — the maxima are untouched — but the
+    small ends were 15-16px, which is where the page actually renders on a
+    phone and a narrow laptop, and she asked for 18/22 as the readable floor
+    for body copy sitewide on this page.
+
+    22/18 is 1.222, so the line heights that were tuned tighter than that are
+    raised to meet it: a floor on the size alone would hit the target for type
+    and miss it for leading. `--text-card-label` was 1.2 and is now 1.222;
+    `--text-card-body` was 1.083, which is very tight for running prose and is
+    the one the client is reading in the panels.
+  */
+  --text-card-label: clamp(1.125rem, 1.1458vw, 1.375rem); /* 18px floor, 22px */
+  --text-card-label--line-height: 1.222;
+  --text-card-body: clamp(1.125rem, 1.25vw, 1.5rem); /* 18px floor, 24px */
+  --text-card-body--line-height: 1.222;
+  --text-card-fine: clamp(1.125rem, 0.9375vw, 1.125rem); /* 18px, flat */
+  --text-card-fine--line-height: 1.222;
+
+  /*
+    That page's palette, and the one place on the site that is dark on light.
+    Named `card-*` because `--color-ink` above is already the brand blue the
+    header and footer are drawn in — this page's near-black is a different
+    colour with a similar name, and sharing one would move site chrome.
+  */
+  /*
+    **All three are pure black at the client's instruction.** They were
+    `#050a17` for headings, `#4f4a41` for body copy and `#174310` for the rules
+    and LOOK FOR prose — sampled from her PSD, where they read as a near-black,
+    a warm grey and a forest green. She has since called those a mistake in the
+    original design rather than an intention: the softened ink was costing
+    legibility on the page's pale sheet, and the dividers now ship black too
+    (see `cardReference.dividerGreen`).
+
+    They stay three separate names rather than collapsing into one. Each marks
+    a different job — heading, body, accent — and the page reads them in
+    different places; if any of the three is ever pulled back off black, it can
+    move on its own.
+  */
+  --color-card-ink: #000000; /* her headings */
+  --color-card-ink-soft: #000000; /* her body copy */
+  --color-card-forest: #000000; /* the rules, and the LOOK FOR prose */
+  /*
+    **The suit pages' navy, which the card pages do not use.**
+
+    Her four suit frames are set in two inks rather than the card pages' one:
+    black for the title and the keyword line, and this navy for everything
+    else — the three paragraphs, KEY THEMES and its lines, the sphere cards,
+    the closing saying and the unfolding block. Sampled from her `CUPS.psd`
+    at `#17335d`, and the client confirmed the split.
+
+    **It is a separate token rather than a change to the three above**, because
+    those were taken to pure black at her request for the card pages and the
+    twenty-two must not move. The suit pages opt in; nothing else reads this.
+  */
+  --color-suit-ink: #17335d;
+  /*
+    **The dark panels' ground, which is not the ink above.**
+
+    `--color-card-ink` was doing two jobs: the page's dark *type* on the sheet,
+    and the near-black *surface* the "When … Appears in a Reading" and SHADOW
+    panels are drawn on. Taking the ink to pure black at the client's request
+    took those panels with it, and a flat `#000` panel is not what she drew —
+    her navy has a blue cast that reads as a deep night beside the gold, where
+    black reads as a hole.
+
+    So the surface keeps her original `#050a17` under its own name. The two
+    were only ever the same value by coincidence.
+  */
+  --color-card-panel: #050a17;
+  /*
+    **The SHADOW panel's ground, which is not the panel above it either.**
+
+    The same lesson as `--color-card-panel` directly above, one step further on.
+    That token exists because the page's dark *surface* is not its dark *ink*;
+    this one exists because the SHADOW panel's surface is not the "Appears in a
+    Reading" panel's surface. Her frame draws two different darks: a near-black
+    navy for the reading panel and this neutral grey, measurably lighter and
+    with the blue gone, for the plaque the figure stands on.
+
+    Sampled from the twenty-two shipped `shadows/<slug>.webp` exports, which is
+    where this colour lived until `.card-shadow-ground` replaced the panel half
+    of those images with CSS. See that rule for why it is a sampled value rather
+    than a mix of the token above.
+  */
+  --color-card-shadow: #383638;
+  --color-card-parchment: #f2e8d5;
+
   /* Layout rhythm */
   --spacing-gutter: clamp(1.25rem, 3.125vw, 3.75rem); /* 60px edge inset: header bleed, column gaps */
   --spacing-section: clamp(3rem, 7.2917vw, 8.75rem); /* 140px section padding */
@@ -112,11 +287,100 @@
     is what `.library-grid` is built from.
   */
   --container-library: 914px;
+  /*
+    A card's reference page draws two columns, and neither is a width the site
+    already has: her prose runs 1035px (SECTION 1, x=455) and her panels run
+    wider at 1234px (SECTION 2, x=341), so the artwork breaks out past the text
+    rather than the two sharing one measure.
+  */
+  --container-card: 1035px;
+  --container-card-wide: 1234px;
+  /* Her sheet of paper, `Layer 21`, which every block on that page sits inside. */
+  --container-card-paper: 1337px;
+  /*
+    The closing line's own box on that page. Her frame draws it at 513px —
+    narrow enough that "The invitation is not to know - / it is to begin"
+    breaks where she breaks it rather than running on one line in the 1035px
+    column.
+
+    **640px, because her 513 was measured off the one card that wanted to
+    break.** His closing is two `Phrase` parts and hers is the only one written
+    that way; the other twenty-one are single strings, so they wrapped wherever
+    the box ran out and orphaned a word — "You are ready to answer the / call"
+    on Judgement. Measured in a browser: at 513 only fourteen of the
+    twenty-two sat on one line, at 640 it is twenty.
+
+    **The ceiling is The Fool, not the copy.** `Phrase` sets its parts on one
+    line while they fit, so a box wide enough for his 505px closing collapses
+    the break he was given. 640 renders at 462px — 43px of margin under that —
+    and 700 would cross it by a single pixel. Re-measure in a browser before
+    raising this; the two 0.85 scale factors make the token and the rendered
+    width very different numbers.
+
+    Justice stays on two lines at any sane width: its 58 characters need 757px,
+    wider than the 1035px prose column it sits under.
+  */
+  --container-card-closing: 640px;
 
   --radius-button: 0.625rem;
   --radius-button-lg: 0.875rem;
 
   --ease-veil: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+  The two knobs the sitewide content scale turns. Both are neutral here, at
+  every width: below `lg` the page is the tablet and phone layout the client
+  signed off and nothing scales. The desktop values live in the
+  `@media (width >= 64rem)` block further down, which is the one place to
+  retune this — see the long note there for why it is a token scale rather
+  than a transform.
+*/
+:root {
+  /* 1 = the page exactly as drawn in Figma. Desktop overrides this to 0.85. */
+  --content-scale: 1;
+  /*
+    The Library deck's multiplier on top of `--content-scale`, so the cards can
+    go up while the rest of the site comes down. 1 everywhere but desktop.
+  */
+  --library-scale: 1;
+  /*
+    The card reference page's multiplier on top of `--content-scale`, the same
+    arrangement as `--library-scale` above and for the same reason: one page
+    steps further while the rest of the site holds still. 1 everywhere but
+    desktop, where `.library-card-page` takes it to 0.85 — the page read as
+    jumbo there even after the site-wide reduction. See the note on it.
+  */
+  --card-scale: 1;
+  /*
+    The three reading pages, which take the same treatment as the card page and
+    for the same reason — see `.reading-page` in the desktop query.
+
+    **Two knobs rather than one, because the client asked for two things.**
+    `--reading-rhythm` is the vertical gaps between blocks and `--reading-scale`
+    is everything's size; the ask was for the rhythm to come in *before* any
+    shrinking, so they tune separately. A single factor could not express
+    "tighter but not yet smaller".
+
+    Both are 1 here and set on the page class on desktop. `/redeem/` renders the
+    same `ReadingPresentation` and is deliberately not included: it is a page the
+    client has not asked to change, which is why the class arrives by an opt-in
+    prop rather than living on the component.
+  */
+  --reading-rhythm: 1;
+  --reading-scale: 1;
+  /*
+    **The alias the shared blocks read**, so a block drawn on more than one page
+    family scales with whichever page it is on.
+
+    `ClosingSaying` is the case that forced it: the card reference page and the
+    three reading pages both draw it, and each shrinks by its own factor. A
+    block that hardcoded `--reading-*` would have ignored the card page's
+    `--card-scale` and vice versa, so it reads these instead and each page maps
+    them to its own numbers. 1 here, so a page that maps neither is unchanged.
+  */
+  --block-rhythm: 1;
+  --block-scale: 1;
 }
 
 /*
@@ -131,19 +395,19 @@
 :root {
   --gradient-gold: linear-gradient(
     45deg,
-    #d6b661 0%,
-    #f5dc84 13%,
-    #f7e19c 25%,
-    #fae7b4 38%,
-    #fae7b7 50%,
-    #f7e29e 63%,
-    #f5db84 75%,
-    #e2c56f 88%,
-    #b18f49 100%
+    #c9ac6e 0%,
+    #e8d191 13%,
+    #edd9a6 25%,
+    #f2e1bc 38%,
+    #f3e1be 50%,
+    #eddaa8 63%,
+    #e8d091 75%,
+    #d5bb7c 88%,
+    #a58755 100%
   );
   --glow-gold: 0 0 16px rgba(248, 242, 176, 0.59);
   --glow-gold-strong: 0 0 28px rgba(250, 231, 183, 0.5);
-  --edge-gold: rgba(228, 196, 106, 0.55); /* resting border of a bordered control */
+  --edge-gold: rgba(223, 200, 148, 0.55); /* resting border of a bordered control */
   /*
     The same light as `--glow-gold`, tuned for `drop-shadow` on a 2px line
     rather than `box-shadow` around a filled box: far less source to spread,
@@ -237,27 +501,310 @@
   --measure-reading-props: 47.7rem; /* 763px */
   --measure-flourish: 448px;
   --measure-flourish-wide: 538px;
+  /* The card page's sheet fills the screen below `lg`, like every other measure. */
+  --measure-card-paper: 100%;
+  /* The card reference page's green rule, drawn at 582px in her frame. */
+  --measure-rule-green: 582px;
   --measure-hairline: min(12rem, 100%);
 }
 
+/*
+  Sitewide content scale, desktop only.
+
+  The client asked for the whole page to sit about 15% smaller inside the
+  viewport, with more of the artwork showing around it. Every measure below and
+  every type step further down is multiplied by this one number, so the change
+  is a single global adjustment rather than a per-page tweak and the
+  proportions the design was drawn at survive intact.
+
+  **Why this is a scale on the tokens and not a `transform: scale()` on the
+  page.** A transform would scale rendered pixels: text and the gold hairlines
+  go soft at a fractional factor, the scaled box becomes a containing block and
+  takes the sticky masthead with it, and the page atmosphere is pinned to the
+  raw viewport (`--atmosphere-width`, and the hand-computed offsets past
+  1920px) so the artwork would stop lining up with the content it frames.
+  Scaling the tokens keeps the layout real — the type stays selectable and
+  zoomable, the background stays exactly where it was, and the extra room
+  simply becomes visible artwork, which is the point.
+
+  **Desktop only.** This block is already the `>= 64rem` half of the measures,
+  and the type steps below are overridden in the same query, so the tablet and
+  phone layouts are untouched: their clamp floors are what carry those widths
+  and nothing here reaches them.
+
+  One knob: change `--content-scale` alone to retune the whole site.
+*/
 @media (width >= 64rem) {
   :root {
-    --measure-page: min(var(--container-page), 81.667vw);
-    --measure-hero: min(var(--container-hero), 80.052vw);
-    --measure-narrow: min(var(--container-measure), 60.052vw);
-    --measure-copy: min(var(--container-copy), 83.333vw);
-    --measure-value-props: min(var(--container-value-props), 65.99vw);
-    --measure-readings: min(var(--container-readings), 78.229vw);
-    --measure-readings-gift: min(var(--container-readings-gift), 62.031vw);
-    --measure-reading: min(var(--container-reading), 74.531vw);
-    --measure-world-tarot: min(var(--container-world-tarot), 53.594vw);
-    --measure-library: min(var(--container-library), 47.604vw);
+    --content-scale: 0.85;
+    /*
+      The Library's deck goes the other way, per the client.
+
+      **This factor is against the shrunken page, not against the original
+      deck, and the two are very different numbers.** A first pass set it to
+      1.2 on the reading "20% larger", which is 20% larger than the page around
+      it — but `--content-scale` had already taken the deck down 15%, so the
+      two nearly cancelled and the deck came out just 2% over where it started
+      (0.85 × 1.2 = 1.02). Against a 15%-smaller page that is a real contrast,
+      but nobody sees the page twice: the eye compares the deck to the deck it
+      remembers, and at +2% it reads as unchanged.
+
+      1.4 is what "20% larger" means measured the way it is actually seen —
+      0.85 × 1.4 = 1.19, so the deck sits 19% above its original width while
+      the rest of the page sits 15% below. At 1920px that is 914px → 1088px,
+      with 416px of artwork still clear on either side.
+    */
+    --library-scale: 1.4;
+
+    /*
+      **The card reference page steps 15% below the rest of the site**, at the
+      client's request: it still read as jumbo here after `--content-scale`,
+      because her frame is drawn at a scale that suits a 1920 comp and not a
+      browser.
+
+      This is the same arrangement as `--library-scale` above, pointed the other
+      way — one factor on top of the site's, applied to the tokens that page
+      owns (`--text-card-*` and the four `card*` measures, all of which carry
+      `var(--card-scale)`).
+
+      **It is a `:root` default of 1 overridden on `.library-card-page`, rather
+      than a 0.85 here, and the scope is why.** Those tokens are declared on
+      `:root` beside the site's own steps, so setting the factor there would be
+      indistinguishable from retuning the site. On the page's class it inherits
+      to every consumer — a `.shell--card` is inside that element, and a custom
+      property substitutes where it is *used*, not where it is declared — while
+      staying 1 everywhere else, including the twenty-one `ComingSoonPage`
+      siblings that serve the same URL shape.
+
+      **Desktop only, because it lives in this query.** Below `lg` the layout
+      has stopped scaling and the clamp floors carry it, and another 15% off
+      those would put the page's prose under 16px — the one direction it cannot
+      go. The compounded figure on desktop is 0.7225 against her frame, which is
+      the intent: 15% off what is on screen today, not off the comp.
+    */
+
+
+    /*
+      Both halves of each measure scale: the `vw` term so the column tracks the
+      viewport at the new proportion, and the `--container-*` cap so it still
+      freezes at the right width on a very wide screen. Multiplying the whole
+      `min()` does both at once and leaves the Figma numbers above readable as
+      the source of truth.
+    */
+    --measure-page: calc(min(var(--container-page), 81.667vw) * var(--content-scale));
+    --measure-hero: calc(min(var(--container-hero), 80.052vw) * var(--content-scale));
+    --measure-narrow: calc(min(var(--container-measure), 60.052vw) * var(--content-scale));
+    --measure-copy: calc(min(var(--container-copy), 83.333vw) * var(--content-scale));
+    --measure-value-props: calc(min(var(--container-value-props), 65.99vw) * var(--content-scale));
+    --measure-readings: calc(min(var(--container-readings), 78.229vw) * var(--content-scale));
+    --measure-readings-gift: calc(min(var(--container-readings-gift), 62.031vw) * var(--content-scale));
+    --measure-reading: calc(min(var(--container-reading), 74.531vw) * var(--content-scale));
+    --measure-world-tarot: calc(min(var(--container-world-tarot), 53.594vw) * var(--content-scale));
+    /*
+      The Library's deck is the one exception the client asked for: against a
+      page that has come down 15%, the cards are to read *larger*, so the deck
+      takes a 1.2 of its own on top of the sitewide scale. Written as the two
+      factors rather than a single collapsed number so the intent stays legible
+      — this is "sitewide, then up again", not a measure that opted out.
+    */
+    --measure-library: calc(min(var(--container-library), 47.604vw) * var(--content-scale) * var(--library-scale));
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale)); /* 1337 / 19.2 */
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale)); /* 1035 / 19.2 */
+    --measure-card-closing: calc(min(var(--container-card-closing), 33.334vw) * var(--content-scale) * var(--card-scale)); /* 640 / 19.2 */
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale)); /* 1234 / 19.2 */
     /* Flush with the panels again the moment there is width for it. */
     --measure-reading-props: var(--measure-reading);
-    --measure-flourish: min(448px, 23.333vw);
-    --measure-flourish-wide: min(538px, 28.021vw);
-    --measure-hairline: min(368px, 19.167vw);
+    --measure-flourish: calc(min(448px, 23.333vw) * var(--content-scale));
+    --measure-flourish-wide: calc(min(538px, 28.021vw) * var(--content-scale));
+    --measure-rule-green: calc(min(582px, 30.313vw) * var(--content-scale)); /* 582 / 19.2 */
+    --measure-hairline: calc(min(368px, 19.167vw) * var(--content-scale));
   }
+
+  /*
+    The type and rhythm steps, scaled by the same number.
+
+    Tailwind compiles `text-h1` to `font-size: var(--text-h1)` and emits the
+    `@theme` values into `@layer theme` on `:root`, so redefining them here
+    lands on the same custom property the utilities already read — no utility
+    changes anywhere, and no component touched. This rule is unlayered, which
+    outranks `@layer theme` regardless of source order, so it wins wherever it
+    applies and stays inert below `lg`.
+
+    **The whole clamp scales — floor included — and the floor is the subtle
+    part.** Each step is `clamp(floor, vw, max)`, and those floors are the
+    phone values. It is tempting to leave them alone on the grounds that they
+    are "for mobile", but nothing scopes a floor to a screen size: it binds
+    wherever the `vw` term falls below it. At the `lg` breakpoint itself the
+    `vw` term has only just overtaken the floor, so multiplying it by 0.85
+    pushes most steps back under — and the floor, unscaled, wins. Measured at
+    1024px, 17 of the 20 steps below would have stopped scaling, several of
+    them (`text-fine`, `text-caption`, every `text-card-*`) not moving at all,
+    while the measures around them came down the full 15%. Full-size text in a
+    15%-narrower column is precisely the disproportion this block exists to
+    avoid, so the floors come down with everything else and every step holds
+    its ratio from 1024px up.
+
+    Scaling the floors is safe here because this rule is inside the desktop
+    query: below `lg` the tokens in `@theme` are untouched and the phone floors
+    are still the originals.
+  */
+  :root {
+    --text-hero: clamp(calc(2.75rem * var(--content-scale)), calc(5.2083vw * var(--content-scale)), calc(6.25rem * var(--content-scale)));
+    --text-hero-sm: clamp(calc(2rem * var(--content-scale)), calc(3.75vw * var(--content-scale)), calc(4.5rem * var(--content-scale)));
+    --text-h1: clamp(calc(1.875rem * var(--content-scale)), calc(3.125vw * var(--content-scale)), calc(3.75rem * var(--content-scale)));
+    --text-h1-sm: clamp(calc(1.75rem * var(--content-scale)), calc(2.9167vw * var(--content-scale)), calc(3.5rem * var(--content-scale)));
+    --text-h2-lg: clamp(calc(1.5625rem * var(--content-scale)), calc(2.6042vw * var(--content-scale)), calc(3.125rem * var(--content-scale)));
+    --text-h2-md: clamp(calc(1.5rem * var(--content-scale)), calc(2.5vw * var(--content-scale)), calc(3rem * var(--content-scale)));
+    --text-h2: clamp(calc(1.5rem * var(--content-scale)), calc(2.2917vw * var(--content-scale)), calc(2.75rem * var(--content-scale)));
+    --text-h3: clamp(calc(1.375rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+    --text-lead: clamp(calc(1.125rem * var(--content-scale)), calc(2.0833vw * var(--content-scale)), calc(2.5rem * var(--content-scale)));
+    --text-body: clamp(calc(1.0625rem * var(--content-scale)), calc(1.875vw * var(--content-scale)), calc(2.25rem * var(--content-scale)));
+    --text-nav: clamp(calc(0.9375rem * var(--content-scale)), calc(1.5625vw * var(--content-scale)), calc(1.875rem * var(--content-scale)));
+    /* Already 17.5% under the Figma nav size (see the token); this scales that. */
+    --text-nav-sm: clamp(calc(0.875rem * var(--content-scale)), calc(1.2891vw * var(--content-scale)), calc(1.5469rem * var(--content-scale)));
+    --text-caption: clamp(calc(0.8125rem * var(--content-scale)), calc(1.1458vw * var(--content-scale)), calc(1.375rem * var(--content-scale)));
+    --text-note: clamp(calc(0.875rem * var(--content-scale)), calc(1.25vw * var(--content-scale)), calc(1.5rem * var(--content-scale)));
+    --text-fine: clamp(calc(0.75rem * var(--content-scale)), calc(0.9375vw * var(--content-scale)), calc(1.125rem * var(--content-scale)));
+
+    /*
+      The card reference page's own steps. They sit inside `--measure-card`,
+      which has already come down, so they scale with everything else rather
+      than growing relative to the column that holds them.
+
+      **`--card-scale` rides along on each one**, which is what lets that page
+      step further down than the site without a second set of steps. It is 1
+      everywhere except under `.library-card-page`, so these read exactly as
+      the steps above them until that page sets it — and the measures they sit
+      inside carry the same factor, so the column and its type come down
+      together. The floors scale for the reason the long note above gives: a
+      floor is not scoped to a screen size, and leaving them would strand
+      full-size text in a narrower column.
+    */
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
+
+    /*
+      Layout rhythm. `--spacing-section` and `--spacing-stack` carry the
+      vertical rhythm between sections, so they scale with the type to keep the
+      page's proportions; shrinking the content but not the gaps between it is
+      what makes a reduced page read as sparse rather than smaller.
+
+      `--spacing-gutter` is deliberately NOT scaled — see the note below.
+    */
+    --spacing-section: clamp(calc(3rem * var(--content-scale)), calc(7.2917vw * var(--content-scale)), calc(8.75rem * var(--content-scale)));
+    --spacing-stack: clamp(calc(1rem * var(--content-scale)), calc(2.1875vw * var(--content-scale)), calc(2.625rem * var(--content-scale)));
+  }
+
+  /*
+    **The three reading pages, tightened then shrunk.** Two factors, because the
+    client asked for two things in order: the vertical rhythm comes in first and
+    the overall size follows, so each has its own knob and either can move
+    without the other.
+
+    `--reading-rhythm` (0.85) multiplies the vertical gaps — the `mt`/`pt` and
+    `gap-y` clamps that carry this page's rhythm, in the components themselves.
+    `--reading-scale` (0.85) multiplies everything else: the measures below and
+    the panels' own `cqw`-driven padding, which follows its container for free.
+
+    **The measures are redeclared here rather than left on `:root`, and that is
+    the lesson the card page paid for.** A `var()` resolves in the scope of the
+    element its declaration lands on, not the element that reads the result — so
+    a `--measure-reading` on `:root` would see `--reading-scale: 1` no matter
+    that every consumer sits inside this page, and the panels would not move at
+    all while the gaps around them did. That is exactly the "only some of it
+    scales" the card page showed, measured: see the note on `.library-card-page`.
+
+    **`/redeem/` is deliberately excluded.** It renders the same
+    `ReadingPresentation`, so this class cannot live on that component; the three
+    routes opt in with a prop instead. `/checkout/complete/` shares the backdrop
+    only and never had these tokens.
+  */
+  .reading-page {
+    --reading-rhythm: 0.85;
+    --reading-scale: 0.85;
+
+    /* The shared blocks follow this page's factors. See `--block-rhythm`. */
+    --block-rhythm: var(--reading-rhythm);
+    --block-scale: var(--reading-scale);
+
+    --measure-reading: calc(min(var(--container-reading), 74.531vw) * var(--content-scale) * var(--reading-scale));
+    --measure-reading-props: var(--measure-reading);
+  }
+
+  /*
+    **The factor, and the page's own tokens redeclared here with it.**
+
+    The redeclaration is the load-bearing part, and the reason is a custom
+    property rule that is easy to get backwards: a `var()` inside a declaration
+    resolves in the scope of the element the declaration *lands on*, not the
+    element that eventually reads the result. `--measure-card-paper` and the
+    `--text-card-*` steps are declared on `:root`, so their `var(--card-scale)`
+    resolved against `:root` — where the factor is 1 — no matter that every
+    element reading them sits inside this page. Measured at 1920px, the sheet
+    computed `calc(min(1337px, 69.635vw) * .85 * 1)` and forcing the factor to
+    0.5 moved the paper, the `<h1>` and both shells by exactly nothing; only the
+    hardcoded clamps in the components, which *are* read inside the page,
+    responded. That is the "only some elements scale" this block fixes.
+
+    So the tokens this page owns are declared again here, on the element that
+    carries the factor. Same expressions as the `:root` copies above, with the
+    factor now in scope: the four `card*` measures (the sheet, the prose column,
+    its wider panels, the closing line) and the five type steps. `:root` keeps
+    its own copies for the twenty-one `ComingSoonPage` siblings, which do not
+    set this class.
+  */
+  .library-card-page {
+    --card-scale: 0.85;
+
+    /* The shared blocks follow this page's factor. See `--block-rhythm`. */
+    --block-rhythm: var(--card-scale);
+    --block-scale: var(--card-scale);
+
+    --measure-card-paper: calc(min(var(--container-card-paper), 69.635vw) * var(--content-scale) * var(--card-scale));
+    --measure-card: calc(min(var(--container-card), 53.906vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-closing: calc(min(var(--container-card-closing), 33.334vw) * var(--content-scale) * var(--card-scale));
+    --measure-card-wide: calc(min(var(--container-card-wide), 64.271vw) * var(--content-scale) * var(--card-scale));
+
+    --text-card-name: clamp(calc(1.75rem * var(--content-scale) * var(--card-scale)), calc(2.5vw * var(--content-scale) * var(--card-scale)), calc(3rem * var(--content-scale) * var(--card-scale)));
+    --text-card-lead: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(1.875vw * var(--content-scale) * var(--card-scale)), calc(2.25rem * var(--content-scale) * var(--card-scale)));
+    --text-card-label: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.1458vw * var(--content-scale) * var(--card-scale)), calc(1.375rem * var(--content-scale) * var(--card-scale)));
+    --text-card-body: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(1.25vw * var(--content-scale) * var(--card-scale)), calc(1.5rem * var(--content-scale) * var(--card-scale)));
+    --text-card-fine: clamp(calc(1.125rem * var(--content-scale) * var(--card-scale)), calc(0.9375vw * var(--content-scale) * var(--card-scale)), calc(1.125rem * var(--content-scale) * var(--card-scale)));
+
+    /*
+      `--text-h3` is the closing line's size, and it is redeclared here for the
+      same reason the four measures above are: it is read inside this page, so
+      the factor has to be in scope or only one half of the pair responds.
+
+      **That mismatch is what broke the wrap.** `ClosingSaying` sets this page's
+      quote at `text-h3` and `Container width="cardClosing"` puts it in a 513px
+      box — a Figma pair, drawn to break "The invitation is not to know -" onto
+      its own line. The box picked up the page's 0.85 and came down 15%; the
+      type, declared only on `:root`, did not. The line then no longer fitted
+      its own box and took a third line, breaking after "to".
+
+      Scaling it with the box restores her two lines, and it is the proportion
+      her frame draws rather than a number tuned to this one sentence — a
+      longer closing on another card breaks the same way hers does.
+    */
+    --text-h3: clamp(calc(1.375rem * var(--content-scale) * var(--card-scale)), calc(2.1875vw * var(--content-scale) * var(--card-scale)), calc(2.625rem * var(--content-scale) * var(--card-scale)));
+  }
+
+  /*
+    `--spacing-gutter` is left at full size on purpose.
+
+    It is not content — it is the floor on the empty margin at the edge of the
+    screen, and `.shell` spends it as `100% - 2 * gutter`, a *cap* that only
+    binds when a measure is wider than the screen allows. Every measure above
+    has just come down 15%, so on desktop that cap no longer binds at all and
+    scaling it would change nothing visible. Where it would matter is the one
+    place we do not want it to: shrinking the edge inset works against the
+    thing this whole block is for, which is more artwork showing around the
+    content, not less.
+  */
 }
 
 /*
@@ -361,13 +908,54 @@
   a sane minimum (verified by measuring at padding ≈ 0). Only widening the
   column (e.g. delaying the grid's own two-column switch past 1024px) would
   close the rest of the gap, and that's a layout change beyond this fix.
+
+  **Every value here is multiplied by `--content-scale`, and leaving it out
+  was a bug.** These are the only sizing tokens in the file that sat outside
+  the sitewide scale (they are declared after the `@media (width >= 64rem)`
+  block, so an override up there would have lost the cascade to them), and
+  the consequence was not a slightly-too-large button — it was the hero card.
+
+  The two buttons carry a shared `min-width`, so the copy column's
+  min-content is `2 × --hero-action-btn-min-w + --hero-action-row-gap`. When
+  that exceeds the column's share of `797fr 673fr`, an `fr` track with an
+  automatic minimum does not clip — it grows, and the width comes out of the
+  *other* track. So a min-width frozen at full size while the labels inside
+  it came down 15% did not overflow anywhere visible; it quietly widened the
+  text column and took the difference off the card. Measured at 1920: the
+  copy column held 849px against a 676px share and the card rendered 265px
+  where the design puts it at 380px — 30% under, which is
+  https://github.com/YoussefSanad/theworldtarot-frontend/issues/109.
+
+  Scaling is written in place rather than as a second block in the desktop
+  query because `--content-scale` is 1 below `lg` — the multiply is a no-op
+  there, so one declaration covers both halves and there is still only one
+  number to retune.
+
+  **The clamp floor is the one number that could not simply be multiplied.**
+  13.875rem was measured against unscaled labels, so at 0.85 it resolves to
+  188.7px where the widest label needs 198px — and because an explicit
+  `min-width` replaces the automatic min-content minimum, that does not grow
+  the track, it overflows the `whitespace-nowrap` label out of its own
+  padding box at 1024px. It is raised to 15rem, which scales to 204px and
+  clears the label with the same ~6-8px margin the rest of the ramp carries.
+
+  It is raised through `--hero-action-btn-min-w-floor` rather than inline
+  because the bump belongs to desktop alone. Below `lg` the scale is 1, the
+  type steps are sitting on their own clamp floors, and 13.875rem is already
+  generous there — writing 15rem into the shared declaration would widen both
+  buttons by 18px on tablet and phone, which is a signed-off layout nothing
+  here is meant to touch. The ramp's slope and maximum are unchanged:
+  re-measured across 1024→1920 (Playwright, both labels rendered
+  unconstrained), they were already correct once scaled.
 */
 :root {
-  --hero-action-py: clamp(0.365625rem, calc(0.365625rem + (100vw - 1024px) * 0.0131138), 1.1rem);
-  --hero-action-pr: clamp(1.1375rem, calc(1.1375rem + (100vw - 1024px) * 0.0226563), 2.40625rem);
-  --hero-action-pl: clamp(0.73125rem, calc(0.73125rem + (100vw - 1024px) * 0.0139509), 1.5125rem);
-  --hero-action-gap: clamp(0.4875rem, calc(0.4875rem + (100vw - 1024px) * 0.0047991), 0.75625rem);
-  --hero-action-row-gap: clamp(1.015625rem, calc(1.015625rem + (100vw - 1024px) * 0.0186942), 2.0625rem);
+  /* Desktop raises this to 15rem, below; see the note above for why. */
+  --hero-action-btn-min-w-floor: 13.875rem;
+  --hero-action-py: clamp(calc(0.365625rem * var(--content-scale)), calc((0.365625rem + (100vw - 1024px) * 0.0131138) * var(--content-scale)), calc(1.1rem * var(--content-scale)));
+  --hero-action-pr: clamp(calc(1.1375rem * var(--content-scale)), calc((1.1375rem + (100vw - 1024px) * 0.0226563) * var(--content-scale)), calc(2.40625rem * var(--content-scale)));
+  --hero-action-pl: clamp(calc(0.73125rem * var(--content-scale)), calc((0.73125rem + (100vw - 1024px) * 0.0139509) * var(--content-scale)), calc(1.5125rem * var(--content-scale)));
+  --hero-action-gap: clamp(calc(0.4875rem * var(--content-scale)), calc((0.4875rem + (100vw - 1024px) * 0.0047991) * var(--content-scale)), calc(0.75625rem * var(--content-scale)));
+  --hero-action-row-gap: clamp(calc(1.015625rem * var(--content-scale)), calc((1.015625rem + (100vw - 1024px) * 0.0186942) * var(--content-scale)), calc(2.0625rem * var(--content-scale)));
   /*
     Equal-width floor for the two buttons, same 1024→1920 anchor as above.
     Measured directly (Playwright, both labels rendered unconstrained) rather
@@ -380,7 +968,19 @@
     just close enough to *look* right while still wrapping the label. Prefer
     this measured value over another attempt at the grid trick.
   */
-  --hero-action-btn-min-w: clamp(13.875rem, calc(13.875rem + (100vw - 1024px) * 0.2075893), 25.5rem);
+  --hero-action-btn-min-w: clamp(calc(var(--hero-action-btn-min-w-floor) * var(--content-scale)), calc((13.875rem + (100vw - 1024px) * 0.2075893) * var(--content-scale)), calc(25.5rem * var(--content-scale)));
+}
+
+/*
+  The desktop floor. This sits after the block above rather than in the main
+  `@media (width >= 64rem)` further up the file for the same cascade reason
+  the scaling is written inline: `:root` rules of equal specificity are
+  resolved in source order, and the block above would win over an earlier one.
+*/
+@media (width >= 64rem) {
+  :root {
+    --hero-action-btn-min-w-floor: 15rem;
+  }
 }
 
 @layer base {
@@ -465,6 +1065,19 @@
 
   .shell--library {
     --shell-width: var(--measure-library);
+  }
+
+  /* A card's reference page: prose at 1035px, its panels wider at 1234px. */
+  .shell--card {
+    --shell-width: var(--measure-card);
+  }
+
+  .shell--card-closing {
+    --shell-width: var(--measure-card-closing);
+  }
+
+  .shell--card-wide {
+    --shell-width: var(--measure-card-wide);
   }
 
   /*
@@ -561,8 +1174,39 @@
     without also masking the flat colour underneath it.
   */
   .page-atmosphere-readings {
+    /*
+      **The parlour crosses the footer's top margin.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither box
+      — so between this floor-anchored artwork's bottom edge and the footer's
+      own scrim there is a strip of the layout column with nothing painted in
+      it, showing flat colour as a thin bar across the foot of the page. It
+      measured 8–11px, which is exactly that clamp.
+
+      This is the World Tarot path's `--path-drop` and the Library rotunda's
+      `--room-drop` under a third name; see either for the full account. The
+      short version is that it is a **gap**, not an edge: no fade covers it,
+      because there is nothing there to fade — only reaching across it does.
+      (`--parlour-feather` is this artwork's edge treatment and is a separate
+      concern, at the opposite end.)
+
+      2rem is past the margin at every width so the crossing is never
+      hairline-exact, and no more than that because the surplus lands under a
+      scrim that is 77% rather than opaque.
+    */
+    --parlour-drop: 2rem;
     background-color: var(--color-ink);
-    overflow: clip; /* the artwork runs taller than the page on a narrow desktop */
+    /*
+      **No `overflow: clip`.** It said "the artwork runs taller than the page on
+      a narrow desktop", and that cannot happen: the `::after` is capped at
+      `min(171.51vw, 100%)` and the second term is this box, so it never
+      exceeds it. What the clip did do was cut off `--parlour-drop`, which is
+      the overhang that covers the margin above — the same trap the World Tarot
+      block records, where no value of the drop could appear to work while a
+      clip was eating it.
+
+      `overflow-y-clip` on the layout column is what stops an overhang
+      lengthening the document, and it is untouched.
+    */
   }
 
   .page-atmosphere-readings::after {
@@ -586,7 +1230,8 @@
     */
     block-size: min(171.51vw, 100%);
     content: "";
-    inset: auto 0 0 0;
+    /* `--parlour-drop` below the page's floor, crossing the footer's top margin. */
+    inset: auto 0 calc(-1 * var(--parlour-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--parlour-feather, 12%));
     position: absolute;
@@ -658,8 +1303,19 @@
     even at 1920, where the artwork fills the page exactly.
   */
   .page-atmosphere-reading {
+    /*
+      `--observatory-drop` is the parlour's `--parlour-drop`, carried here for
+      the same reason and with the same value: this artwork is floor-anchored
+      too, so the footer's top margin shows through as a bar between it and the
+      footer's scrim. See `.page-atmosphere-readings` above for the full note.
+    */
+    --observatory-drop: 2rem;
     background-color: var(--color-night);
-    overflow: clip;
+    /*
+      No `overflow: clip`, for the parlour's reason: the `::after` is capped at
+      `min(166.2vw, 100%)` so it cannot outrun this box, and the clip's only
+      real effect was to eat the drop.
+    */
   }
 
   .page-atmosphere-reading::after {
@@ -669,7 +1325,8 @@
     background-size: cover;
     block-size: min(166.2vw, 100%);
     content: "";
-    inset: auto 0 0 0;
+    /* `--observatory-drop` below the page's floor; see the parlour's rule. */
+    inset: auto 0 calc(-1 * var(--observatory-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 10%));
     position: absolute;
@@ -725,14 +1382,31 @@
     negative `top` — and `overflow: clip` on the layout column stops the
     overhang from lengthening the document.
 
-    `3rem` reaches into the masthead without going behind all of it — the
-    header runs about 90px on a desktop and 66px on a phone, so the path
-    climbs roughly half of it and the wordmark keeps flat colour behind its
-    own line. It was 6rem first, which cleared the whole header and read as
-    too high against the copy; this is that value tuned back down by eye
-    against the rendered page, which is the only way this particular number
-    can be settled. Anything that changes `SiteHeader`'s height wants
-    re-checking here.
+    **It is spent to zero now, at every width, and the masthead is why.**
+    The rise was `3rem` — far enough into the header to climb roughly half of
+    it, leaving the wordmark on flat colour and the nav row over the
+    photograph. That is what reads as "the header has a fade at its bottom" on
+    this page: the header itself paints nothing anywhere on the site, so the
+    gradient a viewer sees across its lower half is this artwork's own
+    `--path-feather` dissolving into `--color-ink`, landing mid-masthead
+    because the rise put it there.
+
+    No other page does this. The Library's rotunda and the Viewing Room's room
+    both begin at their wrapper's top edge, so their feathers sit below the
+    masthead rather than across it, and the header reads as flat colour on
+    both. Keeping the rise here would mean the header looks like one thing on
+    this page and another everywhere else — and the client's note is that it
+    should look the same everywhere.
+
+    So the client's "reach up behind the masthead" composition is given up on
+    purpose. What is lost is small: the box is 3rem shorter, so a little less
+    of the canopy shows above the path. What is gained is that the top of this
+    page now matches every other page's.
+
+    Left as a variable rather than deleted because it is still the lever — put
+    a length back here and the path climbs again, and the feather returns to
+    the masthead with it. Anything that changes `SiteHeader`'s height no
+    longer needs re-checking against this.
 
     The picture keeps its own aspect throughout: it is `cover` on a box whose
     height is capped at `171.77vw`, so it scales on width and nothing is
@@ -748,7 +1422,8 @@
       opaque — hence "a little" and not "generous".
     */
     --path-drop: 2rem;
-    --path-rise: 3rem;
+    /* See the note above: zero so the feather stays clear of the masthead. */
+    --path-rise: 0rem;
     background-color: var(--color-ink);
     /*
       **No `overflow: clip` here, unlike the two blocks above**, and that is
@@ -780,10 +1455,11 @@
     `world-tarot/README.md` describes; this artwork answers it the other way
     from the observatory's.
 
-    It does keep `overflow: clip` and no overhang, which is where it parts from
-    the path: the client draws the room inside the frame rather than running it
-    up behind the masthead, and the page ends on the closing button rather than
-    on a stretch of artwork.
+    It takes no overhang at the *top*, which is where it parts from the path:
+    the client draws the room inside the frame rather than running it up behind
+    the masthead. At the bottom it now takes the path's other overhang,
+    `--room-drop`, for the path's own reason — the footer's top margin. See the
+    rule itself.
 
     The layer Figma draws is 2137x4312 at (-124,-380) against a 1920x3772
     frame — wider and taller than the page and meant to be cropped. Width
@@ -792,9 +1468,152 @@
     percentage would squash the room whenever the page runs taller or shorter
     than the frame.
   */
+  /*
+    The Viewing Room's own room (Figma `384:3`, her two BACKGROUND layers
+    flattened to one delivery).
+
+    Her artboard is 1920x2132 and the real page is taller once a header and a
+    footer she does not draw are added, so the picture is scaled to fill the
+    box and cropped at the sides, where there is only wall. See the `::after`
+    note below for why it fills rather than being capped to its own aspect.
+
+    **This element spans header, main and footer**, like every other page's
+    atmosphere, because the page wraps in `relative isolate` and the layer is
+    `absolute inset-0`. It did not always: the page used to nest its own
+    positioned `<main>`, which cut the artwork off at the masthead's bottom
+    edge and left the header on the wrong ground entirely. The docblock in
+    `viewing-room/page.tsx` has the full account.
+  */
+  .page-atmosphere-viewing-room {
+    /*
+      **The room crosses the footer's top margin.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither
+      box — so between this artwork's bottom edge and the footer's own scrim
+      there is a strip of the layout column with nothing painted in it,
+      showing flat colour as a thin bar across the foot of the page. Measured
+      10.22px at 1400, which is exactly that clamp.
+
+      This is the readings parlour's `--parlour-drop`, the World Tarot path's
+      `--path-drop` and the Library rotunda's `--room-drop` under a fourth
+      name; see any of them for the full account. It is a **gap**, not an
+      edge: no fade covers it, because there is nothing there to fade — only
+      reaching across it does.
+
+      2rem is past the margin at every width so the crossing is never
+      hairline-exact, and no more than that because the surplus lands under a
+      scrim that is 77% rather than opaque.
+    */
+    --room-drop: 2rem;
+    /*
+      Black rather than `--color-night`: her second export carries the base
+      painted in, and the navy every other page sits on read as a blue cast
+      against it. This colour is only seen past the artwork's own aspect.
+    */
+    background-color: #000;
+    /*
+      **No `overflow: clip`**, for the reason the parlour and the World Tarot
+      block both record: a clip on this element eats `--room-drop`, which is
+      the overhang covering the margin above, and then no value of the drop
+      appears to work. `overflow-y-clip` on the layout column is what stops an
+      overhang lengthening the document, and it is untouched.
+    */
+  }
+
+  /*
+    The room itself, anchored to the floor like the parlour's, so
+    `--room-drop` carries the picture across the footer's margin rather than
+    leaving its last rows short of it.
+
+    **It fills the box rather than being capped to its own aspect.** The
+    parlour can write `min(171.51vw, 100%)` because its artwork is far taller
+    than its page, so the cap always bites and the box is always covered.
+    Hers is 2132/1920 — only 111.04vw — which at 1400px wide is 1554px
+    against an 1823px page, and the shortfall showed as a black band across
+    the top with the title sitting in it.
+
+    So the height is the box, and `cover` scales the picture to fill it,
+    cropping width-wise at the sides where there is only wall.
+
+    **There is no feather on the top edge any more, and the masthead is why.**
+    It was `--room-feather: 7%`, dissolving the artwork's top edge into the
+    black beneath it rather than ending it on a line under the masthead — which
+    was sound while this element stopped at `main`'s top edge, because the
+    whole fade then happened *below* the header and the header had its own
+    (wrong) ground.
+
+    The page now wraps in `relative isolate` like every other page, so this
+    element spans header, main and footer — see the docblock in
+    `viewing-room/page.tsx` for why it had to. That moves the top edge up to
+    the top of the document, and a *percentage* feather scales with the box:
+    7% of a 2400px page is 168px, against a masthead of about 79-90px. The
+    fade would have run well past the header's bottom edge, so the nav would
+    have sat on half-transparent artwork with `#000` showing through it — the
+    exact gradient-across-the-header that `.page-atmosphere-world-tarot` gave
+    up `--path-rise` to stop. Fixing the ground and then feathering across it
+    would have traded one version of the fault for another.
+
+    So the artwork now reaches the top of the page at full opacity and the
+    masthead sits on solid room, which is what makes the header read the same
+    here as everywhere else. Nothing is lost by dropping it: the feather
+    existed to hide a *horizontal edge* under the masthead, and there is no
+    edge to hide once the picture starts above the masthead rather than at it.
+    `cover` on a box this tall crops the artwork's sides, where there is only
+    wall, rather than letting the ceiling run out.
+
+    The knob is kept, defaulting to `0%`, because it is still the lever: give
+    it a length and the top edge fades again. A *length* rather than a
+    percentage is what it would want if it ever comes back, so the fade cannot
+    outgrow the header the way the percentage did.
+  */
+  .page-atmosphere-viewing-room::after {
+    background-image: url("/figma/viewing-room-bg.webp");
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    content: "";
+    inset: 0 0 calc(-1 * var(--room-drop)) 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 0%));
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 0%));
+    position: absolute;
+  }
+
   .page-atmosphere-library {
+    /*
+      **`--room-drop` is the World Tarot path's `--path-drop`, and it is here
+      for the same band.** `SiteFooter` carries
+      `mt-[clamp(0.5rem,0.73vw,0.875rem)]`, and a margin belongs to neither
+      box — so between the artwork's bottom edge and the footer's own scrim
+      the layout column's flat colour shows straight through, as a thin strip
+      clean across the foot of the page. It is most visible below `lg`, where
+      the room stands on the floor and its floor tiles run right up to that
+      seam; above `lg` the artwork has already faded out into the page colour
+      by then (`--room-sink`), so there is nothing to butt against and nothing
+      to see.
+
+      The surplus past the margin lands under the footer's scrim, which is 77%
+      rather than opaque — hence 2rem and not a generous overhang.
+
+      **This is a different band from the one `--room-sink` fixes**, and the
+      distinction is worth keeping straight: `--room-sink` is the artwork's own
+      bottom *edge* seaming against the page colour, and it is cured by fading
+      the picture out. This one is a *gap* between two boxes with nothing
+      painted in it, and no amount of fading covers a gap — only reaching
+      across it does.
+    */
+    --room-drop: 2rem;
     background-color: var(--color-night);
-    overflow: clip;
+    /*
+      **No `overflow: clip`**, for the reason the World Tarot block above
+      spells out: the drop is an overhang, and a clip on this element cuts
+      exactly the overhang off, leaving the artwork flush at the wrapper's
+      edge and the band back where it started.
+
+      It was here when the room took no overhang at all. Both things it was
+      guarding are already covered elsewhere: `overflow-y-clip` on the layout
+      column stops an overhang lengthening the document, and the `block-size`
+      cap below — `min(..., 100%)`, the second term being this box — is what
+      keeps the artwork from outrunning a short page.
+    */
   }
 
   .page-atmosphere-library::after {
@@ -803,16 +1622,23 @@
     background-repeat: no-repeat;
     background-size: cover;
     /*
-      The room is 1.965 tall for its width (1280x2515 as shipped). Past that the
-      photograph has run out and the page colour carries on alone.
+      The room is 1.965 tall for its width (1920x3772 as shipped — the client's
+      re-export, her frame at full size; it was a 1280x2515 crop before, same
+      aspect and so the same number here). Past that the photograph has run out
+      and the page colour carries on alone.
 
       **The fade at the bottom is not decoration, it is the fix for a visible
-      band**, and the numbers say why: the artwork's own bottom edge averages
+      band**, and the numbers said why: the *first* crop's bottom edge averaged
       `#1d242e` while the page under it is `--color-night`, `#081525`. Ending
-      the image on a hard line therefore butts a light grey-blue against a
-      darker navy, and that seam reads as a flat strip across the foot of the
-      page — the thing the client reported above the footer. Nothing about the
-      height was wrong; the edge was.
+      the image on a hard line therefore butted a light grey-blue against a
+      darker navy, and that seam read as a flat strip across the foot of the
+      page. Nothing about the height was wrong; the edge was.
+
+      **The re-export mostly fixes that in the picture** — its own last rows
+      measure about `#0c121b`, near enough to the page colour that the seam no
+      longer carries. The fade is kept anyway: it costs nothing (it lands on
+      empty floor, past where the last button ends), it is what makes the edge
+      insensitive to the *next* export, and `near enough` is not `exact`.
 
       So the last stretch of the image dissolves into the colour beneath it
       instead of stopping on it. `--room-sink` is where the fade begins, far
@@ -876,10 +1702,13 @@
         the rotunda's apex is cloud rather than flat ceiling, so it has as much
         to fade as the parlour's does.
 
-    `overflow: clip` on the parent is kept from the desktop rule and is now
-    doing the parlour's job rather than nothing: a floor-anchored box capped at
-    `min(196.46vw, 100%)` can run taller than a short page, and the clip keeps
-    that inside the wrapper.
+    **There is no `overflow: clip` on the parent any more.** What it was
+    thought to be guarding — a floor-anchored box outrunning a short page — the
+    `min(196.46vw, 100%)` cap already handles, because the cap's second term is
+    the box itself. What the clip actually did was eat `--room-drop`, the
+    deliberate overhang that covers the footer's top margin; see the parent
+    rule. The document cannot grow either way: `overflow-y-clip` on the layout
+    column is what stops that, and it is still there.
 
     The sky itself is the readings index's layer verbatim — same 375x850 asset
     at its own scale, same downward fade. See "The mobile sky" above for why it
@@ -889,7 +1718,17 @@
   @media (width < 64rem) {
     .page-atmosphere-library::after {
       background-position: center bottom;
-      inset: auto 0 0 0;
+      /*
+        `--room-drop` below the wrapper's own floor, so the room reaches across
+        the footer's top margin instead of stopping on the near side of it.
+        See `--room-drop` on the parent for why that margin shows as a band and
+        why this is not the same fault `--room-sink` cures.
+
+        The bottom inset is where it goes because this is the edge the artwork
+        stands on below `lg`; above `lg` the room hangs from the top and the
+        drop has nothing to do, which is why it is not in the base rule.
+      */
+      inset: auto 0 calc(-1 * var(--room-drop)) 0;
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
       mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--room-feather, 12%));
     }
@@ -908,23 +1747,859 @@
     }
   }
 
+  /*
+    A card's reference page (Figma `357:261`).
+
+    The flat ground the artwork sits on and fades into; the artwork itself is
+    the `::after` below. **Nothing here repeats.** Her forest is a composition
+    rather than a texture — trees in particular places, light falling one way —
+    so tiling it restarts that composition partway down and draws a hard seam
+    where the copies meet. It is painted once from the top and the page carries
+    on beneath it in this colour.
+  */
+  /*
+    **This one spans the whole layout column**, header included, because the
+    masthead on this page is transparent — see the `:has()` block below — and
+    what would otherwise sit behind the nav is `body`'s own night.
+
+    It needs no lift to do that. `PageAtmosphere` is `absolute inset-0`, and
+    `CardReferencePage`'s wrapper is deliberately *not* positioned, so this
+    resolves against the layout column — which `(site)/layout.tsx` positions
+    precisely so an atmosphere "spans header, main and footer". The box
+    therefore already starts at the top of the window.
+
+    **Several rounds of negative `top` were tried here first and all of them
+    were treating a symptom.** While that wrapper was `relative` this layer
+    was trapped below the header, so no lift could reach the top: a bare
+    negative `top` against `inset: 0` shifts the box rather than growing it,
+    pulling the artwork off the foot of the page, and pairing it with a
+    `100% + rise` height only moved the same gap around. Removing the
+    positioning is the fix; the lift was never one.
+
+    There is no masthead offset left anywhere in here. The artwork starts at
+    the top of the box and the box starts at the top of the window, so the nav
+    sits on her forest directly.
+  */
+  /*
+    **Her clouds, and the page is dark behind the sheet now.**
+
+    This was `--color-card-parchment` under a forest wash — a warm, pale ground
+    that the paper floated on. The client replaced the artwork with a night sky
+    (`ref-page-clouds-bg.png`, delivered 1920x3620), so the flat colour under it
+    is a deep navy rather than a cream: what shows past the image at the foot of
+    a long page has to belong to the same picture.
+
+    `#091828` is the sky's own top row, sampled across its width. It is within a
+    step or two of `--color-night` but is deliberately its own value — it
+    answers to her image, and re-sampling it is the right move if that image is
+    ever re-exported, where following the site token would not be.
+
+    This is also why the masthead went back to the site's blue: the ground under
+    it stopped being pale, so the light nav this page briefly carried had
+    nothing left to justify it.
+  */
+  .page-atmosphere-card-reference {
+    background-color: #091828;
+    overflow: clip;
+  }
+
+  /*
+    **The sky, which replaced her forest wash.**
+
+    Her delivered file is 1920x3620, so 188.54vw rather than the wash's
+    169.32vw, and it is a night sky rather than a warm forest — see the ground
+    colour on the rule above.
+
+    **No mask, and that is the change of kind.** The wash was a picture with a
+    *bottom*: it ended on `#d2b287` against a much paler page and had to be
+    dissolved into it, which is what `--wash-sink` and the two mask stops were
+    for. The sky ends on `#08192b` against a ground sampled from its own top
+    row, so there is nothing to hide — the image simply stops and the same
+    colour carries on. A fade here would only wash out the lowest clouds.
+
+    `100% auto` and `no-repeat`: the sky spans the page's width at its own
+    aspect and does not tile, for the reason the forest did not either — it is
+    a composition with light falling one way, so a second copy would restart it
+    mid-page. Below its own height the ground colour takes over.
+  */
+  .page-atmosphere-card-reference::after {
+    background-image: url("/figma/card-reference/page-clouds.webp");
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: 100% auto;
+    block-size: 188.54vw; /* 3620 / 19.2 */
+    content: "";
+    inset: 0 0 auto 0;
+    position: absolute;
+  }
+
+  /*
+    The sheet of paper, and **it is a container rather than a backdrop** — the
+    single most important thing about this page's layout.
+
+    Her `Layer 21` is 1337x2995 at x=302, y=171 of a 1920x3237 frame, and every
+    one of the page's eight content blocks sits inside those bounds (checked
+    against her own coordinates: the widest, the reading panel, runs x=341..1575
+    against the paper's 302..1639). The paper is what the page is written on,
+    not something drawn behind it.
+
+    The first build made it a share of the viewport painted into the atmosphere
+    layer, which put the content on top of the paper rather than inside it: the
+    sheet sat where the viewport said instead of where the content was, and a
+    page taller than her 2995px simply started a second sheet.
+
+  /*
+    **The sheet is one image per card, painted once.**
+
+    Two earlier versions got this wrong and both are worth recording, because
+    each looked right in isolation.
+
+    First it was three *files* per card — a top edge, a stretching middle and a
+    bottom edge — on the reasoning that the page's height is content-driven and
+    only the featureless middle should distort. The cuts ran through her torn
+    deckle, so every sheet gained a hard line where the edge used to fade out.
+
+    Then it was one file painted three times, pinning the two edges with
+    `background-size: 100% 32px`. That does not crop the top 32px of the sheet —
+    **it squashes the entire 2965px sheet into a 32px band**, which rendered as a
+    smeared bar above and below the paper.
+
+    So: one layer, `100% 100%`. Her sheet already carries its own deckle at both
+    ends (it fades in over ~30px top and ~40px bottom), so there is nothing to
+    pin — the edges are simply part of the picture. The stretch is real but the
+    deckle is about 1% of the sheet's height, so it changes by a fraction of a
+    pixel while the flat grain in between takes the rest. That grain has no
+    figure and no horizon to skew, which is why this was always the layer that
+    could afford to stretch.
+  */
+  /*
+    **No background here any more — above `lg` the sheet is the `<img>` below.**
+
+    The declarations that used to live on this rule (`var(--card-paper)` at
+    `100% 100%`) were the stretch: they handed the picture whatever shape the
+    content box happened to be. The two narrow bands further down still paint a
+    background, and both set every property they need, so nothing is inherited
+    from here.
+
+    What stays is the box itself: the measure, the centring, and `position:
+    relative` so the sheet layer resolves against this element.
+
+    **`overflow` is deliberately not set.** The sheet is wider than this box on
+    every card and has to be allowed out of it — a `hidden` or `clip` here would
+    crop the torn side edges back to the column and undo the whole construction.
+    That is also why no ancestor between here and the page may clip: see the note
+    on `.page-atmosphere-card-reference`, which clips its own artwork but is a
+    sibling of this box rather than its parent.
+  */
+  .card-paper {
+    margin-inline: auto;
+    max-width: var(--measure-card-paper);
+    position: relative;
+    width: 100%;
+  }
+
+  /*
+    **The content sits above the sheet.**
+
+    The sheet layer is `position: absolute` inside this box, so without a
+    position of their own the content blocks would paint *under* it — the
+    parchment is added to the flow after nothing and before everything. Each
+    direct child is lifted into its own layer instead of the sheet being pushed
+    to a negative `z-index`, because a negative index would put it behind this
+    element's own background and, on the bands that still paint one, behind the
+    paper.
+
+    `> *:not(.card-paper__sheet)` so the rule names exactly the content and the
+    sheet keeps its own `z-index: 0`.
+  */
+  .card-paper > *:not(.card-paper__sheet) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /*
+    **The sheet as a picture, free to be wider than the column it backs.**
+
+    See the long note in `CardReferencePage` for why the parchment is an element
+    here rather than a background: her sheets are ~1.82..2.24 tall per unit wide
+    against content that runs 2.5..2.7, so a sheet held to the content's width
+    cannot also reach its height, and every attempt to make it bridge that gap
+    distorted, tiled or cropped her artwork.
+
+    `block-size: 100%` with an automatic inline size is the whole mechanism: the
+    height is the page's, and the browser works the width back from the file's
+    own intrinsic ratio. The picture is therefore always at true proportions and
+    always exactly tall enough, whatever aspect the file happens to be — nothing
+    in CSS or TS states or derives that aspect.
+
+    **`inset-block-start: 0` with the centring transform, not `inset: 0`.** The
+    layer has to be *taller-agnostic*: pinning both block edges would hand it the
+    box's height as a constraint again and defeat the sizing. So it hangs from the
+    top, takes the box's height through `block-size`, and is centred across the
+    column with the translate — which is what lets the overflow fall evenly either
+    side rather than all to the right.
+
+    `max-inline-size: none` because `img` carries `max-width: 100%` from the
+    preflight, and that cap is exactly the constraint this layer exists to escape.
+
+    `z-index: 0` with the content above it: the sheet is behind the writing but
+    inside the same stacking context, so it does not need to leave the element or
+    reach the page's atmosphere layer.
+  */
+  .card-paper__sheet {
+    block-size: 100%;
+    inline-size: auto;
+    inset-block-start: 0;
+    inset-inline-start: 50%;
+    max-inline-size: 100vw;
+    object-fit: contain;
+    object-position: center top;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 0;
+  }
+
+  /*
+    **The one sheet that outgrows the window, and why the cap is `object-fit`
+    rather than a width.**
+
+    Justice is the shallowest parchment in the deck at 1.819 — hers is the
+    shortest sheet, so standing it as tall as the page makes it the widest:
+    1055px against a 1024px window, about 16px past each edge. The content sits
+    well inside the paper there and `overflow-x-hidden` on `html`/`body` keeps a
+    scrollbar away, so this is a clipped deckle rather than a broken layout, and
+    it affects one card over roughly fifty pixels of width.
+
+    **A bare `max-inline-size` is the obvious fix and reintroduces the stretch.**
+    With `block-size: 100%` still in force a width cap squashes the picture
+    horizontally into the cap — the box's aspect wins again, which is the exact
+    fault this construction exists to remove. It was written that way first and
+    measured at once; recorded here so it is not tried again.
+
+    `object-fit: contain` with the cap is what holds the proportions: the element
+    may be capped to the window, and the *picture* inside it keeps its own ratio
+    and letterboxes rather than distorting. So in this narrow band the sheet
+    draws at window width, at true proportions, ending before the copy does —
+    the honest trade, and the same one her frames make by running paper past
+    the last line.
+
+    `100vw` rather than `100%`, because the sheet is deliberately allowed outside
+    its column: the limit here is the window, not the box.
+  */
+
+
+  /*
+    **The suit sheets are never stretched, on either axis.**
+
+    `.card-paper` paints `100% 100%`, which hands the image the *box's* aspect.
+    On a card that costs nothing — her card sheets are flat grain through the
+    middle, and a page whose content lands near the sheet's own proportions
+    stretches it by a few percent that nothing in the picture shows. **Each
+    suit sheet has her emblem painted into it**, a chalice or a sword or a
+    torch, and those skew visibly at the same few percent.
+
+    Two attempts at this failed and are worth recording, because each looked
+    like the obvious fix:
+
+    - **`repeat-y` with `100% auto`.** Never bends the sheet, which is why it
+      seemed right. But our page is always taller than her frame — we add a
+      masthead, the Library intro with its suit nav, and a footer, none of
+      which she draws — so the tile always came round, restating her torn top
+      deckle partway down and ending on a hard cut.
+    - **The pinned-band construction**, borrowed from the card sheets' phone
+      layout. That works where a sheet is a painted border around a quiet
+      centre; her suit washes run the full height at the sides and reach well
+      into the middle, so there is no quiet band to stretch.
+
+    What works is to stop the box from ever being a shape the sheet has to fill.
+    `min-block-size` derives the sheet's natural height from its own inline
+    size, so the box *starts* at the image's true proportions and the picture
+    is painted at `100% auto` — full width, its own aspect, pinned to the top.
+    Content shorter than the sheet leaves her parchment showing below it, which
+    is what her frame draws anyway.
+
+    **The floor is derived from the measure, not from a container query.**
+    `cqw` would need `container-type: inline-size` on this element, and the
+    sheet is an ancestor of boxes that resolve their own `cqw` — the sphere
+    cards size their type against `OrnateFrame`. Those have containers of their
+    own in between, so it would most likely be harmless, but "most likely" is
+    not a reason to introduce a containment context the layout never asked for.
+    `--measure-card-paper` is exactly the width this box takes, so the height
+    can be read straight off it.
+
+    `aspect-ratio` is the other thing not used here, and the note on
+    `.appears-panel__ground` sets out why at length: it can convert a *height*
+    back into a width, so a box in a stretched grid cell feeds its sibling's
+    height into its own measure. A floor computed from the measure only ever
+    travels one way.
+
+    The ratio is one number for all four — her sheets are 1.9466 to 1.9545 high
+    per unit wide, a 0.4% spread — so 1.953 fits every one within half a percent.
+
+    **If content ever outruns the sheet**, the box grows past the floor and the
+    image simply stops where it stops, on her bottom deckle, with the page's own
+    atmosphere behind the remainder. That is a seam, not a stretch, and it is
+    the failure this construction chooses: her chalice keeps its shape.
+  */
+  /*
+    **The suit sheets have no background of their own above `lg` — the picture
+    layer draws them, exactly as it draws the card sheets.**
+
+    These pages are `.card-paper .suit-paper`, and this rule was once a single
+    `background-size` override riding on `.card-paper`'s image. Two changes have
+    passed through it since, both worth recording because the second undid the
+    first:
+
+    - When the card pages moved their sheet to an `<img>`, `.card-paper`'s
+      `background-image` went with it and this rule inherited nothing. The four
+      suit parchments vanished at every width except the 40..64rem band, which
+      happens to declare its own. The fix was to restate the declarations here.
+    - Then the suits took the picture layer too, because the floor-and-`cover`
+      construction was cropping 5..9% off the sides between 1024 and ~1100 (see
+      the note where that block used to be). With the layer drawing the sheet, a
+      background here would paint the same parchment behind it at a different
+      size.
+
+    So the only band that still needs a background is 40..64rem, and it is
+    declared in its own block below rather than here. Above `lg` this rule has
+    nothing to say, which is why there is no `.suit-paper` base rule any more —
+    only the one thing that is still true of these sheets at every width.
+
+    **What remains is the aspect, and it is a real difference from the cards.**
+    All four suit sheets share one ratio to 0.4%, asserted at conversion time in
+    `optimize-suit-assets.mjs`, where the twenty-two card sheets run a 23%
+    spread. Nothing in the picture layer depends on that — it reads each file's
+    own ratio — but it is the reason this page could use a single-constant floor
+    for as long as it did.
+  */
+
+  /*
+    **Above `lg` the sheet is the picture layer, not a background.**
+
+    This block used to set `cover` with a `min-block-size` floor computed from
+    the one aspect all four sheets share. That is the construction this page
+    pioneered and it was right for a long time — but it assumes the content
+    lands near the sheet's own proportions, and between 1024 and about 1100 it
+    does not: the sheet halves in width crossing `lg` while the copy keeps its
+    length, so the box ran 2.05..2.14 against her 1.95 and `cover` scaled the
+    parchment up and cropped 5..9% off each side. Worst on Wands. It read as a
+    stretch because the thing that disappears is the torn edge.
+
+    `.card-paper__sheet` replaces both declarations: the picture takes the box's
+    height and derives its own width, so it is neither scaled unevenly nor
+    cropped at any width. The floor goes with the `cover` — the layer needs the
+    box to be the *content's* height, and a floor would hold it taller than the
+    content on short pages and push the sheet wider than it needs to be.
+
+    The two things that block kept safe are both still handled. The sheet cannot
+    show twice, because the picture is drawn once with no `repeat`. And it
+    cannot end partway down leaving bare ground, because its height *is* the
+    box's height by construction.
+
+    What the background is still needed for is the 40..64rem band below, which
+    is full-bleed and has no room either side for a wider sheet — see the note
+    there, and `.card-paper__sheet`'s own `display: none` in that window.
+  */
+
+  /*
+    **Between `sm` and `lg` the sheet is full-bleed, so the floor is `vw`.**
+    `--measure-card-paper` is the literal `100%` in that band — a percentage of
+    the parent, which cannot be multiplied into a height — and the box spans the
+    viewport, so `100vw` is the same number expressed in a unit that can be.
+
+    This window also has to opt out of the pinned-band construction the card
+    sheets use here. That design stretches everything between a 14% band at each
+    end, which is right for a sheet painted as a border around a quiet centre
+    and wrong for these: her suit washes run the full height at the sides and
+    reach into the middle, so there is no quiet band and the stretch lands on
+    her emblem.
+  */
+  @media (width >= 40rem) and (width < 64rem) {
+    .suit-paper {
+      background-image: var(--card-paper);
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+      min-block-size: calc(100vw * 1.953);
+    }
+  }
+
+  /*
+    **A reading ground for the sections that sit on her painted border.**
+
+    Every sheet is a watercolour vignette — pines, pillars, mist — painted around
+    a pale centre, and this page's copy is pure black. A block of text that
+    reaches the sides therefore loses its ground wherever the painting reaches
+    in, and the first words of each line go dark on dark. Worst on the busy
+    cards: Death, Justice, The Tower.
+
+    A wash of white at very low alpha fixes that without becoming a box. Her
+    paper still reads through it, which is the point — a solid panel would look
+    like a card laid on the sheet rather than like the page's own writing
+    surface.
+
+    **The alpha is deliberately near the floor.** At `0.38` it does real work on
+    the busy sheets and is close to invisible on the pale ones (The Fool,
+    Temperance), which is the right asymmetry: the cards that need it get it and
+    the cards that do not are barely touched. Raise it first if it reads as too
+    faint; lower it first if it reads as a panel. It was tried at `0.22` and put
+    back: that was too thin to clear black type off her darker borders.
+
+    The padding is small by the same logic — enough that the words are not flush
+    against the tint's edge, not so much that it becomes a block with margins.
+    The radius is the site's button radius rather than a new number.
+
+    **Who wears it**: the opening section (the keywords, subtitle, artwork and
+    essay as one block) and the LOOK FOR section. Both run the full width beside
+    or across her border. The dark panels do not — they bring their own opaque
+    ground and would gain nothing — and the closing line sits in the sheet's pale
+    foot where there is nothing to clear.
+  */
+  .card-reading-ground {
+    background-color: rgb(255 255 255 / 0.38);
+    border-radius: var(--radius-button);
+    padding: clamp(calc(0.625rem * var(--card-scale)), calc(1.25vw * var(--card-scale)), calc(1.25rem * var(--card-scale)));
+  }
+
+  /*
+    **The LOOK FOR rule, cut where the label sits.**
+
+    Her `divider-look-for.webp` is drawn with the gap already in it — a 229px
+    transparent span at x=490..718 of 1203, so 19% of the width, centred. That is
+    generous on a desktop and too narrow on a phone: the gap is a *share* of the
+    rule and shrinks with it, while the label's type bottoms out at the 22px
+    floor of `--text-card-lead` and `--card-scale` is only declared above `lg`.
+    So the words keep their size while the space drawn for them closes, and below
+    `lg` they end up sitting on the line.
+
+    The label used to paint `--color-card-parchment` behind itself to hide that.
+    It worked and it looked wrong: a flat swatch over a watercolour vignette,
+    under a translucent wash it could not match — visible as a smear around the
+    words.
+
+    So the rule is masked instead of the label painted. The band is transparent
+    through the middle and the line resumes either side, which is the same shape
+    her asset draws — only this one follows the type.
+
+    **`ch` is the unit that makes it track.** The mask is sized off the label's
+    own font size, so the cut scales exactly as the words do: it is wide enough
+    for "LOOK FOR:" plus a little air at every viewport, without a breakpoint or
+    a measured pixel value. `12ch` is the nine characters plus roughly three
+    characters of clearance.
+
+    The two `50%` stops are hard, not feathered: her own gap has clean ends with
+    dots finishing them, and a soft fade here would read as the line dissolving
+    rather than stopping.
+  */
+  .look-for__rule {
+    /*
+      **The rule carries the label's own type metrics**, which is what makes the
+      `ch` below mean anything: `ch` resolves against the element it is used on,
+      and this is an `<img>` that would otherwise inherit whatever the page sets.
+      Matching the font and size to the label makes one `ch` here the same width
+      as one character there, so the cut tracks the words rather than drifting
+      from them. Nothing renders text in this element — these two declarations
+      exist only to give the unit its meaning.
+    */
+    font-family: var(--font-serif);
+    font-size: var(--text-card-lead);
+
+    /*
+      **The default, for a caller that sets nothing.** `LookFor` overrides it
+      inline from the label's own length — the suit pages put "KEY THEMES" in
+      this rule, which is longer than "LOOK FOR:" and would sit on the line at a
+      fixed 12ch. See `lookForGap` in look-for-gap.ts.
+    */
+    --look-for-gap: 12ch;
+
+    -webkit-mask-image: linear-gradient(
+      to right,
+      #000 calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% + var(--look-for-gap) / 2),
+      #000 calc(50% + var(--look-for-gap) / 2)
+    );
+    mask-image: linear-gradient(
+      to right,
+      #000 calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% - var(--look-for-gap) / 2),
+      transparent calc(50% + var(--look-for-gap) / 2),
+      #000 calc(50% + var(--look-for-gap) / 2)
+    );
+  }
+
+  /*
+    **The SHADOW panel's ground below `xl` — above it her picture is the
+    panel.**
+
+    It is baked into each card's `shadows/<slug>.webp` — the figure and the
+    plaque she stands on composited into one 1216x227 picture, twenty-two times
+    — and that composite still ships on a desktop, where it is the client's
+    artwork drawn as drawn. This rule is the phone's replacement for it.
+
+    **The split exists because the composite has a fixed ratio and the box does
+    not.** It is drawn `object-fill` into a cell whose height the text sets, so
+    the bitmap stretches to meet it: about +17% at 1920, which passes, and
+    **+218% at 390px**, where the figure is three times too tall and visibly
+    smeared. Measured, not estimated. A drawn ground cannot distort, so the
+    narrow widths get this and lose the figure — which the original design also
+    did below `sm`.
+
+    **This was `sm`, then `lg`, and is now `xl` — and the composite does not
+    truly fit at any width.** Fitting the split to those two measurements
+    assumed the stretch fell away smoothly with width. It does not. The panel
+    is `--measure-card-wide`: `64.271vw` times `--content-scale` and
+    `--card-scale`, both 0.85 and both applied only above `lg`. So it caps near
+    892px even at 1920 — her 1216px export is never drawn at its own width —
+    and the two scales switching on put a cliff at `lg`, the panel dropping
+    from ~657px at 1023 to ~476px at 1024.
+
+    Against the 185px text column measured at 1920 below, the composite runs
+    roughly +19% there, +28% at 1103 and +71% at 768. Reported from an iPad Pro
+    13" at 1032px, visibly wrong below about 1103px. `xl` clears that band with
+    margin; it is a judgement about where the distortion stops reading as
+    wrong, not a width at which the ratio agrees. `object-cover` is the change
+    that would end it everywhere, at the cost of cropping the plaque.
+
+    The panel half of those twenty-two pictures is identical in all of them:
+    measured across the set, the same flat rounded rectangle, `#383638` on most
+    and `#373737` on a few (The Fool, The High Priestess), a difference of one
+    or two levels that is webp quantisation rather than art direction. That is
+    what this reproduces.
+
+    **When the client's cut-out figures land this becomes the panel at every
+    width**, with the silhouette as her own layer over it, and the desktop
+    composite goes away. It is written to stand alone for that reason.
+
+    **It is its own token, not a tint of the panel above it.** The obvious move
+    is to derive it from `--color-card-panel` (`#050a17`) — the "When ...
+    Appears in a Reading" panels — so the two dark blocks stay tied together.
+    They cannot be: that token is a near-black *navy*, 5/10/23, and this ground
+    measures 56/54/56, a neutral grey with no blue in it at all. Lightening her
+    navy toward white carries the blue cast along and lands on 203/204/206 by
+    the time it is this bright — the right value is unreachable on that path,
+    and a `color-mix` written to look derived would only be the sampled number
+    in disguise. So it is sampled, and named, and sits beside its sibling as a
+    second colour rather than a function of the first.
+
+    `#383638` is what twenty of the twenty-two measure. The Fool and The High
+    Priestess come in at `#373737`, one level off on two channels, which is webp
+    quantisation and not a different grey.
+
+    **The radius is a percentage of the width, not a token.** Her corner is 20px
+    on a 1216px panel — 1.645% — and this panel is the one box on the page that
+    is a fixed-aspect block scaling continuously with the viewport. A
+    `--radius-button` here would hold 10px while the panel ran from 320px to
+    1216px wide, so the corner would read as sharp at full width and as a pill
+    at phone width. The percentage holds her proportion at every size. It is
+    written on the inline axis alone (`/ 1.645% ...` would make it an ellipse
+    against the panel's much shorter height) — `border-radius` takes a second
+    value after the slash for exactly this, and `20px / 20px` on a 1216x227 box
+    is `1.645% / 8.811%`.
+
+    **The height is her 227/1216 of the width, and it must never run backwards.**
+    There is no image to supply a height now, so the ratio does — but it has to
+    be applied in a way that can only ever read the width and never re-derive
+    it, and that is the whole difficulty of this box.
+
+    `aspect-ratio: 1216 / 227` with `align-self: stretch` is the version that
+    looks right and is not. This ground and the words are the two children of a
+    `.stack` — one grid cell — so `stretch` hands the box the *taller* sibling's
+    height, and `aspect-ratio` then dutifully converts that height back into a
+    width. Measured at 1920: the text column stood 185px tall, the ratio turned
+    that into a 993px-wide ground inside an 834px cell, and the panel overflowed
+    159px past its own container and off the side of the sheet. The symptom
+    reads as "the panel is too wide" and the cause is entirely in the height.
+
+    So the ratio is expressed as a `min-block-size` in container-query units:
+    `calc(100cqw * 227 / 1216)`, read off the panel's own inline size. The grid
+    settles the width from the cell, the floor is derived from that width, and
+    nothing the height does can travel back the other way — which is the single
+    property this box needs and the one `aspect-ratio` could not give it.
+    `block-size: 100%` then takes the cell's full height when the words are the
+    taller of the two, replacing the `stretch` that caused the feedback.
+
+    **A percentage floor was tried here and is silently dead.** `min-block-size:
+    calc(100% * 227 / 1216)` looks like the same thing written without a
+    container, and it is not: a percentage in the block axis resolves against
+    the *parent's height*, which on this content-sized grid is the height the
+    floor was supposed to be constraining. It computes to nothing. With copy in
+    the panel the text holds the box open and it appears to work; hide the copy
+    and the ground collapses to 0. `cqw` is what makes the floor read the width,
+    and `container-type: inline-size` on `.card-shadow-panel` is what gives
+    those units something to measure — the two have to ship together.
+
+    The copy is why there has to be a floor rather than a fixed height. At
+    1216/227 a 360px phone gives a 67px panel, and the heading, the champagne
+    rule and the warnings do not fit in 67px at the 18px type floor. The shadow
+    text is not a fixed quantity either — two or three lines per card, the
+    longest single line over 140 characters, which wraps to four or five visual
+    lines in a narrow column. A `min-block-size` in `em` was tried before this
+    and is also wrong: it is a guess at a line count, so it is at once too tall
+    for the shortest card and too short for the longest.
+
+    See the note in `ShadowPanel` on the text's offset, which is the other half
+    of this.
+
+    **The width is the container's, with no inset of her own.** Her export is
+    1216px inside a `--container-card-wide` of 1234, and reproducing that 9px-a-
+    side inset here was tried and removed: it is a desktop frame proportion, and
+    this rule only ever renders below `xl`, where the container is the edge
+    gutter and every neighbouring block fills it. See `.card-shadow-panel` above
+    for the measurement.
+
+    **Whatever width this box takes, the text column must take too.** They are
+    siblings in the `.stack`, and the column's offsets (`ml-[29.2%]`,
+    `mr-[0.8%]`) are percentages of whatever box it is given. If the two ever
+    measure against different widths the words drift off the plaque — which is
+    why any future inset belongs on the shared `.card-shadow-panel` and not on
+    this box alone.
+  */
+  /*
+    **The phone panel's box**, which exists to give the ground's floor a width
+    to read — `min-block-size` below is in `cqw`, and `container-type` is what
+    makes those units mean the panel's own inline size.
+
+    **There is no width inset here, and that is a correction.** Her composite is
+    1216px inside a 1234px frame, so for a moment this carried `98.541%` to
+    reproduce that. It is a *desktop frame* proportion: below `sm` the container
+    is the edge gutter rather than her 1234, and every other block on the page —
+    the meta strip, the dark panels, the essay ground — simply fills it. Re-
+    applying her inset here stood the panel 3px inside all of them, measured at
+    390px (meta strip 20..370, panel 23..367). On a phone the right width is the
+    container's.
+
+    Above `xl` the picture is the panel and brings its own dimensions, so there
+    is nothing to set at all — hence no rule outside this query.
+
+    **This query's width and the ground's own breakpoint are one decision.**
+    The floor below is in `cqw`, which needs a container to measure; if this
+    query stayed narrower than the ground's own breakpoint, the floor
+    would quietly resolve against no container and compute to nothing. With
+    copy in the panel the text holds the box open and it would look correct —
+    the failure only shows on a card whose copy is short. The two widths move
+    together or the floor is dead.
+  */
+  @media (width < 80rem) {
+    .card-shadow-panel {
+      container-type: inline-size;
+    }
+  }
+
+  .card-shadow-ground {
+    background-color: var(--color-card-shadow);
+    block-size: 100%;
+    border-radius: 1.645% / 8.811%;
+    min-block-size: calc(100cqw * 227 / 1216);
+  }
+
+
+  /*
+    **Below `lg` the sheet tiles at its own aspect instead of stretching.**
+
+    `100% 100%` above is a two-axis stretch, and it is only cheap while the box
+    is close to the asset's own proportion. Her sheets are 1337px wide and
+    2432–2995px tall — an aspect between 1:1.82 and 1:2.24 — and on a desktop
+    the content box lands near that, so the vertical give is a few percent.
+
+    A phone breaks that assumption in both directions at once. The box is about
+    375px wide, so the sheet's *natural* height at full width is only ~790px,
+    while the content — essay, two dark panels, the carousel, the meta strip —
+    runs several thousand. The same declaration therefore compresses the sheet
+    to roughly a quarter of its height, and the paper smears into horizontal
+    banding. That is the squish this block exists to fix.
+
+    So the narrow sheet is sized the way the atmosphere layer above it already
+    is — `100% auto`, full width at the asset's own aspect — and `repeat-y`
+    takes the remaining height. Nothing bends.
+
+    **The seam repeats her scenery, and that is the open cost here.**
+    These sheets are *compositions*, not texture: twenty-two bespoke watercolour
+    vignettes — Death's lamppost and bridge, The Fool's pines, Justice's pillars
+    and scales — painted border around a pale centre. So each tile restates that
+    border, torn top deckle and all, roughly every 790px on a phone.
+
+    **UNDER REVIEW — this block currently ships the pinned-band construction
+    below, for a visual check on a phone. It is not settled.** Rendered against
+    three sheets it divides sharply: The Fool reads well (his pines elongate into
+    a forest corridor and the seams pass as creases in the paper), while Death
+    repeats his lamppost three times as a stretched streak and Justice repeats
+    her scales and torches with both seams cutting straight across. The rule
+    seems to be soft/textural art survives it and recognisable objects do not.
+    If this is rejected, the fallback is `repeat-y` with `100% auto` — which
+    never bends the paper and whose repetition is at least her own composition
+    at her own scale.
+  */
+  /*
+    **Pinned top and bottom, stretched middle.** Three layers of the one image:
+    the painted top pinned at its own aspect, the painted bottom likewise, and
+    the sheet stretched between them to cover the rest.
+
+    `--card-deckle` is 14%. Measured across all twenty-two sheets on the centre
+    240px, the painting clears into plain paper within 11.9% of the height at
+    the top (The Tower, Death) and 8.4% at the bottom (Justice, The Hermit), so
+    14% clears the worst card with room to spare. It is only the *centre* that
+    clears, though — the side edges carry art the whole way down, which is why
+    the object-bearing cards duplicate and this is still under review.
+
+    **`center` places the middle layer exactly, and is not a guess.** A
+    percentage `background-position` is proportional, not an offset: a layer of
+    height `m` in a box of height `H` sits at `pct × (H − m)`. The middle is
+    `H − 2d` tall for a band depth `d`, so `H − m` is `2d` and landing it at `d`
+    needs `d / 2d` — one half, whatever `d` and `H` are. That symmetry is why the
+    gap closes at every viewport and every essay length (verified 1200–12000px).
+    A literal `14%` here reads as the obvious thing to write and is wrong: it
+    lands the layer at a fifth of where it belongs and slides it under the top
+    band as the page grows. **Change `--card-deckle` freely — but leave this
+    `center` alone**, since the proof holds for any depth.
+
+    **Fading the seams was tried and is not here.** Two shapes of it: a
+    multi-layer `mask-image` on this element, and the same ramps moved onto
+    `::before`/`::after`. The first cannot work in principle — a mask applies to
+    the element's composited result, not to one background layer within it, so it
+    shapes the sheet's silhouette and nothing else. The second does fade, but a
+    crossfade between two copies of the same art at *different scales* blurs the
+    join rather than hiding it, and the deckle survives at partial alpha as a
+    fainter line. If it is picked up again, that is the thing to solve first.
+  */
+  @media (width < 64rem) {
+    /*
+      `:not(.suit-paper)` because this is for *her card sheets*: it stretches
+      everything between a 14% band at each end, which works where a sheet is a
+      painted border around a quiet centre. Her suit washes run the full height
+      at the sides and reach into the middle, so there is no quiet band and the
+      stretch would land on the emblem. Those sheets size to their own aspect
+      instead — see `.suit-paper`.
+    */
+    .card-paper:not(.suit-paper) {
+      --card-deckle: 14%;
+
+      background-image: var(--card-paper), var(--card-paper), var(--card-paper);
+      background-position: center top, center bottom, center center;
+      background-repeat: no-repeat, no-repeat, no-repeat;
+      background-size:
+        100% auto,
+        100% auto,
+        100% calc(100% - 2 * var(--card-deckle));
+    }
+
+    /*
+      **The picture layer is for the wide sheet only.**
+
+      Below `lg` the paper is full-bleed, so there is no room either side for it
+      to spread into — a sheet wider than the column would simply run off the
+      screen, and the construction's whole purpose is to use margin that exists.
+      This band paints its own background instead, so the element goes.
+
+      `display: none` rather than `visibility: hidden`: the layer must not
+      contribute a box here, and a hidden one still would.
+
+      **The file is still fetched**, which is deliberate rather than overlooked:
+      the two bands below paint `var(--card-paper)` and `var(--card-paper-mobile)`
+      from CSS, so the desktop sheet is wanted at these widths anyway on the
+      tablet band. Only below `sm` is this file genuinely unused, and the
+      download is one `webp` the browser may already hold from a wider layout.
+    */
+    .card-paper__sheet {
+      display: none;
+    }
+  }
+
+  /*
+    **Below `sm` the phone sheet replaces all of that, drawn once and cut to
+    the content.** Every card has one: she painted twenty-two at 390px wide as
+    one tall full-bleed sheet, art at the top and flat grain below, with no
+    bottom deckle — so the box simply ends where the content does and none of
+    the pinning and stretching above is needed.
+
+    `cover` anchored at the top keeps her pillars in proportion (`100% 100%`
+    squashed them to ~58% on The Magician's 3008px page) and only scales up if
+    a page outgrows the sheet's 3500px.
+
+    **The sheets were 5200 tall for one card and are 3500 for all of them.**
+    The Magician's shipped alone while this page was built; her finished
+    delivery is shorter. `cover` does not care — the only thing the height
+    changes is where upscaling begins — but the number is recorded because the
+    previous one was written here as though it were fixed.
+
+    `[data-paper-mobile]` is now set on every card page, so it no longer
+    selects a subset. It is kept as the hook that says *this element has a
+    phone sheet*, and `assets.ts` records why the gate behind it went away.
+  */
+  @media (width < 40rem) {
+    .card-paper[data-paper-mobile] {
+      background-image: var(--card-paper-mobile);
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+  }
+
+  /*
+    **Below `sm` the sheet is gone and the page sits on the wash directly.**
+
+    The client's note is that the mobile version "does not need to float within
+    the background like desktop/tablet". That floating is the whole point of
+    the sheet on a wide screen — her paper is a 1337px object with margins
+    either side and torn edges you can see. On a phone the sheet is already
+    edge to edge (`--measure-card-paper` is `100%` there), so those edges are
+    off-screen and all it contributes is a second pale layer over a wash that
+    is already parchment-coloured, plus two deckle images that cost bandwidth
+    to draw a line nobody sees.
+
+    So it drops out and the ground shows through. The content keeps its own
+    padding, which is why this is `background` and the deckles rather than the
+    element: `.card-paper` is a *container* — see the note above — and hiding
+    it would take the page's layout with it.
+  */
+  /*
+    **The sheet stays on mobile, and that reverses an earlier change.**
+
+    It was dropped below `sm` on the client's note that the phone version
+    "does not need to float within the background like desktop/tablet" — sound
+    while the ground behind it was her warm parchment, where losing the sheet
+    cost only a pale layer over a pale wash.
+
+    The ground is a night sky now, and the page's ink is pure black. Hiding the
+    sheet would put black type straight onto `#091828`, which is not a styling
+    regression but an unreadable page. If the client still wants the sheet gone
+    on a phone, the ink has to change with it.
+  */
+
   .page-atmosphere-world-tarot::after {
     background-image: url("/figma/world-tarot-path.webp");
     background-position: center bottom;
     background-repeat: no-repeat;
     background-size: cover;
     /*
-      Pinned at both ends rather than given a height: `top` and `bottom`
-      together already state the box, and a `block-size` beside them would
-      be a third value for the same thing — the reason the readings blocks
-      above set one edge and a height, and this one sets two edges.
+      **Floor-anchored with a height, not pinned at both ends** — the same
+      construction the `< lg` block below already uses, now at every width.
 
-      `cover` therefore fills a box that is the page plus both overhangs, and
-      on a page taller than the artwork's own aspect it crops from the top,
-      which is where the feather is. Nothing is ever stretched.
+      This was two pinned edges (`top` and `bottom`, no height) on the
+      reasoning that they "already state the box". They do, and that is the
+      problem: `cover` then has to fill a box whose aspect is the *page's*,
+      not the artwork's, and this page is far taller than 1919x3298 is. So
+      `cover` scaled the picture to the box's **height** and the sides went
+      off-screen — 29% of the image's width at a 1440px viewport, and worse
+      the narrower the screen. The client saw it as the background being
+      "scaled too large, cutting off the sides", which is exactly what it was.
+
+      That also made "width-driven" false on desktop while every comment here
+      — and the README — said it was. `block-size` restores it: 171.77vw is
+      the artwork's own height at full width (3298/1919), so the picture is
+      sized by the viewport's width, shows its full width at every one, and
+      is never stretched. `min(…, 100%)` keeps it from outgrowing a page
+      shorter than that, which is the only case the old box handled for free.
+
+      `--path-rise` moves onto `block-size` rather than staying on `top`: the
+      box hangs off the floor now, so the rise has to lengthen it upwards to
+      still reach behind the masthead. `--path-drop` stays on `bottom`, where
+      it always was.
     */
+    block-size: min(calc(171.77vw + var(--path-rise) + var(--path-drop)), calc(100% + var(--path-rise) + var(--path-drop)));
     content: "";
-    inset: calc(-1 * var(--path-rise)) 0 calc(-1 * var(--path-drop)) 0;
+    inset: auto 0 calc(-1 * var(--path-drop)) 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
     mask-image: linear-gradient(to bottom, transparent 0%, #000 var(--path-feather, 4%));
     position: absolute;
@@ -952,19 +2627,19 @@
     frame; below `lg` this page has the same screens of empty colour the
     readings index had, and it gets the same answer.
 
-    **The path has to give the top of the page up first, and that is the real
-    change here — the sky alone does nothing.** On desktop this artwork is
-    pinned at *both* ends (`top` and `bottom`, no height) so `cover` fills the
-    whole page and crops from the top, which is exactly right at 1920 where the
-    frame and the page are near enough the same shape. It is also why a sky
-    added behind it was invisible: the path's box *is* the page, the photograph
-    is opaque edge to edge, and `::after` paints over `::before` — so the sky
-    was drawn and then covered by it, everywhere except the 4% the path's own
-    feather fades out.
+    **The path had to give the top of the page up first, and that was the real
+    change here — the sky alone does nothing.** This artwork *was* pinned at
+    *both* ends (`top` and `bottom`, no height) so `cover` filled the whole
+    page. That is also why a sky added behind it was invisible: the path's box
+    *was* the page, the photograph is opaque edge to edge, and `::after` paints
+    over `::before` — so the sky was drawn and then covered by it, everywhere
+    except the 4% the path's own feather fades out.
 
-    So below `lg` the path stops being pinned at the top and takes the readings
-    parlour's construction instead: a height, and one edge. `block-size:
-    min(171.77vw, 100%)` is the artwork's own height at full width (3298/1919),
+    The base rule now carries the height-and-one-edge construction at every
+    width (see the note on `::after` above, and why two pinned edges were also
+    cropping the picture's sides), so the top of the page is free here for
+    free. `block-size: min(171.77vw, …)` is the artwork's own height at full
+    width (3298/1919),
     so at 375px it stands about 644px tall on the floor of the page and the
     thousands of pixels above it are free for the sky. `inset: auto 0 …` drops
     the top edge; the bottom keeps `--path-drop`, because the footer's margin
@@ -974,13 +2649,17 @@
     same floor anchor, same top feather dissolving into the colour above it.
     What changes is only how much of the page the box claims.
 
-    **`--path-rise` is spent to zero with it.** The rise carries the path up
-    behind the masthead on desktop, which is the client's composition. Below
-    `lg` the path is nowhere near the masthead — the sky is what is up there —
-    so it has nothing left to lift, and against a floor-anchored box it would
-    only push the artwork down off its own floor. The header clearance moves to
-    the wrapper (`max-lg:-top-20` in world-tarot/page.tsx), the readings index's
-    arrangement exactly: the element moves, the artwork inside it does not.
+    **`--path-rise` is spent to zero here, and the base rule now spends it
+    too** — so this override is a no-op as it stands. It is kept rather than
+    deleted because the two zeros are held for different reasons: the base
+    one keeps the feather off the masthead (see the note there), this one is
+    about the mobile layout. Below `lg` the path is nowhere near the masthead
+    — the sky is what is up there — so it has nothing to lift, and against a
+    floor-anchored box a rise would only push the artwork down off its own
+    floor. If the base rise is ever restored, this line is what keeps a phone
+    correct. The header clearance stays on the wrapper (`max-lg:-top-20` in
+    world-tarot/page.tsx), the readings index's arrangement exactly: the
+    element moves, the artwork inside it does not.
 
     **`overflow: clip` still must not be added to the parent**, for the reason
     the base rule gives — `--path-drop` is an overhang and a clip would cut it
@@ -992,10 +2671,13 @@
       --path-rise: 0rem;
     }
 
-    .page-atmosphere-world-tarot::after {
-      block-size: min(171.77vw, 100%);
-      inset: auto 0 calc(-1 * var(--path-drop)) 0;
-    }
+    /*
+      The base rule now uses this same floor-anchored construction at every
+      width (see the note there), so the only thing this block ever had left
+      to do was spend the rise — and the base rule now spends it too. The
+      `block-size`/`inset` pair that used to be repeated here is gone because
+      it is no longer an override.
+    */
 
     .page-atmosphere-world-tarot::before {
       background-image: url("/figma/readings-sky-mobile.webp");
@@ -1286,7 +2968,13 @@
     disagreed, which was the same desync again, ~19px by 2560px.
   */
   #hero-sky {
-    --hero-sky-top: calc(5.9% - 4.48972vw);
+    /*
+      `--hero-sky-lift` is a desktop-only nudge, 0 by default so this expression
+      is the approved one everywhere it has not been asked for. See the block
+      below the mobile rule for why desktop needs it.
+    */
+    --hero-sky-lift: 0px;
+    --hero-sky-top: calc(5.9% - 4.48972vw - var(--hero-sky-lift));
   }
 
   /*
@@ -1319,6 +3007,45 @@
     }
   }
 
+  /*
+    The composition sits higher on desktop, because the sitewide content scale
+    moved the hero out from under it.
+
+    `--hero-sky-top` is a share of the *document* height, which is the property
+    that makes the comp ride with the page — and the content scale shortened
+    the page, so the anchor already came up about 61px at 1920px on its own.
+    That was not enough: the masthead and the hero copy above the card took the
+    full 0.85 directly, so the card itself rose further than the sky beneath it
+    did, and the glint ended up sitting low against it.
+
+    Expressed as a lift on the shared anchor rather than as a smaller
+    percentage, for two reasons. The percentage is the approved placement and
+    stays readable as such — this is visibly a departure from it, not a
+    silent re-tune. And it is `vw`, so the lift tracks the same width the
+    artwork is sized in: a page-height share would make the correction drift
+    with content edits, which is the exact failure the comment above this
+    block describes.
+
+    `--hero-sky-top` is still the only thing either layer reads, so the
+    11.13vw weld between sun and earth is untouched and the two travel
+    together, as that comment requires.
+
+    **Tuned by eye — this is the number to change if the sun wants to sit
+    higher or lower on desktop, and the only one.**
+
+    a width-relative share of the same width the globe is sized
+    in (100.21%), so dropping it is that 8% exactly. What is left on desktop is
+    the approved base placement, the ~61px the shorter page gave back and
+    nothing else. The declaration stays rather than going away because the
+    >=120rem expression below reads it too; restoring a desktop lift means
+    putting a number back here and only here.
+  */
+  @media (width >= 64rem) {
+    #hero-sky {
+      --hero-sky-lift: 6vw;
+    }
+  }
+
   .hero-sky-shine {
     position: absolute;
     max-width: none;
@@ -1337,7 +3064,15 @@
 
   @media (width >= 120rem) {
     #hero-sky {
-      --hero-sky-top: calc(320.6px - (100vw - 1920px) * 0.28156);
+      /*
+        Past 1920px the anchor stops being a page-height share and becomes the
+        globe's own pinning expression, so the desktop lift has to be carried
+        across explicitly: this declaration replaces the one that subtracts it,
+        and without the term here the sun would drop back down the moment a
+        window crossed 1920px. Same `--hero-sky-lift`, so there is still one
+        number to tune.
+      */
+      --hero-sky-top: calc(320.6px - (100vw - 1920px) * 0.28156 - var(--hero-sky-lift));
     }
   }
 
@@ -1425,7 +3160,7 @@
     0%,
     100% {
       border-color: var(--edge-gold);
-      box-shadow: 0 0 0 rgba(228, 196, 106, 0);
+      box-shadow: 0 0 0 rgba(223, 200, 148, 0);
     }
     50% {
       border-color: var(--color-gold);
@@ -1446,6 +3181,34 @@
     animation: none;
   }
 
+  @keyframes rune-pulse {
+    0%,
+    100% {
+      opacity: 0.12;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .rune-field {
+    --rune-base: clamp(14px, 1.6vw, 28px);
+  }
+
+  .rune-field__rune {
+    color: var(--color-champagne);
+    filter: drop-shadow(0 0 4px rgba(223, 200, 148, 0.55)); /* static */
+    opacity: 0.35;
+    animation: rune-pulse var(--dur, 5s) var(--ease-veil) var(--delay, 0s) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rune-field__rune {
+      animation: none;
+      opacity: 0.35;
+    }
+  }
+
   /* Header selectors ------------------------------------------------------- */
   /*
     The language and currency pills are `.btn-ghost`s, and the menu one opens is
@@ -1453,7 +3216,20 @@
     button growing rather than as a second surface arriving over the page. The
     only thing it adds is a shadow, because unlike the button it floats.
   */
+  /*
+    **A floating panel carries the site's dark palette regardless of the page.**
+    It paints `--color-ghost` and shadows itself off the page, so it is an
+    overlay rather than part of the masthead — which matters on a card's
+    reference page, where `.library-card-page` rebinds `--header-*` to dark ink
+    for the nav. Without this reset a panel opening off that nav would inherit
+    the dark ink onto its own dark ground. The mobile drawer does the same
+    thing in `SiteHeader` for the same reason.
+  */
   .menu-panel {
+    --header-ink: var(--color-mist-dim);
+    --header-accent: var(--color-gold);
+    --header-cta: var(--color-champagne);
+
     background-color: var(--color-ghost);
     border: 1px solid var(--edge-gold);
     border-radius: var(--radius-button-lg);
@@ -1486,9 +3262,29 @@
     outline-offset: -3px;
   }
 
+  /*
+    The primary nav's dropdown rows (READINGS, LIBRARY), which part from
+    `.menu-option` on the face only.
+
+    **The rows are Gill Sans, not `.menu-option`'s Cinzel, at the client's
+    request** — the same call recorded on `.reading-action-frame`: a dropdown
+    row is the nav link above it continued downwards, so it is drawn in the
+    nav's own face rather than in the panel's. Weight is Light to match that
+    decision; the size is left to the panel, which sets `--text-nav-sm` once
+    for every row so no row can be larger than its siblings.
+
+    Scoped to a class of its own rather than folded into `.menu-option`
+    because the language/currency menu shares that class and keeps Cinzel —
+    its panel is a settings surface, not a continuation of the nav.
+  */
+  .nav-menu-option {
+    font-family: var(--font-sans);
+    font-weight: 300;
+  }
+
   .menu-option:hover,
   .menu-option:focus-visible {
-    background-color: rgba(228, 196, 106, 0.08);
+    background-color: rgba(223, 200, 148, 0.08);
     color: var(--color-champagne);
   }
 
@@ -1646,6 +3442,31 @@
   */
   .ornate-frame--inset {
     --ornate-radius: 3.2cqw;
+  }
+
+  /*
+    A card reference page's love/career/money cards. Her `LOVE DIAMOND FRAME
+    TOP` draws the corner at about 22px on a 373px card — 5.9% of its own
+    width, the same kind of container-relative value as the four above.
+  */
+  /*
+    A card reference page's love/career/money cards. Her `LOVE DIAMOND FRAME
+    TOP` draws the corner at about 22px on a 373px card — 5.9% of its own
+    width, the same kind of container-relative value as the four above.
+
+    **The line is her near-black, not the site's gold.** Every other frame on
+    the site rings gold content on a dark ground; these sit on parchment and
+    she draws them in the same ink as the card's own words, so the ring takes a
+    colour of its own rather than inheriting the one `.ornate-frame__ring`
+    hard-codes for the rest.
+  */
+  .ornate-frame--sphere {
+    --ornate-radius: 5.9cqw;
+    --ornate-line: 1px;
+  }
+
+  .ornate-frame--sphere .ornate-frame__ring {
+    border-color: color-mix(in srgb, var(--color-card-ink) 70%, transparent);
   }
 
   /*
@@ -1836,6 +3657,17 @@
   }
 
   /*
+    `.panel-marks` spaces a *pair* out at the fifths, which is what the reading
+    panels want; this card has one mark and wants it in the middle, so the
+    padding those fifths come from is dropped and the row centres instead.
+  */
+  .panel-marks--single {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+
+  /*
     The body starts on the line, so the heading's lower half hangs over it —
     that is what putting a heading on a border means. This is the room it needs
     to clear the artwork beneath: half a line of the legend's own type, which
@@ -2008,6 +3840,30 @@
       from escaping the panel.
     */
     z-index: 1;
+  }
+
+  /*
+    The sphere cards' trio, which is one mark centred on the top edge rather
+    than the pair `.panel-marks` spaces out at the fifths.
+
+    **Raised above the shared `.ornate-crest` by an extra class**, not merely by
+    order: that rule is restated inside the `lg` media query for the readings
+    cards' desktop crop, and a media query's declarations beat an unqualified
+    one whatever their position. Doubling the class is what carries this past
+    it without a `!important` or a copy of the breakpoint.
+
+    Her trio is 47px on a 373px card, so 12.6% of it — the container query does
+    resolve against the card, and an earlier reading of 7.47% was this rule
+    losing to the media query below rather than a container mismatch.
+
+    11 of the ornament's 22 rows sit above the line — her own border ran through
+    the two rows between them and is cropped out, the ring drawing that line now
+    — so the lift is half the rendered height. The readings trio's 7-of-16 split
+    is asymmetric; this one is not.
+  */
+  .ornate-crest--sphere.ornate-crest--sphere {
+    inline-size: 12.6cqw; /* 47px of her 373px card */
+    margin-block-start: -2.95cqw; /* half the ornament, so it centres on the line */
   }
 
   /*
@@ -2185,7 +4041,7 @@
   }
 
   .flanked__rule {
-    border-block-start: var(--flanked-rule, 2px solid rgba(228, 196, 106, 0.75));
+    border-block-start: var(--flanked-rule, 2px solid rgba(223, 200, 148, 0.75));
     flex: 1;
     min-inline-size: 0;
   }
@@ -2194,7 +4050,7 @@
     The same row, ruled the way a reading page's four section headings are:
     a hairline at full strength rather than a 2px line at 75%, and no mark
     closing it. Figma ships each of those as a 626x1 bitmap that is solid
-    `#e4c46a` up to the heading and transparent behind it — which is a rule
+    the old `#e4c46a` up to the heading and transparent behind it — which is a rule
     with a gap in it, so the gap is the heading's own width here and there is
     no measurement to keep in sync as the type scales.
   */
@@ -2575,7 +4431,7 @@
     frame under a pointer is the wash *and* the glow — on, and being pointed at.
   */
   .checkout-option[aria-pressed="true"] {
-    background-color: rgba(228, 196, 106, 0.14);
+    background-color: rgba(223, 200, 148, 0.14);
     border-color: var(--color-gold);
     color: var(--color-champagne);
   }
@@ -2623,6 +4479,28 @@
     aspect-ratio: 538 / 66;
     background-image: url("/figma/divider-hero.webp");
     max-width: var(--measure-flourish-wide);
+  }
+
+  /*
+    The card reference page's rule, which it draws three times — under the
+    card's name, around LOOK FOR, and above and below the closing line.
+
+    **A variant rather than a tone**, because every rule here is an image and an
+    image has no colour property to set. The colour is baked into the asset.
+
+    **It is black now, and the name is a leftover.** This rule was her forest
+    green — her texture under `rgba(23,72,20,0.93)` — and the client has since
+    delivered black replacements under the same filenames, alongside taking the
+    page's ink to `#000`. The variant is still called `green` because that is
+    what the asset, the token and every caller are called, and renaming the set
+    for a colour that may change again buys nothing.
+    `scripts/optimize-card-assets.mjs` says why the image-not-tone distinction
+    is load-bearing.
+  */
+  .divider--green {
+    aspect-ratio: 582 / 14;
+    background-image: url("/figma/card-reference/divider-green.webp");
+    max-width: var(--measure-rule-green);
   }
 
   /*
@@ -2689,11 +4567,17 @@
         The global focus ring is 2px at 3px offset (see `:focus-visible`) and a
         tile fills its slide top to bottom, so the clip would otherwise shave the
         ring off whichever card has keyboard focus. Overflow clips at the padding
-        box, so 5px is exactly the room the ring needs. Nothing inline may be
-        added here: Embla measures the track to size its viewport, and horizontal
+        box, so 5px is the room that ring needs. Nothing inline may be added
+        here: Embla measures the track to size its viewport, and horizontal
         padding would shift the alignment maths under it.
+
+        **`--carousel-lift` is for a slide that draws above its own box.** The
+        sphere cards hang their diamond trio over the top border, which is 8px
+        clear of the card at a phone's width — more than the ring's 5px — and
+        the clip took the top off it. A carousel whose slides stay inside their
+        boxes leaves this at 0 and keeps the 5px it always had.
       */
-      padding-block: 5px;
+      padding-block: calc(5px + var(--carousel-lift, 0px));
     }
 
     .carousel-window::-webkit-scrollbar {
@@ -2721,6 +4605,7 @@
       min-inline-size: 0;
       scroll-snap-align: center;
     }
+
   }
 
   /*
@@ -2742,13 +4627,24 @@
     justify-content: center;
   }
 
+  /*
+    **The dot's two colours are variables because the ground underneath changes.**
+
+    Gold on `--color-night` is the default and needs no help: the idle dot comes
+    to 2.79:1 against it and the current one to 10.84:1. On the card reference
+    page's parchment the same gold collapses — 1.23:1 idle, and 1.39:1 for the
+    *current* dot, which is fainter than the idle ones it is supposed to stand
+    out from. So the page overrides these two rather than this block hard-coding
+    a gold that only suits half the site; `.library-card-page` below is the one
+    override today.
+  */
   .carousel-dot::before {
-    background-color: var(--color-gold-soft);
+    background-color: var(--carousel-dot-color, var(--color-gold-soft));
     block-size: 0.75em;
     border-radius: 9999px;
     content: "";
     inline-size: 0.75em;
-    opacity: 0.45;
+    opacity: var(--carousel-dot-opacity, 0.45);
     transition:
       background-color 300ms var(--ease-veil),
       box-shadow 300ms var(--ease-veil),
@@ -2762,9 +4658,45 @@
 
   /* The tile in the middle answers with light, like every other gold control. */
   .carousel-dot[aria-current]::before {
-    background-color: var(--color-gold);
-    box-shadow: var(--glow-gold);
+    background-color: var(--carousel-dot-current, var(--color-gold));
+    box-shadow: var(--carousel-dot-glow, var(--glow-gold));
     opacity: 1;
+  }
+
+  /*
+    Position as a count, for a deck too long to dot — the Library's twenty-two
+    cards. Same job as `.carousel-dot`, same gold, same `--text-fine` step, so
+    the two read as one family rather than two ideas about where you are.
+
+    The numerals are `tabular-nums` because this is a counter that changes every
+    few seconds on its own: without it the line jogs sideways each time the
+    digits change width, which is exactly the fidget a self-advancing carousel
+    should not add. `letter-spacing` is the page's own small-caps tracking.
+  */
+  .carousel-counter {
+    align-items: center;
+    color: var(--color-gold-soft);
+    display: flex;
+    font-size: var(--text-fine);
+    font-variant-numeric: tabular-nums;
+    justify-content: center;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+
+  /*
+    A drawn rule between the numbers rather than a typed "/", so the divider is
+    the same hairline the rest of the page separates things with and does not
+    change weight with the font.
+  */
+  .carousel-counter__rule {
+    background-color: currentColor;
+    block-size: 1px;
+    display: inline-block;
+    inline-size: 1.5em;
+    margin-inline: 0.55em;
+    opacity: 0.45;
+    vertical-align: middle;
   }
 
   /* The Library ------------------------------------------------------------ */
@@ -2780,7 +4712,14 @@
   */
   .library-grid {
     display: grid;
-    gap: clamp(0.75rem, 1.458vw, 1.75rem);
+    /*
+      The gutter rides the same two scales the measure does. The columns are
+      `1fr`, so a gutter left at its own size would let the cards absorb the
+      whole of the deck's `--library-scale` on their own and the 233:205 pitch
+      the client drew would tighten as the deck grew. Both knobs are 1 below
+      `lg`, so this is the original clamp everywhere but desktop.
+    */
+    gap: calc(clamp(0.75rem, 1.458vw, 1.75rem) * var(--content-scale) * var(--library-scale));
     grid-template-columns: repeat(4, 1fr);
     justify-items: center;
     list-style: none;
@@ -2816,12 +4755,24 @@
     }
   }
 
+  /*
+    **Two columns all the way down, at the client's instruction.**
+
+    This was one column below `30rem` with a 20rem cap, and below `40rem` the
+    deck became a swipeable carousel on top of that — twenty-two full-height
+    cards being four screens of scrolling on a phone. She asked for both gone:
+    "keep the responsive grid with two columns, rather than a horizontal
+    carousel. No horizontal scrolling."
+
+    So `< 64rem`'s two columns simply carry on down, and there is no narrower
+    breakpoint. The tiles get small on a phone — about 42% of the viewport each
+    — which is the cost of the arrangement she has chosen, and the reason the
+    plaque type above is set to fill the brass rather than sit politely inside
+    it. The gutter tightens here so the pair keeps as much width as it can.
+  */
   @media (width < 30rem) {
     .library-grid {
-      grid-template-columns: 1fr;
-      /* One card wide, the cards would otherwise be nearly the viewport. */
-      margin-inline: auto;
-      max-inline-size: 20rem;
+      gap: clamp(0.5rem, 2.5vw, 0.75rem);
     }
   }
 
@@ -2894,7 +4845,46 @@
     display: flex;
     flex-direction: column;
     font-family: var(--font-serif);
-    font-size: 2.62cqw;
+    /*
+      **The rivets are the constraint, not the brass.** Measured off the
+      delivered art at 640x1060: the plaque's brass spans x=186..458 (42.5% of
+      the card) and its four rivets sit at x≈193 and x≈446, so the clear
+      interior a name may cross is 243px — 37.97% of the card's width.
+
+      The size is derived from that rather than fitted by eye. Cinzel's own
+      metrics (`wght` 700, 1000 upem) put what was then the widest
+      standard-tier name, "THE HANGED MAN", at 10.216em including this rule's
+      0.02em tracking, so the ceiling is 243/10.216 = 23.8px, or 3.717cqw. This
+      sets 3.70cqw and keeps the last tenth as the margin for hinting and
+      subpixel rounding.
+
+      **That name is gone and the size deliberately has not moved.** XII was
+      renamed to "THE HANGMAN" on 26 September 2026, which leaves "THE HIGH
+      PRIEST" the widest of the standard tier and a narrower constraint than
+      the one this number was cut to. The ceiling therefore rose; 3.70cqw is
+      kept because it is the size the client signed off on, and because every
+      name still clears the rivets at it. Re-derive only if she asks for larger
+      again.
+
+      **The history matters, because the number moved twice.** 2.62cqw was the
+      client's own mockup size, at which the longest name fills about 85% of the
+      interior; she called it too small to read, twice. 3.05cqw answered that by
+      filling the interior, and she asked for larger again — "as large as
+      possible for the best readability". This is that limit: one more step and
+      "THE HANGED MAN", the longest name at the time, crossed the rivets, which
+      is a thing the artwork draws and the type must not sit on top of.
+
+      **Vertical is not the limit and never was.** The brass is 51px tall while
+      these caps are 16.6px — a third of it — so the headroom is real but
+      unspendable: the line is bounded by the rivets either side, not by the
+      plaque's height.
+
+      `CardEssay` renders the same plaque through the same class, so the
+      reference page's card grows with this one; both are `@container` boxes
+      sized in `cqw`, which is what lets one number serve two very different
+      render widths.
+    */
+    font-size: 3.7cqw;
     /*
       Real bold, not synthesized: `next/font` loads Cinzel as a variable face
       with a `400 900` weight axis (see the generated `@font-face`), so the
@@ -2956,6 +4946,82 @@
   }
 
   /*
+    A card's reference page (Figma `357:261`).
+
+    **This page inverts the site**, and the class exists to say so in one
+    place: every other page is light type on `--color-night`, and this one is
+    near-black on parchment. Setting the ink here means the blocks inside it
+    inherit rather than each restating a colour.
+
+    The two dark panels — "When … Appears in a Reading" and SHADOW — are *not*
+    part of the inversion. They are the site's own gold and cream on
+    near-black, so they override what they inherit here and keep
+    `--color-gold` and `--color-cream`. That is deliberate: they are the same
+    colours the rest of the site uses, not new ones.
+  */
+  .library-card-page {
+    color: var(--color-card-ink-soft);
+  }
+
+  /*
+    **The masthead is the site's own here, and that is a reversal.**
+
+    This page spent a while with a light nav — dark ink on her parchment, a
+    dark cut of the wordmark, forest hovers — because the header sat on a pale
+    ground and the brief was legibility against it. The client has since asked
+    for the standard blue back: one masthead everywhere, and this page no
+    longer the exception. `--color-night` behind it does that, so nothing here
+    rebinds `--header-*` and the nav keeps its cream and gold.
+
+    What is left is only the ground. `body` is `bg-night` already, but this
+    page's atmosphere spans the layout column (it has to, so the clouds reach
+    the top), and it would otherwise paint its own sky behind the nav. The
+    header takes the blue back explicitly rather than relying on what is
+    beneath it.
+
+    **`:has()` rather than a prop, because the header cannot be told.** It is
+    rendered by `(site)/layout.tsx` as a sibling *before* `main`, so no context
+    or prop from the page reaches it, and the URL cannot stand in either:
+    `/library/*-tarot-meaning/` serves two different pages, since only The
+    Fool has copy and the other twenty-one render `ComingSoonPage`. The class
+    can tell them apart, because only `CardReferencePage` sets it.
+  */
+  div:has(> header):has(> main > .library-card-page) > header {
+    background-color: var(--color-night);
+  }
+
+  /*
+    **The carousel dots, re-tuned for parchment.** The shared gold is built for
+    `--color-night` and vanishes here: 1.23:1 for an idle dot on this ground, and
+    1.39:1 for the current one — *fainter* than the idle dots it marks itself out
+    from, which is the contrast complaint that prompted this.
+
+    Forest is the page's own accent, already carrying its rules and its LOOK FOR
+    prose, so the dots join that family rather than importing a third colour. At
+    0.5 the idle dot comes to 2.62:1 and the current one to 9.36:1 — the same
+    relationship the gold has on night (2.79 and 10.84), reproduced on the
+    opposite ground.
+
+    The glow goes to a plain shadow: `--glow-gold` is light thrown outward, which
+    reads on a dark page and does nothing on a pale one. A soft forest shadow
+    gives the current dot the same lift by the means this ground allows.
+  */
+  .library-card-page {
+    /*
+      The idle dots keep an opacity, and that is not the reduced-opacity *text*
+      the client asked to be taken to full — it is how a carousel says which
+      slide is current. The shared gold does the same on every dark page (2.79
+      idle against 10.84 current); this is that relationship on a pale ground.
+      The glow follows the ink to black now that `--color-card-forest` is no
+      longer green.
+    */
+    --carousel-dot-color: var(--color-card-forest);
+    --carousel-dot-opacity: 0.45;
+    --carousel-dot-current: var(--color-card-forest);
+    --carousel-dot-glow: 0 0 0 0.18em rgba(0, 0, 0, 0.18);
+  }
+
+  /*
     The long names.
 
     Measured against the plaque's interior at the size above, every name in the
@@ -2977,8 +5043,20 @@
     The row still reads as one engraving; only the longest name in the deck is
     touched at all.
   */
+  /*
+    "THE HIGH PRIESTESS" is the one name that will not take the size above.
+
+    At -0.03em — about as tight as this face goes before the capitals look
+    cramped — it measures 10.523em against the 243px interior, so its own
+    ceiling is 23.1px = 3.608cqw. That is only 2.5% under the standard tier,
+    which is why the split is now almost invisible: the tracking does nearly all
+    the work and the size gives up a rounding's worth.
+
+    `TarotCardTile` picks this tier by the name's own length rather than naming
+    the card, so a renamed or added card sorts itself.
+  */
   .library-card__name--long {
-    font-size: 2.52cqw;
+    font-size: 3.6cqw;
     letter-spacing: -0.03em;
   }
 
@@ -3043,10 +5121,27 @@
     display: flex;
   }
 
+  /*
+    **The nav rides the masthead's own ramp, not a flat `vw` of its own.**
+
+    The client called this line oversized against her PSD, and the ceiling was
+    never the problem: both this and the tagline above it top out at the 30px
+    she draws. What differed is the slope. `3.1vw` reached 30px at about 968px
+    of viewport and then sat there, while `--text-nav`'s `1.5625vw` — which the
+    tagline, the standfirst and the rest of the masthead all follow — does not
+    reach it until 1920. Between those two widths the nav was the only line in
+    the block still at full size: 30px beside a 22.5px tagline at 1440, which
+    is the mismatch she was reading as "too large".
+
+    So this is `--text-nav` itself rather than a clamp restating it. At 1920 it
+    is the 30px the PSD draws, and at every width below it scales with the type
+    it sits under instead of against it. The floor is the token's 15px, which
+    is the size the sitewide subheading rule settles on.
+  */
   .library-suit-nav__link {
     color: var(--color-gold);
     font-family: var(--font-sans);
-    font-size: clamp(0.75rem, 3.1vw, 1.875rem);
+    font-size: var(--text-nav);
     font-weight: 300;
     letter-spacing: 0.025em;
     line-height: 1;

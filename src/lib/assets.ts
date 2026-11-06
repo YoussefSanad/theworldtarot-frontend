@@ -230,6 +230,36 @@ export const worldTarotArtwork = {
    * rather than drawn, it comes back there and not as a straggling token.
    */
   between: asset("/figma/world-tarot-between.webp", 138, 57),
+  /**
+   * **Recoloured to the then-current `--color-gold` (#e4c46a), and the pixels
+   * are no longer
+   * the client's own.** She asked for this heading to match the gold the
+   * rest of the site's headings use, and being artwork it could not simply
+   * be re-tokened.
+   *
+   * Two things were wrong with the original, and only fixing both matched it:
+   * its hue was already 44.3° — exactly the token's — but its saturation ran
+   * 41.6% against the token's 53.5%, *and* her export is capped at alpha 140,
+   * so the letter body painted at 55% over a near-black panel and composited
+   * to about #6A5C34. Lifting the saturation alone still left it dark; the
+   * flat 140 plateau (the glyph bodies, 2410px) is rescaled to 255 with it.
+   *
+   * The gradient and the outline survive because the shift is multiplicative
+   * in HSV about the existing values rather than a flat fill — the body now
+   * spans luminance 188..200 around the token's 195. The antialiased rim
+   * keeps its own lower alpha and stays a rim.
+   *
+   * `asset dump/readings page/SKY & STONE.png` is the untouched original and
+   * measures the same pale #EACF83 at alpha 140, so the wash is hers rather
+   * than something the webp conversion introduced — re-exporting from the
+   * dump will undo this. Dimensions are unchanged, so nothing below moves.
+   *
+   * **The token has since moved to the antique gold #dfc894 (19 Sep 2026) and
+   * these baked pixels did not follow.** Being artwork, this heading still
+   * carries the old, more saturated gold and now runs warmer than the live
+   * type around it. Matching it means re-running the recolour above against
+   * the new token, not a CSS change.
+   */
   skyStone: asset("/figma/world-tarot-sky-stone.webp", 218, 37),
   /** Her silver signature, not the conversion's black one. */
   signature: asset("/figma/world-tarot-signature.webp", 153, 94),
@@ -260,9 +290,9 @@ export const worldTarotSurfaces = {
  * script asserts on the source dimensions rather than trusting them.
  *
  * Addressed by slug so `content/library.ts` can look one up from the card it is
- * already holding; the client's own filenames (`04-the-emporer`,
- * `12-the-hangman`) are mapped to these slugs in the script and appear nowhere
- * else.
+ * already holding; the client's own filenames (`04-the-emporer`, `0-the-fool`
+ * beside `01-the-magician`) carry her spellings and inconsistent zero-padding,
+ * and are mapped to these slugs in the script and appear nowhere else.
  */
 const libraryCard = (slug: string): ImageAsset => asset(`/figma/library-cards/${slug}.webp`, 640, 1060);
 
@@ -279,7 +309,7 @@ export const libraryCards = {
   "the-hermit": libraryCard("the-hermit"),
   "the-wheel": libraryCard("the-wheel"),
   justice: libraryCard("justice"),
-  "the-hanged-man": libraryCard("the-hanged-man"),
+  "the-hangman": libraryCard("the-hangman"),
   death: libraryCard("death"),
   temperance: libraryCard("temperance"),
   "the-devil": libraryCard("the-devil"),
@@ -292,7 +322,289 @@ export const libraryCards = {
 } as const;
 
 /** Backgrounds referenced from CSS rather than markup, for the Library. */
+/**
+ * The Viewing Room's paywall marks (Figma `384:28`), at her own pixel sizes.
+ *
+ * Her four deliveries, converted by `npm run assets:viewing-room`. They were
+ * drawn here as inline SVG first, which was wrong twice: the shapes are hers
+ * rather than generic, and a redrawn infinity or key is a guess at artwork she
+ * has already made.
+ */
+export const viewingRoomMarks = {
+  cards: asset("/figma/viewing-room-cards-icon.webp", 71, 71),
+  infinity: asset("/figma/viewing-room-infinity-icon.webp", 69, 69),
+  star: asset("/figma/viewing-room-star-icon.webp", 74, 76),
+  /** The rule with a key through it, under the panel's heading (`384:40`). */
+  keyDivider: asset("/figma/viewing-room-key-divider.webp", 452, 38),
+  /**
+   * The carousel's knob (`384:23`).
+   *
+   * **The dotted rule it rides is not here**, and deliberately: her export
+   * of it is 330px of dots whose spacing is not uniform (4-6px wide, 3-5px
+   * apart), so tiling it across a rule of any other width broke the rhythm
+   * every tile and the seams read as holes. `CarouselKnob` draws the line
+   * with a gradient instead, in her colour and at her pitch — a gradient
+   * cannot have a seam.
+   */
+  knob: asset("/figma/viewing-room-knob.webp", 43, 43),
+} as const;
+
+/**
+ * The Learn page's artwork, written by `scripts/optimize-learn-assets.mjs`.
+ *
+ * **Every one of these arrives pre-composed and is drawn as delivered.** The
+ * postcards carry their own rotation, their rounded corners and the play glyph
+ * in their pixels, so `PostcardFan` only ever translates them — anything that
+ * rotated them here would tilt artwork that is already tilted. The laptop
+ * carries its own darkness out to a transparent left edge, which is what lets
+ * it dissolve into the night band rather than ending on a seam.
+ *
+ * The dimensions are the delivery's own, and the optimize script prints them on
+ * every run so the two can be checked against each other: `next/image` reserves
+ * each box from the numbers here, so a number that drifts from the file is a
+ * layout shift that only shows once the image loads.
+ *
+ * No `learnSurfaces` companion: nothing on this page is painted from CSS.
+ */
+export const learnArtwork = {
+  /** The hero's laptop, bleeding off the right edge above `lg`. */
+  computer: asset("/figma/learn-computer.webp", 1606, 960),
+
+  /** The three course postcards, fanned beside "Discover. Explore. Understand." */
+  postcardSun: asset("/figma/learn-postcard-sun.webp", 518, 341),
+  postcardChariot: asset("/figma/learn-postcard-chariot.webp", 487, 314),
+  postcardStar: asset("/figma/learn-postcard-star.webp", 467, 280),
+
+  /** The four gold discs on the "78 cards" band. */
+  markFilm: asset("/figma/learn-mark-film.webp", 107, 109),
+  markBook: asset("/figma/learn-mark-book.webp", 107, 109),
+  markStar: asset("/figma/learn-mark-star.webp", 107, 109),
+  markCards: asset("/figma/learn-mark-cards.webp", 109, 109),
+
+  /**
+   * The three navy line icons on "A map of the tarot".
+   *
+   * Note these are near-black line art rather than gold, because they sit on the
+   * cream band — the one place on this page where the site's usual polarity is
+   * inverted. They are drawn at a common width, not at their native sizes, which
+   * differ (161, 161 and 191 square); the Minor Arcana's star is the widest
+   * because its points reach further, not because it is meant to read larger.
+   */
+  mapMajor: asset("/figma/learn-map-major.webp", 161, 161),
+  mapCourt: asset("/figma/learn-map-court.webp", 161, 159),
+  mapMinor: asset("/figma/learn-map-minor.webp", 191, 191),
+} as const;
+
 export const librarySurfaces = {
   /** `.page-atmosphere-library` — the rotunda the cards hang in. */
   rotunda: "/figma/library-rotunda.webp",
+  /**
+   * `.page-atmosphere-card-reference` — the three layers behind a card's page.
+   *
+   * Her PSD stacks them: an opaque ground, a forest wash over it that overhangs
+   * the frame slightly, and the torn sheet of paper the content sits on.
+   */
+  cardBase: "/figma/card-reference/page-base.webp",
+  cardWash: "/figma/card-reference/page-wash.webp",
+  /*
+    The paper used to live here as three shared slices. It is per-card now —
+    twenty-two sheets, sliced the same way by
+    `scripts/optimize-packet-assets.mjs` — so it is keyed by slug in
+    `cardPaper()` below rather than named once here.
+  */
 } as const;
+
+const cardRef = (name: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/${name}.webp`, width, height);
+
+/**
+ * The card reference page's artwork (Figma `357:261`).
+ *
+ * **These are the client's own PSD layers**, not Figma exports, and the
+ * distinction is load-bearing — see `scripts/optimize-card-assets.mjs` for what
+ * Figma returned instead and why it was unusable. The dimensions below are that
+ * script's output; read them off a run of it rather than off the Figma frame,
+ * which reports several of these at the size it *draws* them rather than the
+ * size the layer actually is.
+ *
+ * The three background layers live in `librarySurfaces` instead: CSS paints
+ * them, and nothing in the markup references them.
+ */
+export const cardReference = {
+  /**
+   * Her `DIVIDER 1`. **Black since the client's revision**, though the name is
+   * still `green` — that is what it was drawn in, and the file, the token and
+   * every caller share the name. See `.divider--green` in globals.css.
+   */
+  dividerGreen: cardRef("divider-green", 582, 14),
+  dividerGold: cardRef("divider-gold", 241, 5),
+  /** Her `DIVIDER 1` again in champagne, which is the rule the shadow panel draws. */
+  dividerChampagne: cardRef("divider-champagne", 582, 14),
+  dividerLookFor: cardRef("divider-look-for", 1203, 8),
+  appearsIcon1: cardRef("appears-icon-1", 49, 50),
+  appearsIcon2: cardRef("appears-icon-2", 64, 73),
+  appearsIcon3: cardRef("appears-icon-3", 57, 57),
+  appearsIcon4: cardRef("appears-icon-4", 51, 51),
+  /**
+   * The three diamonds astride a sphere card's top edge, cropped from her
+   * `LOVE DIAMOND FRAME TOP`. **Only the trio**: the card's rounded outline is
+   * rebuilt from tokens by `OrnateFrame`, as every framed panel on this site
+   * is — see the "Framed panels" block in globals.css.
+   */
+  sphereCrest: cardRef("sphere-crest", 47, 22),
+  sphereLove: cardRef("sphere-love", 369, 455),
+  sphereCareer: cardRef("sphere-career", 369, 455),
+  sphereMoney: cardRef("sphere-money", 370, 455),
+  metaStripBg: cardRef("meta-strip-bg", 1205, 241),
+  /*
+    **Only the key is still his own.** His air, uranus, aquarius and compass
+    glyphs moved to the shared `cardSymbols` set below — the first three are the
+    same artwork the client ships in every packet, and her three-way yes/no/maybe
+    replaced his one generic compass. The packets carry no keyword glyph at all,
+    so this one stays here and every card points at it.
+  */
+  symbolKey: cardRef("symbol-key", 80, 27),
+} as const;
+
+const cardSymbol = (name: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/symbols/${name}.webp`, width, height);
+
+/**
+ * The meta strip's glyphs — four elements, twelve signs, ten planets, three
+ * verdicts.
+ *
+ * **Shared, not per-card.** The client copied an identical set into all
+ * twenty-one packets — verified by hash in `scripts/optimize-packet-assets.mjs`,
+ * which throws if a re-delivery ever breaks that — so they are written once and
+ * every card's content object points at these.
+ *
+ * **Her sources are pure black silhouette masks**; the tint to the page's
+ * grey-taupe happens in that script. The dimensions below are its output: read
+ * them off a run of it rather than off a packet, where they are the untinted
+ * source's size.
+ */
+export const cardSymbols: Record<string, ImageAsset> = {
+  air: cardSymbol("air", 116, 102),
+  aquarius: cardSymbol("aquarius", 102, 72),
+  aries: cardSymbol("aries", 116, 105),
+  cancer: cardSymbol("cancer", 116, 100),
+  capricorn: cardSymbol("capricorn", 96, 115),
+  earth: cardSymbol("earth", 116, 102),
+  fire: cardSymbol("fire", 116, 102),
+  gemini: cardSymbol("gemini", 116, 110),
+  jupiter: cardSymbol("jupiter", 68, 101),
+  leo: cardSymbol("leo", 90, 114),
+  libra: cardSymbol("libra", 116, 96),
+  mars: cardSymbol("mars", 116, 116),
+  maybe: cardSymbol("maybe", 116, 116),
+  mercury: cardSymbol("mercury", 76, 148),
+  moon: cardSymbol("moon", 116, 125),
+  neptune: cardSymbol("neptune", 116, 130),
+  no: cardSymbol("no", 116, 116),
+  pisces: cardSymbol("pisces", 116, 117),
+  pluto: cardSymbol("pluto", 74, 114),
+  sagittarius: cardSymbol("sagittarius", 116, 116),
+  saturn: cardSymbol("saturn", 78, 118),
+  scorpio: cardSymbol("scorpio", 116, 97),
+  sun: cardSymbol("sun", 116, 116),
+  taurus: cardSymbol("taurus", 116, 117),
+  uranus: cardSymbol("uranus", 76, 121),
+  venus: cardSymbol("venus", 76, 121),
+  virgo: cardSymbol("virgo", 116, 115),
+  water: cardSymbol("water", 116, 102),
+  yes: cardSymbol("yes", 116, 115),
+};
+
+const cardShadow = (slug: string, width: number, height: number): ImageAsset =>
+  asset(`/figma/card-reference/shadows/${slug}.webp`, width, height);
+
+/**
+ * Each card's shadow panel — the ground and the figure in one flat image.
+ *
+ * **They were two layers and are now one.** The Fool's figure used to be
+ * positioned over an empty panel by arithmetic reverse-engineered from the 11px
+ * of transparent glow around her export, and that fitted one card and nothing
+ * else: the client's twenty-one packets each carry their own figure with its
+ * own padding. Every card now ships pre-composited.
+ *
+ * All 1216x227 or thereabouts, but The High Priestess at 260 — her figure
+ * reaches higher above the panel, and the panel is what the artwork overhangs.
+ */
+export const cardShadows: Record<string, ImageAsset> = {
+  death: cardShadow("death", 1216, 227),
+  judgement: cardShadow("judgement", 1216, 227),
+  justice: cardShadow("justice", 1216, 227),
+  strength: cardShadow("strength", 1216, 231),
+  temperance: cardShadow("temperance", 1216, 227),
+  "the-chariot": cardShadow("the-chariot", 1216, 239),
+  "the-devil": cardShadow("the-devil", 1216, 228),
+  "the-emperor": cardShadow("the-emperor", 1216, 249),
+  "the-empress": cardShadow("the-empress", 1216, 235),
+  "the-fool": cardShadow("the-fool", 1216, 228),
+  "the-hangman": cardShadow("the-hangman", 1216, 227),
+  "the-hermit": cardShadow("the-hermit", 1216, 227),
+  "the-high-priest": cardShadow("the-high-priest", 1216, 240),
+  "the-high-priestess": cardShadow("the-high-priestess", 1216, 260),
+  "the-lovers": cardShadow("the-lovers", 1216, 234),
+  "the-magician": cardShadow("the-magician", 1216, 227),
+  "the-moon": cardShadow("the-moon", 1216, 227),
+  "the-star": cardShadow("the-star", 1216, 228),
+  "the-sun": cardShadow("the-sun", 1216, 228),
+  "the-tower": cardShadow("the-tower", 1216, 227),
+  "the-wheel": cardShadow("the-wheel", 1216, 227),
+  "the-world": cardShadow("the-world", 1216, 227),
+};
+
+/**
+ * A card's parchment sheet, as a bare URL.
+ *
+ * **Not an `ImageAsset`, because CSS paints this** — `.card-paper` sets it as
+ * `background-image`, and a background has no intrinsic box for a width and a
+ * height to describe. The same reason `librarySurfaces` holds the page's other
+ * backdrops.
+ *
+ * **It was three URLs — a top edge, a middle and a bottom edge.** The sheet is
+ * whole now; `.card-paper` pins the two torn edges and stretches the middle by
+ * painting this one image three times, which is the same effect without cutting
+ * her deckle in half.
+ */
+export const cardPaper = (slug: string) => `/figma/card-reference/paper/${slug}.webp`;
+
+/**
+ * A card's phone-width sheet.
+ *
+ * Painted at 390px wide as a single tall full-bleed sheet, so below `sm`
+ * `.card-paper` draws it once with `cover` from the top instead of tiling the
+ * desktop sheet — which keeps her art in proportion and lets the box end where
+ * the content does.
+ *
+ * **All twenty-two have one now, so there is no gate.** This was a `Set` of the
+ * cards with a sheet, holding only The Magician while her phone delivery was
+ * one test card; `MOBILE BACKGROUNDS` completed the set, and a card missing
+ * from a gate fails as a silently absent background rather than a build error.
+ * `optimize-packet-assets.mjs` asserts all twenty-two are present instead,
+ * which is where a gap should surface.
+ */
+export const cardPaperMobile = (slug: string) =>
+  `/figma/card-reference/paper-mobile/${slug}.webp`;
+
+/**
+ * A suit's parchment — her delivered sheet, one per suit.
+ *
+ * **The emblem is painted into it.** The chalice, the coin pouch, the sword and
+ * the torch are part of the sheet rather than layers to place, which is why
+ * there is no suit equivalent of `cardShadows` and no emblem accessor here: a
+ * suit page leaves that column of the sheet empty and the artwork shows
+ * through.
+ *
+ * Wider than a card's 1337 — hers run ~1460 — and that costs nothing:
+ * `.card-paper` is a box the image fills, so a sheet's own width is only its
+ * aspect, and all four suits share one. See `scripts/optimize-suit-assets.mjs`
+ * for why that aspect is checked rather than assumed.
+ */
+export const suitPaper = (slug: string) => `/figma/suit-reference/paper/${slug}.webp`;
+
+/** The same sheet drawn for the phone, at the 390x3500 the card pages already use. */
+export const suitPaperMobile = (slug: string) =>
+  `/figma/suit-reference/paper-mobile/${slug}.webp`;
+

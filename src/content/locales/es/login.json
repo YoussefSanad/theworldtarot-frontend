@@ -29,5 +29,16 @@
     "rateLimitedBriefly": "Han sido demasiadas peticiones. Espera un momento y prueba otra vez.",
     "unknownFailure": "Algo ha fallado por nuestra parte. No se ha enviado ningún enlace. Inténtalo de nuevo en un momento.",
     "backPrompt": "Volver a iniciar sesión"
+  },
+  "menu": {
+    "triggerLabel": "Iniciar sesión",
+    "accountOf": "Cuenta:",
+    "signedInAs": "Sesión iniciada como",
+    "drawerAction": "INICIAR SESIÓN"
+  },
+  "signOutConfirm": {
+    "idle": "Cerrar sesión",
+    "armedHint": "Pulsa otra vez para confirmar el cierre de sesión",
+    "busyLabel": "Cerrando sesión…"
   }
 }

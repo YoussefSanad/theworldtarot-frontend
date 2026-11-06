@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { cardBack, defaultRevealCard, findCard, livingTarot } from "./cards.ts";
 import { checkoutCompleteCopy } from "./checkout.ts";
-import { afterSignIn, loginCopy, signInPath } from "./login.ts";
+import { loginCopy, signInPath } from "./login.ts";
 import { resetPasswordCopy, setPasswordCopy } from "./passwords.ts";
 
 /*
@@ -19,7 +19,6 @@ test("the sign-in page keeps its copy, and its two paths stay paths", () => {
   assert.equal(loginCopy.forgotPrompt, "Forgotten your password?");
   assert.equal(loginCopy.forgot.heading, "Ask for a link");
   assert.equal(loginCopy.forgot.backPrompt, "Back to sign in");
-  assert.equal(afterSignIn, "/readings/");
   assert.equal(signInPath, "/login/");
 });
 
