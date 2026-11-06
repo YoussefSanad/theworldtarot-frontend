@@ -1,0 +1,117 @@
+{
+  "hero": {
+    "titleTop": "Entra en",
+    "titleMain": "The Living Tarot",
+    "tagline": "tarot cinematográfico, hecho vida",
+    "body": "Adéntrate en una interpretación cinematográfica de los Arcanos Mayores. Descubre una carta y vive The Living Tarot historia a historia.",
+    "bodyMobile": "Adéntrate en una interpretación cinematográfica de los Arcanos Mayores. Vive la historia de una carta.",
+    "secondaryActions": [
+      {
+        "label": ["explora la", "colección completa"],
+        "labelMobile": ["explora la", "colección"]
+      },
+      {
+        "label": ["HAZ UNA PREGUNTA", "PIDE TU LECTURA"],
+        "labelMobile": ["PIDE TU", "LECTURA"]
+      }
+    ],
+    "returnPrompt": "Vuelve otro día para descubrir una carta nueva.",
+    "closing": {
+      "lead": "sabiduría antigua•historias eternas•descubrimiento sin fin.",
+      "question": "¿Adónde te llevará The World Tarot?"
+    }
+  },
+  "worldTarot": {
+    "heading": "Tarot de Todo el Mundo",
+    "subheading": "Acompaña a Serafina en un viaje místico alrededor del mundo",
+    "body": {
+      "before": "Entra en lecturas de tarot como ninguna otra: un viaje por lugares escondidos y símbolos vivos. De cafés a la luz de las velas a costas batidas por el viento, de templos sagrados a santuarios de montaña. Mientras Serafina recorre el mundo, va creando ",
+      "after": ", una baraja cinematográfica que da vida a cada arquetipo en el paisaje que lo inspiró."
+    }
+  },
+  "products": [
+    {
+      "title": "LECTURA DE 1 CARTA",
+      "subtitle": "Un Solo Mensaje del Tarot",
+      "action": "EMPEZAR LECTURA"
+    },
+    {
+      "title": "LECTURA DE 3 CARTAS",
+      "subtitle": "Una Pregunta, Tres Cartas",
+      "action": "EMPEZAR LECTURA"
+    },
+    {
+      "title": "EL MES QUE VIENE",
+      "subtitle": "¿Qué te Espera? Pronóstico de 5 Cartas",
+      "action": "EMPEZAR LECTURA"
+    },
+    {
+      "title": "SALA DE PROYECCIÓN",
+      "subtitle": "Colección de Cine Completa",
+      "action": "ENTRAR"
+    }
+  ],
+  "journey": {
+    "heading": "Elige Tu Viaje:",
+    "subheading": [
+      "Elige una lectura personalizada, o entra en la colección",
+      "completa de Living Tarot en la Sala de Proyección."
+    ],
+    "carousel": {
+      "dotsLabel": "Elige una lectura",
+      "dotAction": "Mostrar"
+    }
+  },
+  "included": {
+    "heading": "Qué Incluye",
+    "columns": [
+      [
+        "Una interpretación de tarot personalizada, ajustada a tu pregunta",
+        "Orientación clara y meditada",
+        "Tu lectura, presentada con cuidado sobre la ilustración original y entregada por correo electrónico."
+      ],
+      [
+        "Entrega puntual según la lectura que elijas",
+        "Una lectura bellamente maquetada, pensada para guardar y releer"
+      ]
+    ]
+  },
+  "placeStatement": [
+    "Un lugar donde el arte, el misticismo",
+    "y la intención se encuentran. Un espacio entre el cielo y la piedra."
+  ],
+  "valueProps": [
+    { "title": "Guiado por las Cartas", "body": "Cada lectura se despliega a través de los propios arquetipos" },
+    { "title": "Compuesto con Intención", "body": "Ilustración original unida a una interpretación meditada" },
+    { "title": "Claridad en Movimiento", "body": "Una mirada que ilumina tu próximo capítulo" }
+  ],
+  "valuePropsCarousel": {
+    "dotsLabel": "La promesa de The World Tarot",
+    "dotAction": "Mostrar"
+  },
+  "featuredTestimonial": {
+    "quote": "“No solo me habló: brilló.  La guardo como si fuera una obra de arte.”",
+    "attribution": "- Blake M., Big Sur, CA"
+  },
+  "artist": {
+    "body": [
+      "Serafina es una artista cuyo trabajo entrelaza arte, simbolismo e intuición, inspirándose en lugares sagrados de todo el mundo.",
+      "Su obra está moldeada por toda una vida de estudio del tarot, el mito y la narración visual, y da lugar a lecturas íntimas, meditadas y profundamente personales."
+    ],
+    "quote": [
+      "“Para mí, cada lectura es como estar ante una obra de arte viva, donde el destino, la elección",
+      "y la reflexión se encuentran en el lenguaje de los símbolos.”"
+    ]
+  },
+  "closingCta": {
+    "heading": "¿Quieres Recibir Tu Mensaje?",
+    "action": "QUIERO MI LECTURA",
+    "testimonial": {
+      "quote": [
+        "“Sentí que la lectura estaba hecha solo para mí. Las palabras,",
+        "las imágenes, la claridad: fue hermosa y reconfortante.”"
+      ],
+      "attribution": "- Sasha N., Charlottesville VA"
+    }
+  }
+}

@@ -279,8 +279,8 @@ export async function redeemGift(
  * somebody work out whether the redemption was theirs, and an hour and a
  * minute in a timezone that may not be theirs answers a question nobody asked.
  *
- * **Against the site's locale rather than the browser's**, which is the rule
- * `formatPrice` already follows and for the same reason: a visitor whose laptop
+ * **Against the site's locale rather than the browser's**, for the reason
+ * `formatPrice` refuses the browser's too: a visitor whose laptop
  * is set to German is reading English copy, and one date in the middle of it
  * written their laptop's way is a seam.
  *

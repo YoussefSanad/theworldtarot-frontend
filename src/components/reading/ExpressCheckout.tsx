@@ -491,7 +491,7 @@ export function ExpressCheckout({ productKey, money }: { productKey: string; mon
           single wallet, because which one is drawn here is Stripe's decision at
           runtime and may be both.
         */
-        aria-label={`Pay ${formatPrice(money)} with a saved wallet`}
+        aria-label={readingPageChrome.checkout.walletLabel.replace("{price}", () => formatPrice(money))}
       >
         <Elements stripe={getStripe()} options={elementsOptions}>
           <Wallet

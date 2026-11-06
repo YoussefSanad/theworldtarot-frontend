@@ -6,13 +6,14 @@ import { GiftAReading } from "@/components/readings/GiftAReading";
 import { ReadingsIntro } from "@/components/readings/ReadingsIntro";
 import { SignatureExperience } from "@/components/readings/SignatureExperience";
 import { TraditionalReadings } from "@/components/readings/TraditionalReadings";
-import { siteName } from "@/content/site";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: `Readings — ${siteName}`,
+export const metadata: Metadata = buildMetadata({
+  path: "/readings/",
+  title: "Readings",
   description:
     "Begin with our signature interactive experience, where the cards come to life and answer your question in real time, or choose a traditional written reading for a deeper exploration of your path.",
-};
+});
 
 export default function ReadingsPage() {
   /*

@@ -23,12 +23,18 @@ const bundled = [
   tile("month-ahead", "MONTH AHEAD", "What's in Store?", "$75"),
 ];
 
-function priced(key: string, currency: string, amount: number, name = key.toUpperCase()): ApiProduct {
+function priced(
+  key: string,
+  currency: string,
+  amount: number,
+  name = key.toUpperCase(),
+  short_description = "Live copy.",
+): ApiProduct {
   return {
     key,
     type: "reading",
     name,
-    short_description: "Live copy.",
+    short_description,
     allows_question: true,
     is_giftable: true,
     price: { currency, amount },
@@ -59,11 +65,48 @@ test("an empty catalogue is a fault rather than a shop with nothing in it", () =
   assert.deepEqual(resolveProducts([], bundled), bundled);
 });
 
-test("live copy replaces the bundled copy, which is what the API owns", () => {
-  const [tile] = resolveProducts([priced("one-card", "USD", 1200, "ONE CARD, LIVE")], bundled);
+/*
+  The one rule for API-supplied copy, from both sides. `useApiCopy` is the third
+  argument so these can drive it without an environment; in the app it defaults
+  to `apiServesDisplayLocale()` — is the backend answering in the language being
+  read?
+*/
+test("the API's words win while it is answering in the language being read", () => {
+  const [tile] = resolveProducts(
+    [priced("one-card", "USD", 1200, "ONE CARD, LIVE", "Live copy.")],
+    bundled,
+    true,
+  );
 
   assert.equal(tile?.title, "ONE CARD, LIVE");
   assert.equal(tile?.subtitle, "Live copy.");
+  assert.equal(tile?.price, "$12");
+});
+
+test("and the bundled words stand when it is not, because English inside a Spanish page is worse", () => {
+  const [tile] = resolveProducts(
+    [priced("one-card", "USD", 1000, "SOMETHING ELSE ENTIRELY", "and another subtitle")],
+    bundled,
+    false,
+  );
+
+  assert.equal(tile?.title, "1 CARD READING");
+  assert.equal(tile?.subtitle, "A Single Message from the Tarot");
+});
+
+/* The price is never subject to the rule: a number is the same in every language. */
+test("the price is live either way", () => {
+  const answer = [priced("three-card", "EUR", 2000, "TRES CARTAS", "una pregunta")];
+  const threeCard = [tile("three-card", "3 CARD READING", "One Question, Three Cards", "$52")];
+
+  assert.equal(resolveProducts(answer, threeCard, true)[0]?.price, "€20");
+  assert.equal(resolveProducts(answer, threeCard, false)[0]?.price, "€20");
+});
+
+test("an empty description falls back to the bundled one rather than blanking the tile", () => {
+  const [result] = resolveProducts([priced("one-card", "USD", 1200, "LIVE NAME", "   ")], bundled, true);
+
+  assert.equal(result?.subtitle, "A Single Message from the Tarot");
 });
 
 test("the price is formatted from the answer's Money, which is what makes a currency switch move it", () => {

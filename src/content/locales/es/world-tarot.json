@@ -1,0 +1,28 @@
+{
+  "intro": {
+    "heading": "The World Tarot",
+    "tagline": ["Un estudio dedicado al lenguaje vivo", "de los símbolos arquetípicos"]
+  },
+  "mission": {
+    "body": [
+      "A través del arte, la escritura y la mirada cinematográfica, The World Tarot explora los arquetipos como presencias vivas, entre el símbolo y el relato.",
+      "Lleva el tarot más allá de la página con ensayos visuales, bibliotecas simbólicas y lecturas pensadas para aportar claridad y perspectiva."
+    ]
+  },
+  "artistNote": {
+    "legend": "Entre el cielo y la piedra",
+    "body": [
+      "Te doy la bienvenida a The World Tarot, un lugar entre el cielo y la piedra.",
+      "Soy narradora de símbolos, moldeada por una devoción de toda la vida al arte, la historia y los misterios callados entre lo visible y lo invisible.",
+      "Empecé como diseñadora, atraída por la geometría sagrada y por los lenguajes visuales que cruzan culturas y épocas. Llevo más de veinte años con el tarot como lenguaje de reflexión, que revela patrones, umbrales y verdad interior.",
+      "Hoy mi obra vive en el cruce del arte y la intuición. Exploro los símbolos no solo como imágenes, sino como experiencias: cómo una carta o una forma puede centrar la atención, abrir la mirada y cambiar suavemente nuestro paso por el mundo.",
+      "Con The World Tarot comparto lecturas y obra creativa moldeadas por el lugar, el mito y la historia. Es un estudio contemplativo donde se encuentran el arte, el simbolismo y la intención."
+    ],
+    "photoAlt": "Serafina de pie entre las torres del templo de Angkor Wat al atardecer.",
+    "signatureAlt": "Serafina"
+  },
+  "closing": {
+    "saying": ["Todo viaje se hace", "un paso tras otro"],
+    "action": "QUIERO MI LECTURA"
+  }
+}

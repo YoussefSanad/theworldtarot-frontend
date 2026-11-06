@@ -22,10 +22,14 @@ import {
   theWheel,
   theWorld,
   type MajorArcanaContent,
-} from "@/content/card-content";
-import { cups, pentacles, swords, wands, type SuitContent } from "@/content/suit-content";
-import { libraryCards } from "@/lib/assets";
-import type { ImageAsset } from "@/lib/assets";
+} from "./card-content.ts";
+import { cups, pentacles, swords, wands, type SuitContent } from "./suit-content.ts";
+import { libraryCards } from "../lib/assets.ts";
+import type { ImageAsset } from "../lib/assets.ts";
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/library.json" with { type: "json" };
+import es from "./locales/es/library.json" with { type: "json" };
 
 /**
  * The Library's copy and its two rosters: the twenty-two Major Arcana, and the
@@ -33,7 +37,14 @@ import type { ImageAsset } from "@/lib/assets";
  *
  * Components import from here and render; they own no strings, the rule
  * `content/README.md` sets for the whole content layer.
+ *
+ * **The words are in `locales/*\/library.json` since 11 September 2026**; the
+ * slugs, numerals, artwork and addresses stay here. Names and suits are keyed
+ * by slug rather than matched by position, so a translator cannot shift one
+ * card's name onto its neighbour. Every component that renders them is a client
+ * component, so they arrive in the visitor's language; see `LanguageBoundary`.
  */
+const copy = pickCopy(en, { es }, currentLocale());
 
 export type MajorArcanaCard = {
   /** Also the last segment of the card's own page, and its image's filename. */
@@ -81,28 +92,28 @@ export type MajorArcanaCard = {
  * `scripts/optimize-library-cards.mjs` and appear nowhere else.
  */
 export const majorArcana: readonly MajorArcanaCard[] = [
-  { slug: "the-fool", numeral: "0", name: "The Fool", image: libraryCards["the-fool"], content: theFool },
-  { slug: "the-magician", numeral: "I", name: "The Magician", image: libraryCards["the-magician"] , content: theMagician },
-  { slug: "the-high-priestess", numeral: "II", name: "The High Priestess", image: libraryCards["the-high-priestess"] , content: theHighPriestess },
-  { slug: "the-empress", numeral: "III", name: "The Empress", image: libraryCards["the-empress"] , content: theEmpress },
-  { slug: "the-emperor", numeral: "IV", name: "The Emperor", image: libraryCards["the-emperor"] , content: theEmperor },
-  { slug: "the-high-priest", numeral: "V", name: "The High Priest", image: libraryCards["the-high-priest"] , content: theHighPriest },
-  { slug: "the-lovers", numeral: "VI", name: "The Lovers", image: libraryCards["the-lovers"] , content: theLovers },
-  { slug: "the-chariot", numeral: "VII", name: "The Chariot", image: libraryCards["the-chariot"] , content: theChariot },
-  { slug: "strength", numeral: "VIII", name: "Strength", image: libraryCards.strength , content: strength },
-  { slug: "the-hermit", numeral: "IX", name: "The Hermit", image: libraryCards["the-hermit"] , content: theHermit },
-  { slug: "the-wheel", numeral: "X", name: "The Wheel", image: libraryCards["the-wheel"] , content: theWheel },
-  { slug: "justice", numeral: "XI", name: "Justice", image: libraryCards.justice , content: justice },
-  { slug: "the-hangman", numeral: "XII", name: "The Hangman", image: libraryCards["the-hangman"] , content: theHangman },
-  { slug: "death", numeral: "XIII", name: "Death", image: libraryCards.death , content: death },
-  { slug: "temperance", numeral: "XIV", name: "Temperance", image: libraryCards.temperance , content: temperance },
-  { slug: "the-devil", numeral: "XV", name: "The Devil", image: libraryCards["the-devil"] , content: theDevil },
-  { slug: "the-tower", numeral: "XVI", name: "The Tower", image: libraryCards["the-tower"] , content: theTower },
-  { slug: "the-star", numeral: "XVII", name: "The Star", image: libraryCards["the-star"] , content: theStar },
-  { slug: "the-moon", numeral: "XVIII", name: "The Moon", image: libraryCards["the-moon"] , content: theMoon },
-  { slug: "the-sun", numeral: "XIX", name: "The Sun", image: libraryCards["the-sun"] , content: theSun },
-  { slug: "judgement", numeral: "XX", name: "Judgement", image: libraryCards.judgement , content: judgement },
-  { slug: "the-world", numeral: "XXI", name: "The World", image: libraryCards["the-world"] , content: theWorld },
+  { slug: "the-fool", numeral: "0", name: copy.majorArcana["the-fool"], image: libraryCards["the-fool"], content: theFool },
+  { slug: "the-magician", numeral: "I", name: copy.majorArcana["the-magician"], image: libraryCards["the-magician"], content: theMagician },
+  { slug: "the-high-priestess", numeral: "II", name: copy.majorArcana["the-high-priestess"], image: libraryCards["the-high-priestess"], content: theHighPriestess },
+  { slug: "the-empress", numeral: "III", name: copy.majorArcana["the-empress"], image: libraryCards["the-empress"], content: theEmpress },
+  { slug: "the-emperor", numeral: "IV", name: copy.majorArcana["the-emperor"], image: libraryCards["the-emperor"], content: theEmperor },
+  { slug: "the-high-priest", numeral: "V", name: copy.majorArcana["the-high-priest"], image: libraryCards["the-high-priest"], content: theHighPriest },
+  { slug: "the-lovers", numeral: "VI", name: copy.majorArcana["the-lovers"], image: libraryCards["the-lovers"], content: theLovers },
+  { slug: "the-chariot", numeral: "VII", name: copy.majorArcana["the-chariot"], image: libraryCards["the-chariot"], content: theChariot },
+  { slug: "strength", numeral: "VIII", name: copy.majorArcana.strength, image: libraryCards.strength, content: strength },
+  { slug: "the-hermit", numeral: "IX", name: copy.majorArcana["the-hermit"], image: libraryCards["the-hermit"], content: theHermit },
+  { slug: "the-wheel", numeral: "X", name: copy.majorArcana["the-wheel"], image: libraryCards["the-wheel"], content: theWheel },
+  { slug: "justice", numeral: "XI", name: copy.majorArcana.justice, image: libraryCards.justice, content: justice },
+  { slug: "the-hangman", numeral: "XII", name: copy.majorArcana["the-hangman"], image: libraryCards["the-hangman"], content: theHangman },
+  { slug: "death", numeral: "XIII", name: copy.majorArcana.death, image: libraryCards.death, content: death },
+  { slug: "temperance", numeral: "XIV", name: copy.majorArcana.temperance, image: libraryCards.temperance, content: temperance },
+  { slug: "the-devil", numeral: "XV", name: copy.majorArcana["the-devil"], image: libraryCards["the-devil"], content: theDevil },
+  { slug: "the-tower", numeral: "XVI", name: copy.majorArcana["the-tower"], image: libraryCards["the-tower"], content: theTower },
+  { slug: "the-star", numeral: "XVII", name: copy.majorArcana["the-star"], image: libraryCards["the-star"], content: theStar },
+  { slug: "the-moon", numeral: "XVIII", name: copy.majorArcana["the-moon"], image: libraryCards["the-moon"], content: theMoon },
+  { slug: "the-sun", numeral: "XIX", name: copy.majorArcana["the-sun"], image: libraryCards["the-sun"], content: theSun },
+  { slug: "judgement", numeral: "XX", name: copy.majorArcana.judgement, image: libraryCards.judgement, content: judgement },
+  { slug: "the-world", numeral: "XXI", name: copy.majorArcana["the-world"], image: libraryCards["the-world"], content: theWorld },
 ];
 
 /**
@@ -113,9 +124,12 @@ export const majorArcana: readonly MajorArcanaCard[] = [
  * display name. The numeral is deliberately left out: it is drawn inside the
  * image and the name is already beside it as real text, so a screen reader
  * hearing the name twice is the useful amount, and three times is not.
+ *
+ * The sentence is a template with `{card}` in it, so a translator can put the
+ * name wherever their language wants it.
  */
 export function cardAlt(card: MajorArcanaCard): string {
-  return `${card.name} tarot card from The World Tarot`;
+  return copy.cardAlt.replace("{card}", card.name);
 }
 
 export function findMajorArcana(slug: string): MajorArcanaCard | undefined {
@@ -212,10 +226,10 @@ export type Suit = {
  * describes.
  */
 export const suits: readonly Suit[] = [
-  { slug: "swords", label: "SWORDS", title: "Swords", href: `/library/swords${SUIT_SUFFIX}/`, content: swords },
-  { slug: "cups", label: "CUPS", title: "Cups", href: `/library/cups${SUIT_SUFFIX}/`, content: cups },
-  { slug: "wands", label: "WANDS", title: "Wands", href: `/library/wands${SUIT_SUFFIX}/`, content: wands },
-  { slug: "pentacles", label: "PENTACLES", title: "Pentacles", href: `/library/pentacles${SUIT_SUFFIX}/`, content: pentacles },
+  { slug: "swords", ...copy.suits.swords, href: `/library/swords${SUIT_SUFFIX}/`, content: swords },
+  { slug: "cups", ...copy.suits.cups, href: `/library/cups${SUIT_SUFFIX}/`, content: cups },
+  { slug: "wands", ...copy.suits.wands, href: `/library/wands${SUIT_SUFFIX}/`, content: wands },
+  { slug: "pentacles", ...copy.suits.pentacles, href: `/library/pentacles${SUIT_SUFFIX}/`, content: pentacles },
 ];
 
 export function findSuit(slug: string): Suit | undefined {
@@ -236,13 +250,6 @@ export function suitPath(suit: Suit): string {
 }
 
 /**
- * A suit page's title and description, as plain strings.
- *
- * The route files turn these into Next's `Metadata`; this module imports
- * nothing from the framework, which is the rule the whole content layer keeps —
- * it is copy, and copy is what a CMS would one day own.
- */
-/**
  * A suit's meta description: hers when she has written one, the generated
  * sentence otherwise.
  *
@@ -262,6 +269,18 @@ export function suitDescription(suit: Suit): string {
   );
 }
 
+/**
+ * A suit page's title and description, as plain strings.
+ *
+ * The route files turn these into Next's `Metadata`; this module imports
+ * nothing from the framework, which is the rule the whole content layer keeps —
+ * it is copy, and copy is what a CMS would one day own.
+ *
+ * **English, and only ever read at build time**, like every route's metadata:
+ * search is English-only by decision (ADR 0004's superseding note), so the
+ * sentence stays here rather than in `locales/`, where a translator would
+ * write Spanish no visitor could see.
+ */
 export function suitMeta(slug: string): { title: string; description: string } {
   const suit = findSuit(slug);
 
@@ -279,13 +298,14 @@ export function suitMeta(slug: string): { title: string; description: string } {
  */
 export const libraryPath = "/library/";
 
-export const majorArcanaNav = { label: "MAJOR ARCANA", href: libraryPath };
+export const majorArcanaNav = { label: copy.majorArcanaNav, href: libraryPath };
+
+/** The suit navigation's landmark name, which is read aloud and never shown. */
+export const sectionsLabel = copy.sectionsLabel;
 
 export const library = {
-  title: "The World Tarot Library",
-  tagline: "AN ARCHIVE OF THE SYMBOL AND MEANING",
-  blurb: "Explore the imagery, stories, and wisdom woven through the Tarot",
-  closing: "The library - worlds without end",
+  ...copy.library,
+  /** The route's meta description, English for the reason `suitMeta` gives. */
   metaDescription:
     "An archive of symbol and meaning. Explore the imagery, stories, and wisdom woven through the Major Arcana of The World Tarot.",
 };
@@ -295,8 +315,4 @@ export const library = {
  * arrives. Both are real routes with real artwork — they simply do not pretend
  * to be the reference pages that have their own issues and their own designs.
  */
-export const comingSoon = {
-  card: "This card's full reference is being written.",
-  suit: "This suit's reference is being written.",
-  back: "Return to the Library",
-};
+export const comingSoon = copy.comingSoon;

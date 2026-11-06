@@ -1,5 +1,37 @@
 # Language is a path segment, English keeps `/`, and the switcher renders what was built and is live
 
+> **SUPERSEDED on the path segment, 9 September 2026.** The translation work
+> this ADR was written to hand a decision to went the other way: **language is a
+> stored preference on a single `/`, and Spanish has no URL of its own.** There
+> is no `[locale]` segment, no `generateStaticParams` over locales, and no
+> `/es/`. `BUILT_LOCALES` in `src/lib/locale.ts` holds English alone, and that
+> is now permanent rather than pending.
+>
+> **The three objections below are accepted, not answered**, which is the whole
+> of the reversal. `<html lang>` does read `en` over Spanish copy in the served
+> markup — `HtmlLang` corrects it after mount, so a crawler only ever sees the
+> uncorrected version. A Spanish reader cannot be linked to. The trade is
+> deliberate: **search is English-only by decision**, so the SEO half of the
+> cost is one the business does not pay. `hreflang` and the sitemap are written
+> from `BUILT_LOCALES` and so stay truthful — they emit nothing for a `/es/`
+> that does not exist.
+>
+> **Everything else in this file survives**: the backend's 404-rather-than-
+> English contract, the rule that the switcher renders the intersection of what
+> was built and what `GET /api/v1/languages` answers, and the reasoning for
+> both. `src/lib/languages.ts` implements the intersection with **one change to
+> its built half**: a language must be in `OFFERED_LOCALES`, whose copy ships in
+> the bundle, rather than in `BUILT_LOCALES`, which has a route — no language
+> but English has a route, so the old half would draw no switcher at all. The
+> rule is load bearing — `apiLocale()` follows the display language as of the
+> same date, so an offer the endpoint did not make would be a 404 a visitor can
+> click on.
+>
+> Read the rest as the case for an address, which is still the better shape and
+> is what to reopen if search ever needs to reach Spanish. **Do not build the
+> `[locale]` segment from it** without reopening the decision; the README's
+> language section and `src/lib/locale.ts` describe what actually shipped.
+
 > **Decided 1 September 2026**, refining #63. The shape is settled here and
 > **nothing in this ADR is built** — #63 ships prices, currency and the
 > `/languages` fetch, and the routing arrives with the translation ticket that
@@ -86,3 +118,33 @@ backend's side knows. **Whatever builds the deferred half needs its own
 completeness check at build time**, or a language ships with English holes in it.
 That is the cost of keeping the copy here, stated where the next person will find
 it.
+
+## What `/en/` would have cost, priced
+
+**Recorded 5 September 2026**, when this decision was revisited before launch as
+the section above asks, and confirmed unchanged. The price is kept here because
+the document that established it — `docs/plans/locale-controls.md`, never
+committed — was deleted the same day, and the number is the whole argument.
+
+Moving English from `/` to `/en/`: a route move across nine routes, a root-layout
+move, `generateStaticParams`, a `LocaleLink` applied across **48 `href`s in
+`src/content/`**, all **seven `check:` scripts**, a Cloudflare Worker for the
+`/` → `/en/` redirect, and **`/` answering 404 in `next dev` forever**.
+
+That last is not a matter of effort. `redirects`, `rewrites`, `headers` and Proxy
+are all listed as unsupported under `output: "export"` — verified against
+`node_modules/next/dist/docs/01-app/02-guides/static-exports.md` on 5 September
+2026 — so nothing can send `/` to `/en/` locally, and the Worker only fixes it in
+production.
+
+Keeping `/` costs one thing: an "unless it is the default locale" branch in the
+link and canonical helpers. `src/lib/seo.ts` is where that branch lives.
+
+The three documents deleted alongside this note — `locale-controls.md`,
+`locale-controls-implementation.md` and `local-controls-reply.md`, all dated
+30 August 2026 and never committed — argued the opposite decision: language as a
+stored browser preference with no URL at all, accepting that *"non-English pages
+cannot be found in search, ever."* This ADR reversed that on 3 September. They
+were deleted because a 1,925-line implementation plan for a design that lost,
+sitting untracked and undated in `docs/plans/`, reads as current to everyone who
+finds it.
