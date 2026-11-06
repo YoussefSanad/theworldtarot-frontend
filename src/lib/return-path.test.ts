@@ -181,3 +181,17 @@ test("a pass holder lands in the Viewing Room", () => {
 test("everybody else lands on the homepage", () => {
   assert.equal(landingFor(customer(false)), "/");
 });
+
+/*
+  The password pages (#150, #171) sign in and go to `next` only when this
+  answers a path, for a claim and a reset alike. A reset from forgot-password
+  carries no `next`, so it keeps its success screen.
+*/
+test("a password link's next: the Viewing Room when safe, null when missing or unsafe", () => {
+  assert.equal(safeReturnPath("/viewing-room/"), "/viewing-room/");
+  assert.equal(safeReturnPath(new URLSearchParams("token=t&email=e&next=%2Fviewing-room%2F").get("next")), "/viewing-room/");
+  assert.equal(safeReturnPath(new URLSearchParams("token=t&email=e").get("next")), null);
+  for (const unsafe of ["//evil.com", "https://evil.com", "https://evil.com/viewing-room/", "/.//evil.com"]) {
+    assert.equal(safeReturnPath(unsafe), null, unsafe);
+  }
+});
