@@ -162,8 +162,10 @@ export const readingPageChrome = {
      * It does not say "Pay with Card", and no label it has worn ever has. The
      * **hosted page** offers every method turned on in the Dashboard, and a
      * button that names one of them would be wrong the first time somebody pays
-     * with anything else. "Pay Another Way" keeps that and says what the frame
-     * is for besides: another way than the two wallet buttons above it.
+     * with anything else. ~~"Pay Another Way" keeps that and says what the
+     * frame is for besides: another way than the two wallet buttons above it.~~
+     * **"Checkout" keeps that from 6 November 2026**: it names the step a press
+     * starts, not any way of paying.
      *
      * **It does not quote the price either.** ~~The amount was set beside it,
      * so the label could be a constant and the number the API's.~~ The panel
@@ -172,8 +174,9 @@ export const readingPageChrome = {
      * panel — wrap onto two lines and stand taller than the frames beside it.
      * Removed 29 August 2026 at the client's request; see `HostedCheckoutButton`.
      *
-     * ~~"Buy Now".~~ ~~"Continue to Checkout" from 29 August 2026.~~ **"Pay
-     * Another Way" from 30 August 2026**, both at the client's request.
+     * ~~"Buy Now".~~ ~~"Continue to Checkout" from 29 August 2026.~~ ~~"Pay
+     * Another Way" from 30 August 2026.~~ **"Checkout" from 6 November 2026**,
+     * all three at the client's request.
      *
      * The first reversal was about a promise the button does not keep: pressing
      * it buys nothing — it places a `pending` order and sends the browser to
@@ -183,10 +186,18 @@ export const readingPageChrome = {
      * its own pending state.
      *
      * The second is the client's wording and it does not take that back: this
-     * is still the road that leaves, and "Pay Another Way" is read against the
+     * is still the road that leaves, ~~and "Pay Another Way" is read against the
      * wallet buttons directly above rather than on its own. It is also the
      * shortest label the frame has worn, which is what finally settles the wrap
-     * `.checkout-option`'s padding was loosened for.
+     * `.checkout-option`'s padding was loosened for.~~
+     *
+     * **The third, on 6 November 2026, gives up the contrast the second was
+     * made for.** "Checkout" is read on its own rather than against the wallet
+     * buttons above it, and it says what `buying` below already says while it
+     * waits. That is the client's call, not an accident — flagged here so
+     * nobody reverts it to restore the contrast. It is now the shortest label
+     * the frame has worn, so the wrap `.checkout-option`'s padding was loosened
+     * for stays settled.
      *
      * **The card mark beside it is narrower than the road, and that is
      * accepted rather than missed.** `marks.card` is the client's own frame
@@ -196,7 +207,7 @@ export const readingPageChrome = {
      * customer reaches this frame, card is what is left. The *label* still
      * names no method, which is what keeps the paragraph above true.
      */
-    buy: "Pay Another Way",
+    buy: "Checkout",
     /**
      * Held across both round trips — the order, then the payment — because the
      * browser does not leave until the second one answers, and a button that

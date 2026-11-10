@@ -91,7 +91,9 @@ wrong the first time somebody pays with anything else.
 three days ("Buy Now", "Continue to Checkout", "Pay Another Way") and left the
 identifier naming copy that no longer existed. ~~"the card button", used twice
 in this file~~: corrected in the same change, for the reason the label already
-avoided the word.
+avoided the word. The label moved a fourth time on **6 November 2026**, to
+**"Checkout"**, at the client's request — and the identifier did not move with
+it.
 _Avoid_: Buy Now, Pay Another Way (labels it has worn, not what it is), card button, pay button. **Two document titles still say "card button"** — `docs/adr/0002-*` and `docs/plans/hosted-checkout.md` — and stay that way: they are dated records, each noting the rename.
 
 **Hosted page**:
