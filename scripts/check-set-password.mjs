@@ -12,7 +12,9 @@
  *
  * #150: a finished claim with a safe `next` signs in with the password just
  * chosen and goes straight there; if that sign in fails it falls back to the
- * done panel. Reset never signs in, and a claim with no safe `next` does not.
+ * done panel. ~~Reset never signs in~~ — **since #171 a reset with a safe `next`
+ * does too**, and every #150 case runs for both pages. Neither page signs in
+ * without a safe `next`, and an expired link keeps each page's own wording.
  * The shared signed-in state comes from the login response, never from a later
  * `/me` read; a visitor who already has a session is not signed in again; and
  * the claim form shows whose account is being claimed. A sign in only follows
@@ -358,74 +360,228 @@ async function masthead(page) {
 const ORIGIN_PATH = (page) => new URL(page.url()).pathname;
 const DONE = "main h1:has-text('ready'), main h1:has-text('changed')";
 
-console.log("\nclaim: a safe next signs them in and goes straight there (#150)");
-{
-  const { page, sent, logins } = await open("/set-password/", query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS);
-  await submit(page);
+/*
+  #150 for the claim, and #171 for a reset from a pass receipt: each block runs
+  for both pages. A safe `next` signs in after the write and goes there; anything
+  that stops the sign in leaves the person on that page's success screen.
+*/
+const SIGN_IN_FLOWS = [
+  { name: "claim", path: "/set-password/", endpoint: "set-password", done: "main h1:has-text('ready')", linkFailure: "If you have already set a password" },
+  { name: "reset", path: "/reset-password/", endpoint: "reset-password", done: "main h1:has-text('changed')", linkFailure: "Reset links last an hour and work once" },
+];
 
-  try {
-    await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
-  } catch {
-    /* Reported by the assertions below. */
+for (const { name, path, endpoint, done, linkFailure } of SIGN_IN_FLOWS) {
+  console.log(`\n${name}: a safe next signs them in and goes straight there (#150, #171)`);
+  {
+    const { page, sent, logins } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS);
+    await submit(page);
+
+    try {
+      await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
+      await page.waitForLoadState("networkidle");
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(`${name} signed in`, "they land on where they were going", ORIGIN_PATH(page), NEXT);
+    expect(`${name} signed in`, "the address no longer carries the token or email", new URL(page.url()).search, "");
+    expect(`${name} signed in`, "the sign in carries the pair they just chose and no device_name", logins, [
+      { email: EMAIL, password: "a long new one" },
+    ]);
+    expect(`${name} signed in`, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(`${name} signed in`, "the masthead shows them signed in", await masthead(page), {
+      signIn: 0,
+      name: CUSTOMER.name,
+    });
+    await page.close();
   }
 
-  expect("claim signed in", "they land on where they were going", ORIGIN_PATH(page), NEXT);
-  expect("claim signed in", "the sign in carries the pair they just chose and no device_name", logins, [
-    { email: EMAIL, password: "a long new one" },
-  ]);
-  expect("claim signed in", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  await page.close();
-}
+  console.log(`\n${name}: a refused sign in falls back to the success screen (#150, #171)`);
+  {
+    const { page, sent, logins } = await open(path, query({ next: NEXT }));
+    await submit(page);
+    await page.waitForSelector(DONE);
 
-console.log("\nclaim: a refused sign in falls back to the success screen (#150)");
-{
-  const { page, sent, logins } = await open("/set-password/", query({ next: NEXT }));
-  await submit(page);
-  await page.waitForSelector(DONE);
+    expect(`${name} sign in refused`, "a sign in was attempted", logins.length, 1);
+    expect(`${name} sign in refused`, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(`${name} sign in refused`, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(`${name} sign in refused`, "the success screen is shown", await page.locator(done).count(), 1);
+    expectLink(`${name} sign in refused`, await signInLink(page), NEXT);
+    await page.close();
+  }
 
-  expect("claim sign in refused", "a sign in was attempted", logins.length, 1);
-  expect("claim sign in refused", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect("claim sign in refused", "they stay on the page", ORIGIN_PATH(page), "/set-password/");
-  expectLink("claim sign in refused", await signInLink(page), NEXT);
-  await page.close();
-}
+  console.log(`\n${name}: a hostile next never signs in or leaves the page (#150, #171)`);
+  for (const hostile of HOSTILE) {
+    const { page, logins } = await open(path, query({ next: hostile }), api({ message: "ok" }), LOGIN_SUCCEEDS);
+    await submit(page);
+    await page.waitForSelector(DONE);
 
-console.log("\nclaim: a hostile next never signs in or leaves the page (#150)");
-for (const hostile of HOSTILE) {
-  const { page, logins } = await open("/set-password/", query({ next: hostile }), api({ message: "ok" }), LOGIN_SUCCEEDS);
-  await submit(page);
-  await page.waitForSelector(DONE);
+    expect(`${name} hostile`, `${hostile}: no sign in is attempted`, logins.length, 0);
+    expect(`${name} hostile`, `${hostile}: they stay on the page`, ORIGIN_PATH(page), path);
+    expect(`${name} hostile`, `${hostile}: the success screen is shown`, await page.locator(done).count(), 1);
+    await page.close();
+  }
 
-  expect("claim hostile", `${hostile}: no sign in is attempted`, logins.length, 0);
-  expect("claim hostile", `${hostile}: they stay on the page`, ORIGIN_PATH(page), "/set-password/");
-  expect("claim hostile", `${hostile}: the success screen is shown`, await page.locator("main h1:has-text('ready')").count(), 1);
-  await page.close();
-}
+  console.log(`\n${name}: no next keeps the success screen (#150, #171)`);
+  {
+    const { page, logins } = await open(path, query(), api({ message: "ok" }), LOGIN_SUCCEEDS);
+    await submit(page);
+    await page.waitForSelector(DONE);
 
-console.log("\nclaim: no next keeps the success screen (#150)");
-{
-  const { page, logins } = await open("/set-password/", query(), api({ message: "ok" }), LOGIN_SUCCEEDS);
-  await submit(page);
-  await page.waitForSelector(DONE);
+    expect(`${name} no next`, "no sign in is attempted", logins.length, 0);
+    expect(`${name} no next`, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(`${name} no next`, "the success screen is shown", await page.locator(done).count(), 1);
+    expectLink(`${name} no next`, await signInLink(page), null);
+    await page.close();
+  }
 
-  expect("claim no next", "no sign in is attempted", logins.length, 0);
-  expect("claim no next", "they stay on the page", ORIGIN_PATH(page), "/set-password/");
-  expect("claim no next", "the success screen is shown", await page.locator("main h1:has-text('ready')").count(), 1);
-  expectLink("claim no next", await signInLink(page), null);
-  await page.close();
-}
+  console.log(`\n${name}: an expired link keeps its link-failure wording and never signs in (#171)`);
+  {
+    const { page, logins } = await open(path, query({ next: NEXT }), DEAD_LINK, LOGIN_SUCCEEDS);
+    await submit(page);
+    await page.waitForSelector(ALERT + ":not(:empty)");
 
-console.log("\nreset: never signs in, whatever next says (#150)");
-{
-  const { page, logins } = await open("/reset-password/", query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS);
-  await submit(page);
-  await page.waitForSelector(DONE);
+    expect(`${name} expired`, "the page's own link-failure wording is shown", (await page.locator(ALERT).innerText()).includes(linkFailure), true);
+    expect(`${name} expired`, "no sign in is attempted", logins.length, 0);
+    expect(`${name} expired`, "they stay on the page", ORIGIN_PATH(page), path);
+    expectLink(`${name} expired`, await signInLink(page), NEXT);
+    await page.close();
+  }
 
-  expect("reset", "no sign in is attempted", logins.length, 0);
-  expect("reset", "they stay on the page", ORIGIN_PATH(page), "/reset-password/");
-  expect("reset", "the changed screen is shown", await page.locator("main h1:has-text('changed')").count(), 1);
-  expectLink("reset", await signInLink(page), NEXT);
-  await page.close();
+  console.log(`\n${name}: the signed-in state is the login response, not a later /me read (#150, #171)`);
+  for (const meAfterLogin of ["fail", "hang"]) {
+    const { page, logins, counts } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      meAfterLogin,
+    });
+    const state = `${name} /me ${meAfterLogin}s after login`;
+    await submit(page);
+
+    try {
+      await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
+      await page.waitForLoadState("networkidle");
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(state, "a sign in was attempted once", logins.length, 1);
+    expect(state, "they land on where they were going", ORIGIN_PATH(page), NEXT);
+    expect(state, "the masthead shows the customer from the login response", await masthead(page), {
+      signIn: 0,
+      name: CUSTOMER.name,
+    });
+    expect(state, "no /me read was needed after the login", counts.meAfterLogin, 0);
+    await page.close();
+  }
+
+  console.log(`\n${name}: a visitor who already has a session is not signed in again (#150, #171)`);
+  {
+    const { page, sent, logins } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      alreadySignedIn: true,
+    });
+    await submit(page);
+
+    try {
+      await page.waitForSelector(DONE, { timeout: 5000 });
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(`${name} already signed in`, "no sign in is attempted", logins.length, 0);
+    expect(`${name} already signed in`, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(`${name} already signed in`, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(`${name} already signed in`, "the success screen is shown", await page.locator(done).count(), 1);
+    expectLink(`${name} already signed in`, await signInLink(page), NEXT);
+    await page.close();
+  }
+
+  console.log(`\n${name}: a safe next signs in only when /me answers 401 right before it (#150, #171)`);
+  {
+    const { page, sent, logins, counts } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      me: { load: "unauthenticated", check: "unauthenticated" },
+    });
+    const state = `${name} /me 401 twice`;
+    await submit(page);
+
+    try {
+      await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
+      await page.waitForLoadState("networkidle");
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "/me was read again after the write, before the sign in", counts.meAfterClaim >= 1, true);
+    expect(state, "the sign in carries the pair they just chose", logins, [{ email: EMAIL, password: "a long new one" }]);
+    expect(state, "they land on where they were going", ORIGIN_PATH(page), NEXT);
+    expect(state, "the masthead shows the customer from the login response", await masthead(page), {
+      signIn: 0,
+      name: CUSTOMER.name,
+    });
+    await page.close();
+  }
+
+  console.log(`\n${name}: a failed initial /me never signs in, and falls back to the success screen (#150, #171)`);
+  for (const load of ["fail", "abort"]) {
+    const state = `${name} initial /me ${load === "fail" ? "500" : "aborted"}`;
+    const { page, sent, logins } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      me: { load },
+    });
+    await submit(page);
+
+    try {
+      await page.waitForSelector(DONE, { timeout: 5000 });
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(state, "no sign in is attempted", logins.length, 0);
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(state, "the success screen is shown", await page.locator(done).count(), 1);
+    expectLink(state, await signInLink(page), NEXT);
+    await page.close();
+  }
+
+  console.log(`\n${name}: an initial /me that never answers never signs in (#150, #171)`);
+  {
+    /* The app gives /me 8s; this waits a few seconds, not that long, so only the
+       absence of a sign in and of a redirect is asserted, not the fallback screen. */
+    const { page, sent, logins } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      me: { load: "hang" },
+    });
+    const state = `${name} initial /me hangs`;
+    await submit(page);
+    await page.waitForTimeout(3000);
+
+    expect(state, "no sign in is attempted", logins.length, 0);
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "they have not been sent on to where they were going", ORIGIN_PATH(page), path);
+    await page.close();
+  }
+
+  console.log(`\n${name}: a session from another tab, found by the fresh /me, is not replaced (#150, #171)`);
+  for (const check of ["customer", "hang"]) {
+    /* `hang` is the fresh read timing out (3s in signInAfter): nobody is signed in. */
+    const state = `${name} fresh /me ${check === "customer" ? "finds a customer" : "times out"}`;
+    const { page, sent, logins, counts } = await open(path, query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS, {
+      me: { load: "unauthenticated", check },
+    });
+    await submit(page);
+
+    try {
+      await page.waitForSelector(DONE, { timeout: 8000 });
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(state, "/me was read again after the write", counts.meAfterClaim >= 1, true);
+    expect(state, "no sign in is attempted", logins.length, 0);
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(state, "the success screen is shown", await page.locator(done).count(), 1);
+    expectLink(state, await signInLink(page), NEXT);
+    await page.close();
+  }
 }
 
 console.log("\nclaim: the form shows whose account is being claimed (#150)");
@@ -438,160 +594,13 @@ for (const [label, next] of [["with next", NEXT], ["without next", undefined]]) 
   await page.close();
 }
 
-console.log("\nclaim: the signed-in state is the login response, not a later /me read (#150)");
-for (const meAfterLogin of ["fail", "hang"]) {
-  const { page, logins, counts } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { meAfterLogin },
-  );
-  const state = `claim /me ${meAfterLogin}s after login`;
-  await submit(page);
+console.log("\nreset: the form shows whose account it signs into only when it will sign in (#171)");
+for (const [label, next, shown] of [["with next", NEXT, true], ["without next", undefined, false], ["hostile next", "//evil.com", false]]) {
+  const { page } = await open("/reset-password/", query({ next }));
+  await page.waitForSelector(PASSWORD);
 
-  try {
-    await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
-    await page.waitForLoadState("networkidle");
-  } catch {
-    /* Reported by the assertions below. */
-  }
-
-  expect(state, "a sign in was attempted once", logins.length, 1);
-  expect(state, "they land on where they were going", ORIGIN_PATH(page), NEXT);
-  expect(state, "the masthead shows the customer from the login response", await masthead(page), {
-    signIn: 0,
-    name: CUSTOMER.name,
-  });
-  expect(state, "no /me read was needed after the login", counts.meAfterLogin, 0);
-  await page.close();
-}
-
-console.log("\nclaim: a visitor who already has a session is not signed in again (#150)");
-{
-  const { page, sent, logins } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { alreadySignedIn: true },
-  );
-  await submit(page);
-
-  try {
-    await page.waitForSelector(DONE, { timeout: 5000 });
-  } catch {
-    /* Reported by the assertions below. */
-  }
-
-  expect("claim already signed in", "no sign in is attempted", logins.length, 0);
-  expect("claim already signed in", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect("claim already signed in", "they stay on the page", ORIGIN_PATH(page), "/set-password/");
-  expect("claim already signed in", "the success screen is shown", await page.locator("main h1:has-text('ready')").count(), 1);
-  expectLink("claim already signed in", await signInLink(page), NEXT);
-  await page.close();
-}
-
-console.log("\nclaim: a safe next signs in only when /me answers 401 right before it (#150)");
-{
-  const { page, sent, logins, counts } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { me: { load: "unauthenticated", check: "unauthenticated" } },
-  );
-  await submit(page);
-
-  try {
-    await page.waitForURL((url) => url.pathname.startsWith(NEXT), { timeout: 5000 });
-    await page.waitForLoadState("networkidle");
-  } catch {
-    /* Reported by the assertions below. */
-  }
-
-  expect("claim /me 401 twice", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect("claim /me 401 twice", "/me was read again after the write, before the sign in", counts.meAfterClaim >= 1, true);
-  expect("claim /me 401 twice", "the sign in carries the pair they just chose", logins, [
-    { email: EMAIL, password: "a long new one" },
-  ]);
-  expect("claim /me 401 twice", "they land on where they were going", ORIGIN_PATH(page), NEXT);
-  expect("claim /me 401 twice", "the masthead shows the customer from the login response", await masthead(page), {
-    signIn: 0,
-    name: CUSTOMER.name,
-  });
-  await page.close();
-}
-
-console.log("\nclaim: a failed initial /me never signs in, and falls back to the success screen (#150)");
-for (const load of ["fail", "abort"]) {
-  const state = `claim initial /me ${load === "fail" ? "500" : "aborted"}`;
-  const { page, sent, logins } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { me: { load } },
-  );
-  await submit(page);
-
-  try {
-    await page.waitForSelector(DONE, { timeout: 5000 });
-  } catch {
-    /* Reported by the assertions below. */
-  }
-
-  expect(state, "no sign in is attempted", logins.length, 0);
-  expect(state, "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect(state, "they stay on the page", ORIGIN_PATH(page), "/set-password/");
-  expect(state, "the success screen is shown", await page.locator("main h1:has-text('ready')").count(), 1);
-  expectLink(state, await signInLink(page), NEXT);
-  await page.close();
-}
-
-console.log("\nclaim: an initial /me that never answers never signs in (#150)");
-{
-  /* The app gives /me 8s; this waits a few seconds, not that long, so only the
-     absence of a sign in and of a redirect is asserted, not the fallback screen. */
-  const { page, sent, logins } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { me: { load: "hang" } },
-  );
-  await submit(page);
-  await page.waitForTimeout(3000);
-
-  expect("claim initial /me hangs", "no sign in is attempted", logins.length, 0);
-  expect("claim initial /me hangs", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect("claim initial /me hangs", "they have not been sent on to where they were going", ORIGIN_PATH(page), "/set-password/");
-  await page.close();
-}
-
-console.log("\nclaim: a session from another tab, found by the fresh /me, is not replaced (#150)");
-{
-  const { page, sent, logins, counts } = await open(
-    "/set-password/",
-    query({ next: NEXT }),
-    api({ message: "ok" }),
-    LOGIN_SUCCEEDS,
-    { me: { load: "unauthenticated", check: "customer" } },
-  );
-  await submit(page);
-
-  try {
-    await page.waitForSelector(DONE, { timeout: 5000 });
-  } catch {
-    /* Reported by the assertions below. */
-  }
-
-  expect("claim other tab", "/me was read again after the write", counts.meAfterClaim >= 1, true);
-  expect("claim other tab", "no sign in is attempted", logins.length, 0);
-  expect("claim other tab", "the password was set once", sent.map((s) => s.endpoint), ["set-password"]);
-  expect("claim other tab", "they stay on the page", ORIGIN_PATH(page), "/set-password/");
-  expect("claim other tab", "the success screen is shown", await page.locator("main h1:has-text('ready')").count(), 1);
-  expectLink("claim other tab", await signInLink(page), NEXT);
+  const text = await page.locator("main").innerText();
+  expect("reset email shown", `${label}: the visible page text includes the email`, text.includes(EMAIL), shown);
   await page.close();
 }
 

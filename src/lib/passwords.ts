@@ -52,15 +52,25 @@ export async function claimAccount(submission: PasswordSubmission): Promise<void
   await apiWrite<{ message: string }>("/api/v1/set-password", requestBody(submission));
 }
 
+/** Either of the two password writes above and below. */
+export type PasswordWrite = (submission: PasswordSubmission) => Promise<void>;
+
 /**
- * Claims first, then signs in only if a fresh session read confirms nobody is
- * signed in. If the read or sign in fails, the new password can still be used
- * to sign in later.
+ * Sets the password with `write` first, then signs in with it only if a fresh
+ * session read confirms nobody is signed in. If the read or sign in fails, the
+ * new password can still be used to sign in later.
+ *
+ * **Takes the write rather than naming it**, because a claim and a reset carrying
+ * `next` end the same way (#150, #171). A refused write throws exactly as `write`
+ * does on its own, and nothing after it runs, so a dead link never signs in.
+ * Anything that goes wrong after the write succeeded is `sign-in-needed`, never a
+ * throw: the password has changed by then, and the page must not say otherwise.
  */
-export async function claimAndSignIn(
+export async function signInAfter(
+  write: PasswordWrite,
   submission: PasswordSubmission,
 ): Promise<{ outcome: "signed-in"; customer: Customer } | { outcome: "sign-in-needed" }> {
-  await claimAccount(submission);
+  await write(submission);
 
   try {
     const signal = AbortSignal.timeout(3_000);

@@ -14,14 +14,14 @@ import {
   resetPasswordCopy,
   setPasswordCopy,
 } from "@/content/passwords";
-import { afterClaimDestination, safeReturnPath } from "@/lib/return-path";
+import { safeReturnPath } from "@/lib/return-path";
 import {
   claimAccount,
-  claimAndSignIn,
   type PasswordFailure,
-  type PasswordSubmission,
+  type PasswordWrite,
   readPasswordFailure,
   resetPassword,
+  signInAfter,
 } from "@/lib/passwords";
 
 /**
@@ -43,10 +43,7 @@ import {
 /** Which of the two pages this is. Claiming an account, or resetting one. */
 export type PasswordFlow = "claim" | "reset";
 
-const FLOW: Record<
-  PasswordFlow,
-  { copy: PasswordPageCopy; submit: (submission: PasswordSubmission) => Promise<void> }
-> = {
+const FLOW: Record<PasswordFlow, { copy: PasswordPageCopy; submit: PasswordWrite }> = {
   claim: { copy: setPasswordCopy, submit: claimAccount },
   reset: { copy: resetPasswordCopy, submit: resetPassword },
 };
@@ -63,9 +60,13 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     `next` is read on its own, not as part of the link: it is where the person
     was going before sign in. It never goes in the write. `safeReturnPath`
     returns it already normalised, so it is encoded once here and not decoded.
+
+    A safe `next` is also what makes either flow sign in after the write and go
+    there (claim since #150, reset since #171). The backend only puts one on a
+    link from a pass receipt; a forgot-password reset has none and still ends on
+    the success screen.
   */
   const next = safeReturnPath(searchParams.get("next"));
-  const destination = afterClaimDestination(flow, searchParams.get("next"));
   const signInHref = next === null ? signInPath : `${signInPath}?next=${encodeURIComponent(next)}`;
 
   const fieldId = useId();
@@ -105,14 +106,14 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     let navigating = false;
 
     try {
-      if (destination !== null && customer === null) {
-        const outcome = await claimAndSignIn(submission);
+      if (next !== null && customer === null) {
+        const outcome = await signInAfter(submit, submission);
         setPassword("");
         setPasswordConfirmation("");
         if (outcome.outcome === "signed-in") {
           // The layout survives navigation, so update its shared customer first.
           setCustomer(outcome.customer);
-          router.replace(destination);
+          router.replace(next);
           navigating = true;
           return;
         }
@@ -159,7 +160,11 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     <Panel>
       <h1 className="font-display text-h2 text-champagne">{copy.heading}</h1>
       <p className="mt-4 text-note text-ash">{copy.intro}</p>
-      {flow === "claim" && email !== "" ? (
+      {/*
+        A reset with a safe `next` signs in too (#171), so it names the account
+        the same way: a forwarded link must not sign somebody in unseen.
+      */}
+      {(flow === "claim" || next !== null) && email !== "" ? (
         <p className="mt-4 break-words text-note text-ash">{claimEmailPrompt} {email}</p>
       ) : null}
 

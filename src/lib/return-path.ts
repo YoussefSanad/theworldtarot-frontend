@@ -4,8 +4,8 @@ const MAX_LENGTH = 512;
 const BASE = "https://x.invalid";
 
 /**
- * Open-redirect guard for the `?next=` return path on /login/ and
- * /set-password/. Allow-list only: returns the URL-normalised
+ * Open-redirect guard for the `?next=` return path on /login/,
+ * /set-password/ and /reset-password/. Allow-list only: returns the URL-normalised
  * `pathname + search + hash` of a same-origin relative path with a single
  * leading `/`, otherwise null. The result is already normalised and must not
  * be decoded again by callers.
@@ -43,14 +43,6 @@ export function safeReturnPath(raw: string | null | undefined): string | null {
   const params = new URLSearchParams(url.search);
   if (params.has("token") || params.has("email")) return null;
   return url.pathname + url.search + url.hash;
-}
-
-/** Only a claim with a safe destination continues straight to sign in. */
-export function afterClaimDestination(
-  flow: "claim" | "reset",
-  next: string | null | undefined,
-): string | null {
-  return flow === "claim" ? safeReturnPath(next) : null;
 }
 
 /**
