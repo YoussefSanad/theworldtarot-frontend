@@ -30,10 +30,24 @@ const copy = pickCopy(en, { es }, currentLocale());
  *   link, so somebody whose receipt link has died is not stranded
  */
 
-export const loginCopy = copy;
+/*
+  Two groups beyond the page's own sentences, both in `locales/` with the rest:
 
-/** Where a signed-in customer lands. There is no member area to land in yet. */
-export const afterSignIn = "/readings/";
+  - `menu` is the masthead's dropdown, which is where most people sign in now.
+    It shares every sentence above that it can — the fields, the refusals, the
+    forgot-password panel — and adds only a name for the trigger and the
+    signed-in state the page never draws. `accountOf` exists so a screen reader
+    does not hear only the customer's own name on that button ("Jane Doe,
+    button, collapsed"). `drawerAction` is in the client's capitals because it
+    stands beside GET MY READING in the drawer and the two read as a pair.
+  - `signOutConfirm` is the sign out button, which carries its own
+    confirmation. It shows one word; armed and working it shows pictures, which
+    is why `armedHint` and `busyLabel` exist — they are what a screen reader
+    hears in place of the amber glow and the spinner. No warning language,
+    deliberately: signing out costs nothing, and "are you sure?" would dress a
+    harmless action up as a dangerous one. See `SignOutConfirm`.
+*/
+export const loginCopy = copy;
 
 /**
  * The sign in page's own address, exported so the three places that send people

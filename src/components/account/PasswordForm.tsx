@@ -1,19 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Field, fieldErrorsOf, Panel, Refusal } from "@/components/account/FormPanel";
+import { useSignedIn } from "@/components/account/useSignedIn";
 import { Button } from "@/components/ui/Button";
 import { signInPath } from "@/content/login";
 import {
+  claimEmailPrompt,
   type PasswordPageCopy,
   resetPasswordCopy,
   setPasswordCopy,
 } from "@/content/passwords";
+import { afterClaimDestination, safeReturnPath } from "@/lib/return-path";
 import {
   claimAccount,
+  claimAndSignIn,
   type PasswordFailure,
   type PasswordSubmission,
   readPasswordFailure,
@@ -33,9 +37,8 @@ import {
  * the CSRF handshake belongs to the write seam and is not worth a second
  * implementation here.
  *
- * `token` and `email` are read from the query string and never shown or edited.
- * They are the link, not the form: an email a person could change would just be
- * a way to aim a token at another address, and the backend would refuse it.
+ * `token` and `email` are read from the query string and never edited. The
+ * claim form shows the email so the person can see which account it names.
  */
 /** Which of the two pages this is. Claiming an account, or resetting one. */
 export type PasswordFlow = "claim" | "reset";
@@ -50,9 +53,20 @@ const FLOW: Record<
 
 export function PasswordForm({ flow }: { flow: PasswordFlow }) {
   const { copy, submit } = FLOW[flow];
+  const router = useRouter();
+  const { customer, setCustomer } = useSignedIn();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const email = searchParams.get("email") ?? "";
+
+  /*
+    `next` is read on its own, not as part of the link: it is where the person
+    was going before sign in. It never goes in the write. `safeReturnPath`
+    returns it already normalised, so it is encoded once here and not decoded.
+  */
+  const next = safeReturnPath(searchParams.get("next"));
+  const destination = afterClaimDestination(flow, searchParams.get("next"));
+  const signInHref = next === null ? signInPath : `${signInPath}?next=${encodeURIComponent(next)}`;
 
   const fieldId = useId();
   const [password, setPassword] = useState("");
@@ -60,6 +74,12 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
   const [failure, setFailure] = useState<PasswordFailure | null>(null);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const doneHeading = useRef<HTMLHeadingElement>(null);
+
+  // The form unmounts on success, so focus would fall to <body>.
+  useEffect(() => {
+    if (done) doneHeading.current?.focus();
+  }, [done]);
 
   /*
     A link missing either half is dead before anything is typed, and it reads as
@@ -81,21 +101,51 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     setBusy(true);
     setFailure(null);
 
+    const submission = { token, email, password, passwordConfirmation };
+    let navigating = false;
+
     try {
-      await submit({ token, email, password, passwordConfirmation });
+      if (destination !== null && customer === null) {
+        const outcome = await claimAndSignIn(submission);
+        setPassword("");
+        setPasswordConfirmation("");
+        if (outcome.outcome === "signed-in") {
+          // The layout survives navigation, so update its shared customer first.
+          setCustomer(outcome.customer);
+          router.replace(destination);
+          navigating = true;
+          return;
+        }
+      } else {
+        await submit(submission);
+        setPassword("");
+        setPasswordConfirmation("");
+      }
       setDone(true);
     } catch (cause: unknown) {
       setFailure(readPasswordFailure(cause));
     } finally {
-      setBusy(false);
+      if (!navigating) setBusy(false);
     }
   }
 
   if (done) {
     return (
       <Panel>
-        <h1 className="font-display text-h2 text-champagne">{copy.successHeading}</h1>
+        <h1
+          ref={doneHeading}
+          tabIndex={-1}
+          className="font-display text-h2 text-champagne outline-none"
+        >
+          {copy.successHeading}
+        </h1>
         <p className="mt-4 text-note text-ash">{copy.successBody}</p>
+        <Link
+          href={signInHref}
+          className="mt-4 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
+        >
+          {copy.signInPrompt}
+        </Link>
       </Panel>
     );
   }
@@ -109,6 +159,9 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     <Panel>
       <h1 className="font-display text-h2 text-champagne">{copy.heading}</h1>
       <p className="mt-4 text-note text-ash">{copy.intro}</p>
+      {flow === "claim" && email !== "" ? (
+        <p className="mt-4 break-words text-note text-ash">{claimEmailPrompt} {email}</p>
+      ) : null}
 
       <form className="mt-8 flex flex-col gap-6" onSubmit={onSubmit} noValidate>
         {/*
@@ -152,7 +205,7 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
       */}
       {failure?.kind === "link" ? (
         <Link
-          href={signInPath}
+          href={signInHref}
           className="mt-4 inline-block text-note text-champagne underline underline-offset-4 transition-colors hover:text-gold"
         >
           {copy.signInPrompt}

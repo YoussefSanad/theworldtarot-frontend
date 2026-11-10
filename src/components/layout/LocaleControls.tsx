@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
+import { chrome } from "@/content/site";
 import { cn } from "@/lib/cn";
 import type { ApiCurrency, ApiLanguage } from "@/lib/api";
 import { highlightedCurrency, useCurrency } from "@/lib/currency";
@@ -26,8 +27,10 @@ const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
  *   `lib/currency.ts` holds the choice and `lib/catalogue.ts` re-asks on it
  * - **Language is a stored choice**, kept for the visit and applied by
  *   reloading, because the copy catalogue resolves at module scope. Its list is
- *   the backend's `GET /api/v1/languages` plus the languages whose copy ships in
- *   this bundle — see `OURS` in `lib/languages.ts`. It is **not** a route and
+ *   the backend's `GET /api/v1/languages` and nothing else, so a language the
+ *   panel has not published never enters this control and one it takes down
+ *   leaves on the next request. That is what makes the choice safe now that
+ *   `apiLocale()` follows it. It is **not** a route and
  *   Spanish has no URL of its own: search is English-only by decision, which is
  *   what makes that acceptable. `docs/adr/0004-language-is-a-path-segment.md`
  *   argued the opposite and is superseded on that point
@@ -63,9 +66,10 @@ export type SelectOption = {
  *
  * **`native_name` over `label`.** A language switcher is one of the few
  * controls read by people who cannot read the language it is currently in,
- * which is exactly when "Español" works and "Spanish" does not. The backend
- * does not send the field yet — `YoussefSanad/TheWorldTarot#66` asks for it —
- * so this reads the English name until the day it ships, and then stops.
+ * which is exactly when "Español" works and "Spanish" does not. The backend has
+ * sent the field since 9 September 2026 (`YoussefSanad/TheWorldTarot#66`); the
+ * fallback to `label` stays for a frontend deploy that lands ahead of the
+ * backend's, where the English name beats `undefined` on screen.
  *
  * No flags, on purpose. A flag names a country and these name languages, which
  * are not the same set; and a colour bitmap would be the only saturated thing
@@ -125,8 +129,9 @@ export type LocaleSelection = {
  *   modules that are not the header's descendants. `highlightedCurrency` is the
  *   rule for which row is drawn as chosen, and it prefers what the backend
  *   resolved over what was asked for
- * - **Language** reads `currentLocale()`, which is `"en"` until #69 puts a
- *   segment in the path
+ * - **Language** reads `currentLocale()`, the visitor's stored choice, which is
+ *   `"en"` until they make one. There is no segment in the path to read it from,
+ *   by decision; see the superseding note on ADR 0004
  */
 export function useLocaleSelection(): LocaleSelection {
   const { chosen, resolved, choose } = useCurrency();
@@ -155,10 +160,15 @@ export function LocaleControls({ selection, className }: { selection: LocaleSele
     <div className={cn("flex flex-col gap-4 text-nav-sm", className)}>
       {/* Empty until there are two languages to choose between — see `lib/languages.ts`. */}
       {languages.length > 0 ? (
-        <SegmentRow label="Language" options={languageRows(languages)} value={language} onChange={setLanguage} />
+        <SegmentRow
+          label={chrome.languageHeading}
+          options={languageRows(languages)}
+          value={language}
+          onChange={setLanguage}
+        />
       ) : null}
       <SegmentRow
-        label="Currency"
+        label={chrome.currencyHeading}
         options={currencyRows(currencies)}
         value={highlighted}
         onChange={choose}
@@ -241,7 +251,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
       className={cn("relative flex h-[clamp(1.25rem,1.98vw,2.375rem)] items-center", className)}
     >
       <span id={labelId} className="sr-only">
-        Language and currency
+        {chrome.localeMenu}
       </span>
 
       <button
@@ -259,8 +269,16 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
         aria-controls={open ? panelId : undefined}
         aria-labelledby={labelId}
         className={cn(
-          "inline-flex h-full cursor-pointer items-center justify-center p-0 opacity-90 transition-[opacity,color] duration-300 ease-(--ease-veil) hover:opacity-100 focus-visible:opacity-100",
-          open && "text-gold opacity-100",
+          /*
+            `text-(--header-ink)` explicitly, rather than letting the globe's
+            `currentColor` inherit from whatever encloses it. The icon is drawn
+            as a disc filled with `currentColor`, so without a colour here it
+            took the header's own — which is `--color-mist-dim` on every dark
+            page but the page's dark ink on the light one, leaving it a
+            different weight from the sibling controls that do set it.
+          */
+          "inline-flex h-full cursor-pointer items-center justify-center p-0 text-(--header-ink) opacity-90 transition-[opacity,color] duration-300 ease-(--ease-veil) hover:text-(--header-accent) hover:opacity-100 focus-visible:opacity-100",
+          open && "text-(--header-accent) opacity-100",
         )}
       >
         <GlobeIcon className="size-[clamp(1.25rem,1.98vw,2.375rem)]" />
@@ -289,7 +307,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
             {hasLanguages ? (
               <>
                 <LocaleGroup
-                  label="Language"
+                  label={chrome.languageHeading}
                   options={languageRows(languages)}
                   value={language}
                   onChange={setLanguage}
@@ -299,7 +317,7 @@ export function LocaleMenu({ selection, className }: { selection: LocaleSelectio
               </>
             ) : null}
             <LocaleGroup
-              label="Currency"
+              label={chrome.currencyHeading}
               options={currencyRows(currencies)}
               value={highlighted}
               onChange={choose}
@@ -373,6 +391,12 @@ function LocaleGroup({
 
   return (
     <div role="listbox" aria-label={label}>
+      {/*
+        Panel content, not masthead content — so it keeps `--color-mist-dim`
+        rather than `--header-ink`. The panel paints its own dark ground and
+        floats above whatever page is beneath, which is why it is unaffected by
+        a page that recolours the masthead. See the `--header-*` tokens.
+      */}
       <div aria-hidden className="px-[1.1em] pt-[0.5em] pb-[0.2em] text-fine tracking-[0.08em] text-mist-dim">
         {label.toUpperCase()}
       </div>
@@ -415,12 +439,17 @@ function LocaleGroup({
  * a person icon and a bag icon also manage without one.
  */
 /**
- * `login-icon.webp` and `bag-icon.webp` are solid filled silhouettes, not line
- * art, so a thin stroked circle reads noticeably lighter next to them at the
- * same box height — same height, far less ink. This is a solid disc instead,
- * with the meridian and equator cut out through a mask rather than drawn in a
- * paint colour, so the cutout stays transparent against whatever the header's
- * own backdrop happens to be at that scroll position, not a fixed guess at it.
+ * A solid disc, with the meridian and equator cut out through a mask rather
+ * than drawn in a paint colour, so the cutout stays transparent against
+ * whatever the header's own backdrop happens to be at that scroll position
+ * rather than a fixed guess at it.
+ *
+ * **The reason it is solid was the raster pair beside it** — `login-icon.webp`
+ * and `bag-icon.webp` are filled silhouettes, and a thin stroked circle reads
+ * noticeably lighter next to them at the same box height. In the masthead that
+ * pairing no longer holds: `AccountControl` draws a stroked `AccountIcon` now,
+ * so this disc is the heavier of the two. See the note there. `ConceptHeader`
+ * still uses the rasters, where the original reasoning applies unchanged.
  */
 function GlobeIcon({ className }: { className?: string }) {
   const maskId = useId();
@@ -468,6 +497,7 @@ function SegmentRow({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      {/* Drawer row, on the drawer's own veil — dark ground, so not `--header-ink`. */}
       <span className="text-mist-dim tracking-[0.01em]">{label.toUpperCase()}</span>
 
       <div role="group" aria-label={label} className="flex flex-wrap items-center gap-[0.4em]">

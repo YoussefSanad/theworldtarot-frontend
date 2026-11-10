@@ -1,5 +1,37 @@
 # Language is a path segment, English keeps `/`, and the switcher renders what was built and is live
 
+> **SUPERSEDED on the path segment, 9 September 2026.** The translation work
+> this ADR was written to hand a decision to went the other way: **language is a
+> stored preference on a single `/`, and Spanish has no URL of its own.** There
+> is no `[locale]` segment, no `generateStaticParams` over locales, and no
+> `/es/`. `BUILT_LOCALES` in `src/lib/locale.ts` holds English alone, and that
+> is now permanent rather than pending.
+>
+> **The three objections below are accepted, not answered**, which is the whole
+> of the reversal. `<html lang>` does read `en` over Spanish copy in the served
+> markup — `HtmlLang` corrects it after mount, so a crawler only ever sees the
+> uncorrected version. A Spanish reader cannot be linked to. The trade is
+> deliberate: **search is English-only by decision**, so the SEO half of the
+> cost is one the business does not pay. `hreflang` and the sitemap are written
+> from `BUILT_LOCALES` and so stay truthful — they emit nothing for a `/es/`
+> that does not exist.
+>
+> **Everything else in this file survives**: the backend's 404-rather-than-
+> English contract, the rule that the switcher renders the intersection of what
+> was built and what `GET /api/v1/languages` answers, and the reasoning for
+> both. `src/lib/languages.ts` implements the intersection with **one change to
+> its built half**: a language must be in `OFFERED_LOCALES`, whose copy ships in
+> the bundle, rather than in `BUILT_LOCALES`, which has a route — no language
+> but English has a route, so the old half would draw no switcher at all. The
+> rule is load bearing — `apiLocale()` follows the display language as of the
+> same date, so an offer the endpoint did not make would be a 404 a visitor can
+> click on.
+>
+> Read the rest as the case for an address, which is still the better shape and
+> is what to reopen if search ever needs to reach Spanish. **Do not build the
+> `[locale]` segment from it** without reopening the decision; the README's
+> language section and `src/lib/locale.ts` describe what actually shipped.
+
 > **Decided 1 September 2026**, refining #63. The shape is settled here and
 > **nothing in this ADR is built** — #63 ships prices, currency and the
 > `/languages` fetch, and the routing arrives with the translation ticket that

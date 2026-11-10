@@ -151,7 +151,7 @@ export function GetMyReading({
 
   return (
     /* 49px under the question field. */
-    <section className="mt-[clamp(1rem,2.55vw,3.0625rem)] flex flex-col items-center text-center">
+    <section className="mt-[clamp(calc(1rem*var(--reading-rhythm)),calc(2.55vw*var(--reading-rhythm)),calc(3.0625rem*var(--reading-rhythm)))] flex flex-col items-center text-center">
       <PanelHeading className="text-h2-md">{checkout.heading}</PanelHeading>
 
       <Price offer={offer} fallback={reading.price} />
@@ -159,7 +159,7 @@ export function GetMyReading({
       {rushDelivery.enabled ? (
         <DeliveryChoice />
       ) : (
-        <p className="mt-[clamp(0.25rem,0.36vw,0.4375rem)] text-note leading-none tracking-[0.01em] font-light text-gold">
+        <p className="mt-[clamp(calc(0.25rem*var(--reading-rhythm)),calc(0.36vw*var(--reading-rhythm)),calc(0.4375rem*var(--reading-rhythm)))] text-note leading-none tracking-[0.01em] font-light text-gold">
           {reading.delivery}
         </p>
       )}
@@ -183,7 +183,7 @@ export function GetMyReading({
       */}
       <div
         className={cn(
-          "mt-[clamp(0.5rem,1.2vw,1.4375rem)] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none",
+          "mt-[clamp(calc(0.5rem*var(--reading-rhythm)),calc(1.2vw*var(--reading-rhythm)),calc(1.4375rem*var(--reading-rhythm)))] flex w-[72.49cqw] flex-col items-center gap-[0.4em] text-nav leading-none",
           offer.status === "loading" && "invisible",
         )}
         inert={offer.status === "loading"}
@@ -332,7 +332,7 @@ function Price({
   offer: Exclude<ProductOffer, { status: "withdrawn" }>;
   fallback: string;
 }) {
-  const line = "mt-[clamp(0.125rem,0.21vw,0.25rem)] font-display text-h2-md leading-none tracking-[0.01em] text-white";
+  const line = "mt-[clamp(calc(0.125rem*var(--reading-rhythm)),calc(0.21vw*var(--reading-rhythm)),calc(0.25rem*var(--reading-rhythm)))] font-display text-h2-md leading-none tracking-[0.01em] text-white";
 
   if (offer.status === "loading") {
     return (
@@ -343,10 +343,10 @@ function Price({
   }
 
   /*
-    `formatPrice` formats against the site's locale and never the browser's, so
-    a US visitor's price is not written `75,00 $` because their laptop is set to
-    German. The currency varies by visitor; the language it is written in does
-    not. The other branch is `reading.price`, which is already a display string
+    `formatPrice` writes a price the English way in every language and never
+    the browser's way, so a US visitor's price is not written `75,00 $` because
+    their laptop is set to German. The currency varies by visitor; how it is
+    written does not. The other branch is `reading.price`, which is already a display string
     and is copy rather than money — see its docblock.
   */
   return <p className={line}>{offer.status === "live" ? formatPrice(offer.money) : fallback}</p>;
@@ -363,8 +363,8 @@ function Price({
  */
 function DeliveryChoice() {
   return (
-    <fieldset className="mt-[clamp(0.25rem,0.52vw,0.625rem)] flex flex-col items-start gap-[0.3em] text-note leading-none">
-      <legend className="sr-only">Delivery</legend>
+    <fieldset className="mt-[clamp(calc(0.25rem*var(--reading-rhythm)),calc(0.52vw*var(--reading-rhythm)),calc(0.625rem*var(--reading-rhythm)))] flex flex-col items-start gap-[0.3em] text-note leading-none">
+      <legend className="sr-only">{rushDelivery.legend}</legend>
 
       {/*
         Named rather than described. The product's own `delivery` line — "within

@@ -15,19 +15,22 @@ import { formatPrice } from "./price.ts";
  * **The price is always the API's. The words are the API's only while it is
  * answering in the language being read** — `apiServesDisplayLocale()` in
  * `lib/locale.ts` is that rule, and it is the same one the reveal applies to a
- * card's name. Today the backend is pinned to English, so an English visitor
- * sees admin-panel copy and a Spanish one sees `src/content/locales/es/`.
+ * card's name. **It answers true in every language since 9 September 2026**,
+ * when `apiLocale()` stopped being pinned to English — so a rename in the admin
+ * panel now reaches a Spanish visitor too, which is what the bundled Spanish in
+ * `src/content/locales/es/` had been standing in for.
  *
  * A price is never subject to it: a number is the same in every language, and a
  * stale one is money nobody is charging.
  *
- * So a rename in the admin panel reaches an English visitor and not a Spanish
- * one, until the backend can answer in Spanish. That is the intended shape
- * rather than a gap: the alternative is English words inside a Spanish page.
+ * The bundled words still matter. They are what a visitor sees before the first
+ * answer lands and after one that failed, and they are what the rule falls back
+ * to if the backend ever translates one endpoint ahead of another. The
+ * alternative to that fallback is English words inside a Spanish page.
  *
- * The merge below names `price` explicitly rather than spreading the
- * response, so handing `name` back to the backend later — once its own
- * translation ships — is a two-line re-add here, not an excavation.
+ * The merge below names `price` explicitly rather than spreading the response,
+ * which is what kept handing `name` back to the backend a two-line change
+ * rather than an excavation.
  */
 
 /**

@@ -13,6 +13,7 @@
  */
 
 import { ApiRateLimitError, ApiValidationError, apiWrite } from "./api-write.ts";
+import { type Customer, currentCustomer, signIn } from "./session.ts";
 
 export type PasswordSubmission = {
   /** Straight from the link. Single use, and valid for sixty minutes. */
@@ -49,6 +50,29 @@ function requestBody(submission: PasswordSubmission) {
  */
 export async function claimAccount(submission: PasswordSubmission): Promise<void> {
   await apiWrite<{ message: string }>("/api/v1/set-password", requestBody(submission));
+}
+
+/**
+ * Claims first, then signs in only if a fresh session read confirms nobody is
+ * signed in. If the read or sign in fails, the new password can still be used
+ * to sign in later.
+ */
+export async function claimAndSignIn(
+  submission: PasswordSubmission,
+): Promise<{ outcome: "signed-in"; customer: Customer } | { outcome: "sign-in-needed" }> {
+  await claimAccount(submission);
+
+  try {
+    const signal = AbortSignal.timeout(3_000);
+    if ((await currentCustomer({ signal })) !== null || signal.aborted) {
+      return { outcome: "sign-in-needed" };
+    }
+
+    const customer = await signIn({ email: submission.email, password: submission.password });
+    return { outcome: "signed-in", customer };
+  } catch {
+    return { outcome: "sign-in-needed" };
+  }
 }
 
 /** Chooses a new password for an account that already had one. */

@@ -17,3 +17,10 @@ The five canonical roles, label strings unchanged. See `docs/agents/triage-label
 ### Domain docs
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Verification
+
+- Unit tests: `npm test` (Node's built-in runner, `src/**/*.test.ts`). One file: `node --test --experimental-strip-types --import=./scripts/test-register.mjs src/path/file.test.ts`
+- Lint: `npm run lint`
+- Browser checks: `npm run build && npm run check:<name>`. Each `scripts/check-*.mjs` serves `out/` and fakes the API itself, so none needs staging or a real customer. Use these to verify layout and flow criteria that unit tests cannot see.
+- Plans live in `docs/plans/`. The API contract is owned by the backend repo (`../theworldtarot-backend/API_CONTRACT.md`); never change it from here.

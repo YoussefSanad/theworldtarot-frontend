@@ -41,18 +41,28 @@ Two things follow, and both matter when you edit here:
 while the backend is answering in the language being read.**
 
 `apiServesDisplayLocale()` in [`lib/locale.ts`](../lib/locale.ts) is that rule in
-one line — `apiLocale() === currentLocale()`. Today the backend is pinned to
-English while its own translation work is unfinished, so:
+one line — `apiLocale() === currentLocale()`. **`apiLocale()` has followed the
+display language since 9 September 2026**, so the two match in every language
+the switcher can offer:
 
 | The visitor is reading | Tile names, reading names, card names | Prices |
 |---|---|---|
 | English | the API's, editable in the admin panel | the API's |
-| Spanish | this folder's, from `locales/es/` | the API's |
+| Spanish | the API's, editable in the admin panel | the API's |
+
+That holds because the switcher is built from `GET /api/v1/languages`, which
+lists live languages only — a language the backend would 404 on is never
+offered, so the display language is always one it can answer in.
+
+This folder is still what a visitor reads **before the first answer lands, after
+one that failed, and for every word the API never supplied** — which is most of
+them. It becomes the fallback for names again if the backend ever translates one
+endpoint ahead of another; `apiLocale()` is written to grow an endpoint argument
+for exactly that.
 
 `resolveProducts` in `lib/products.ts` and `resolveReadingName` in
 `lib/reading-prices.ts` both take that flag as a parameter so they stay pure and
-a test can drive both sides. The day the backend serves Spanish, `apiLocale()`
-follows the display language, the two match, and nothing else changes.
+a test can drive both sides.
 
 **A price is never subject to it.** A number is the same in every language, and a
 stale one is money nobody is charging.
@@ -118,12 +128,42 @@ begin before the whole file lands).
 
 `primaryNav` and `footerNav` point at paths from the client's navigation
 document (`/world-tarot`, `/living-tarot`, `/readings`, `/library`, `/faq`,
-etc.). None of those routes are built — only `/` exists under `src/app` (the
+etc.). Several are now built — `/readings/` and its three written readings,
+`/world-tarot/`, `/login/` and `/library/` — and the rest are not (the
 `/concept` sunrise-hero experiment route was removed; its components remain
 under `src/components/concept` for reference — see that folder's README).
 The links are intentionally live/correct now so that adding a route later is
 just adding a page under `src/app`, not also hunting down every place that
-linked to it.
+linked to it. **A built path carries a trailing slash and an unbuilt one does
+not** — the reasoning is in `site.ts`'s own header.
+
+## `library.ts`
+
+The Library's copy and its two rosters: the twenty-two Major Arcana and the four
+suits. The names are the client's, with her outright typos fixed and her deck's
+own naming kept, and the ordering is numerical where her mockup's is not — both
+decisions are argued in the file and in
+[`src/components/library/README.md`](../components/library/README.md).
+
+Alt text is *derived* from the name (`cardAlt`) rather than written out
+twenty-two times, so it cannot drift from what the plaque prints.
+
+## `card-content.ts`
+
+Each Major Arcana card's reference-page copy. **All twenty-two have a record**
+— The Fool's transcribed from her Figma frame, the other twenty-one imported
+from her `LIBRARY CARDS CONTENT 1.xls` by `scripts/import-card-content.mjs`.
+
+**The imported copy is verbatim, which is the opposite of the rule `library.ts`
+keeps for the names above.** At the client's instruction of 2026-09-28 her
+misspellings and duplications ship as written rather than being fixed; the
+file's own header lists which, and they are raised with her instead. The Fool is
+the one exception, because his correction predates the instruction.
+
+Two invisible characters are normalized on import — U+2028, which she uses for
+paragraph breaks, and U+00B7, a second bullet glyph mixed with U+2022.
+`card-content.test.ts` pins that neither survives, along with the shape every
+record must have.
 
 ## Products (`home.ts`)
 

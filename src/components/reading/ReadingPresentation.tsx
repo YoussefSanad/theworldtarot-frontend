@@ -18,9 +18,12 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  * and nothing about what it costs.
  *
  * The three routes under `app/(site)/readings/` are this composition with
- * `ReadingOrder` in the hole, and they differ from each other in a `ReadingPage`
- * and a `<title>` — which is what the README has claimed since the second page
- * landed, and what a hundred lines copied three times had stopped being.
+ * `ReadingOrder` in the hole, through `ReadingForSale`, and they differ from
+ * each other in a product key and a `<title>` — which is what the README has
+ * claimed since the second page landed, and what a hundred lines copied three
+ * times had stopped being. **A route must not pass a `ReadingPage` here
+ * itself**: it would arrive in English whatever the visitor reads; see
+ * `ReadingForSale`.
  *
  * The second caller is `/redeem/`, which puts `RedeemPanel` in the slot — the
  * code's state and the question, in commerce's place, collecting no money. See
@@ -66,20 +69,37 @@ import { readingPageChrome, type ReadingPage } from "@/content/reading-pages";
  * Next reads it from the page module, so it is the one thing here that could
  * not have moved.
  */
-export function ReadingPresentation({ reading, commerce }: { reading: ReadingPage; commerce?: ReactNode }) {
+export function ReadingPresentation({
+  reading,
+  commerce,
+  /*
+    **Opt-in, because `/redeem/` renders this same composition.**
+
+    The class carries the desktop tightening and shrink the client asked for on
+    the three `readings/` routes (see `.reading-page` in globals.css). Those
+    routes pass it; `RedeemGift` does not, so a redeemed gift keeps the size it
+    has today. A class on this component instead of a prop would have changed a
+    page nobody asked to change, which is the whole reason this is a parameter.
+  */
+  scaled = false,
+}: {
+  reading: ReadingPage;
+  commerce?: ReactNode;
+  scaled?: boolean;
+}) {
   /*
     The backdrop and the box that scopes it, which `/redeem/` draws too — both
     of its screens. Why it is scoped here rather than to the layout column, and
     what the mobile offset is tuned to, is in `ReadingBackdrop`.
   */
   return (
-    <ReadingBackdrop>
+    <ReadingBackdrop className={scaled ? "reading-page" : undefined}>
       {/*
         Figma sets the pair 144px under a frame that draws no masthead; ours
         renders one, so this is only the air between the two. 79px of floor
         under the panels before the props.
       */}
-      <Section padding="none" className="pt-[clamp(1rem,2.6vw,3.125rem)]">
+      <Section padding="none" className="pt-[clamp(calc(1rem*var(--reading-rhythm)),calc(2.6vw*var(--reading-rhythm)),calc(3.125rem*var(--reading-rhythm)))]">
         <Container width="reading">
           {/*
             687 + 58 + 686. `items-start` because the two panels are different
@@ -87,7 +107,7 @@ export function ReadingPresentation({ reading, commerce }: { reading: ReadingPag
             longer. Below `lg` they stack in source order, which is the order
             the desktop frame reads in too.
           */}
-          <div className="grid gap-y-[clamp(2rem,4.17vw,5rem)] lg:grid-cols-2 lg:items-start lg:gap-x-[min(3.021vw,3.625rem)]">
+          <div className="grid gap-y-[clamp(calc(2rem*var(--reading-rhythm)),calc(4.17vw*var(--reading-rhythm)),calc(5rem*var(--reading-rhythm)))] lg:grid-cols-2 lg:items-start lg:gap-x-[min(3.021vw,3.625rem)]">
             {/*
               Left: the reading, and then whatever this page does with it.
               Where it sells one, the slot is `ReadingOrder` — the question

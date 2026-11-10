@@ -1,4 +1,4 @@
-import { currentLocale } from "./locale.ts";
+import { DEFAULT_LOCALE } from "./locale.ts";
 
 /**
  * Money, exactly as the API sends it: integer minor units and the currency they
@@ -16,10 +16,16 @@ export type Money = {
 /**
  * `{ currency: "USD", amount: 1200 }` becomes `"$12"`.
  *
- * **Formatted against the site's locale, never the browser's.** `Intl` defaults
- * to the browser's when passed `undefined`, which would render a US visitor's
- * price as `10,00 $` for anyone whose laptop is set to German. The currency
- * varies by visitor; the language it is written in does not.
+ * **Formatted the English way in every language, never the browser's way.**
+ * `Intl` defaults to the browser's locale when passed `undefined`, which would
+ * render a US visitor's price as `10,00 $` for anyone whose laptop is set to
+ * German. The currency varies by visitor; how it is written does not.
+ *
+ * ~~Formatted against the site's locale.~~ **English in every language from
+ * 11 September 2026**, at the client's request: a Spanish page wrote `52 US$`,
+ * which is longer than the `$52` the design is set around and wrapped the
+ * readings index's buttons. A price is a number and a mark, and there is
+ * nothing in it to translate.
  *
  * **Trailing `.00` is dropped**, because the design says `$12` and not `$12.00`.
  * A price that is not a whole unit keeps both decimals, so `1250` is `$12.50`
@@ -29,7 +35,7 @@ export type Money = {
 export function formatPrice({ currency, amount }: Money): string {
   const whole = amount % 100 === 0;
 
-  return new Intl.NumberFormat(currentLocale(), {
+  return new Intl.NumberFormat(DEFAULT_LOCALE, {
     style: "currency",
     currency,
     minimumFractionDigits: whole ? 0 : 2,

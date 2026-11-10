@@ -14,9 +14,11 @@ import { BUILT_LOCALES, DEFAULT_LOCALE, type Locale } from "./locale.ts";
  * **Locale-aware while there is one locale**, deliberately. Nothing here draws a
  * second language today: `BUILT_LOCALES` holds `en` alone, so `localePath` is an
  * identity function and `languageAlternates` answers nothing. What it buys is
- * that adding Spanish is a change to `BUILT_LOCALES` and a set of copy files,
- * rather than a rewrite of ten `<head>`s. See
- * `docs/adr/0004-language-is-a-path-segment.md`.
+ * that giving a language an address of its own is a change to `BUILT_LOCALES`,
+ * rather than a rewrite of ten `<head>`s. ~~Adding Spanish~~ was expected to be
+ * that change; on 9 September 2026 Spanish shipped as a stored preference with
+ * no address, so it is not in `BUILT_LOCALES` and must not be added there. See
+ * the superseding note on `docs/adr/0004-language-is-a-path-segment.md`.
  */
 
 /**

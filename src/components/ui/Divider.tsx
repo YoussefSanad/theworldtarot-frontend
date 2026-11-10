@@ -4,7 +4,16 @@ import { cn } from "@/lib/cn";
  * The ornamental rules Figma repeats between sections. Each variant is one
  * shared image, sized by its own aspect ratio so it never distorts.
  */
-export type DividerVariant = "ornate" | "flourish" | "flourishEnd" | "hero" | "heroWide" | "hairline" | "tile";
+export type DividerVariant =
+  | "ornate"
+  | "flourish"
+  | "flourishEnd"
+  | "hero"
+  | "heroWide"
+  | "hairline"
+  | "tile"
+  /** The card reference page's green rule; see `.divider--green` in globals.css. */
+  | "green";
 
 const VARIANT_CLASS: Record<DividerVariant, string> = {
   ornate: "divider--ornate",
@@ -14,6 +23,7 @@ const VARIANT_CLASS: Record<DividerVariant, string> = {
   heroWide: "divider--hero-wide",
   hairline: "divider--hairline",
   tile: "divider--tile",
+  green: "divider--green",
 };
 
 export function Divider({ variant = "ornate", className }: { variant?: DividerVariant; className?: string }) {

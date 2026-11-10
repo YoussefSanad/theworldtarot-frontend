@@ -13,7 +13,7 @@
     on width, so the width is what changes between the two states and the
     height is what holds.
   -->
-  <rect x="1.5" y="1.5" width="35" height="51" rx="4" stroke="#e4c46a" stroke-width="1.6"/>
-  <rect x="4.9" y="4.9" width="28.2" height="44.2" rx="2.2" stroke="#e4c46a" stroke-width=".7" stroke-opacity=".5"/>
-  <path d="M19 16c.5 7 1 10.5 8 11-7 .5-7.5 4-8 11-.5-7-1-10.5-8-11 7-.5 7.5-4 8-11Z" fill="#e4c46a"/>
+  <rect x="1.5" y="1.5" width="35" height="51" rx="4" stroke="#dfc894" stroke-width="1.6"/>
+  <rect x="4.9" y="4.9" width="28.2" height="44.2" rx="2.2" stroke="#dfc894" stroke-width=".7" stroke-opacity=".5"/>
+  <path d="M19 16c.5 7 1 10.5 8 11-7 .5-7.5 4-8 11-.5-7-1-10.5-8-11 7-.5 7.5-4 8-11Z" fill="#dfc894"/>
 </svg>

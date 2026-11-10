@@ -231,15 +231,19 @@ export function ConceptHeader() {
 
               <nav aria-label="Primary" className="flex flex-col gap-5 text-nav">
                 {/*
-                  A dropdown-capable NavGroup joined `primaryNav` for the
-                  live header's READINGS item (see `content/site.ts`); this
-                  demo predates it and has no dropdown of its own, so a group
-                  here just links its first child.
+                  A dropdown-capable NavGroup joined `primaryNav` for the live
+                  header's READINGS item (see `content/site.ts`); this demo
+                  predates it and has no dropdown of its own, so a group here
+                  flattens to its own `href` — the same overview page its label
+                  now links to in the live header. It used to reach for
+                  `children[0]` instead, which was that overview row until the
+                  row was removed as a duplicate of the label; first child is
+                  the dead 1-Card route today.
                 */}
                 {primaryNav.map((link) => (
                   <Link
                     key={link.label}
-                    href={"children" in link ? link.children[0].href : link.href}
+                    href={link.href}
                     className="text-mist-dim tracking-[0.01em] transition-colors hover:text-gold focus-visible:text-gold"
                     onClick={closeMenu}
                   >
