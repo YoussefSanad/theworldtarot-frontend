@@ -92,6 +92,11 @@ three days ("Buy Now", "Continue to Checkout", "Pay Another Way") and left the
 identifier naming copy that no longer existed. ~~"the card button", used twice
 in this file~~: corrected in the same change, for the reason the label already
 avoided the word.
+Label history: ~~"Buy Now"~~, ~~"Continue to Checkout" from 29 August 2026~~,
+~~"Pay Another Way" from 30 August 2026~~, **"Checkout" from 11 November
+2026** (#169). The last move drops the contrast "Pay Another Way" drew against
+the wallet buttons above it — the client's call, not an accident, so do not
+revert it as one.
 _Avoid_: Buy Now, Pay Another Way (labels it has worn, not what it is), card button, pay button. **Two document titles still say "card button"** — `docs/adr/0002-*` and `docs/plans/hosted-checkout.md` — and stay that way: they are dated records, each noting the rename.
 
 **Hosted page**:

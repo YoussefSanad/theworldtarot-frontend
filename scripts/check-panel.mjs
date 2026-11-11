@@ -830,7 +830,7 @@ expect("live", "two frames: checkout, gift", sold.settled.ghosts, 2);
   quotes the API — `sold.settled.price` above is — it is the assertion that it
   quotes nothing at all.
 */
-expect("live", "the checkout button is labelled, and quotes no amount", sold.settled.hosted, "Pay Another Way");
+expect("live", "the checkout button is labelled, and quotes no amount", sold.settled.hosted, "Checkout");
 expect("live", "and is offered rather than announced as unavailable", sold.settled.hostedDisabled, "false");
 /*
   The frames are no longer one width. The checkout button and the wallet row
@@ -904,7 +904,7 @@ expect("ahead", "the wallet row still stands beside the refused card road", ahea
 expect("ahead", "the order was placed and the payment asked for", ahead.paid.length, 1);
 expect("ahead", "the browser goes nowhere", ahead.landed, PAGE);
 expect("ahead", "the panel says so, and says nothing was charged", /could not start the checkout, and nothing has been charged/i.test(ahead.afterPanel), true);
-expect("ahead", "and the button is pressable again", ahead.afterwards, "Pay Another Way");
+expect("ahead", "and the button is pressable again", ahead.afterwards, "Checkout");
 /* Nothing to paint a confirmation from, because nothing was confirmed. */
 expect("ahead", "nothing was remembered", ahead.record, null);
 
@@ -1088,7 +1088,7 @@ expect("unaddressed", "the browser stays where it is", unaddressed.landed, PAGE)
   And the button is not left holding a pending state for a press it refused —
   which would read as a checkout in flight that never arrives.
 */
-expect("unaddressed", "and the button is pressable again", unaddressed.afterwards, "Pay Another Way");
+expect("unaddressed", "and the button is pressable again", unaddressed.afterwards, "Checkout");
 
 const mistyped = await drive("gifting — an address confirmed as a different address cannot be paid for", PRICED, priced, {
   gift: true,
@@ -1123,7 +1123,7 @@ expect("mistyped", "every field on the section is filled in", mistyped.walletFor
 expect("mistyped", "no order is placed", mistyped.orderCalls, []);
 expect("mistyped", "nothing is paid for", mistyped.paid, []);
 expect("mistyped", "the browser stays where it is", mistyped.landed, PAGE);
-expect("mistyped", "and the button is pressable again", mistyped.afterwards, "Pay Another Way");
+expect("mistyped", "and the button is pressable again", mistyped.afterwards, "Checkout");
 
 /*
   **A page of its own, and it has to be.** The press above leaves for Stripe,
@@ -1179,7 +1179,7 @@ expect("unreachable", "the bundled price, as copy", dead.settled.price, "$75");
   meet a hole where the checkout is. Neither of the two can take money.
 */
 expect("unreachable", "the frames stand, all of them duds", dead.settled.ghosts, 2);
-expect("unreachable", "the checkout button is the same label it is everywhere", dead.settled.hosted, "Pay Another Way");
+expect("unreachable", "the checkout button is the same label it is everywhere", dead.settled.hosted, "Checkout");
 expect("unreachable", "and says it is unavailable", dead.settled.hostedDisabled, "true");
 /*
   The assertion this state exists for. `reading.price` is the string "$75" for a

@@ -24,13 +24,14 @@ const { checkout } = readingPageChrome;
  * ## ~~`BuyNow`~~ `HostedCheckoutButton`, from 31 August 2026
  *
  * **Renamed because the old name was a label, and the label moved three times
- * in three days**: "Buy Now", then "Continue to Checkout" on 29 August, then
- * "Pay Another Way" on 30 August, all at the client's request. An identifier
- * named after copy goes stale every time the copy does — and by the end this
- * control was called one thing in the code, labelled another on the page, keyed
- * `checkout.buy` in the content, and called "the card button" in `CONTEXT.md`.
- * Four names for one control is the exact condition that file exists to
- * prevent.
+ * in three days**: ~~"Buy Now"~~, then ~~"Continue to Checkout"~~ on 29 August,
+ * then ~~"Pay Another Way"~~ on 30 August, all at the client's request — and
+ * **"Checkout" from 11 November 2026**, a fourth move this name did not have to
+ * follow. An identifier named after copy goes stale every time the copy does —
+ * and by the end this control was called one thing in the code, labelled
+ * another on the page, keyed `checkout.buy` in the content, and called "the
+ * card button" in `CONTEXT.md`. Four names for one control is the exact
+ * condition that file exists to prevent.
  *
  * **So the name is the road, not the words on it.** What this button *is* is
  * the control that starts the hosted-page road, and that has been true since 29
@@ -61,12 +62,12 @@ const { checkout } = readingPageChrome;
  * is placed in, not what the button says.
  *
  * **Both of those facts have since moved and the conclusion has not.** The
- * label is "Pay Another Way" from 30 August 2026 and the face is Gill Sans
- * rather than Cinzel, so this button has more room than the measurement above
- * describes; the two frames under it were narrowed in the same change and now
- * have less. The amount stays off the button for the reason it came off, which
- * was never the width alone: the panel says the price once, above these frames,
- * in display type.
+ * label is ~~"Pay Another Way" from 30 August 2026~~ **"Checkout" from 11
+ * November 2026** and the face is Gill Sans rather than Cinzel, so this button
+ * has more room than the measurement above describes; the two frames under it
+ * were narrowed in the same change and now have less. The amount stays off the
+ * button for the reason it came off, which was never the width alone: the panel
+ * says the price once, above these frames, in display type.
  *
  * ## It takes Money, or nothing at all
  *
