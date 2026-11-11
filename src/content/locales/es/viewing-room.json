@@ -1,68 +1,68 @@
 {
   "title": "The Living Tarot",
-  "subtitle": "CINEMATIC TAROT CARDS AS MOVING ART",
-  "carouselHint": "Click any card to experience the Living Tarot",
+  "subtitle": "CARTAS DE TAROT CINEMATOGRÁFICAS COMO ARTE EN MOVIMIENTO",
+  "carouselHint": "Pulsa cualquier carta para vivir The Living Tarot",
   "panel": {
-    "heading": "Unlock the Viewing Room",
-    "body": "Enter a private viewing room for The Living Tarot — a cinematic art collection bringing all 22 Major Arcana to life through motion, atmosphere, light, and sound.",
+    "heading": "Abre la Sala de Proyección",
+    "body": "Entra en una sala de proyección privada para The Living Tarot: una colección de arte cinematográfico que da vida a los 22 Arcanos Mayores a través del movimiento, la atmósfera, la luz y el sonido.",
     "benefits": [
       {
         "lines": [
-          "ALL 22",
-          "MAJOR ARCANA"
+          "LOS 22",
+          "ARCANOS MAYORES"
         ]
       },
       {
         "lines": [
-          "LIFETIME",
-          "ACCESS"
+          "ACCESO",
+          "DE POR VIDA"
         ]
       },
       {
         "lines": [
-          "MOTION,",
-          "LIGHT & SOUND"
+          "MOVIMIENTO,",
+          "LUZ Y SONIDO"
         ]
       }
     ],
-    "action": "ENTER THE VIEWING ROOM",
-    "priceNote": " — One-time payment",
+    "action": "ENTRAR EN LA SALA DE PROYECCIÓN",
+    "priceNote": " — Pago único",
     "signIn": {
-      "lead": "Already Have Access? ",
-      "link": "Sign in Here."
+      "lead": "¿Ya tienes acceso? ",
+      "link": "Inicia sesión aquí."
     },
     "account": {
-      "signedInAs": "Signed in as",
-      "switch": "Sign out / switch account"
+      "signedInAs": "Sesión iniciada como",
+      "switch": "Cerrar sesión / cambiar de cuenta"
     },
     "payment": {
-      "back": "Back",
-      "loading": "Checking the price…",
-      "unavailable": "The pass cannot be bought right now. Please try again shortly."
+      "back": "Volver",
+      "loading": "Consultando el precio…",
+      "unavailable": "El pase no se puede comprar ahora mismo. Vuelve a intentarlo en un momento."
     }
   },
   "player": {
-    "play": "Play this film",
-    "resume": "Resume this film",
-    "replay": "Play this film again",
-    "retry": "Try again",
-    "loading": "Starting the film…",
-    "error": "This film could not be played."
+    "play": "Reproducir esta película",
+    "resume": "Continuar esta película",
+    "replay": "Volver a reproducir esta película",
+    "retry": "Intentar de nuevo",
+    "loading": "Comenzando la película…",
+    "error": "Esta película no se ha podido reproducir."
   },
   "carousel": {
-    "knob": "Move through the deck"
+    "knob": "Recorre la baraja"
   },
   "deck": {
-    "loading": "Summoning the deck…",
-    "empty": "The deck is being prepared.",
-    "unreachable": "The deck could not be loaded.",
-    "retry": "Try again"
+    "loading": "Invocando la baraja…",
+    "empty": "La baraja se está preparando.",
+    "unreachable": "No se ha podido cargar la baraja.",
+    "retry": "Intentar de nuevo"
   },
   "closing": {
     "lines": [
-      "The cards can tell stories.",
-      "now let them tell yours."
+      "Las cartas saben contar historias.",
+      "deja que cuenten la tuya."
     ],
-    "action": "GET A READING"
+    "action": "QUIERO MI LECTURA"
   }
 }
