@@ -1,3 +1,8 @@
+import { pickCopy } from "../lib/copy.ts";
+import { currentLocale } from "../lib/locale.ts";
+import en from "./locales/en/viewing-room.json" with { type: "json" };
+import es from "./locales/es/viewing-room.json" with { type: "json" };
+
 /**
  * The Viewing Room's words (Figma `384:2`, "VIEWING ROOM 10_16").
  *
@@ -5,6 +10,9 @@
  * corrected deliberately and both are layout rather than language: she writes
  * "GET A  READING" with a double space, and her closing line carries a `~`
  * where the line breaks. Neither is a character anybody is meant to read.
+ *
+ * **The words are in `locales/*\/viewing-room.json`**, with one exception that
+ * is argued at `price` below — it is money, not copy.
  *
  * ## The deck is not here any more
  *
@@ -20,6 +28,7 @@
  * components are written against, and they import their words from here
  * already.
  */
+const copy = pickCopy(en, { es }, currentLocale());
 
 /**
  * One card as the Viewing Room needs it.
@@ -59,20 +68,16 @@ export type ViewingRoomCard = {
 };
 
 export const viewingRoom = {
-  title: "The Living Tarot",
-  subtitle: "CINEMATIC TAROT CARDS AS MOVING ART",
-  carouselHint: "Click any card to experience the Living Tarot",
+  title: copy.title,
+  subtitle: copy.subtitle,
+  carouselHint: copy.carouselHint,
 
   panel: {
-    heading: "Unlock the Viewing Room",
-    body: "Enter a private viewing room for The Living Tarot — a cinematic art collection bringing all 22 Major Arcana to life through motion, atmosphere, light, and sound.",
+    heading: copy.panel.heading,
+    body: copy.panel.body,
     /** Three captions under three icons, each broken as her frame breaks it. */
-    benefits: [
-      { lines: ["ALL 22", "MAJOR ARCANA"] },
-      { lines: ["LIFETIME", "ACCESS"] },
-      { lines: ["MOTION,", "LIGHT & SOUND"] },
-    ],
-    action: "ENTER THE VIEWING ROOM",
+    benefits: copy.panel.benefits,
+    action: copy.panel.action,
     /**
      * The price line, carried as two pieces because only the first is ours to
      * replace.
@@ -86,11 +91,17 @@ export const viewingRoom = {
      * Kept apart rather than templated into one string because the suffix is
      * the client's wording and the number is not, and a `{price}` placeholder
      * in copy she proofreads is a thing to get wrong.
+     *
+     * **`price` is deliberately not in the JSON.** It is a number in a
+     * currency, the same in every language, and `lib/pass-price.ts` formats
+     * the live one per locale already — handing a translator `"$29"` would
+     * invite a converted figure that no payment is ever taken at.
+     * `priceNote` is hers and is translated.
      */
     price: "$29",
-    priceNote: " — One-time payment",
+    priceNote: copy.panel.priceNote,
     /** Two clauses because only the second is the link. */
-    signIn: { lead: "Already Have Access? ", link: "Sign in Here." },
+    signIn: copy.panel.signIn,
 
     /**
      * The switch-account line, for a visitor signed in **without** the pass.
@@ -99,25 +110,14 @@ export const viewingRoom = {
      * address and sign in as another, and this state is where that person
      * lands; a panel that only says "buy it" sends them to a 422.
      */
-    account: { signedInAs: "Signed in as", switch: "Sign out / switch account" },
+    account: copy.panel.account,
 
     /** Screen two, which her frame does not draw. See `PaymentPanel`. */
-    payment: {
-      back: "Back",
-      loading: "Checking the price…",
-      unavailable: "The pass cannot be bought right now. Please try again shortly.",
-    },
+    payment: copy.panel.payment,
   },
 
   /** The player's own states, which carry no words in her frame. */
-  player: {
-    play: "Play this film",
-    resume: "Resume this film",
-    replay: "Play this film again",
-    retry: "Try again",
-    loading: "Starting the film…",
-    error: "This film could not be played.",
-  },
+  player: copy.player,
 
   carousel: {
     /**
@@ -125,7 +125,7 @@ export const viewingRoom = {
      * the label names the whole deck, and the control announces its own
      * position within it through `aria-valuenow`.
      */
-    knob: "Move through the deck",
+    knob: copy.carousel.knob,
   },
 
   /**
@@ -137,17 +137,12 @@ export const viewingRoom = {
    * arrives and a case where it never does. Both are words rather than a blank
    * band: a carousel that is empty for a second and a carousel that is empty
    * for good look identical, and only one of them is worth waiting through.
+   *
+   * `empty` is the backend answering with nothing on the website in this
+   * language yet — a real state, not a failure, which a freshly seeded site
+   * reaches.
    */
-  deck: {
-    loading: "Summoning the deck…",
-    /**
-     * The backend answered, and has nothing on the website in this language
-     * yet. A real state, not a failure — a freshly seeded site reaches it.
-     */
-    empty: "The deck is being prepared.",
-    unreachable: "The deck could not be loaded.",
-    retry: "Try again",
-  },
+  deck: copy.deck,
 
   closing: {
     /**
@@ -155,7 +150,7 @@ export const viewingRoom = {
      * `Phrase` breaks between parts rather than inside them, so these are the
      * parts. Same treatment as the card pages' closing line.
      */
-    lines: ["The cards can tell stories.", "now let them tell yours."],
-    action: "GET A READING",
+    lines: copy.closing.lines,
+    action: copy.closing.action,
   },
 } as const;

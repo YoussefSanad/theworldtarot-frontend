@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
+import { LibraryClosing } from "@/components/library/LibraryClosing";
 import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { MajorArcanaGrid } from "@/components/library/MajorArcanaGrid";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
-import { ClosingSaying } from "@/components/readings/ClosingSaying";
 import { library } from "@/content/library";
-import { headerActions, siteName } from "@/content/site";
+import { siteName } from "@/content/site";
 
 export const metadata: Metadata = {
   title: `Library — ${siteName}`,
@@ -19,12 +19,11 @@ export const metadata: Metadata = {
  * here on the cards, and MAJOR ARCANA in the suit navigation is the way back to
  * this page from a suit.
  *
- * The closing block is `ClosingSaying` with this page's words. It already takes
- * the 538px rule this frame draws (`heroWide`, added for World Tarot) and the
- * gold tone the index uses, so there is nothing here to define — the point of
- * that component's props. GET MY READING goes to the readings index because
- * this page sells nothing itself, which is the rule `content/site.ts` sets for
- * the whole site.
+ * The closing block is `ClosingSaying` with this page's words, through
+ * `LibraryClosing` so they are resolved in the visitor's language rather than
+ * the build's. It already takes the 538px rule this frame draws (`heroWide`,
+ * added for World Tarot) and the gold tone the index uses, so there is nothing
+ * here to define — the point of that component's props.
  */
 export default function LibraryPage() {
   return (
@@ -108,31 +107,7 @@ export default function LibraryPage() {
         </Container>
       </Section>
 
-      {/*
-        Champagne, not gold. The client read this line as off against the rest
-        of the site, and it was: the World Tarot page and a reading's own page
-        both closed in `--color-champagne` while this one and the readings index
-        closed in gold. This page moved first; the readings index followed for
-        the same note, and champagne is now `ClosingSaying`'s default rather
-        than a thing each page asks for. `tone` is still passed here to keep the
-        call explicit alongside the other three props.
-
-        `hugRule` collapses this block's centred room-space box, so GET MY
-        READING sits under the rule instead of floating in the middle of up to
-        256px of air — the same move the World Tarot page makes, and for the
-        same reason: this page owns the room below its closing line on the
-        wrapper above, so spending it twice pushed the button away from the
-        line it belongs to. The wrapper's `lg:pb-` absorbs the 94px that box
-        used to contribute; see the note up there.
-      */}
-      <ClosingSaying
-        saying={[library.closing]}
-        action={headerActions.cta}
-        width="library"
-        rule="heroWide"
-        tone="champagne"
-        hugRule
-      />
+      <LibraryClosing />
     </div>
   );
 }

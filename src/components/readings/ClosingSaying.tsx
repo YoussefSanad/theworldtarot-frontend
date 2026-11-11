@@ -1,3 +1,5 @@
+"use client";
+
 import { Container, Section, type ContainerWidth } from "@/components/layout/Section";
 import { ButtonLink } from "@/components/ui/Button";
 import { Divider, type DividerVariant } from "@/components/ui/Divider";

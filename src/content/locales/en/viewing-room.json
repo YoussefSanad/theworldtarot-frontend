@@ -1,0 +1,68 @@
+{
+  "title": "The Living Tarot",
+  "subtitle": "CINEMATIC TAROT CARDS AS MOVING ART",
+  "carouselHint": "Click any card to experience the Living Tarot",
+  "panel": {
+    "heading": "Unlock the Viewing Room",
+    "body": "Enter a private viewing room for The Living Tarot — a cinematic art collection bringing all 22 Major Arcana to life through motion, atmosphere, light, and sound.",
+    "benefits": [
+      {
+        "lines": [
+          "ALL 22",
+          "MAJOR ARCANA"
+        ]
+      },
+      {
+        "lines": [
+          "LIFETIME",
+          "ACCESS"
+        ]
+      },
+      {
+        "lines": [
+          "MOTION,",
+          "LIGHT & SOUND"
+        ]
+      }
+    ],
+    "action": "ENTER THE VIEWING ROOM",
+    "priceNote": " — One-time payment",
+    "signIn": {
+      "lead": "Already Have Access? ",
+      "link": "Sign in Here."
+    },
+    "account": {
+      "signedInAs": "Signed in as",
+      "switch": "Sign out / switch account"
+    },
+    "payment": {
+      "back": "Back",
+      "loading": "Checking the price…",
+      "unavailable": "The pass cannot be bought right now. Please try again shortly."
+    }
+  },
+  "player": {
+    "play": "Play this film",
+    "resume": "Resume this film",
+    "replay": "Play this film again",
+    "retry": "Try again",
+    "loading": "Starting the film…",
+    "error": "This film could not be played."
+  },
+  "carousel": {
+    "knob": "Move through the deck"
+  },
+  "deck": {
+    "loading": "Summoning the deck…",
+    "empty": "The deck is being prepared.",
+    "unreachable": "The deck could not be loaded.",
+    "retry": "Try again"
+  },
+  "closing": {
+    "lines": [
+      "The cards can tell stories.",
+      "now let them tell yours."
+    ],
+    "action": "GET A READING"
+  }
+}

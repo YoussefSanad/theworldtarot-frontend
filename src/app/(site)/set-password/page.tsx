@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PasswordForm } from "@/components/account/PasswordForm";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { setPasswordCopy } from "@/content/passwords";
-import { siteName } from "@/content/site";
+import { buildMetadata } from "@/lib/seo";
 
 /**
  * Where somebody claims the account that was made for them when they bought
@@ -18,12 +18,13 @@ import { siteName } from "@/content/site";
  * A separate page from the reset, not a mode of it. Nothing is being reset for
  * a person who has never had a password.
  */
-export const metadata: Metadata = {
-  title: `${setPasswordCopy.title} — ${siteName}`,
+export const metadata: Metadata = buildMetadata({
+  path: "/set-password/",
+  title: setPasswordCopy.title,
   // Reached only from a link in a mail, and it carries a single-use token in
   // the address. Nothing about it belongs in an index.
-  robots: { index: false, follow: false },
-};
+  index: false,
+});
 
 export default function SetPasswordPage() {
   /*

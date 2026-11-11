@@ -1,3 +1,5 @@
+"use client";
+
 import { TarotCardTile } from "@/components/library/TarotCardTile";
 import { majorArcana } from "@/content/library";
 

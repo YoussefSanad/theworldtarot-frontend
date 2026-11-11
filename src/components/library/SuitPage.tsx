@@ -1,3 +1,5 @@
+"use client";
+
 import { ComingSoonPage } from "@/components/library/ComingSoonPage";
 import { SuitReferencePage } from "@/components/library/suit/SuitReferencePage";
 import { comingSoon, findSuit } from "@/content/library";

@@ -40,6 +40,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template, which is the whole point of having one. `.env*` had
+# been silently swallowing `.env.example` — which is why the file
+# `docs/adr/0001-one-registrable-domain.md` refers to does not exist, and why the
+# platform URL that ADR forbids found its way back into `.env.local` after #32
+# had already corrected it once. A template nobody can commit prevents nothing.
+!.env.example
 
 # vercel
 .vercel

@@ -150,10 +150,8 @@ export function useProduct(key: string): ProductOffer {
   useEffect(() => {
     const controller = new AbortController();
 
-    // Asked for explicitly rather than left to the default, for the reason
-    // `useProducts` gives: `formatPrice` formats against `currentLocale()`, and
-    // a second language added there but not here would price Spanish copy off
-    // an English response.
+    // Asked for explicitly rather than left to the default, so the product
+    // answers in the language the page around it is written in.
     //
     // The currency is sent only when the visitor has chosen one. A cold request
     // carries none and is answered by the backend's detection — see

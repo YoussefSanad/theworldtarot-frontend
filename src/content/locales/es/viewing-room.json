@@ -1,0 +1,68 @@
+{
+  "title": "The Living Tarot",
+  "subtitle": "CARTAS DE TAROT CINEMATOGRÁFICAS COMO ARTE EN MOVIMIENTO",
+  "carouselHint": "Pulsa cualquier carta para vivir The Living Tarot",
+  "panel": {
+    "heading": "Abre la Sala de Proyección",
+    "body": "Entra en una sala de proyección privada para The Living Tarot: una colección de arte cinematográfico que da vida a los 22 Arcanos Mayores a través del movimiento, la atmósfera, la luz y el sonido.",
+    "benefits": [
+      {
+        "lines": [
+          "LOS 22",
+          "ARCANOS MAYORES"
+        ]
+      },
+      {
+        "lines": [
+          "ACCESO",
+          "DE POR VIDA"
+        ]
+      },
+      {
+        "lines": [
+          "MOVIMIENTO,",
+          "LUZ Y SONIDO"
+        ]
+      }
+    ],
+    "action": "ENTRAR EN LA SALA DE PROYECCIÓN",
+    "priceNote": " — Pago único",
+    "signIn": {
+      "lead": "¿Ya tienes acceso? ",
+      "link": "Inicia sesión aquí."
+    },
+    "account": {
+      "signedInAs": "Sesión iniciada como",
+      "switch": "Cerrar sesión / cambiar de cuenta"
+    },
+    "payment": {
+      "back": "Volver",
+      "loading": "Consultando el precio…",
+      "unavailable": "El pase no se puede comprar ahora mismo. Vuelve a intentarlo en un momento."
+    }
+  },
+  "player": {
+    "play": "Reproducir esta película",
+    "resume": "Continuar esta película",
+    "replay": "Volver a reproducir esta película",
+    "retry": "Intentar de nuevo",
+    "loading": "Comenzando la película…",
+    "error": "Esta película no se ha podido reproducir."
+  },
+  "carousel": {
+    "knob": "Recorre la baraja"
+  },
+  "deck": {
+    "loading": "Invocando la baraja…",
+    "empty": "La baraja se está preparando.",
+    "unreachable": "No se ha podido cargar la baraja.",
+    "retry": "Intentar de nuevo"
+  },
+  "closing": {
+    "lines": [
+      "Las cartas saben contar historias.",
+      "deja que cuenten la tuya."
+    ],
+    "action": "QUIERO MI LECTURA"
+  }
+}

@@ -292,10 +292,11 @@ const NavDropdownLink = forwardRef<
 });
 
 /**
- * The text inside one `NavGroupLink` — live off `/products` when the row names
- * a `productKey`, the bundled label otherwise. Its own component so the drawer
- * in `SiteHeader.tsx` can put the same answer inside its own flat row, rather
- * than the desktop panel and the mobile drawer asking twice.
+ * The text inside one `NavGroupLink` — live off `/products` when the row names a
+ * `productKey` and the backend is answering in the language being read, the
+ * bundled label otherwise. Its own component so the drawer in `SiteHeader.tsx`
+ * can put the same answer inside its own flat row, rather than the desktop
+ * panel and the mobile drawer asking twice.
  */
 export function NavGroupLinkLabel({ link }: { link: NavGroupLink }) {
   return useReadingName(link.productKey ?? "", link.label);

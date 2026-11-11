@@ -1,0 +1,56 @@
+{
+  "pageTitle": "Your payment",
+  "outcomes": {
+    "received": {
+      "heading": "Your reading is on its way",
+      "body": "Thank you. Your {reading} has been received and will be delivered within 24 hours. A confirmation email is on its way.",
+      "amountLabel": "Payment received:"
+    },
+    "pending": {
+      "heading": "Your payment is going through",
+      "body": "Your bank has it and has not finished with it yet, which some payment methods do. Nothing more is needed from you. We will email you as soon as it clears.",
+      "amountLabel": "Being paid"
+    },
+    "unpaid": {
+      "heading": "No payment was taken",
+      "body": "Nothing has been charged. Your order is still waiting, so you can go back to the reading and try again: a different card, or the same one a moment later.",
+      "amountLabel": "Still to pay"
+    },
+    "unfinished": {
+      "heading": "Your payment is not finished",
+      "body": "It has not been completed and nothing has been charged yet. If you were in the middle of confirming with your bank, go back to the reading and start the payment again.",
+      "amountLabel": "To pay"
+    }
+  },
+  "giftReceived": {
+    "heading": "Your gift is on its way",
+    "body": "Thank you. We have sent your gift to {recipient}, with a code to redeem it whenever they are ready. Your own confirmation email is on its way.",
+    "amountLabel": "Payment received:"
+  },
+  "passReceived": {
+    "heading": "Your Viewing Room pass is ready",
+    "body": "Thank you. You now have lifetime access to The Living Tarot, all 22 Major Arcana in motion, light and sound.",
+    "amountLabel": "Payment received:",
+    "stepsLead": "What happens next",
+    "steps": [
+      "We have emailed you a link to choose a password and claim your account.",
+      "Sign in with it and the Viewing Room opens, on this device and any other."
+    ],
+    "enterLabel": "ENTER THE VIEWING ROOM"
+  },
+  "receivedSteps": {
+    "lead": "What happens next",
+    "steps": [
+      "Your reading is written by hand and sent to the email address you paid with.",
+      "If it has not arrived within 24 hours, check your spam folder before getting in touch."
+    ]
+  },
+  "checkingHeading": "Checking your payment",
+  "unknownHeading": "We cannot show you this payment",
+  "unknownBody": "There is nothing here for us to look up. This page shows a payment made in this tab, and that is not what brought you here. If you have just paid, your receipt will arrive by email and is the record that counts. If you were part-way through, go back to the reading and start again.",
+  "errorHeading": "We could not check your payment",
+  "errorBody": "Something went wrong looking it up, which says nothing about whether you were charged. Your receipt will arrive by email if the payment went through. Reloading this page is safe.",
+  "unnamedReading": "reading",
+  "unnamedRecipient": "the address you gave",
+  "backLabel": "BACK TO READINGS"
+}

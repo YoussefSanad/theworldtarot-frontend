@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { RedeemGift } from "@/components/redeem/RedeemGift";
 import { redeemCopy } from "@/content/redeem";
-import { siteName } from "@/content/site";
+import { buildMetadata } from "@/lib/seo";
 
 /**
  * `/redeem/` — one page for every reading, and the only place a **gift code**
@@ -23,11 +23,12 @@ import { siteName } from "@/content/site";
  * the export itself and went at #79 the day this route landed. A search result
  * landing on "enter your gift code" is a page that works.
  */
-export const metadata: Metadata = {
-  title: `${redeemCopy.pageTitle} — ${siteName}`,
+export const metadata: Metadata = buildMetadata({
+  path: "/redeem/",
+  title: redeemCopy.pageTitle,
   description:
     "Enter the code from your email to open the reading you have been given, and ask your question.",
-};
+});
 
 export default function RedeemPage() {
   /*

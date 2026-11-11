@@ -1,0 +1,53 @@
+{
+  "intro": {
+    "heading": "Lecturas",
+    "tagline": ["entra en el salón.", "deja atrás lo ordinario."],
+    "body": [
+      "Empieza con nuestra experiencia insignia, donde las cartas cobran vida y responden a tu pregunta al instante. O elige una de nuestras",
+      "lecturas escritas tradicionales para explorar tu camino a fondo."
+    ]
+  },
+  "signature": {
+    "eyebrow": ["The World Tarot", "Experiencia Insignia"],
+    "title": "Lectura de 1 Carta",
+    "body": ["Haz tu pregunta.", "Descubre tu carta.", "Mírala cobrar vida."],
+    "imageAlt": "Una carta de tarot boca abajo sobre una mesa de madera junto a una vela encendida"
+  },
+  "traditional": {
+    "heading": "Lecturas de Tarot Tradicionales",
+    "body": "Lecturas escritas con cuidado y entregadas tras una interpretación atenta de tus cartas."
+  },
+  "readings": [
+    {
+      "title": "Lectura de 3 Cartas",
+      "titleTail": "",
+      "subtitle": "pasado • presente • futuro",
+      "body": ["Explora la historia profunda", "que hay tras tu pregunta", "con la sabiduría de las cartas."],
+      "imageAlt": "Tres cartas de tarot boca abajo en fila sobre una mesa de madera"
+    },
+    {
+      "title": "Lectura del Mes",
+      "titleTail": " que Viene",
+      "subtitle": "descubre qué te espera",
+      "body": ["Prepárate para el mes", "que viene con una mirada", "a lo que está por llegar."],
+      "imageAlt": "Una tirada de cinco cartas junto a un reloj de bolsillo y unas monedas"
+    },
+    {
+      "title": "Lectura a Fondo",
+      "titleTail": "",
+      "subtitle": "el panorama completo",
+      "body": ["Descubre el panorama completo", "con la Cruz Celta."],
+      "imageAlt": "Una tirada de la Cruz Celta extendida sobre una mesa de madera"
+    }
+  ],
+  "readingAction": "EMPIEZA TU LECTURA",
+  "gift": {
+    "title": "Regala una Lectura",
+    "subtitle": ["un regalo", "de luz"],
+    "body": ["Regala una lectura con sentido,", "acompañada de tu mensaje personal."],
+    "imageAlt": "Una caja de regalo dorada atada con un lazo"
+  },
+  "closing": {
+    "saying": ["El futuro susurra mucho antes", "de llegar"]
+  }
+}

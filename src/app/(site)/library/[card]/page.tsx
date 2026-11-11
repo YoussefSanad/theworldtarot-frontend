@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { CardReferencePage } from "@/components/library/card/CardReferencePage";
-import { ComingSoonPage } from "@/components/library/ComingSoonPage";
-import { cardAlt, cardMeta, cardPath, comingSoon, findMajorArcanaByPath, majorArcana } from "@/content/library";
+import { CardPage } from "@/components/library/CardPage";
+import { cardMeta, cardPath, findMajorArcanaByPath, majorArcana } from "@/content/library";
 import { siteName } from "@/content/site";
 
 /**
@@ -46,17 +45,5 @@ export default async function MajorArcanaCardPage({ params }: { params: Promise<
     notFound();
   }
 
-  if (!card.content) {
-    return (
-      <ComingSoonPage
-        heading={card.name}
-        eyebrow={card.numeral}
-        message={comingSoon.card}
-        image={card.image}
-        imageAlt={cardAlt(card)}
-      />
-    );
-  }
-
-  return <CardReferencePage card={card} content={card.content} />;
+  return <CardPage slug={card.slug} />;
 }

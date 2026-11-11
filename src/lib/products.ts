@@ -6,15 +6,31 @@ import type { Product } from "@/content/home";
 
 import type { ApiProduct } from "./api.ts";
 import { useCatalogue } from "./catalogue.ts";
+import { apiServesDisplayLocale } from "./locale.ts";
 import { formatPrice } from "./price.ts";
 
 /**
- * The Choose Your Journey tiles, with live copy and live prices merged over the
- * bundled ones.
+ * The Choose Your Journey tiles, priced live over the bundled ones.
  *
- * See `docs/plans/products-api-wiring.md`. The short version: the API owns what
- * a tile says, the bundle owns which tiles exist, and they are joined on the
- * product key.
+ * **The price is always the API's. The words are the API's only while it is
+ * answering in the language being read** — `apiServesDisplayLocale()` in
+ * `lib/locale.ts` is that rule, and it is the same one the reveal applies to a
+ * card's name. **It answers true in every language since 9 September 2026**,
+ * when `apiLocale()` stopped being pinned to English — so a rename in the admin
+ * panel now reaches a Spanish visitor too, which is what the bundled Spanish in
+ * `src/content/locales/es/` had been standing in for.
+ *
+ * A price is never subject to it: a number is the same in every language, and a
+ * stale one is money nobody is charging.
+ *
+ * The bundled words still matter. They are what a visitor sees before the first
+ * answer lands and after one that failed, and they are what the rule falls back
+ * to if the backend ever translates one endpoint ahead of another. The
+ * alternative to that fallback is English words inside a Spanish page.
+ *
+ * The merge below names `price` explicitly rather than spreading the response,
+ * which is what kept handing `name` back to the backend a two-line change
+ * rather than an excavation.
  */
 
 /**
@@ -56,7 +72,16 @@ const HIDE_WITHDRAWN = true;
  * leave the section as a heading over blank space, which is exactly the
  * "homepage looks broken" outcome the bundled copy exists to prevent.
  */
-export function resolveProducts(live: ApiProduct[] | null, bundled: Product[]): Product[] {
+export function resolveProducts(
+  live: ApiProduct[] | null,
+  bundled: Product[],
+  /**
+   * Whether to take the tile's words from the response as well as its price.
+   * Defaults to the one rule — see `apiServesDisplayLocale` in `lib/locale.ts`.
+   * A parameter so this stays pure and a test can drive both sides of it.
+   */
+  useApiCopy: boolean = apiServesDisplayLocale(),
+): Product[] {
   if (!live || live.length === 0) return bundled;
 
   const byKey = new Map(live.map((product) => [product.key, product]));
@@ -83,11 +108,15 @@ export function resolveProducts(live: ApiProduct[] | null, bundled: Product[]): 
     return [
       {
         ...tile,
-        title: match.name,
-        // Empty copy should be impossible — the backend's completeness gate
-        // keeps a product with no description out of the response entirely —
-        // so this is a belt-and-braces guard, not an expected path.
-        subtitle: match.short_description.trim() || tile.subtitle,
+        ...(useApiCopy
+          ? {
+              title: match.name,
+              // Empty copy should be impossible — the backend's completeness
+              // gate keeps a product with no description out of the response
+              // entirely — so this is belt and braces, not an expected path.
+              subtitle: match.short_description.trim() || tile.subtitle,
+            }
+          : {}),
         price: formatPrice(match.price),
       },
     ];

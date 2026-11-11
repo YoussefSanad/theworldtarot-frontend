@@ -1,0 +1,120 @@
+{
+  "chrome": {
+    "heroAlt": "Cartas de tarot esparcidas alrededor de una iluminada por dentro con fuego dorado",
+    "question": {
+      "heading": "Haz una Pregunta",
+      "body": ["Empieza tu lectura escribiendo", "una pregunta, si quieres."],
+      "label": "Tu pregunta",
+      "placeholder": "Escribe tu pregunta…"
+    },
+    "gift": {
+      "heading": "Datos de Quien lo Recibe",
+      "body": ["¿Quién debe recibir tu regalo?", "Añade abajo su dirección de correo y un mensaje personal."],
+      "enter": "Regalar una Lectura",
+      "leave": "Una Lectura para Mí",
+      "signature": { "label": "De parte de quién", "placeholder": "De parte de quién…" },
+      "email": { "label": "Correo de quien lo recibe", "placeholder": "Correo de quien lo recibe…" },
+      "confirmation": {
+        "label": "Confirma el correo de quien lo recibe",
+        "placeholder": "Confirma el correo de quien lo recibe…",
+        "mismatch": "Estas dos direcciones de correo no coinciden."
+      },
+      "message": { "label": "Mensaje personal (opcional)", "placeholder": "Escribe un mensaje personal…" },
+      "note": "Elegirá su propia pregunta cuando le llegue la lectura."
+    },
+    "checkout": {
+      "heading": "Quiero Mi Lectura",
+      "card": "Pagar con Tarjeta",
+      "buy": "Pagar de Otra Forma",
+      "buying": "Llevándote al pago…",
+      "giftingComing": "Los regalos aún se están preparando, así que acordaremos la entrega contigo por correo en cuanto hayas pagado.",
+      "buyFailed": "No hemos podido iniciar el pago, y no se ha cobrado nada. Inténtalo de nuevo.",
+      "walletFailed": "No hemos podido cobrar este pago. No se ha hecho ningún cargo.",
+      "walletUnresolved": "No hemos podido completar este pago. Si se te ha cobrado, tu recibo llegará por correo.",
+      "walletNeedsGiftDetails": "Revisa los datos del regalo antes de pagar. No se ha hecho ningún cargo.",
+      "pricePending": "Consultando el precio",
+      "secure": "Pago seguro con Stripe",
+      "walletLabel": "Pagar {price} con un monedero digital guardado"
+    },
+    "included": { "heading": "Tu Lectura" },
+    "gate": {
+      "heading": "Más Allá de la Puerta",
+      "subtitle": "Tu Viaje Empieza Aquí",
+      "imageAlt": "Un arco de piedra iluminado por un farol en un sendero de bosque cubierto de musgo"
+    },
+    "features": [
+      { "title": "Guiado por las Cartas", "body": ["Cada lectura se despliega a través", "de los propios arquetipos"] },
+      { "title": "Compuesto con Intención", "body": ["Ilustración original unida a una", "interpretación meditada"] },
+      { "title": "Claridad en Movimiento", "body": ["Una mirada que ilumina tu", "próximo capítulo"] }
+    ],
+    "closingAction": "QUIERO MI LECTURA"
+  },
+  "rushDelivery": {
+    "label": "Urgente en 24 Horas",
+    "surcharge": "+$25",
+    "standard": "Entrega Estándar",
+    "legend": "Entrega"
+  },
+  "pages": {
+    "three-card": {
+      "title": "Lectura de 3 Cartas",
+      "tagline": ["Una Pregunta. Tres Cartas.", "Tu Camino Iluminado."],
+      "delivery": "Tiempo de entrega: en menos de 24 horas",
+      "included": [
+        ["Una Lectura de Tres Cartas", "centrada en tu camino por delante"],
+        ["Prepárate para las semanas que vienen", "con claridad"],
+        ["Interpretación escrita con cuidado"],
+        ["Presentada sobre la ilustración", "World Tarot", "original"],
+        ["Entregada por correo en menos de 24 horas"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“El pasado fue asombrosamente exacto. El presente me dio claridad.",
+          "Ahora veo el futuro desplegarse con otros ojos.”"
+        ],
+        "attribution": ["NIKKI M.", "BURLINGTON, VT"]
+      },
+      "closing": ["Cada pregunta tiene una historia", "esperando a ser contada"]
+    },
+    "month-ahead": {
+      "title": "Lectura del Mes que Viene",
+      "tagline": ["Un Mes. Cinco Cartas.", "un camino claro por delante."],
+      "delivery": "Tiempo de entrega: en menos de 24 horas",
+      "included": [
+        ["Una Lectura del Mes que Viene", "centrada en tu camino por delante"],
+        ["Prepárate para las semanas que vienen", "con claridad"],
+        ["Interpretación escrita con cuidado"],
+        ["Presentada sobre la ilustración", "World Tarot", "original"],
+        ["Entregada por correo en menos de 24 horas"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“Me dio una idea mucho más clara de qué esperar del mes que venía.",
+          "Al terminar el mes, me asombró cuánto había resonado.”"
+        ],
+        "attribution": ["RILEY S", "PORTLAND, ME"]
+      },
+      "closing": ["Lo que se está desplegando", "ya ha empezado"]
+    },
+    "in-depth": {
+      "title": "Lectura a Fondo",
+      "tagline": ["Una Pregunta. Doce Cartas.", "Una Historia Más Honda al Descubierto."],
+      "delivery": "Tiempo de entrega: en menos de 48 horas",
+      "included": [
+        ["Una lectura de doce cartas que explora", "tu pregunta en profundidad"],
+        ["Una mirada a los patrones y temas hondos", "que dan forma a tu historia"],
+        ["Orientación clara que aporta perspectiva", "a situaciones complejas"],
+        ["Presentada sobre la ilustración", "World Tarot", "original"],
+        ["Entregada por correo en menos de 48 horas"]
+      ],
+      "testimonial": {
+        "quote": [
+          "“Llegó mucho más hondo de lo que esperaba.",
+          "Conectó cosas que yo no había visto y me dio una claridad real sobre cómo llegué hasta aquí y hacia dónde ir.”"
+        ],
+        "attribution": ["RACHEL T.", "SEDONA, AZ"]
+      },
+      "closing": ["Cuanto más hondo el viaje,", "más rica la historia"]
+    }
+  }
+}

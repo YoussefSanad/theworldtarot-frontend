@@ -11,7 +11,7 @@ import { AccountDrawerLine, AccountDrawerSection } from "@/components/account/Ac
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
 import { ButtonLink } from "@/components/ui/Button";
-import { headerActions, primaryNav, siteName } from "@/content/site";
+import { chrome, headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
 import { cn } from "@/lib/cn";
 import { lockScroll } from "@/lib/scroll-lock";
@@ -185,7 +185,7 @@ export function SiteHeader() {
     */
     <header className="relative z-50">
       <div className="relative mx-auto flex w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-gutter gap-y-4 px-gutter py-5">
-        <Link href="/" aria-label={`${siteName} home`} className="shrink-0">
+        <Link href="/" aria-label={chrome.homeLink} className="shrink-0">
           <Image
             src={brand.logo.src}
             alt={siteName}
@@ -202,7 +202,7 @@ export function SiteHeader() {
           onClick={toggleMenu}
           aria-expanded={menuOpen}
           aria-controls={panelId}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? chrome.closeMenu : chrome.openMenu}
           className="btn btn-ghost z-60 grid h-[2.75em] w-[2.75em] place-items-center p-0 text-note desktop-nav:hidden"
         >
           {/*
@@ -255,7 +255,7 @@ export function SiteHeader() {
             <LocaleMenu selection={localeSelection} />
           </div>
 
-          <nav aria-label="Primary" className="flex flex-row items-center gap-[1.33em] text-nav-sm">
+          <nav aria-label={chrome.primaryNavLabel} className="flex flex-row items-center gap-[1.33em] text-nav-sm">
             {primaryNav.map((item) =>
               "children" in item ? (
                 <NavDropdown key={item.label} group={item} />
@@ -278,7 +278,7 @@ export function SiteHeader() {
           <motion.button
             key="backdrop"
             type="button"
-            aria-label="Close menu"
+            aria-label={chrome.closeMenu}
             className="fixed inset-0 z-50 touch-none bg-night/55 desktop-nav:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -339,7 +339,7 @@ export function SiteHeader() {
               <Link
                 href="/"
                 id={labelId}
-                aria-label={`${siteName} home`}
+                aria-label={chrome.homeLink}
                 className="w-fit shrink-0"
                 onClick={closeMenu}
               >
@@ -412,7 +412,7 @@ export function SiteHeader() {
                 spacing. Visually this lands close to where it was; what
                 changed is that the space between labels is now tappable.
               */}
-              <nav aria-label="Primary" className="flex flex-col gap-1 text-nav-sm">
+              <nav aria-label={chrome.primaryNavLabel} className="flex flex-col gap-1 text-nav-sm">
                 {primaryNav.map((item) =>
                   "children" in item ? (
                     <div key={item.label} className="flex flex-col gap-1">

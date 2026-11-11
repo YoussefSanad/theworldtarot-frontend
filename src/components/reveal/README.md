@@ -102,7 +102,14 @@ clicks.
 
 `RevealProvider` draws it from the backend on mount, through `drawCard()` in
 [`@/lib/api`](../../lib/api.ts). `GET /api/v1/{locale}/cards/draw` returns a
-random card **and a signed film**. A restored visit calls `GET /cards/{id}`
+random card **and a signed film**.
+
+**`{locale}` is `apiLocale()` — English — and not the language being read.** So
+a card's `name` arrives in English however the site is set, and the rule in
+[`src/lib/locale.ts`](../../lib/locale.ts) decides whether it is the one shown:
+the API's word only while the API is answering in the visitor's language,
+otherwise `livingTarot` in `content/cards.ts`. Only The Star has a local name
+today, so a card drawn outside that set keeps the backend's. A restored visit calls `GET /cards/{id}`
 instead, which returns the card and no film, because a restored visit shows the
 still and has nothing to play.
 

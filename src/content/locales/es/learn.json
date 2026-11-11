@@ -1,0 +1,80 @@
+{
+  "hero": {
+    "title": "Aprende Tarot",
+    "eyebrow": [
+      "UNA COMPRENSIÓN MÁS PROFUNDA",
+      "DE LAS CARTAS"
+    ],
+    "lead": "Tarot, carta a carta.",
+    "body": [
+      "Cursos breves en vídeo, cinematográficos, pensados para que el tarot resulte fácil de entender, agradable de aprender y más sencillo de recordar.",
+      "A través de la imagen, la narración y el sonido, cada curso da vida a una sola carta: su historia, su simbolismo y su significado dentro de una lectura."
+    ],
+    "action": "APÚNTATE A LA LISTA",
+    "note": "Sé la primera persona en saber cuándo se publican los cursos.",
+    "imageAlt": "Un portátil sobre un escritorio iluminado por velas, reproduciendo una película de una figura encapuchada y un perro en una cresta a la luz de la luna."
+  },
+  "stepInside": {
+    "eyebrow": "ENTRA EN CADA CARTA.",
+    "heading": "Descubre. Explora. Comprende.",
+    "body": [
+      "Cada curso te lleva dentro de la carta y revela su historia, sus símbolos y su significado más profundo. Aprende cómo ha evolucionado a lo largo de la historia y cómo su sentido puede cambiar dentro de una lectura.",
+      "Las lecciones se dividen en capítulos breves y fáciles de seguir, para que aprendas a tu propio ritmo y construyas tu comprensión con naturalidad, carta a carta."
+    ]
+  },
+  "postcards": {
+    "sun": {
+      "alt": "El Sol: un sol dorado con rostro humano, resplandeciendo sobre las nubes."
+    },
+    "chariot": {
+      "alt": "El Carro: un auriga guiando dos caballos blancos por campo abierto."
+    },
+    "star": {
+      "alt": "La Estrella: una mujer vertiendo agua en un estanque bajo una estrella brillante."
+    }
+  },
+  "seventyEight": {
+    "heading": "78 CARTAS. UNA HISTORIA CADA VEZ.",
+    "intro": "Tanto si descubres el tarot por primera vez como si profundizas en lo que ya conoces, estos cursos están pensados para que las cartas resulten más claras, más memorables y más intuitivas de leer.",
+    "marks": {
+      "film": {
+        "title": "VÍDEOS CINEMATOGRÁFICOS",
+        "body": "Lecciones bellamente ilustradas que dan vida a cada carta."
+      },
+      "book": {
+        "title": "FÁCIL DE SEGUIR",
+        "body": "Capítulos breves y concretos que puedes disfrutar a tu propio ritmo."
+      },
+      "star": {
+        "title": "UN SENTIDO MÁS RICO",
+        "body": "Explora el simbolismo, la historia y la interpretación."
+      },
+      "cards": {
+        "title": "DESTREZA REAL",
+        "body": "Gana confianza e intuición en tus propias lecturas."
+      }
+    }
+  },
+  "tarotMap": {
+    "heading": "UN MAPA DEL TAROT",
+    "intro": "A medida que explores las cartas, empezarás a ver cómo se conectan entre sí — y cómo funciona la baraja en su conjunto.",
+    "groups": {
+      "major": {
+        "title": "ARCANOS MAYORES",
+        "body": "Las fuerzas mayores, los arquetipos y los puntos de inflexión que dan forma al viaje humano."
+      },
+      "court": {
+        "title": "CARTAS DE LA CORTE",
+        "body": "Figuras que pueden representar personas, papeles, personalidades o formas de ser."
+      },
+      "minor": {
+        "title": "ARCANOS MENORES",
+        "body": "Las experiencias, las decisiones, los desafíos y las circunstancias de la vida cotidiana."
+      }
+    }
+  },
+  "meta": {
+    "title": "Aprende Tarot",
+    "description": "Cursos breves en vídeo, cinematográficos, que dan vida a una sola carta de tarot: su historia, su simbolismo y su significado dentro de una lectura."
+  }
+}

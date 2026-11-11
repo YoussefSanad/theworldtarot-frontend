@@ -1,3 +1,5 @@
+"use client";
+
 import { CountedField } from "@/components/reading/CountedField";
 import { FieldBox } from "@/components/reading/FieldBox";
 import { PanelHeading } from "@/components/reading/PanelHeading";

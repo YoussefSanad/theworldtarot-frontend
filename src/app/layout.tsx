@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Cinzel } from "next/font/google";
 import localFont from "next/font/local";
 
-import { siteName } from "@/content/site";
+import { buildMetadata, siteUrl } from "@/lib/seo";
+import { currentLocale } from "@/lib/locale";
 
 import "./globals.css";
 
@@ -43,15 +44,19 @@ const gillSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: `${siteName} — Enter The Living Tarot`,
-  description:
-    "A cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
+  metadataBase: new URL(siteUrl()),
+  ...buildMetadata({
+    path: "/",
+    title: "Enter The Living Tarot",
+    description:
+      "A cinematic interpretation of the Major Arcana. Reveal a card and experience The Living Tarot one story at a time.",
+  }),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang={currentLocale()}
       className={`overflow-x-hidden ${magically.variable} ${cinzel.variable} ${gillSans.variable}`}
     >
       <body className="relative flex min-h-screen flex-col overflow-x-hidden bg-night">{children}</body>
