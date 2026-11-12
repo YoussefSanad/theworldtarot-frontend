@@ -12,8 +12,8 @@
  * dead and this module never sends one.
  */
 
-import { ApiRateLimitError, ApiValidationError, apiWrite } from "./api-write.ts";
-import { type Customer, currentCustomer, signIn } from "./session.ts";
+import { ApiRateLimitError, ApiValidationError, apiWriteSettled } from "./api-write.ts";
+import { type Customer, currentCustomer, signedInCustomerIn, signIn } from "./session.ts";
 
 export type PasswordSubmission = {
   /** Straight from the link. Single use, and valid for sixty minutes. */
@@ -34,11 +34,18 @@ function requestBody(submission: PasswordSubmission) {
 }
 
 /**
- * Claims the account made for somebody when they bought something.
+ * Claims the account made for somebody when they bought something, and answers
+ * the customer the backend signed in.
  *
- * Nothing is returned. The backend sends a message on success and it is not
- * rendered: the words a person reads here belong to the page, which knows
- * whether it just set a first password or replaced an old one.
+ * ~~Nothing is returned. The backend sends a message on success and it is not
+ * rendered~~ **Changed 12 November 2026, #177:** since
+ * `YoussefSanad/TheWorldTarot#124` a successful claim signs the customer in on
+ * the backend and answers login's customer body, so this returns that
+ * customer. **`null` means a backend from before #124** (or a request that could
+ * not hold a session): the password is set and nobody was signed in. The
+ * backend's `message` is still not rendered: the words a person reads here
+ * belong to the page, which knows whether it just set a first password or
+ * replaced an old one.
  *
  * **Named for the act rather than for the endpoint it posts to**, unlike its
  * neighbour below. `setPassword` was the obvious name and it collided with the
@@ -48,19 +55,29 @@ function requestBody(submission: PasswordSubmission) {
  * already use for this act: `ClaimAccount` in the backend, "claim link" in
  * `CONTEXT.md`, and the `claim` arm of `PasswordFlow`.
  */
-export async function claimAccount(submission: PasswordSubmission): Promise<void> {
-  await apiWrite<{ message: string }>("/api/v1/set-password", requestBody(submission));
+export async function claimAccount(submission: PasswordSubmission): Promise<Customer | null> {
+  return signedInCustomerIn(await apiWriteSettled("/api/v1/set-password", requestBody(submission)));
 }
 
+/** Where a password write left the person: signed in, or still to sign in by hand. */
+export type PasswordOutcome =
+  | { outcome: "signed-in"; customer: Customer }
+  | { outcome: "sign-in-needed" };
+
 /**
- * Claims first, then signs in only if a fresh session read confirms nobody is
- * signed in. If the read or sign in fails, the new password can still be used
- * to sign in later.
+ * Claims, and makes sure the claim ends signed in where that is safe.
+ *
+ * **Since #177 the claim itself signs in**, and its answer is returned as it
+ * is: no `/me`, no second request. Everything after that line is the #150 path,
+ * kept for a backend from before `YoussefSanad/TheWorldTarot#124`, so this
+ * website and that backend can be deployed in either order. On that path it
+ * signs in with the password just chosen only if a fresh session read confirms
+ * nobody is signed in. If the read or sign in fails, the new password can still
+ * be used to sign in later. Delete the fallback once #124 is in production.
  */
-export async function claimAndSignIn(
-  submission: PasswordSubmission,
-): Promise<{ outcome: "signed-in"; customer: Customer } | { outcome: "sign-in-needed" }> {
-  await claimAccount(submission);
+export async function claimAndSignIn(submission: PasswordSubmission): Promise<PasswordOutcome> {
+  const signedInByClaim = await claimAccount(submission);
+  if (signedInByClaim !== null) return { outcome: "signed-in", customer: signedInByClaim };
 
   try {
     const signal = AbortSignal.timeout(3_000);
@@ -75,9 +92,17 @@ export async function claimAndSignIn(
   }
 }
 
-/** Chooses a new password for an account that already had one. */
-export async function resetPassword(submission: PasswordSubmission): Promise<void> {
-  await apiWrite<{ message: string }>("/api/v1/reset-password", requestBody(submission));
+/**
+ * Chooses a new password for an account that already had one, and answers the
+ * customer the backend signed in, or `null` from a backend before
+ * `YoussefSanad/TheWorldTarot#124`. See `claimAccount`.
+ *
+ * **There is no #150-style fallback for a reset.** A reset never signed anybody
+ * in before #177, so against an older backend it shows the success screen, as
+ * it always has.
+ */
+export async function resetPassword(submission: PasswordSubmission): Promise<Customer | null> {
+  return signedInCustomerIn(await apiWriteSettled("/api/v1/reset-password", requestBody(submission)));
 }
 
 /**

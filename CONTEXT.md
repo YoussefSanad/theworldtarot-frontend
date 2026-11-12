@@ -396,16 +396,27 @@ _Avoid_: activation link, welcome email, invite
 
 **Return path**:
 Where a visitor goes after signing in, carried as `?next=` on `/login/` and ~~passed
-on by `/set-password/` and `/reset-password/` to their sign-in link~~. **Amended
+on by `/set-password/` and `/reset-password/` to their sign-in link~~. ~~**Amended
 27 October 2026** (#150): a claim with a safe next signs in automatically with
 the password just set and replaces the route with next, but only after a fresh
 session read confirms nobody is signed in. No automatic sign in happens if a
 session already exists or its state is still unknown. Reset and the claim's
-sign-in-failure fallback still pass next to their sign-in link. It is checked
+sign-in-failure fallback still pass next to their sign-in link.~~ **Amended
+12 November 2026** (#177): since `YoussefSanad/TheWorldTarot#124` the backend
+signs the customer in on a successful claim **or reset** and answers who, so
+both pages go straight to a safe next, or, with none, wherever a freshly
+signed-in customer goes (`landingFor`: the Viewing Room for a pass holder, the
+homepage otherwise). A different customer already signed in in the browser is
+replaced, because holding a live link proves the mailbox. Against a backend from
+before #124 the write answers nobody, and the #150 behaviour above is what
+happens, unchanged; the page shows the success screen, with next on its sign-in
+link, whenever the write succeeded and nobody was signed in. It is checked
 by `safeReturnPath` (`src/lib/return-path.ts`), an allow-list of same-origin paths,
-and anything else falls back to `/readings/`. The claim link itself does not carry
-one yet: backend #102 is to add a single fixed value to it, and these pages already
-read it when it arrives.
+and anything else falls back to ~~`/readings/`~~ `landingFor`. ~~The claim link
+itself does not carry one yet: backend #102 is to add a single fixed value to
+it, and these pages already read it when it arrives.~~ The claim link carries
+`next=/viewing-room/` since backend #102, and a pass receipt's reset link does
+since backend #114.
 _Avoid_: redirect, callback URL, returnTo (`return_to` is the checkout's product
 key and means something else)
 
