@@ -225,6 +225,29 @@ export const checkoutCompleteCopy = {
       "Sign in with it and the Viewing Room opens, on this device and any other.",
     ],
     /**
+     * The steps beside the **Set your password** button, #170, for a
+     * first-time buyer the backend has handed the claim link to. `steps`
+     * above are the fallback, unchanged, for everybody else and for the
+     * moments before the link arrives.
+     *
+     * **The button is the route and the email is the backup**, and the second
+     * step says the one thing a buyer needs to know about having two copies:
+     * they are the same link, so whichever is used first is the one that
+     * works. A "use the email" that never said so would send somebody to a
+     * link the button had already spent.
+     */
+    claimSteps: [
+      "Choose your password with the button below and the Viewing Room opens.",
+      "We have emailed you the same link as a backup. It works once, so use whichever you open first.",
+      "After that, sign in with your password to watch on any other device.",
+    ],
+    /**
+     * The gold button that replaces ENTER THE VIEWING ROOM when the claim
+     * link is here. In the client's capitals, like the other two buttons on
+     * this screen, and in the receipt's words for the same link.
+     */
+    setPasswordLabel: "SET YOUR PASSWORD",
+    /**
      * The gold button, in the client's capitals and in her own words for this
      * control — `ENTER THE VIEWING ROOM` is what the paywall's button says, and
      * a buyer who just pressed it should land on a screen offering the same

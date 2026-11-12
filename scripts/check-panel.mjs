@@ -17,7 +17,7 @@
  *
  * ## The whole checkout is answered here, not just the catalogue
  *
- * `/orders` and `/orders/{token}/pay` are intercepted too, which is what lets
+ * `/orders` and `/orders/pay` are intercepted too, which is what lets
  * the live state be **pressed** rather than merely inspected — and pressed
  * without placing a real order against staging every time somebody runs this.
  * The redirect it is handed points back at this server carrying a `cs_...` in
@@ -321,7 +321,12 @@ async function drive(
       await route.fulfill(api(ORDER, 201));
     });
 
-    await page.route("**/api/v1/orders/*/pay", async (route) => {
+    /*
+      The pay token in the body, at `/orders/pay`, from 11 November 2026
+      (#170, backend #122). ~~`/orders/{token}/pay`~~ put it in a path, and a
+      path lands in every access log on the way.
+    */
+    await page.route("**/api/v1/orders/pay", async (route) => {
       paid.push({
         url: route.request().url(),
         body: JSON.parse(route.request().postData() ?? "null"),
@@ -860,14 +865,16 @@ expect("live", "in the API's currency, with the question on the line", sold.plac
   lines: [{ product: "month-ahead", quantity: 1, question: QUESTION }],
 });
 expect("live", "and no name or email, which the page never collected", sold.placed[0] && "email" in sold.placed[0], false);
-expect("live", "then pays it, addressing the order by its pay token", sold.paid.length && sold.paid[0].url.endsWith(`/api/v1/orders/${PAY_TOKEN}/pay`), true);
+expect("live", "then pays it at the body route", sold.paid.length && sold.paid[0].url.endsWith("/api/v1/orders/pay"), true);
+expect("live", "with the pay token in no address", sold.paid.length && sold.paid[0].url.includes(PAY_TOKEN), false);
 /*
   `method` is not decoration and not a default the backend can assume: the two
   roads mint different things — a Checkout Session here, a PaymentIntent for the
   wallet — and `/pay` is told which by name. See `lib/orders.ts` and the
   backend's #43.
 */
-expect("live", "naming its road and the page to come back to", sold.paid[0]?.body, {
+expect("live", "addressing the order by its pay token, naming its road and the page to come back to", sold.paid[0]?.body, {
+  pay_token: PAY_TOKEN,
   return_to: "month-ahead",
   method: "stripe",
 });
@@ -1035,6 +1042,7 @@ expect("gifting", "carrying the present in the field the backend reads", gifted.
 */
 expect("gifting", "and no question on the same line", "question" in (gifted.placed[0]?.lines?.[0] ?? {}), false);
 expect("gifting", "then pays it by the same road a self-purchase takes", gifted.paid[0]?.body, {
+  pay_token: PAY_TOKEN,
   return_to: "month-ahead",
   method: "stripe",
 });

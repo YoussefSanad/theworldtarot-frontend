@@ -19,6 +19,7 @@ import {
   walletCheckoutFor,
 } from "@/lib/checkout-session";
 import type { ApiProduct } from "@/lib/api";
+import { CLAIM_LINK_RETRY_DELAYS_MS, type ClaimLink } from "@/lib/claim-link";
 import { useCatalogue } from "@/lib/catalogue";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
@@ -206,6 +207,30 @@ import { resolveReadingName } from "@/lib/reading-prices";
  * paint to stand, and the two cases part company: a 503 becomes `unreadable`
  * and an unrecognised status becomes `unfinished`.
  *
+ * **One exception, from 11 November 2026, and it asks about a link rather than
+ * a payment** (#170, backend #122). A first-time pass buyer's claim link
+ * arrives on the same answer, and on the card road it usually is not there yet:
+ * the webhook that mints it has not settled the order. So while the answer says
+ * `not_yet`, and only on the pass screen, this asks again in the background on
+ * `CLAIM_LINK_RETRY_DELAYS_MS`, thirty seconds in all, and reads nothing but
+ * the link off those answers. The status on screen is never corrected by them,
+ * so the argument above stands for everything it was about.
+ *
+ * ## The claim link, on the pass screen and nowhere else
+ *
+ * **One gold button, SET YOUR PASSWORD, once the backend has handed the link
+ * over**, in place of ENTER THE VIEWING ROOM, with steps that name the button
+ * and keep the email as the backup. Until then, and whenever it never comes,
+ * the screen is exactly what it was: the email step and ENTER THE VIEWING ROOM.
+ * That covers the moments before the link, a buyer who already has a password
+ * (the backend answers `none` for them and does not say why, by decision on
+ * backend #122), a tab that lost its record, and a backend that cannot be
+ * reached. **No spinner stands in front of `received` for it**: the button
+ * arrives into a screen that is already true, and `aria-live` announces it.
+ *
+ * `lib/claim-link.ts` is what guarantees the link is whole or absent. Reading
+ * and gift confirmations never look at it.
+ *
  * ## The stale-result guard
  *
  * The id in the address is what stops a second purchase in the same tab from
@@ -319,6 +344,12 @@ export function CheckoutComplete() {
   const redeemed = searchParams.get(redeemedParam);
 
   const [result, setResult] = useState<Result>({ state: "checking" });
+  /*
+    The claim link's address on this site, once the backend has handed it
+    over. Only ever whole: `lib/claim-link.ts` turns anything less into
+    nothing. Read only by the pass screen.
+  */
+  const [claimHref, setClaimHref] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -369,6 +400,47 @@ export function CheckoutComplete() {
       }
 
       /*
+        **Whether this is a pass screen that could carry the claim link.** Read
+        off the record's product key, as `isPass` below is, and never for a
+        gift: a gift wins over a pass on screen, and the case cannot arise.
+      */
+      const forThePass = record.productKey === PASS && !(record.gift ?? false);
+      const { payToken } = record;
+
+      /*
+        The claim link, followed until it is here or will never be. Starts from
+        the first answer's link, or from `null` when that ask failed, which
+        the contract says to treat as "not yet". Asks again only while the
+        answer is `not_yet`, on the delays in `CLAIM_LINK_RETRY_DELAYS_MS`,
+        and reads nothing but the link off those answers. Stops at the first
+        `ready` or `none`, when the delays run out, or when the screen goes.
+      */
+      const followClaimLink = async (first: ClaimLink | null): Promise<void> => {
+        let link = first;
+
+        for (const delay of [...CLAIM_LINK_RETRY_DELAYS_MS, null]) {
+          if (!live) return;
+
+          if (link?.state === "ready") {
+            setClaimHref(link.href);
+            return;
+          }
+
+          if (link?.state === "none" || delay === null) return;
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
+
+          if (!live) return;
+
+          try {
+            link = (await fetchPaymentStatus(payToken)).claimLink;
+          } catch {
+            link = null;
+          }
+        }
+      };
+
+      /*
         **Only the card road paints before it asks.** `success_url` is reached
         only after Stripe has taken the payment. `return_url` is reached
         whatever happened, so on the wallet road there is nothing yet that is
@@ -385,9 +457,22 @@ export function CheckoutComplete() {
       }
 
       try {
-        const status = await fetchPaymentStatus(record.payToken);
+        const { status, claimLink } = await fetchPaymentStatus(payToken);
 
         if (!live) return;
+
+        /*
+          **The pass screen's claim link**, followed only where that screen is
+          what stays up: `received` on either road, or a status this build has
+          never heard of on the card road, where the optimistic paint stands.
+          Anywhere the screen is corrected away from `received`, there is no
+          pass screen to put a button on.
+        */
+        const staysReceived = card
+          ? !isRecognisedStatus(status) || outcomeFor(status) === "received"
+          : outcomeFor(status) === "received";
+
+        if (forThePass && staysReceived) void followClaimLink(claimLink);
 
         /*
           Two answers that are not corrections. A status this build has never
@@ -444,7 +529,13 @@ export function CheckoutComplete() {
           stands. On the wallet road nothing is on screen and nothing is known,
           so the screen says that rather than inventing either answer.
         */
-        if (!card) setResult({ state: "unreadable" });
+        if (!card) {
+          setResult({ state: "unreadable" });
+        } else if (forThePass) {
+          // The card road's pass screen stands, and a failed ask is "not yet"
+          // for the link: it may still arrive.
+          void followClaimLink(null);
+        }
       }
     })();
 
@@ -598,8 +689,15 @@ export function CheckoutComplete() {
         only thing to do, which is to try the payment again. A gift buyer gets
         none either, because the next move is the recipient's and not theirs.
       */}
+      {/*
+        The pass buyer's steps follow the button: the claim link's when it is
+        here, and the email's, unchanged, whenever it is not.
+      */}
       {isPass ? (
-        <NextSteps lead={checkoutCompleteCopy.passReceived.stepsLead} steps={checkoutCompleteCopy.passReceived.steps} />
+        <NextSteps
+          lead={checkoutCompleteCopy.passReceived.stepsLead}
+          steps={claimHref ? checkoutCompleteCopy.passReceived.claimSteps : checkoutCompleteCopy.passReceived.steps}
+        />
       ) : !isGift && result.outcome === "received" ? (
         <NextSteps
           lead={checkoutCompleteCopy.receivedSteps.lead}
@@ -617,11 +715,24 @@ export function CheckoutComplete() {
         just paid to enter it — so the primary action is the room and BACK TO
         READINGS drops to the quiet second place it already occupies.
       */}
+      {/*
+        **Still one gold button**, from 11 November 2026 (#170): SET YOUR
+        PASSWORD when the claim link is here, in place of the room rather than
+        beside it, because a first-time buyer has no password and the room
+        would only show them its paywall. Setting the password carries them on
+        to the room signed in, by the `next` the link already holds.
+      */}
       {isPass ? (
         <div className="mt-8 flex flex-col items-center gap-4">
-          <ButtonLink href={checkoutCompleteCopy.passReceived.enterHref} variant="gold" size="md">
-            {checkoutCompleteCopy.passReceived.enterLabel}
-          </ButtonLink>
+          {claimHref ? (
+            <ButtonLink href={claimHref} variant="gold" size="md">
+              {checkoutCompleteCopy.passReceived.setPasswordLabel}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={checkoutCompleteCopy.passReceived.enterHref} variant="gold" size="md">
+              {checkoutCompleteCopy.passReceived.enterLabel}
+            </ButtonLink>
+          )}
 
           <ButtonLink href={checkoutCompleteCopy.backHref} variant="ghost" size="md">
             {checkoutCompleteCopy.backLabel}

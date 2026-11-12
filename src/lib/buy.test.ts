@@ -126,7 +126,8 @@ test("one press places an order, pays it, remembers it, and answers where to sen
     },
     // The road names itself. There are two from 29 August 2026 and the endpoint
     // cannot tell them apart otherwise.
-    { return_to: "month-ahead", method: "stripe" },
+    // The pay token in the body since #170 (backend #122), never the path.
+    { pay_token: "kQ3rN8xvT1sLb0Zy", return_to: "month-ahead", method: "stripe" },
   ]);
 
   // No name and no email: Stripe's page collects the buyer's email after the
@@ -409,7 +410,7 @@ test("a wallet press places an order, pays it as a wallet, remembers it, and ans
       cancel to come back from, and the only address in play is the one handed
       to `confirmPayment` for 3D Secure.
     */
-    { method: "stripe_wallet" },
+    { pay_token: "kQ3rN8xvT1sLb0Zy", method: "stripe_wallet" },
   ]);
 });
 
