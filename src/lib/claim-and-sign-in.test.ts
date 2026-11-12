@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 
 import { ApiRateLimitError, ApiValidationError } from "./api-write.ts";
-import { claimAndSignIn, resetPassword } from "./passwords.ts";
+import { claimAccount, claimAndSignIn, resetPassword } from "./passwords.ts";
 
 type Call = { url: string; init: RequestInit };
 type Handler = () => Response | Promise<Response>;
@@ -241,11 +241,81 @@ test("the password appears in neither the outcome nor an error from a failed cla
   });
 });
 
-test("a reset never signs in", async () => {
+test("a reset from a backend before TheWorldTarot#124 answers nobody and never signs in by itself", async () => {
   stubApi({ reset: () => json({ message: "Your password has been changed." }) });
 
-  await resetPassword(submission);
+  assert.equal(await resetPassword(submission), null);
 
   assert.equal(writes("/api/v1/reset-password").length, 1);
   assert.equal(writes("/api/v1/login").length, 0);
+  assert.equal(writes("/api/v1/me").length, 0);
+});
+
+/*
+  #177: since YoussefSanad/TheWorldTarot#124 the write itself signs the customer
+  in and answers login's customer body, plus its old `message`. That body is the
+  signed-in customer; nothing else is asked.
+*/
+
+const signedInByTheWrite = { ...customer, message: "Your account is ready. You can sign in now." };
+
+test("a claim the backend signed in answers its customer, with no /me and no second sign in", async () => {
+  stubApi({ claim: () => json(signedInByTheWrite) });
+
+  const outcome = await claimAndSignIn(submission);
+
+  assert.deepEqual(outcome, { outcome: "signed-in", customer: signedInCustomer });
+  assert.equal(writes("/api/v1/set-password").length, 1);
+  assert.equal(writes("/api/v1/me").length, 0);
+  assert.equal(writes("/api/v1/login").length, 0);
+  assert.ok(!JSON.stringify(outcome).includes(submission.password));
+});
+
+test("the two writes answer the customer the backend signed in", async () => {
+  stubApi({
+    claim: () => json(signedInByTheWrite),
+    reset: () => json({ ...customer, message: "Your password has been changed." }),
+  });
+
+  assert.deepEqual(await claimAccount(submission), signedInCustomer);
+  assert.deepEqual(await resetPassword(submission), signedInCustomer);
+  assert.equal(writes("/api/v1/login").length, 0);
+  assert.equal(writes("/api/v1/me").length, 0);
+});
+
+for (const [kind, body] of [
+  ["only a message (a backend before TheWorldTarot#124)", { message: "Your account is ready." }],
+  ["a customer missing its access flag", { id: 31, email: "jennifer@example.com", message: "ok" }],
+  ["an id that is not a number", { ...customer, id: "31" }],
+  ["an email that is not a string", { ...customer, email: null }],
+  ["not an object", ["jennifer@example.com"]],
+  ["null", null],
+] as const) {
+  test(`a successful write answering ${kind} signs nobody in from the body`, async () => {
+    stubApi({ claim: () => json(body), reset: () => json(body) });
+
+    assert.equal(await claimAccount(submission), null);
+    assert.equal(await resetPassword(submission), null);
+  });
+}
+
+test("a successful write whose body cannot be read is still a success, never an error", async () => {
+  const unreadable = () =>
+    new Response("<html>not json</html>", { status: 200, headers: { "Content-Type": "text/html" } });
+  stubApi({ claim: unreadable, reset: unreadable });
+
+  // The password was saved. Throwing here would put "your password has not
+  // been changed" on the screen, which would be false.
+  assert.equal(await claimAccount(submission), null);
+  assert.equal(await resetPassword(submission), null);
+});
+
+test("a claim from a backend before TheWorldTarot#124 still falls back to the #150 sign in", async () => {
+  stubApi({ claim: claimOk, me: nobodySignedIn, login: () => json(customer) });
+
+  const outcome = await claimAndSignIn(submission);
+
+  assert.deepEqual(outcome, { outcome: "signed-in", customer: signedInCustomer });
+  assert.equal(writes("/api/v1/me").length, 1);
+  assert.equal(writes("/api/v1/login").length, 1);
 });
