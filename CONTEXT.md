@@ -25,7 +25,10 @@ _Avoid_: "flips to paid", "goes through", "completes"
 **Pay token**:
 The unguessable string returned with an order that carries the authority to pay
 it. It is a credential: never in an address bar, a redirect, an analytics event
-or a log.
+or a log. **And never in a request path, from 11 November 2026** (#170): it
+goes to the backend only in request bodies, `/orders/pay` included, because a
+path lands in every access log and the token is briefly enough to read a
+first-time pass buyer's claim link back.
 _Avoid_: order token, payment token, order id (ids are sequential integers and are not this)
 
 **Product key**:
@@ -383,6 +386,12 @@ is cheaper than the next person renaming one to match the other.
 The link in that email inviting a buyer with no password to set one. It points
 at our `/set-password/`, and it is the reason that page has to exist before the
 first real payment.
+
+**From 11 November 2026 (#170, backend #122) the confirmation can show it too**,
+as SET YOUR PASSWORD on the pass screen. It is the receipt's own link, the same
+token, handed back by `POST /orders/status` for a first-time pass buyer for
+fifteen minutes after settlement; using either copy spends both. Whenever no
+whole link arrives the pass screen is what it was. `lib/claim-link.ts` reads it.
 _Avoid_: activation link, welcome email, invite
 
 **Return path**:

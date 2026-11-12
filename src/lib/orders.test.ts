@@ -90,7 +90,7 @@ test("places an order with no locale segment and returns what the backend priced
   assert.deepEqual(order.lines[1].unitPrice, { currency: "GBP", amount: 4500 });
 });
 
-test("paying returns the client secret, addressing the order by its pay token", async () => {
+test("paying returns the client secret, with the pay token in the body and never in the address", async () => {
   stubFetch(
     new Response(null, { status: 204 }),
     json({ type: "client_secret", client_secret: "pi_1_secret_2" }),
@@ -98,10 +98,14 @@ test("paying returns the client secret, addressing the order by its pay token", 
 
   const result = await payOrder("kQ3rN8xvT1sLb0Zy");
 
-  assert.equal(
-    calls[1].url,
-    "https://staging-api.theworldtarot.com/api/v1/orders/kQ3rN8xvT1sLb0Zy/pay",
-  );
+  // ~~`/api/v1/orders/{pay_token}/pay`~~ until 11 November 2026 (#170, backend
+  // #122): a path segment lands in every access log between the browser and
+  // the backend, and the pay token is briefly enough to claim a first-time
+  // buyer's account. The backend never hands the confirmation a claim link for
+  // an order whose token came in by the path.
+  assert.equal(calls[1].url, "https://staging-api.theworldtarot.com/api/v1/orders/pay");
+  assert.equal(calls[1].url.includes("kQ3rN8xvT1sLb0Zy"), false);
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { pay_token: "kQ3rN8xvT1sLb0Zy" });
   assert.equal(result.type, "client_secret");
   assert.equal(result.type === "client_secret" && result.clientSecret, "pi_1_secret_2");
 });
@@ -197,7 +201,7 @@ test("`return_to` is sent as the product key the checkout started from", async (
 
   await payOrder("kQ3rN8xvT1sLb0Zy", { returnTo: "month-ahead" });
 
-  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { return_to: "month-ahead" });
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { pay_token: "kQ3rN8xvT1sLb0Zy", return_to: "month-ahead" });
 });
 
 test("with no page to return to, the body carries no `return_to` at all", async () => {
@@ -205,7 +209,7 @@ test("with no page to return to, the body carries no `return_to` at all", async 
 
   await payOrder("kQ3rN8xvT1sLb0Zy");
 
-  assert.deepEqual(JSON.parse(String(calls[1].init.body)), {});
+  assert.deepEqual(JSON.parse(String(calls[1].init.body)), { pay_token: "kQ3rN8xvT1sLb0Zy" });
 });
 
 test("`method` names the road, and the two roads are not interchangeable", async () => {
@@ -221,6 +225,7 @@ test("`method` names the road, and the two roads are not interchangeable", async
   await payOrder("kQ3rN8xvT1sLb0Zy", { returnTo: "month-ahead", method: "stripe_wallet" });
 
   assert.deepEqual(JSON.parse(String(calls[1].init.body)), {
+    pay_token: "kQ3rN8xvT1sLb0Zy",
     return_to: "month-ahead",
     method: "stripe_wallet",
   });
@@ -236,16 +241,16 @@ test("a method nobody named is absent rather than null", async () => {
 
   const body = JSON.parse(String(calls[1].init.body));
 
-  assert.deepEqual(body, { method: "stripe" });
+  assert.deepEqual(body, { pay_token: "kQ3rN8xvT1sLb0Zy", method: "stripe" });
   assert.equal("return_to" in body, false);
 });
 
 test("a payment's status is read back with the pay token in the body", async () => {
   stubFetch(new Response(null, { status: 204 }), json({ status: "succeeded" }));
 
-  const status = await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy");
+  const answer = await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy");
 
-  assert.equal(status, "succeeded");
+  assert.equal(answer.status, "succeeded");
   // The token is a credential and a path segment lands in every access log
   // between the browser and the application, which is why this is a POST with a
   // body and why the assertion is on the URL as well as on the body.
@@ -259,7 +264,30 @@ test("a status this build has never heard of comes back as it was sent", async (
   // a screen over; a throw here would take that decision away from it.
   stubFetch(new Response(null, { status: 204 }), json({ status: "requires_hovercraft" }));
 
-  assert.equal(await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), "requires_hovercraft");
+  assert.equal((await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy")).status, "requires_hovercraft");
+});
+
+test("the claim link comes back beside the status, made relative to this site", async () => {
+  stubFetch(
+    new Response(null, { status: 204 }),
+    json({
+      status: "succeeded",
+      set_password_link: "ready",
+      set_password_url: "https://theworldtarot.com/set-password/?token=abc&email=jane%40example.com&next=%2Fviewing-room%2F",
+    }),
+  );
+
+  assert.deepEqual(await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), {
+    status: "succeeded",
+    claimLink: { state: "ready", href: "/set-password/?token=abc&email=jane%40example.com&next=%2Fviewing-room%2F" },
+  });
+});
+
+test("an answer with no claim link keys says there is none", async () => {
+  // The shape before backend #122, and what a reading order's answer amounts to.
+  stubFetch(new Response(null, { status: 204 }), json({ status: "succeeded" }));
+
+  assert.deepEqual((await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy")).claimLink, { state: "none" });
 });
 
 test("a 503 from the status endpoint throws, and says nothing about the payment", async () => {

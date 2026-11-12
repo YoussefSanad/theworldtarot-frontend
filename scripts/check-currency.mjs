@@ -218,7 +218,7 @@ async function open(path, { seed = {}, holdOrder = false } = {}) {
     );
   });
 
-  await page.route("**/api/v1/orders/*/pay", (route) =>
+  await page.route("**/api/v1/orders/pay", (route) =>
     route.fulfill(api({ type: "redirect", redirect_url: `${origin}/stripe-stands-here/cs_test_a1B2c3` })),
   );
 
