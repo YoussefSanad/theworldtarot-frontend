@@ -202,3 +202,21 @@ export async function apiWrite<T>(path: string, body: unknown): Promise<T> {
 export async function apiWriteEmpty(path: string, body?: unknown): Promise<void> {
   await send(path, body);
 }
+
+/**
+ * A write whose success matters more than its answer.
+ *
+ * Refusals throw exactly as `apiWrite`'s do. **A success whose body cannot be
+ * read is still a success**, answered `null`, rather than the `SyntaxError`
+ * `apiWrite` would throw. Added for the two password writes (#177): by the time
+ * the body is read the password is saved, and a thrown error there puts "your
+ * password has not been changed" on the screen, which would be false.
+ *
+ * `unknown` on purpose. The caller checks the shape it needs and treats
+ * anything else as an answer it does not use.
+ */
+export async function apiWriteSettled(path: string, body: unknown): Promise<unknown> {
+  const response = await send(path, body);
+
+  return response.json().catch(() => null);
+}

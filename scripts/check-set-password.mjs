@@ -19,6 +19,15 @@
  * a fresh `/me` that answers 401 right before it: when the page's own read or
  * that fresh one fails, hangs, or finds a customer, nobody is signed in and the
  * success screen carries the sign-in link instead.
+ *
+ * #177: since YoussefSanad/TheWorldTarot#124 the write itself signs the
+ * customer in and answers login's customer body plus its `message`. On both
+ * pages that answer is the signed-in customer: no `/login`, no `/me`, a safe
+ * `next` or else `landingFor` (pass holder to the Viewing Room, everybody else
+ * home), and a different customer already signed in is replaced. **Every #150
+ * case above answers the write with `{ message }` alone, which is a backend from
+ * before #124**, so they are the proof that this site still behaves as it did
+ * against that backend.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -105,6 +114,21 @@ const CUSTOMER = {
 };
 
 const LOGIN_SUCCEEDS = api(CUSTOMER);
+
+/* #177: a pass holder, and somebody else already signed in in the browser. */
+const PASS_HOLDER = { ...CUSTOMER, has_viewing_room_access: true };
+const SOMEONE_ELSE = {
+  id: 99,
+  name: "Someone Else",
+  email: "someone@example.com",
+  created_at: "2026-08-12T10:04:00+00:00",
+  has_viewing_room_access: false,
+};
+
+/** A write from a backend with TheWorldTarot#124: it signed `customer` in. */
+function signedInBy(customer) {
+  return api({ ...customer, message: "Your account is ready. You can sign in now." });
+}
 const LOGIN_REFUSED = api(
   { message: "These credentials do not match our records.", errors: { email: ["These credentials do not match our records."] } },
   422,
@@ -127,13 +151,17 @@ const LOGIN_REFUSED = api(
  * `"hang"` (never answers). `check` defaults to `load`; `alreadySignedIn` makes
  * `load` a customer. `counts.meAfterClaim` counts `/me` requests made once the
  * write has been posted and before a login has succeeded.
+ *
+ * #177: a write answering a customer body signs that customer in, as the
+ * backend now does, and `/me` answers them from then on. `options.signedInAs`
+ * is who `/me` answers for a session that existed before (default `CUSTOMER`).
  */
 async function open(
   path,
   query,
   answer = api({ message: "ok" }),
   login = LOGIN_REFUSED,
-  { alreadySignedIn = false, meAfterLogin = "customer", me = {} } = {},
+  { alreadySignedIn = false, meAfterLogin = "customer", me = {}, signedInAs = CUSTOMER } = {},
 ) {
   const page = await browser.newPage();
   const sent = [];
@@ -143,6 +171,7 @@ async function open(
   const meCheck = me.check ?? meLoad;
   let signedIn = alreadySignedIn;
   let loggedIn = false;
+  let who = signedInAs;
 
   await page.route("**/sanctum/csrf-cookie", (route) => route.fulfill(api(null, 204)));
   await page.route("**/api/v1/me", (route) => {
@@ -161,11 +190,11 @@ async function open(
       if (mode === "hang") return undefined;
       if (mode === "abort") return route.abort();
       if (mode === "fail") return route.fulfill(api({ message: "Server Error" }, 500));
-      if (mode === "customer") return route.fulfill(api(CUSTOMER));
+      if (mode === "customer") return route.fulfill(api(who));
       if (mode === "unauthenticated" && !signedIn) return route.fulfill(api({ message: "Unauthenticated." }, 401));
     }
 
-    return route.fulfill(signedIn ? api(CUSTOMER) : api({ message: "Unauthenticated." }, 401));
+    return route.fulfill(signedIn ? api(who) : api({ message: "Unauthenticated." }, 401));
   });
   await page.route("**/api/v1/login", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill(api(null, 204));
@@ -173,6 +202,7 @@ async function open(
     if (login.status < 400) {
       signedIn = true;
       loggedIn = true;
+      who = CUSTOMER;
     }
     return route.fulfill(login);
   });
@@ -180,6 +210,18 @@ async function open(
     await page.route(`**/api/v1/${endpoint}`, (route) => {
       if (route.request().method() === "OPTIONS") return route.fulfill(api(null, 204));
       sent.push({ endpoint, body: JSON.parse(route.request().postData() ?? "null") });
+      let answered = null;
+      try {
+        answered = JSON.parse(answer.body);
+      } catch {
+        /* Not JSON: the backend signed nobody in that this fake can see. */
+      }
+      if (answer.status < 400 && typeof answered?.email === "string") {
+        who = { ...answered };
+        delete who.message;
+        signedIn = true;
+        loggedIn = true;
+      }
       return route.fulfill(answer);
     });
   }
@@ -402,7 +444,7 @@ for (const hostile of HOSTILE) {
   await page.close();
 }
 
-console.log("\nclaim: no next keeps the success screen (#150)");
+console.log("\nclaim: no next keeps the success screen, against a backend before TheWorldTarot#124 (#150)");
 {
   const { page, logins } = await open("/set-password/", query(), api({ message: "ok" }), LOGIN_SUCCEEDS);
   await submit(page);
@@ -415,7 +457,7 @@ console.log("\nclaim: no next keeps the success screen (#150)");
   await page.close();
 }
 
-console.log("\nreset: never signs in, whatever next says (#150)");
+console.log("\nreset: no second sign in, against a backend before TheWorldTarot#124 (#150, #177)");
 {
   const { page, logins } = await open("/reset-password/", query({ next: NEXT }), api({ message: "ok" }), LOGIN_SUCCEEDS);
   await submit(page);
@@ -428,14 +470,16 @@ console.log("\nreset: never signs in, whatever next says (#150)");
   await page.close();
 }
 
-console.log("\nclaim: the form shows whose account is being claimed (#150)");
-for (const [label, next] of [["with next", NEXT], ["without next", undefined]]) {
-  const { page } = await open("/set-password/", query({ next }));
-  await page.waitForSelector(PASSWORD);
+console.log("\nboth: the form shows whose account the link names (#150, #177)");
+for (const { name, path } of FLOWS) {
+  for (const [label, next] of [["with next", NEXT], ["without next", undefined]]) {
+    const { page } = await open(path, query({ next }));
+    await page.waitForSelector(PASSWORD);
 
-  const text = await page.locator("main").innerText();
-  expect("claim email shown", `${label}: the visible page text includes the email`, text.includes(EMAIL), true);
-  await page.close();
+    const text = await page.locator("main").innerText();
+    expect(`${name} email shown`, `${label}: the visible page text includes the email`, text.includes(EMAIL), true);
+    await page.close();
+  }
 }
 
 console.log("\nclaim: the signed-in state is the login response, not a later /me read (#150)");
@@ -593,6 +637,121 @@ console.log("\nclaim: a session from another tab, found by the fresh /me, is not
   expect("claim other tab", "the success screen is shown", await page.locator("main h1:has-text('ready')").count(), 1);
   expectLink("claim other tab", await signInLink(page), NEXT);
   await page.close();
+}
+
+/*
+  #177. The backend signs the customer in on the write and answers who.
+*/
+
+async function landsOn(page, path) {
+  try {
+    await page.waitForURL((url) => url.pathname === path, { timeout: 5000 });
+    await page.waitForLoadState("networkidle");
+  } catch {
+    /* Reported by the assertions that follow. */
+  }
+}
+
+for (const { name, path, endpoint } of FLOWS) {
+  console.log(`\n${name}: the backend signs them in, and a safe next is where they land (#177)`);
+  {
+    const { page, sent, logins, counts } = await open(path, query({ next: NEXT }), signedInBy(CUSTOMER), LOGIN_SUCCEEDS);
+    const state = `${name} signed in by the write`;
+    await submit(page);
+    await landsOn(page, NEXT);
+
+    expect(state, "they land on where they were going", ORIGIN_PATH(page), NEXT);
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "no second sign in is made", logins.length, 0);
+    expect(state, "no /me read was needed after the write", counts.meAfterLogin, 0);
+    expect(state, "the masthead shows the customer the write answered", await masthead(page), {
+      signIn: 0,
+      name: CUSTOMER.name,
+    });
+    expect(state, "the address bar keeps no token or email", new URL(page.url()).search, "");
+    await page.close();
+  }
+
+  console.log(`\n${name}: no next goes where a freshly signed-in customer goes (#177)`);
+  for (const [who, landing] of [[PASS_HOLDER, "/viewing-room/"], [CUSTOMER, "/"]]) {
+    const state = `${name} no next, ${who.has_viewing_room_access ? "pass holder" : "no pass"}`;
+    const { page, logins } = await open(path, query(), signedInBy(who), LOGIN_SUCCEEDS);
+    await submit(page);
+    await landsOn(page, landing);
+
+    expect(state, "they land where landingFor sends them", ORIGIN_PATH(page), landing);
+    expect(state, "no second sign in is made", logins.length, 0);
+    await page.close();
+  }
+
+  console.log(`\n${name}: a hostile next is ignored, and they land where landingFor sends them (#177)`);
+  for (const hostile of HOSTILE) {
+    const state = `${name} signed in, next ${hostile}`;
+    const { page } = await open(path, query({ next: hostile }), signedInBy(PASS_HOLDER), LOGIN_SUCCEEDS);
+    await submit(page);
+    await landsOn(page, "/viewing-room/");
+
+    expect(state, "they stay on this site", new URL(page.url()).origin, ORIGIN);
+    expect(state, "and land in the Viewing Room, not the hostile target", ORIGIN_PATH(page), "/viewing-room/");
+    await page.close();
+  }
+
+  console.log(`\n${name}: somebody else signed in in this browser is replaced (#177)`);
+  {
+    const state = `${name} replaces someone else`;
+    const { page, logins } = await open(path, query({ next: NEXT }), signedInBy(CUSTOMER), LOGIN_SUCCEEDS, {
+      alreadySignedIn: true,
+      signedInAs: SOMEONE_ELSE,
+    });
+    expect(state, "before: the masthead shows the other customer", await masthead(page), {
+      signIn: 0,
+      name: SOMEONE_ELSE.name,
+    });
+    await submit(page);
+    await landsOn(page, NEXT);
+
+    expect(state, "they land on where they were going", ORIGIN_PATH(page), NEXT);
+    expect(state, "no second sign in is made", logins.length, 0);
+    expect(state, "after: the masthead shows the customer the link named", await masthead(page), {
+      signIn: 0,
+      name: CUSTOMER.name,
+    });
+    await page.close();
+  }
+
+  console.log(`\n${name}: a dead link is still a dead link (#177)`);
+  {
+    const state = `${name} dead link`;
+    const { page, logins } = await open(path, query({ next: NEXT }), DEAD_LINK, LOGIN_SUCCEEDS);
+    await submit(page);
+    await page.waitForSelector(ALERT + ":not(:empty)");
+
+    expect(state, "they stay on the page", ORIGIN_PATH(page), path);
+    expect(state, "no sign in is attempted", logins.length, 0);
+    expect(state, "the masthead still offers sign in", await masthead(page), { signIn: 1, name: "" });
+    expectLink(state, await signInLink(page), NEXT);
+    await page.close();
+  }
+
+  console.log(`\n${name}: a success whose answer cannot be read is still a success (#177)`);
+  {
+    const state = `${name} unreadable 200`;
+    const unreadable = { ...api(null), body: "<html>a proxy page</html>", contentType: "text/html" };
+    const { page, sent } = await open(path, query({ next: NEXT }), unreadable);
+    await submit(page);
+
+    try {
+      await page.waitForSelector(DONE, { timeout: 5000 });
+    } catch {
+      /* Reported by the assertions below. */
+    }
+
+    expect(state, "the password was set once", sent.map((s) => s.endpoint), [endpoint]);
+    expect(state, "the success screen is shown", await page.locator(DONE).count(), 1);
+    expect(state, "no error claims the password was not set", await page.locator(ALERT + ":not(:empty)").count(), 0);
+    expectLink(state, await signInLink(page), NEXT);
+    await page.close();
+  }
 }
 
 await browser.close();

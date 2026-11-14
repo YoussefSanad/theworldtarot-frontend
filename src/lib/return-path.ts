@@ -4,8 +4,8 @@ const MAX_LENGTH = 512;
 const BASE = "https://x.invalid";
 
 /**
- * Open-redirect guard for the `?next=` return path on /login/ and
- * /set-password/. Allow-list only: returns the URL-normalised
+ * Open-redirect guard for the `?next=` return path on /login/,
+ * /set-password/ and /reset-password/. Allow-list only: returns the URL-normalised
  * `pathname + search + hash` of a same-origin relative path with a single
  * leading `/`, otherwise null. The result is already normalised and must not
  * be decoded again by callers.
@@ -45,14 +45,6 @@ export function safeReturnPath(raw: string | null | undefined): string | null {
   return url.pathname + url.search + url.hash;
 }
 
-/** Only a claim with a safe destination continues straight to sign in. */
-export function afterClaimDestination(
-  flow: "claim" | "reset",
-  next: string | null | undefined,
-): string | null {
-  return flow === "claim" ? safeReturnPath(next) : null;
-}
-
 /**
  * Where a signed-in customer belongs when nothing asked for anywhere special.
  *
@@ -68,8 +60,8 @@ export function afterClaimDestination(
  * us they want to buy a reading.
  *
  * **Separate from `safeReturnPath` above rather than folded into it**, because
- * the two answer different questions and only one caller asks both. The sign in
- * page has a `next` to weigh; the masthead's dropdown never does — somebody
+ * the two answer different questions and only some callers ask both. The sign
+ * in page and, since #177, both password pages have a `next` to weigh; the masthead's dropdown never does — somebody
  * signing in from the header is already standing where they chose to be — so a
  * single function taking both would have to be handed an argument its
  * commonest caller does not have.

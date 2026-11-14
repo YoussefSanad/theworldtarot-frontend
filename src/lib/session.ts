@@ -84,6 +84,34 @@ export function customerLabel(customer: Customer): string {
   return customer.name?.trim() || customer.email;
 }
 
+/**
+ * The customer a write answered with, or `null` when the answer is not one.
+ *
+ * For the two password writes (#177), which since
+ * `YoussefSanad/TheWorldTarot#124` sign the customer in themselves and answer
+ * login's body. **A backend from before that answers a `message` and nothing
+ * else**, and so does one whose request could not hold a session; both read as
+ * `null` here and the caller falls back to what it did before. Checked field by
+ * field rather than trusted, because the answer decides whether the page shows
+ * a signed-in masthead.
+ */
+export function signedInCustomerIn(body: unknown): Customer | null {
+  if (typeof body !== "object" || body === null) return null;
+
+  const candidate = body as Partial<Record<keyof ApiCustomer, unknown>>;
+
+  if (
+    typeof candidate.id !== "number" ||
+    typeof candidate.email !== "string" ||
+    typeof candidate.has_viewing_room_access !== "boolean" ||
+    !(candidate.name === null || typeof candidate.name === "string")
+  ) {
+    return null;
+  }
+
+  return toCustomer(candidate as ApiCustomer);
+}
+
 function toCustomer(customer: ApiCustomer): Customer {
   return {
     id: customer.id,

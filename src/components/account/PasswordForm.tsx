@@ -9,20 +9,22 @@ import { useSignedIn } from "@/components/account/useSignedIn";
 import { Button } from "@/components/ui/Button";
 import { signInPath } from "@/content/login";
 import {
-  claimEmailPrompt,
+  accountEmailPrompt,
   type PasswordPageCopy,
   resetPasswordCopy,
   setPasswordCopy,
 } from "@/content/passwords";
-import { afterClaimDestination, safeReturnPath } from "@/lib/return-path";
+import { landingFor, safeReturnPath } from "@/lib/return-path";
 import {
   claimAccount,
   claimAndSignIn,
   type PasswordFailure,
+  type PasswordOutcome,
   type PasswordSubmission,
   readPasswordFailure,
   resetPassword,
 } from "@/lib/passwords";
+import type { Customer } from "@/lib/session";
 
 /**
  * The form both password pages are made of.
@@ -37,15 +39,28 @@ import {
  * the CSRF handshake belongs to the write seam and is not worth a second
  * implementation here.
  *
- * `token` and `email` are read from the query string and never edited. The
- * claim form shows the email so the person can see which account it names.
+ * `token` and `email` are read from the query string and never edited. ~~The
+ * claim form shows the email~~ Both forms show the email (since #177) so the
+ * person can see which account it names.
+ *
+ * **A successful write ends signed in, on both pages** (#177). Since
+ * `YoussefSanad/TheWorldTarot#124` the backend signs the customer in itself and
+ * answers login's customer body, replacing anybody else signed in in this
+ * browser: holding a live link is proof of control of that mailbox. The page
+ * then goes to a safe `next`, or wherever a freshly signed-in customer goes
+ * (`landingFor`). Against a backend from before #124 the answer carries nobody,
+ * and the page does exactly what it did under #150.
  */
 /** Which of the two pages this is. Claiming an account, or resetting one. */
 export type PasswordFlow = "claim" | "reset";
 
 const FLOW: Record<
   PasswordFlow,
-  { copy: PasswordPageCopy; submit: (submission: PasswordSubmission) => Promise<void> }
+  {
+    copy: PasswordPageCopy;
+    /** The customer the backend signed in, or `null` from a backend before #124. */
+    submit: (submission: PasswordSubmission) => Promise<Customer | null>;
+  }
 > = {
   claim: { copy: setPasswordCopy, submit: claimAccount },
   reset: { copy: resetPasswordCopy, submit: resetPassword },
@@ -65,7 +80,6 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     returns it already normalised, so it is encoded once here and not decoded.
   */
   const next = safeReturnPath(searchParams.get("next"));
-  const destination = afterClaimDestination(flow, searchParams.get("next"));
   const signInHref = next === null ? signInPath : `${signInPath}?next=${encodeURIComponent(next)}`;
 
   const fieldId = useId();
@@ -105,21 +119,25 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     let navigating = false;
 
     try {
-      if (destination !== null && customer === null) {
-        const outcome = await claimAndSignIn(submission);
-        setPassword("");
-        setPasswordConfirmation("");
-        if (outcome.outcome === "signed-in") {
-          // The layout survives navigation, so update its shared customer first.
-          setCustomer(outcome.customer);
-          router.replace(destination);
-          navigating = true;
-          return;
-        }
-      } else {
-        await submit(submission);
-        setPassword("");
-        setPasswordConfirmation("");
+      /*
+        The #150 shape, kept only for its fallback: `claimAndSignIn` returns
+        the backend's own sign in when there is one, and otherwise signs in
+        with a second request, which it only does for a claim with a safe
+        `next` and nobody signed in. Every other case takes the write's answer
+        as it is, which from a backend before #124 is nobody.
+      */
+      const outcome: PasswordOutcome =
+        flow === "claim" && next !== null && customer === null
+          ? await claimAndSignIn(submission)
+          : signedInOrNot(await submit(submission));
+      setPassword("");
+      setPasswordConfirmation("");
+      if (outcome.outcome === "signed-in") {
+        // The layout survives navigation, so update its shared customer first.
+        setCustomer(outcome.customer);
+        router.replace(next ?? landingFor(outcome.customer));
+        navigating = true;
+        return;
       }
       setDone(true);
     } catch (cause: unknown) {
@@ -159,8 +177,8 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
     <Panel>
       <h1 className="font-display text-h2 text-champagne">{copy.heading}</h1>
       <p className="mt-4 text-note text-ash">{copy.intro}</p>
-      {flow === "claim" && email !== "" ? (
-        <p className="mt-4 break-words text-note text-ash">{claimEmailPrompt} {email}</p>
+      {email !== "" ? (
+        <p className="mt-4 break-words text-note text-ash">{accountEmailPrompt} {email}</p>
       ) : null}
 
       <form className="mt-8 flex flex-col gap-6" onSubmit={onSubmit} noValidate>
@@ -213,6 +231,10 @@ export function PasswordForm({ flow }: { flow: PasswordFlow }) {
       ) : null}
     </Panel>
   );
+}
+
+function signedInOrNot(customer: Customer | null): PasswordOutcome {
+  return customer === null ? { outcome: "sign-in-needed" } : { outcome: "signed-in", customer };
 }
 
 /**
