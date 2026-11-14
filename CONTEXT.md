@@ -27,8 +27,9 @@ The unguessable string returned with an order that carries the authority to pay
 it. It is a credential: never in an address bar, a redirect, an analytics event
 or a log. **And never in a request path, from 11 November 2026** (#170): it
 goes to the backend only in request bodies, `/orders/pay` included, because a
-path lands in every access log and the token is briefly enough to read a
-first-time pass buyer's claim link back.
+path lands in every access log and the token is briefly enough to ~~read a
+first-time pass buyer's claim link back~~ **sign a first-time pass buyer in,
+from 14 November 2026** (#185, backend #128; see **Entering after payment**).
 _Avoid_: order token, payment token, order id (ids are sequential integers and are not this)
 
 **Product key**:
@@ -387,12 +388,46 @@ The link in that email inviting a buyer with no password to set one. It points
 at our `/set-password/`, and it is the reason that page has to exist before the
 first real payment.
 
-**From 11 November 2026 (#170, backend #122) the confirmation can show it too**,
+~~**From 11 November 2026 (#170, backend #122) the confirmation can show it too**,
 as SET YOUR PASSWORD on the pass screen. It is the receipt's own link, the same
 token, handed back by `POST /orders/status` for a first-time pass buyer for
 fifteen minutes after settlement; using either copy spends both. Whenever no
-whole link arrives the pass screen is what it was. `lib/claim-link.ts` reads it.
+whole link arrives the pass screen is what it was. `lib/claim-link.ts` reads it.~~
+**Struck 14 November 2026** (#185, decided on backend #126): the confirmation
+no longer shows the claim link, and `lib/claim-link.ts` is gone. A first-time
+pass buyer goes straight into the room instead (**Entering after payment**).
+The link lives only in the receipt again, for later visits, and there is no
+separate welcome email. `POST /orders/status` keeps its `set_password_link`
+and `set_password_url` keys, answering `"none"` and `null` once backend #128
+retires the hand-over; this site reads neither.
 _Avoid_: activation link, welcome email, invite
+
+**Entering after payment**:
+A first-time Viewing Room pass buyer, signed in by having paid and taken from
+the confirmation straight to `/viewing-room/`, with no password step. **From
+14 November 2026** (#185 here, `YoussefSanad/TheWorldTarot#128` there, decided
+on backend #126). The pass screen calls `POST /api/v1/orders/enter` with the
+**pay token** in the body, cookie credentials and CSRF, as `/login` is called,
+once the screen shows a received payment and the masthead knows nobody is
+signed in. Anybody already signed in means no call.
+
+**The backend decides who enters, and this site cannot.** It starts a session
+only for a paid pass order whose account that payment made (no password, no
+other order), within fifteen minutes of settlement, for a token that never
+travelled in a path, and once. A 200 is that session: the masthead takes the
+customer it answered and the address is replaced with the room. A 409 is "not
+settled yet", asked again on `ENTRY_RETRY_DELAYS_MS` (one second first, thirty
+in all). Every other answer, and a 409 past thirty seconds, is SIGN IN TO
+ENTER, to `/login/?next=/viewing-room/`, under steps that point at the password
+link in the receipt. Until the answer the screen says "Taking you in" where the
+button goes, never the room's door and never the sign in.
+`lib/enter-after-payment.ts`.
+
+**An existing account is never entered this way** (backend #126, decision 1):
+the address typed at Stripe is unverified, so a buyer who already has a
+password or an earlier order signs in as anybody else does.
+_Avoid_: auto sign in, auto login, magic link (nothing is mailed), claim (that
+finishes an account; this does not)
 
 **Return path**:
 Where a visitor goes after signing in, carried as `?next=` on `/login/` and ~~passed

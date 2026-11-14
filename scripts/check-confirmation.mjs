@@ -73,17 +73,29 @@
  * that road is the durable record. `unknownBody` beside it sends a customer to
  * look for a **receipt**, and a querent was never sent one.
  *
- * ## The claim link on the pass screen, #170
+ * ## ~~The claim link on the pass screen, #170~~
  *
- * From 11 November 2026 the status answer can carry a first-time pass buyer's
+ * ~~From 11 November 2026 the status answer can carry a first-time pass buyer's
  * claim link (backend #122), and the pass screen trades ENTER THE VIEWING ROOM
  * for SET YOUR PASSWORD when it does. Those runs answer each state the contract
  * names: `ready` with the link, `not_yet` and then `ready`, `not_yet` for good,
- * `none`, a 503, and a `ready` whose link is not whole. Every one of them reads
- * the screen **while the answer is held** as well, so a spinner in front of
- * `received`, or a button painted before the link exists, is caught on the
- * first read. The reading and gift runs are handed a link too and must ignore
- * it.
+ * `none`, a 503, and a `ready` whose link is not whole.~~ **Retired 14 November
+ * 2026** (#185): the pass screen no longer reads the claim link, and those runs
+ * became the ones below.
+ *
+ * ## Entering after payment on the pass screen, #185
+ *
+ * From 14 November 2026 a signed-out pass buyer is asked about at
+ * `POST /api/v1/orders/enter` (backend #128) and, on a 200, taken to
+ * `/viewing-room/` signed in. Every run here fakes `/me` and `/orders/enter` as
+ * well as `/orders/status`, and records each request to `/orders/enter`, so a
+ * reading or a gift that asked would fail on the count. The runs follow the
+ * issue's six branches: somebody already signed in (no call, ENTER THE VIEWING
+ * ROOM), the one POST with the pay token in its body and in no address, a 200
+ * that replaces the address with the room, 409 then 200 and 409 for thirty
+ * seconds, the refusals (403, 404, 429, no network) that end on SIGN IN TO
+ * ENTER, and "Taking you in" while the answer is held. The thirty seconds are
+ * fast-forwarded with Playwright's clock rather than waited out.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -201,32 +213,61 @@ function walletQuery({ intentId, clientSecret }, redirectStatus) {
   };
 }
 
-/**
- * The claim link as backend #122 builds it, `FrontendUrl::setPassword(..., ViewingRoomPass)`,
- * on the backend's own idea of the site's origin, and the address on this site
- * the button must carry: the same page and query, never another origin.
- */
-const CLAIM_URL = "https://theworldtarot.com/set-password/?token=claim-token-1&email=jane%40example.com&next=%2Fviewing-room%2F";
-const CLAIM_HREF = "/set-password/?token=claim-token-1&email=jane%40example.com&next=%2Fviewing-room%2F";
+/*
+  ~~`CLAIM_URL`, `CLAIM_HREF`, `linkReady`, `linkNotYet`, `linkNone`,
+  `claimLinks` and `expectPassFallback`~~, the #170 claim link's fixtures.
+  Removed 14 November 2026 with the claim link itself (#185).
+*/
 
-const linkReady = (url = CLAIM_URL) => api({ status: "succeeded", set_password_link: "ready", set_password_url: url });
-const linkNotYet = () => api({ status: "succeeded", set_password_link: "not_yet", set_password_url: null });
-const linkNone = () => api({ status: "succeeded", set_password_link: "none", set_password_url: null });
+/** The customer `/orders/enter` and `/me` answer with, in the wire's shape. */
+const NEW_BUYER = {
+  id: 31,
+  name: null,
+  email: "new-buyer@example.com",
+  created_at: "2026-11-14T19:00:00+00:00",
+  has_viewing_room_access: true,
+};
 
-/** The links on screen that open the set-password page. */
-const claimLinks = (read) => read.links.filter((link) => link.to.startsWith("/set-password/"));
+const SIGN_IN_HREF = "/login/?next=/viewing-room/";
+
 const goldLinks = (read) => read.links.filter((link) => link.gold).map((link) => link.to);
 
+/** What `/orders/enter` answers when a run says nothing: never a session. */
+const refused = () => api({ message: "Sign in to enter." }, 403);
+
 /**
- * The pass screen as it was before #170, and as it still is whenever no whole
- * claim link has arrived: the email step and ENTER THE VIEWING ROOM, and no
- * set-password link of any kind.
+ * The pass screen once the backend will not take this buyer in: SIGN IN TO
+ * ENTER as the one gold button, to `/login/` coming back to the room, under
+ * the steps that point at the password link in the receipt. #185, branch 5.
  */
-function expectPassFallback(state, read) {
+function expectSignInToEnter(state, read) {
   expect(state, "says the pass is ready", /pass is ready/i.test(read.heading), true);
-  expect(state, "keeps the email step", /We have emailed you a link to choose a password/.test(read.text), true);
-  expect(state, "keeps ENTER THE VIEWING ROOM as the one gold button", goldLinks(read), ["/viewing-room/"]);
-  expect(state, "and offers no set-password link at all, whole or half-built", claimLinks(read), []);
+  expect(state, "offers SIGN IN TO ENTER as the one gold button", goldLinks(read), [SIGN_IN_HREF]);
+  expect(state, "in the client's capitals", /SIGN IN TO ENTER/.test(read.text), true);
+  expect(state, "and never ENTER THE VIEWING ROOM", /ENTER THE VIEWING ROOM/.test(read.text), false);
+  expect(state, "under the steps that point at the receipt's password link", /We have emailed you a link to choose a password/.test(read.text), true);
+  expect(state, "and no longer says it is taking them in", /Taking you in/i.test(read.text), false);
+  expect(state, "and keeps readings as the quiet second", read.hrefs.includes("/readings/"), true);
+}
+
+/**
+ * The pass screen while the backend has not answered: "Taking you in" where
+ * the gold button goes, and no door of any kind. #185, branch 6.
+ */
+function expectTakingYouIn(state, read) {
+  expect(state, "says it is taking them in", /Taking you in/i.test(read.text), true);
+  expect(state, "with no gold button at all", goldLinks(read), []);
+  expect(state, "so neither ENTER THE VIEWING ROOM", /ENTER THE VIEWING ROOM/.test(read.text), false);
+  expect(state, "nor SIGN IN TO ENTER", /SIGN IN TO ENTER/.test(read.text), false);
+  expect(state, "nor any link to the room or the sign in", read.hrefs.filter((href) => href === "/viewing-room/" || href === "/login/"), []);
+}
+
+/** Every request a run made to `/orders/enter`, each one a POST of the pay token alone. */
+function expectEnterCalls(state, calls, count) {
+  expect(state, `asks /orders/enter ${count === 1 ? "once" : `${count} times`}`, calls.length, count);
+  expect(state, "always as a POST", calls.every((call) => call.method === "POST"), true);
+  expect(state, "with the pay token in the body and nothing else", calls.every((call) => call.body === JSON.stringify({ pay_token: PAY_TOKEN })), true);
+  expect(state, "and never in its address", calls.filter((call) => call.url.includes(PAY_TOKEN)), []);
 }
 
 /**
@@ -344,12 +385,13 @@ const settledHeading = () => {
  * is what Stripe puts in the address on the way back. Either can be absent,
  * which is how the arrival with nothing at all is told apart from the rest.
  */
-async function drive(state, { stored, redeemed, query, answer, settle = 400, readWhileAsking = false, untilAsked = 0 }) {
+async function drive(state, { stored, redeemed, query, answer, me = null, enter = refused, settle = 400, readWhileAsking = false, untilAsked = 0 }) {
   console.log(`\n${state}`);
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const visited = [];
   const asked = [];
+  const entered = [];
 
   page.on("request", (request) => {
     visited.push(request.url());
@@ -387,11 +429,12 @@ async function drive(state, { stored, redeemed, query, answer, settle = 400, rea
   const requested = new Promise((resolve) => (sawRequest = resolve));
 
   await page.route("**/sanctum/csrf-cookie", (route) => route.fulfill(api({}, 204)));
+  await routeSession(page, { me, enter, entered });
 
   /*
     `answer` may be a function of how many times the backend has been asked,
-    from 0, for the claim link runs whose second ask is told something the
-    first was not.
+    from 0. Written for #170's claim link runs, whose second ask was told
+    something the first was not; kept because it costs nothing.
   */
   let asks = 0;
 
@@ -424,7 +467,58 @@ async function drive(state, { stored, redeemed, query, answer, settle = 400, rea
     await page.waitForFunction(settledHeading, null, { timeout: 20000 }).catch(() => {});
   }
 
-  const read = async () => ({
+  const read = () => readScreen(page);
+
+  /** What the customer sees while the backend is still being asked. */
+  const painted = await read();
+  const paintedOverhang = await scrollPastFooter(page);
+
+  release();
+
+  /*
+    **Waited for by count, where a run says how many asks it expects**, #170.
+    A fixed settle measured the machine as much as the screen: under load it
+    read the page before a background ask had left. Capped, so a screen that
+    never asks still fails on the count rather than hanging the run.
+  */
+  const deadline = Date.now() + 15000;
+  while (asked.length < untilAsked && Date.now() < deadline) await page.waitForTimeout(100);
+
+  // Long enough for the answer to land and the screen to correct itself, and
+  // long enough that a screen which polled would have asked a second time.
+  await page.waitForTimeout(settle);
+
+  const shown = await read();
+  const shownOverhang = await scrollPastFooter(page);
+  const verifications = asked.length;
+  // Before the reload below, which asks again on a pass screen.
+  const enterCalls = [...entered];
+
+  // The reload criterion, taken literally: the same address again, nothing
+  // cleared in between, and the same words back.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(settledHeading, null, { timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(settle);
+
+  const reloaded = await read();
+
+  await page.close();
+
+  return {
+    painted,
+    shown,
+    reloaded,
+    overhang: { painted: paintedOverhang, shown: shownOverhang },
+    verifications,
+    enterCalls,
+    visited,
+    stripeJs: visited.filter((url) => url.includes("js.stripe.com")),
+  };
+}
+
+/** What one confirmation screen shows, as a run reads it. */
+async function readScreen(page) {
+  return {
     heading: (await page.locator(HEADING).first().innerText().catch(() => "")).trim(),
     text: (await page.locator("main").innerText().catch(() => "")).trim(),
     /*
@@ -455,9 +549,9 @@ async function drive(state, { stored, redeemed, query, answer, settle = 400, rea
       links.map((link) => new URL(link.href).pathname),
     ),
     /*
-      The same links with their query strings, which is where a claim link's
-      token, email and `next` live, and the gold ones apart. Added with #170,
-      whose criterion is **one** gold button and a link that is whole.
+      The same links with their query strings, and the gold ones apart. Added
+      with #170, whose criterion was **one** gold button, and kept for #185,
+      whose SIGN IN TO ENTER carries its `next` in the query.
     */
     links: await page.locator("main a[href]").evaluateAll((links) =>
       links.map((link) => {
@@ -465,51 +559,115 @@ async function drive(state, { stored, redeemed, query, answer, settle = 400, rea
         return { to: url.pathname + url.search, gold: link.classList.contains("btn-gold") };
       }),
     ),
+  };
+}
+
+/**
+ * `/me` and `/orders/enter`, faked on every run (#185), because the pass screen
+ * asks both and a request left to the network would reach whatever the build
+ * was pointed at. `me` is the customer `/me` answers, or `null` for a 401.
+ * `enter` is one reply, or a function of how many times it has been asked from
+ * 0, and `"abort"` is a network failure. `hold` is awaited before answering.
+ */
+async function routeSession(page, { me, enter, entered, hold = Promise.resolve() }) {
+  await page.route("**/api/v1/me", (route) =>
+    route.fulfill(me === null ? api({ message: "Unauthenticated." }, 401) : api(me)),
+  );
+
+  await page.route("**/api/v1/orders/enter", async (route) => {
+    const request = route.request();
+
+    // A CORS preflight, if the browser sends one, is not an ask.
+    if (request.method() === "OPTIONS") return route.fulfill(api({}, 204));
+
+    const n = entered.length;
+    entered.push({ method: request.method(), url: request.url(), body: request.postData() });
+    await hold;
+
+    const reply = typeof enter === "function" ? enter(n) : enter;
+
+    if (reply === "abort") return route.abort("failed");
+
+    return route.fulfill(reply);
   });
+}
 
-  /** What the customer sees while the backend is still being asked. */
-  const painted = await read();
-  const paintedOverhang = await scrollPastFooter(page);
+/**
+ * Drives a pass screen that may leave for the room (#185, branches 3, 4 and
+ * 6), which `drive` cannot: its reload and its second read assume the screen
+ * stays. `/orders/status` answers `succeeded` at once, so what is measured is
+ * the entering alone.
+ *
+ * `holdEnter` keeps the first `/orders/enter` answer back until the screen has
+ * been read, which is the "Taking you in" read. `fastForward` installs
+ * Playwright's clock and jumps it past each retry delay, so thirty seconds of
+ * 409s take none; `asks` is how many asks to wait for before reading.
+ */
+async function driveEntry(state, { stored, query, me = null, enter, holdEnter = false, fastForward = false, asks = 1 }) {
+  console.log(`\n${state}`);
 
-  release();
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const visited = [];
+  const entered = [];
 
-  /*
-    **Waited for by count, where a run says how many asks it expects**, #170.
-    The claim link's second ask goes out a second after the first answer, and
-    a fixed settle measured the machine as much as the screen: under load it
-    read the page before that ask had left. Capped, so a screen that never
-    asks again still fails on the count rather than hanging the run.
-  */
-  const deadline = Date.now() + 15000;
-  while (asked.length < untilAsked && Date.now() < deadline) await page.waitForTimeout(100);
+  page.on("request", (request) => visited.push(request.url()));
+  page.on("framenavigated", (frame) => visited.push(frame.url()));
 
-  // Long enough for the answer to land and the screen to correct itself, and
-  // long enough that a screen which polled would have asked a second time.
-  await page.waitForTimeout(settle);
+  await page.addInitScript((value) => {
+    sessionStorage.setItem("checkout", value);
+  }, JSON.stringify(stored));
 
-  const shown = await read();
-  const shownOverhang = await scrollPastFooter(page);
-  const verifications = asked.length;
+  if (fastForward) await page.clock.install();
 
-  // The reload criterion, taken literally: the same address again, nothing
-  // cleared in between, and the same words back.
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForFunction(settledHeading, null, { timeout: 20000 }).catch(() => {});
-  await page.waitForTimeout(settle);
+  let release = () => {};
+  const held = holdEnter ? new Promise((resolve) => (release = resolve)) : Promise.resolve();
 
-  const reloaded = await read();
+  await page.route("**/sanctum/csrf-cookie", (route) => route.fulfill(api({}, 204)));
+  await page.route("**/api/v1/orders/status", (route) => route.fulfill(api({ status: "succeeded" })));
+  await routeSession(page, { me, enter, entered, hold: held });
+
+  await page.goto(`${PAGE}?${new URLSearchParams(query)}`, { waitUntil: "domcontentloaded" });
+  const historyBefore = await page.evaluate(() => history.length);
+
+  const until = async (count) => {
+    const deadline = Date.now() + 20000;
+    while (entered.length < count && Date.now() < deadline) {
+      if (fastForward) await page.clock.fastForward(16000);
+      await page.waitForTimeout(100);
+    }
+  };
+
+  await until(1);
+
+  let waiting = null;
+
+  if (holdEnter) {
+    // Everything the screen does before the answer has been done once it has asked.
+    await page.waitForTimeout(300);
+    waiting = await readScreen(page);
+    release();
+  }
+
+  await until(asks);
+
+  // Either the room, or a door on the pass screen; whichever comes first.
+  await page
+    .waitForFunction(
+      () => location.pathname === "/viewing-room/" || document.querySelector("main a.btn-gold") !== null,
+      null,
+      { timeout: 20000 },
+    )
+    .catch(() => {});
+  await page.waitForTimeout(400);
+
+  const path = new URL(page.url()).pathname;
+  const historyAfter = await page.evaluate(() => history.length);
+  const shown = path === "/checkout/complete/" ? await readScreen(page) : null;
+  const header = (await page.locator("header").first().innerText().catch(() => "")).trim();
 
   await page.close();
 
-  return {
-    painted,
-    shown,
-    reloaded,
-    overhang: { painted: paintedOverhang, shown: shownOverhang },
-    verifications,
-    visited,
-    stripeJs: visited.filter((url) => url.includes("js.stripe.com")),
-  };
+  return { waiting, shown, path, historyBefore, historyAfter, header, enterCalls: entered, visited };
 }
 
 const runs = [
@@ -674,7 +832,7 @@ const runs = [
     },
   },
   {
-    state: "The Viewing Room pass was bought, which is not a reading and is not delivered",
+    state: "The Viewing Room pass was bought, which is not a reading and is not delivered, by somebody already signed in",
     /*
       **The run this screen was missing, and the gap was not theoretical.**
 
@@ -692,9 +850,15 @@ const runs = [
       of the line that may not make the promise, and the shared check above
       proves it against every spelling in `FULFILMENT_CLAIMS`.
     */
-    input: { stored: record(FIRST, "viewing-room-pass"), query: { session_id: FIRST.sessionId } },
+    /*
+      **Bought by somebody already signed in**, from 14 November 2026: #185's
+      first branch. The masthead has a customer, so nothing is asked of
+      `/orders/enter` and the door is ENTER THE VIEWING ROOM, as it always was.
+      The signed-out buyer's screens are the runs after this one.
+    */
+    input: { stored: record(FIRST, "viewing-room-pass"), query: { session_id: FIRST.sessionId }, me: NEW_BUYER },
     claimsTheReading: false,
-    assert: ({ painted, shown }) => {
+    assert: ({ painted, shown, enterCalls }) => {
       expect("pass", "says the pass is ready", /pass is ready/i.test(painted.heading), true);
       expect("pass", "and still does once the backend has answered", /pass is ready/i.test(shown.heading), true);
       // The card road's optimism applies here as it does to a reading: Stripe
@@ -714,145 +878,110 @@ const runs = [
       */
       expect("pass", "tells them to expect the claim email", /choose a password/i.test(shown.text), true);
       // The door. A reading cannot be opened here and a pass can.
-      expect("pass", "offers the Viewing Room as the way on", shown.hrefs.includes("/viewing-room/"), true);
+      expect("pass", "offers ENTER THE VIEWING ROOM as the one gold button", goldLinks(shown), ["/viewing-room/"]);
+      expect("pass", "in the client's capitals", /ENTER THE VIEWING ROOM/.test(shown.text), true);
       expect("pass", "and keeps readings as the quiet second", shown.hrefs.includes("/readings/"), true);
+      // #185, branch 1: already signed in, so no call at all.
+      expect("pass", "and asks /orders/enter nothing", enterCalls.length, 0);
     },
   },
-  {
-    state: "A first-time pass buyer, and the backend hands over the claim link",
-    input: {
-      stored: record(FIRST, "viewing-room-pass"),
-      query: { session_id: FIRST.sessionId },
-      answer: linkReady(),
-    },
+  /*
+    ~~Seven #170 claim link runs: `ready`, `not_yet` then `ready`, `not_yet`
+    for good, `none`, a 503, a `ready` that was not whole, and the wallet's
+    `ready`~~. Retired 14 November 2026 with the claim link (#185). What
+    follows are the signed-out pass buyer's screens that stay on this page;
+    the ones that leave it for the room are `entryRuns`, below the loop.
+  */
+  ...[
+    ["403", refused()],
+    ["404", { ...api({}, 404), body: "" }],
+    ["429", api({ message: "Too Many Attempts." }, 429)],
+    ["a network failure", "abort"],
+  ].map(([kind, reply]) => ({
+    state: `A signed-out pass buyer the backend will not take in: ${kind}`,
+    input: { stored: record(FIRST, "viewing-room-pass"), query: { session_id: FIRST.sessionId }, enter: reply },
     claimsTheReading: false,
-    assert: ({ painted, shown, verifications }) => {
+    enters: 1,
+    assert: ({ painted, shown, enterCalls }) => {
       /*
-        **No spinner in front of `received`.** The answer is held here, so the
-        first read is what the buyer sees before the backend has said anything:
-        the pass screen, whole, with the fallback's door. The button arrives
-        into it.
+        **Branch 6 on the card road's first paint**: the status answer is held
+        here, so this read is the pass screen before anything has been asked
+        about entering. `received` is already true and the door is not.
       */
-      expectPassFallback("claim link, before the answer", painted);
-      expect("claim link", "then offers exactly one gold button, SET YOUR PASSWORD", goldLinks(shown), [CLAIM_HREF]);
-      expect("claim link", "labelled in the client's capitals", /SET YOUR PASSWORD/.test(shown.text), true);
-      expect("claim link", "in place of ENTER THE VIEWING ROOM rather than beside it", /ENTER THE VIEWING ROOM/.test(shown.text), false);
-      expect("claim link", "whose address is this site's set-password page, with the token, email and next intact", claimLinks(shown).map((link) => link.to), [CLAIM_HREF]);
-      expect("claim link", "and whose next is the Viewing Room", new URLSearchParams(CLAIM_HREF.split("?")[1]).get("next"), "/viewing-room/");
-      // The steps match the button, and the email is the backup rather than the route.
-      expect("claim link", "steps point at the button", /with the button below/i.test(shown.text), true);
-      expect("claim link", "and mention the email as the backup", /emailed you the same link as a backup/i.test(shown.text), true);
-      expect("claim link", "and no longer give the email as the only route", /We have emailed you a link to choose a password/.test(shown.text), false);
-      expect("claim link", "keeps readings as the quiet second", shown.hrefs.includes("/readings/"), true);
-      expect("claim link", "and asks once, having its answer", verifications, 1);
+      expect(`enter ${kind}, before the answer`, "says the pass is ready", /pass is ready/i.test(painted.heading), true);
+      expectTakingYouIn(`enter ${kind}, before the answer`, painted);
+      // Branch 5, then branch 2's one POST.
+      expectSignInToEnter(`enter ${kind}`, shown);
+      expectEnterCalls(`enter ${kind}`, enterCalls, 1);
     },
-  },
+  })),
   {
-    state: "A first-time pass buyer whose link is not ready on the first ask, and is on the next",
-    input: {
-      stored: record(FIRST, "viewing-room-pass"),
-      query: { session_id: FIRST.sessionId },
-      answer: (n) => (n === 0 ? linkNotYet() : linkReady()),
-      // The second ask goes out a second after the first answer, in the
-      // background; the run waits for it, then for the answer to paint.
-      untilAsked: 2,
-      settle: 800,
-    },
-    claimsTheReading: false,
-    assert: ({ painted, shown, verifications }) => {
-      expectPassFallback("link later, before the answer", painted);
-      expect("link later", "asks again in the background", verifications, 2);
-      expect("link later", "and the button arrives once the link does", goldLinks(shown), [CLAIM_HREF]);
-      expect("link later", "with the heading never having moved", /pass is ready/i.test(shown.heading), true);
-    },
-  },
-  {
-    state: "A first-time pass buyer whose link never arrives",
-    input: {
-      stored: record(FIRST, "viewing-room-pass"),
-      query: { session_id: FIRST.sessionId },
-      answer: linkNotYet(),
-    },
-    claimsTheReading: false,
-    assert: ({ painted, shown }) => {
-      expectPassFallback("no link yet, before the answer", painted);
-      expectPassFallback("no link yet", shown);
-    },
-  },
-  {
-    state: "A pass buyer who already has a password",
-    input: {
-      stored: record(FIRST, "viewing-room-pass"),
-      query: { session_id: FIRST.sessionId },
-      answer: linkNone(),
-      // Long enough that a screen which kept asking after `none` would have.
-      settle: 2500,
-    },
-    claimsTheReading: false,
-    assert: ({ shown, verifications }) => {
-      expectPassFallback("has a password", shown);
-      expect("has a password", "and stops asking at none", verifications, 1);
-    },
-  },
-  {
-    state: "A pass buyer whose status call fails",
+    state: "A signed-out pass buyer whose status call fails",
+    /*
+      The card road's pass screen stands on a 503, and a failed status ask says
+      nothing about entering, so `/orders/enter` is asked all the same.
+    */
     input: {
       stored: record(FIRST, "viewing-room-pass"),
       query: { session_id: FIRST.sessionId },
       answer: api({ message: "Stripe could not be reached." }, 503),
     },
     claimsTheReading: false,
-    assert: ({ shown }) => {
-      expectPassFallback("status fails", shown);
+    enters: 1,
+    assert: ({ shown, enterCalls }) => {
+      expectSignInToEnter("status fails", shown);
+      expectEnterCalls("status fails", enterCalls, 1);
     },
   },
   {
-    state: "A pass buyer handed a ready link that is not whole",
+    state: "A signed-out pass buyer whose payment collected nothing",
     input: {
       stored: record(FIRST, "viewing-room-pass"),
       query: { session_id: FIRST.sessionId },
-      // No token: a link the set-password page could only refuse.
-      answer: linkReady("https://theworldtarot.com/set-password/?email=jane%40example.com&next=%2Fviewing-room%2F"),
+      answer: api({ status: "requires_payment_method" }),
     },
     claimsTheReading: false,
-    assert: ({ shown }) => {
-      expectPassFallback("half-built link", shown);
+    assert: ({ shown, enterCalls }) => {
+      // Corrected away from the pass screen, so there is nothing to enter from.
+      expect("pass unpaid", "says no payment was taken", /no payment was taken/i.test(shown.heading), true);
+      expect("pass unpaid", "and asks /orders/enter nothing", enterCalls.length, 0);
+      expect("pass unpaid", "nor offers any door to the room", goldLinks(shown), []);
     },
   },
   {
-    state: "A pass bought by wallet, with the claim link on the answer",
+    state: "A pass bought by wallet, by a buyer the backend will not take in",
     input: {
       stored: { ...walletRecord(WALLET_FIRST), productKey: "viewing-room-pass" },
       query: walletQuery(WALLET_FIRST, "succeeded"),
-      answer: linkReady(),
       readWhileAsking: true,
     },
     claimsTheReading: false,
-    assert: ({ painted, shown }) => {
-      // The wallet road asks before it says anything, link or no link.
-      expect("wallet claim link", "says nothing before the backend answers", /Checking/i.test(painted.heading), true);
-      expect("wallet claim link", "and offers no link while it waits", claimLinks(painted), []);
-      expect("wallet claim link", "then the pass screen, with the one gold button", goldLinks(shown), [CLAIM_HREF]);
-      expect("wallet claim link", "under the pass heading", /pass is ready/i.test(shown.heading), true);
+    enters: 1,
+    assert: ({ painted, shown, enterCalls }) => {
+      // The wallet road asks before it says anything, and asks nothing about entering first.
+      expect("wallet pass refused", "says nothing before the backend answers", /Checking/i.test(painted.heading), true);
+      expect("wallet pass refused", "and offers no door while it waits", goldLinks(painted), []);
+      expectSignInToEnter("wallet pass refused", shown);
+      expectEnterCalls("wallet pass refused", enterCalls, 1);
     },
   },
   {
-    state: "A reading bought, with a claim link on the answer it must ignore",
-    input: { stored: record(FIRST), query: { session_id: FIRST.sessionId }, answer: linkReady() },
+    state: "A reading bought, by a signed-out buyer",
+    input: { stored: record(FIRST), query: { session_id: FIRST.sessionId }, enter: () => api(NEW_BUYER) },
     claimsTheReading: true,
     assert: ({ shown }) => {
-      expect("reading ignores link", "still says the reading is on its way", RECEIVED.test(shown.heading), true);
-      expect("reading ignores link", "and offers no password", /password/i.test(shown.text), false);
-      expect("reading ignores link", "nor any set-password link", claimLinks(shown), []);
+      expect("reading, signed out", "still says the reading is on its way", RECEIVED.test(shown.heading), true);
+      expect("reading, signed out", "and offers no password", /password/i.test(shown.text), false);
+      expect("reading, signed out", "nor says it is taking anybody in", /Taking you in/i.test(shown.text), false);
     },
   },
   {
-    state: "A gift bought, with a claim link on the answer it must ignore",
-    input: { stored: giftRecord(FIRST), query: { session_id: FIRST.sessionId }, answer: linkReady() },
+    state: "A gift bought, by a signed-out buyer",
+    input: { stored: giftRecord(FIRST), query: { session_id: FIRST.sessionId }, enter: () => api(NEW_BUYER) },
     claimsTheReading: false,
     assert: ({ shown }) => {
-      expect("gift ignores link", "offers no password", /password/i.test(shown.text), false);
-      expect("gift ignores link", "nor any set-password link", claimLinks(shown), []);
+      expect("gift, signed out", "offers no password", /password/i.test(shown.text), false);
+      expect("gift, signed out", "nor says it is taking anybody in", /Taking you in/i.test(shown.text), false);
     },
   },
   {
@@ -1229,6 +1358,12 @@ for (const run of runs) {
 
   expect(run.state, "says the same thing after a reload", result.reloaded, result.shown);
   /*
+    #185: only a pass screen asks to enter, and only for a signed-out buyer.
+    Every other run, readings, gifts, redemptions and the six unfinished-money
+    screens, must ask nothing, which is counted here rather than trusted.
+  */
+  expect(run.state, "asks /orders/enter only from a signed-out pass screen", result.enterCalls.length, run.enters ?? 0);
+  /*
     The ground the screen stands on, on both reads. `/redeem/` stands under the
     reading pages' own night sky and this address is the one a customer reaches
     straight from a payment, so it stands under the same one — including on the
@@ -1274,6 +1409,99 @@ for (const run of runs) {
     appearing here again is the same accident `check:panel` watches for.
   */
   expect(run.state, "asks js.stripe.com for nothing", result.stripeJs, []);
+}
+
+/*
+  ## The pass screens that leave for the room, #185
+
+  Branches 3, 4 and 6, driven by `driveEntry` because a 200 replaces this
+  address with `/viewing-room/`, and there is then no confirmation to reload
+  or read again.
+*/
+const passRecord = record(FIRST, "viewing-room-pass");
+const cardQuery = { session_id: FIRST.sessionId };
+
+/** A 200 that lands in the room, by `replace`: `history.length` does not grow. */
+function expectInTheRoom(state, result) {
+  expect(state, "ends in the Viewing Room", result.path, "/viewing-room/");
+  expect(state, "by replacing the address, so Back does not return to the confirmation", result.historyAfter, result.historyBefore);
+  expect(state, "with the masthead showing the customer it answered", result.header.includes(NEW_BUYER.email), true);
+}
+
+const entryRuns = [
+  {
+    state: "A signed-out pass buyer the backend takes in at once",
+    input: { stored: passRecord, query: cardQuery, enter: () => api(NEW_BUYER) },
+    assert: (result) => {
+      expectInTheRoom("entered", result);
+      expectEnterCalls("entered", result.enterCalls, 1);
+      expect("entered", "and sends the enter request to the API's own address", result.enterCalls[0]?.url.endsWith("/api/v1/orders/enter"), true);
+    },
+  },
+  {
+    state: "A signed-out pass buyer, paid by wallet, taken in at once",
+    input: {
+      stored: { ...walletRecord(WALLET_FIRST), productKey: "viewing-room-pass" },
+      query: walletQuery(WALLET_FIRST, "succeeded"),
+      enter: () => api(NEW_BUYER),
+    },
+    assert: (result) => {
+      expectInTheRoom("wallet entered", result);
+      expectEnterCalls("wallet entered", result.enterCalls, 1);
+    },
+  },
+  {
+    state: "A signed-out pass buyer who arrives before the webhook: 409, then 200",
+    input: {
+      stored: passRecord,
+      query: cardQuery,
+      enter: (n) => (n === 0 ? api({ message: "Not settled yet." }, 409) : api(NEW_BUYER)),
+      asks: 2,
+    },
+    assert: (result) => {
+      expectInTheRoom("409 then 200", result);
+      expectEnterCalls("409 then 200", result.enterCalls, 2);
+    },
+  },
+  {
+    state: "A signed-out pass buyer whose order never settles in thirty seconds",
+    input: {
+      stored: passRecord,
+      query: cardQuery,
+      enter: () => api({ message: "Not settled yet." }, 409),
+      fastForward: true,
+      // The first ask and one after each of the five delays.
+      asks: 6,
+    },
+    assert: (result) => {
+      expect("409 exhausted", "stays on the confirmation", result.path, "/checkout/complete/");
+      if (result.shown) expectSignInToEnter("409 exhausted", result.shown);
+      expectEnterCalls("409 exhausted", result.enterCalls, 6);
+    },
+  },
+  {
+    state: "A signed-out pass buyer, read while the backend is deciding",
+    input: { stored: passRecord, query: cardQuery, enter: () => api(NEW_BUYER), holdEnter: true },
+    assert: (result) => {
+      expect("taking you in", "is the pass screen", /pass is ready/i.test(result.waiting?.heading ?? ""), true);
+      expectTakingYouIn("taking you in", result.waiting);
+      expectInTheRoom("taking you in, then", result);
+      expectEnterCalls("taking you in", result.enterCalls, 1);
+    },
+  },
+];
+
+for (const run of entryRuns) {
+  const result = await driveEntry(run.state, run.input);
+
+  run.assert(result);
+
+  expect(
+    run.state,
+    "puts the pay token in no address the browser visits",
+    result.visited.filter((url) => url.includes(PAY_TOKEN)),
+    [],
+  );
 }
 
 /**

@@ -7,7 +7,6 @@
  */
 
 import { apiWrite } from "./api-write.ts";
-import { claimLinkFrom, type ClaimLink } from "./claim-link.ts";
 import type { Money } from "./price.ts";
 
 /** One thing being bought. `quantity` defaults to 1 at the backend, maximum 10. */
@@ -249,10 +248,11 @@ export type PaymentMethodName =
  * November 2026 (#170, backend #122). It was a path segment,
  * `/orders/{pay_token}/pay`, and a path lands in every access log between the
  * browser and the backend, Cloudflare's included. That stopped being tolerable
- * when the pay token became briefly enough to read a first-time pass buyer's
- * claim link back: the backend never hands that link to an order whose token
- * came in by the path, so staying on the old route would quietly cost every
- * buyer the Set your password button. The old route is deprecated in
+ * when the pay token became briefly enough to ~~read a first-time pass buyer's
+ * claim link back~~ sign a first-time pass buyer in (#185, from 14 November
+ * 2026; the claim link before it, #170): the backend never enters an order
+ * whose token came in by the path, so staying on the old route would quietly
+ * send every such buyer to "sign in to enter". The old route is deprecated in
  * `API_CONTRACT.md` and goes once this has deployed.
  *
  * Safe to call twice on a pending order — it gives a fresh Session or a fresh
@@ -342,23 +342,22 @@ export async function payOrder(
  * Rejects on a 503, which is what the backend answers when Stripe cannot be
  * reached, and which says nothing whatsoever about the payment.
  *
- * **And the claim link beside it, from 11 November 2026** (#170, backend
+ * ~~**And the claim link beside it, from 11 November 2026** (#170, backend
  * #122): the receipt's own set-password link for a first-time pass buyer, or
- * why there is none. `lib/claim-link.ts` reads it, and anything short of a
- * whole link comes back as `none`, so a caller cannot render half of one.
+ * why there is none.~~ **Not read from 14 November 2026** (#185): a first-time
+ * pass buyer enters after payment instead, through `lib/enter-after-payment.ts`.
+ * The backend keeps `set_password_link` and `set_password_url` on the answer
+ * so an older build is not broken, and answers `"none"` and `null` for good
+ * once backend #128 retires the hand-over. This build reads neither.
  */
 export async function fetchPaymentStatus(payToken: string): Promise<PaymentConfirmation> {
-  const answer = await apiWrite<{ status: string; set_password_link?: unknown; set_password_url?: unknown }>(
-    "/api/v1/orders/status",
-    { pay_token: payToken },
-  );
+  const answer = await apiWrite<{ status: string }>("/api/v1/orders/status", { pay_token: payToken });
 
-  return { status: answer.status, claimLink: claimLinkFrom(answer) };
+  return { status: answer.status };
 }
 
-/** What `POST /orders/status` says: the payment, and the claim link beside it. */
+/** What `POST /orders/status` says about the payment. */
 export type PaymentConfirmation = {
   /** Stripe's PaymentIntent status, unchanged, including one never heard of. */
   status: string;
-  claimLink: ClaimLink;
 };

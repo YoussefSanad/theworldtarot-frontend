@@ -100,9 +100,9 @@ test("paying returns the client secret, with the pay token in the body and never
 
   // ~~`/api/v1/orders/{pay_token}/pay`~~ until 11 November 2026 (#170, backend
   // #122): a path segment lands in every access log between the browser and
-  // the backend, and the pay token is briefly enough to claim a first-time
-  // buyer's account. The backend never hands the confirmation a claim link for
-  // an order whose token came in by the path.
+  // the backend, and the pay token is briefly enough to sign a first-time pass
+  // buyer in (#185; to read their claim link back before it, #170). The backend
+  // never enters an order whose token came in by the path.
   assert.equal(calls[1].url, "https://staging-api.theworldtarot.com/api/v1/orders/pay");
   assert.equal(calls[1].url.includes("kQ3rN8xvT1sLb0Zy"), false);
   assert.deepEqual(JSON.parse(String(calls[1].init.body)), { pay_token: "kQ3rN8xvT1sLb0Zy" });
@@ -267,7 +267,12 @@ test("a status this build has never heard of comes back as it was sent", async (
   assert.equal((await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy")).status, "requires_hovercraft");
 });
 
-test("the claim link comes back beside the status, made relative to this site", async () => {
+test("the claim link keys on the answer are not read: the status is the whole answer", async () => {
+  // ~~The claim link came back beside the status~~ from 11 November 2026 (#170,
+  // backend #122) until 14 November 2026: #185 replaced SET YOUR PASSWORD with
+  // entering after payment (`lib/enter-after-payment.ts`). The backend keeps
+  // both keys on the wire, answering "none" and null once backend #128
+  // retires the hand-over, and this build reads neither, whatever they hold.
   stubFetch(
     new Response(null, { status: 204 }),
     json({
@@ -277,17 +282,7 @@ test("the claim link comes back beside the status, made relative to this site", 
     }),
   );
 
-  assert.deepEqual(await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), {
-    status: "succeeded",
-    claimLink: { state: "ready", href: "/set-password/?token=abc&email=jane%40example.com&next=%2Fviewing-room%2F" },
-  });
-});
-
-test("an answer with no claim link keys says there is none", async () => {
-  // The shape before backend #122, and what a reading order's answer amounts to.
-  stubFetch(new Response(null, { status: 204 }), json({ status: "succeeded" }));
-
-  assert.deepEqual((await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy")).claimLink, { state: "none" });
+  assert.deepEqual(await fetchPaymentStatus("kQ3rN8xvT1sLb0Zy"), { status: "succeeded" });
 });
 
 test("a 503 from the status endpoint throws, and says nothing about the payment", async () => {
