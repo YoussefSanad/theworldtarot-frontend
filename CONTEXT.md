@@ -445,7 +445,11 @@ homepage otherwise). A different customer already signed in in the browser is
 replaced, because holding a live link proves the mailbox. Against a backend from
 before #124 the write answers nobody, and the #150 behaviour above is what
 happens, unchanged; the page shows the success screen, with next on its sign-in
-link, whenever the write succeeded and nobody was signed in. It is checked
+link, whenever the write succeeded and nobody was signed in. **Corrected
+14 November 2026:** backend #124 was dropped (its PR #125 closed unmerged), so
+no deployed backend signs anybody in from a password link. The "before #124"
+path, #150's behaviour, is the one that runs on staging and production, and
+the fallback stays. It is checked
 by `safeReturnPath` (`src/lib/return-path.ts`), an allow-list of same-origin paths,
 and anything else falls back to ~~`/readings/`~~ `landingFor`. ~~The claim link
 itself does not carry one yet: backend #102 is to add a single fixed value to
