@@ -224,29 +224,30 @@ export const checkoutCompleteCopy = {
       "We have emailed you a link to choose a password and claim your account.",
       "Sign in with it and the Viewing Room opens, on this device and any other.",
     ],
+    /*
+      ~~`claimSteps` and `setPasswordLabel`, the steps and the gold button
+      SET YOUR PASSWORD for a first-time buyer the backend had handed the claim
+      link to~~ (#170, 11 November 2026). **Removed 14 November 2026** (#185):
+      that buyer is now signed in by having paid and taken straight to the
+      room, so the screen never offers the link. The receipt still carries it.
+    */
     /**
-     * The steps beside the **Set your password** button, #170, for a
-     * first-time buyer the backend has handed the claim link to. `steps`
-     * above are the fallback, unchanged, for everybody else and for the
-     * moments before the link arrives.
-     *
-     * **The button is the route and the email is the backup**, and the second
-     * step says the one thing a buyer needs to know about having two copies:
-     * they are the same link, so whichever is used first is the one that
-     * works. A "use the email" that never said so would send somebody to a
-     * link the button had already spent.
+     * Where the gold button stands while the backend is asked whether this
+     * buyer may enter (#185): no button at all, because ENTER THE VIEWING ROOM
+     * would open the paywall to somebody about to be signed in, and SIGN IN TO
+     * ENTER would ask for a password they do not have yet. #185's own words.
      */
-    claimSteps: [
-      "Choose your password with the button below and the Viewing Room opens.",
-      "We have emailed you the same link as a backup. It works once, so use whichever you open first.",
-      "After that, sign in with your password to watch on any other device.",
-    ],
+    takingYouIn: "Taking you in…",
     /**
-     * The gold button that replaces ENTER THE VIEWING ROOM when the claim
-     * link is here. In the client's capitals, like the other two buttons on
-     * this screen, and in the receipt's words for the same link.
+     * The gold button when the backend will not sign this buyer in: a buyer
+     * who already had an account, a second browser, the fifteen minutes gone,
+     * or no answer at all (#185). `steps` above sit over it, and they point at
+     * the password link in the receipt, which is the way in for all of them.
+     * In the client's capitals, like the other two buttons on this screen.
      */
-    setPasswordLabel: "SET YOUR PASSWORD",
+    signInLabel: "SIGN IN TO ENTER",
+    /** `/login/`, coming back to the room once signed in. */
+    signInHref: "/login/?next=/viewing-room/",
     /**
      * The gold button, in the client's capitals and in her own words for this
      * control — `ENTER THE VIEWING ROOM` is what the paywall's button says, and

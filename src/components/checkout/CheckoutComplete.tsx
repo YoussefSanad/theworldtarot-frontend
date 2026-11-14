@@ -1,8 +1,9 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useSignedIn } from "@/components/account/useSignedIn";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
 import { ButtonLink } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/Divider";
@@ -19,13 +20,47 @@ import {
   walletCheckoutFor,
 } from "@/lib/checkout-session";
 import type { ApiProduct } from "@/lib/api";
-import { CLAIM_LINK_RETRY_DELAYS_MS, type ClaimLink } from "@/lib/claim-link";
 import { useCatalogue } from "@/lib/catalogue";
+import { type Entry, enterAfterPayment, passDoorFor } from "@/lib/enter-after-payment";
 import { fetchPaymentStatus } from "@/lib/orders";
 import { isRecognisedStatus, outcomeFor, type PaymentOutcome } from "@/lib/payment-outcome";
 import { PASS } from "@/lib/pass-price";
 import { formatPrice, type Money } from "@/lib/price";
 import { resolveReadingName } from "@/lib/reading-prices";
+import type { Customer } from "@/lib/session";
+
+/*
+  **Entering is asked once per pay token per page load**, whatever React does
+  with the effect that asks (#185). The backend lets a token enter once, so a
+  development double-mount that asked twice could spend the entry on the first
+  ask and be refused on the second. The promise is shared; each effect run only
+  decides whether it is still there to act on the answer, which is the shape
+  `useSignedIn` uses for `/me` and for the same reason.
+
+  `watching` counts the screens still waiting on a token, so a buyer who leaves
+  during the 409 retries stops the asking at its next turn rather than being
+  signed in behind a page that no longer listens. A follow that stopped that
+  way is forgotten, so coming back asks again.
+*/
+const entries = new Map<string, Promise<Entry | null>>();
+const watching = new Map<string, number>();
+
+function enterOnce(payToken: string, signedIn: Customer | null): Promise<Entry | null> {
+  const asked = entries.get(payToken);
+  if (asked) return asked;
+
+  const entry = enterAfterPayment(payToken, {
+    signedIn,
+    stillWanted: () => (watching.get(payToken) ?? 0) > 0,
+  });
+
+  entries.set(payToken, entry);
+  void entry.then((answer) => {
+    if (answer === null) entries.delete(payToken);
+  });
+
+  return entry;
+}
 
 /**
  * The **confirmation**: where a paid-for checkout lands, by either road.
@@ -207,29 +242,34 @@ import { resolveReadingName } from "@/lib/reading-prices";
  * paint to stand, and the two cases part company: a 503 becomes `unreadable`
  * and an unrecognised status becomes `unfinished`.
  *
- * **One exception, from 11 November 2026, and it asks about a link rather than
- * a payment** (#170, backend #122). A first-time pass buyer's claim link
- * arrives on the same answer, and on the card road it usually is not there yet:
- * the webhook that mints it has not settled the order. So while the answer says
- * `not_yet`, and only on the pass screen, this asks again in the background on
- * `CLAIM_LINK_RETRY_DELAYS_MS`, thirty seconds in all, and reads nothing but
- * the link off those answers. The status on screen is never corrected by them,
- * so the argument above stands for everything it was about.
+ * ~~**One exception, from 11 November 2026, and it asks about a link rather
+ * than a payment** (#170, backend #122): while the answer said `not_yet`, the
+ * pass screen asked again for the claim link on `CLAIM_LINK_RETRY_DELAYS_MS`.~~
+ * **Retired 14 November 2026** (#185). The pass screen no longer reads the
+ * claim link at all; what it follows instead is a different endpoint, below.
  *
- * ## The claim link, on the pass screen and nowhere else
+ * ## Entering after payment, on the pass screen and nowhere else
  *
- * **One gold button, SET YOUR PASSWORD, once the backend has handed the link
- * over**, in place of ENTER THE VIEWING ROOM, with steps that name the button
- * and keep the email as the backup. Until then, and whenever it never comes,
- * the screen is exactly what it was: the email step and ENTER THE VIEWING ROOM.
- * That covers the moments before the link, a buyer who already has a password
- * (the backend answers `none` for them and does not say why, by decision on
- * backend #122), a tab that lost its record, and a backend that cannot be
- * reached. **No spinner stands in front of `received` for it**: the button
- * arrives into a screen that is already true, and `aria-live` announces it.
+ * ~~One gold button, SET YOUR PASSWORD, once the backend had handed the claim
+ * link over~~ (#170, 11 November 2026). **From 14 November 2026** (#185,
+ * backend #128, decided on backend #126): a first-time pass buyer is signed in
+ * by having paid and taken straight to `/viewing-room/`, with no password step.
  *
- * `lib/claim-link.ts` is what guarantees the link is whole or absent. Reading
- * and gift confirmations never look at it.
+ * Once the pass screen is what stays up, and once the masthead knows who is
+ * signed in, `lib/enter-after-payment.ts` asks `POST /orders/enter` with the
+ * pay token in the body. Somebody already signed in means no call and ENTER
+ * THE VIEWING ROOM, as before. A 200 sets the masthead's customer and replaces
+ * the address with the room. A 409 is "not settled yet" and is asked again on
+ * `ENTRY_RETRY_DELAYS_MS`, thirty seconds in all; anything else, and a 409
+ * past that, is SIGN IN TO ENTER, with the steps that point at the receipt.
+ *
+ * **"Taking you in" stands where the button goes until then**, which is the
+ * one place this screen waits on purpose: ENTER THE VIEWING ROOM before the
+ * answer would open the paywall to a buyer about to be let in. It waits in
+ * place of the button only; `received` above it is already true, and
+ * `aria-live` announces the button when it comes. The status on screen is
+ * never corrected by any of this, so the argument above about not polling
+ * stands. Reading and gift confirmations never ask.
  *
  * ## The stale-result guard
  *
@@ -345,11 +385,18 @@ export function CheckoutComplete() {
 
   const [result, setResult] = useState<Result>({ state: "checking" });
   /*
-    The claim link's address on this site, once the backend has handed it
-    over. Only ever whole: `lib/claim-link.ts` turns anything less into
-    nothing. Read only by the pass screen.
+    ~~The claim link's address on this site, once the backend had handed it
+    over~~ (#170). Replaced 14 November 2026 (#185) by the two below.
+
+    **Entering after payment.** `entryToken` is the pay token, set once the
+    pass screen is what stays up, and it is the signal to ask. `entry` is what
+    asking came to; it starts at `waiting`, which the pass screen draws as
+    "Taking you in" rather than any button. Read only by the pass screen.
   */
-  const [claimHref, setClaimHref] = useState<string | null>(null);
+  const [entryToken, setEntryToken] = useState<string | null>(null);
+  const [entry, setEntry] = useState<Entry | "waiting">("waiting");
+  const router = useRouter();
+  const { customer, setCustomer } = useSignedIn();
 
   useEffect(() => {
     let live = true;
@@ -400,45 +447,17 @@ export function CheckoutComplete() {
       }
 
       /*
-        **Whether this is a pass screen that could carry the claim link.** Read
-        off the record's product key, as `isPass` below is, and never for a
-        gift: a gift wins over a pass on screen, and the case cannot arise.
+        **Whether this is a pass screen a first-time buyer could enter from**
+        (#185; the claim link's screen before it, #170). Read off the record's
+        product key, as `isPass` below is, and never for a gift: a gift wins
+        over a pass on screen, and the case cannot arise.
+
+        The pay token is read here, off the record, before anything is
+        awaited. Nothing on this screen clears it (`forgetQuestion` drops only
+        the question), and it leaves this tab only in a request body.
       */
       const forThePass = record.productKey === PASS && !(record.gift ?? false);
       const { payToken } = record;
-
-      /*
-        The claim link, followed until it is here or will never be. Starts from
-        the first answer's link, or from `null` when that ask failed, which
-        the contract says to treat as "not yet". Asks again only while the
-        answer is `not_yet`, on the delays in `CLAIM_LINK_RETRY_DELAYS_MS`,
-        and reads nothing but the link off those answers. Stops at the first
-        `ready` or `none`, when the delays run out, or when the screen goes.
-      */
-      const followClaimLink = async (first: ClaimLink | null): Promise<void> => {
-        let link = first;
-
-        for (const delay of [...CLAIM_LINK_RETRY_DELAYS_MS, null]) {
-          if (!live) return;
-
-          if (link?.state === "ready") {
-            setClaimHref(link.href);
-            return;
-          }
-
-          if (link?.state === "none" || delay === null) return;
-
-          await new Promise((resolve) => setTimeout(resolve, delay));
-
-          if (!live) return;
-
-          try {
-            link = (await fetchPaymentStatus(payToken)).claimLink;
-          } catch {
-            link = null;
-          }
-        }
-      };
 
       /*
         **Only the card road paints before it asks.** `success_url` is reached
@@ -457,22 +476,23 @@ export function CheckoutComplete() {
       }
 
       try {
-        const { status, claimLink } = await fetchPaymentStatus(payToken);
+        const { status } = await fetchPaymentStatus(payToken);
 
         if (!live) return;
 
         /*
-          **The pass screen's claim link**, followed only where that screen is
+          **The pass screen asks to enter** (#185), only where that screen is
           what stays up: `received` on either road, or a status this build has
           never heard of on the card road, where the optimistic paint stands.
           Anywhere the screen is corrected away from `received`, there is no
-          pass screen to put a button on.
+          pass screen to take anybody in from. The asking is the effect below,
+          which also waits for the masthead to know who is signed in.
         */
         const staysReceived = card
           ? !isRecognisedStatus(status) || outcomeFor(status) === "received"
           : outcomeFor(status) === "received";
 
-        if (forThePass && staysReceived) void followClaimLink(claimLink);
+        if (forThePass && staysReceived) setEntryToken(payToken);
 
         /*
           Two answers that are not corrections. A status this build has never
@@ -532,9 +552,10 @@ export function CheckoutComplete() {
         if (!card) {
           setResult({ state: "unreadable" });
         } else if (forThePass) {
-          // The card road's pass screen stands, and a failed ask is "not yet"
-          // for the link: it may still arrive.
-          void followClaimLink(null);
+          // The card road's pass screen stands, and a failed status ask says
+          // nothing about entering: `/orders/enter` answers 409 until the
+          // order is settled, so the entry is asked for all the same.
+          setEntryToken(payToken);
         }
       }
     })();
@@ -543,6 +564,42 @@ export function CheckoutComplete() {
       live = false;
     };
   }, [sessionId, paymentIntentId, redeemed]);
+
+  /*
+    **Entering after payment** (#185, backend #128), once the pass screen has
+    handed over its pay token and the masthead knows who is signed in. Anybody
+    signed in already means no call and ENTER THE VIEWING ROOM, as before.
+    Otherwise `POST /orders/enter`: a 200 is a session, so the masthead's
+    customer is replaced with the one it answered and the address with the
+    room, `replace` so that Back does not return here. Anything else, after
+    thirty seconds of 409s at most, is SIGN IN TO ENTER.
+
+    It stops asking once it has an answer, which is also why setting the
+    masthead's customer below does not ask again.
+  */
+  useEffect(() => {
+    if (entryToken === null || customer === undefined || entry !== "waiting") return;
+
+    let live = true;
+    watching.set(entryToken, (watching.get(entryToken) ?? 0) + 1);
+
+    void enterOnce(entryToken, customer).then((answer) => {
+      if (!live || answer === null) return;
+
+      setEntry(answer);
+
+      if (answer.outcome === "entered") {
+        // The layout survives navigation, so its shared customer goes first.
+        setCustomer(answer.customer);
+        router.replace(checkoutCompleteCopy.passReceived.enterHref);
+      }
+    });
+
+    return () => {
+      live = false;
+      watching.set(entryToken, (watching.get(entryToken) ?? 1) - 1);
+    };
+  }, [entryToken, customer, entry, router, setCustomer]);
 
   if (result.state === "checking") {
     return (
@@ -654,6 +711,7 @@ export function CheckoutComplete() {
   */
   const isPass = result.outcome === "received" && result.subject.productKey === PASS;
   const isGift = result.gift && result.outcome === "received";
+  const door = passDoorFor(entry);
 
   const copy = isGift
     ? checkoutCompleteCopy.giftReceived
@@ -690,15 +748,17 @@ export function CheckoutComplete() {
         none either, because the next move is the recipient's and not theirs.
       */}
       {/*
-        The pass buyer's steps follow the button: the claim link's when it is
-        here, and the email's, unchanged, whenever it is not.
+        The pass buyer's steps, which point at the password link in the
+        receipt, under either door (#185). **Not while "Taking you in"**: they
+        say to sign in, which a buyer about to be taken in has no need to read,
+        and they arrive with SIGN IN TO ENTER if that is how it ends.
       */}
-      {isPass ? (
+      {isPass && door !== "taking-you-in" ? (
         <NextSteps
           lead={checkoutCompleteCopy.passReceived.stepsLead}
-          steps={claimHref ? checkoutCompleteCopy.passReceived.claimSteps : checkoutCompleteCopy.passReceived.steps}
+          steps={checkoutCompleteCopy.passReceived.steps}
         />
-      ) : !isGift && result.outcome === "received" ? (
+      ) : isPass ? null : !isGift && result.outcome === "received" ? (
         <NextSteps
           lead={checkoutCompleteCopy.receivedSteps.lead}
           steps={checkoutCompleteCopy.receivedSteps.steps}
@@ -716,21 +776,27 @@ export function CheckoutComplete() {
         READINGS drops to the quiet second place it already occupies.
       */}
       {/*
-        **Still one gold button**, from 11 November 2026 (#170): SET YOUR
-        PASSWORD when the claim link is here, in place of the room rather than
-        beside it, because a first-time buyer has no password and the room
-        would only show them its paywall. Setting the password carries them on
-        to the room signed in, by the `next` the link already holds.
+        ~~**Still one gold button**, from 11 November 2026 (#170): SET YOUR
+        PASSWORD when the claim link is here~~. **From 14 November 2026
+        (#185), at most one gold button, and none until the backend has
+        answered.** "Taking you in" while a signed-out buyer is asked about;
+        a 200 never draws a button, because the screen is already on its way
+        to the room. ENTER THE VIEWING ROOM for somebody already signed in, and
+        SIGN IN TO ENTER for everybody the backend will not take in.
       */}
       {isPass ? (
         <div className="mt-8 flex flex-col items-center gap-4">
-          {claimHref ? (
-            <ButtonLink href={claimHref} variant="gold" size="md">
-              {checkoutCompleteCopy.passReceived.setPasswordLabel}
-            </ButtonLink>
-          ) : (
+          {door === "taking-you-in" ? (
+            <p className={`${BODY} text-champagne`} data-entering>
+              {checkoutCompleteCopy.passReceived.takingYouIn}
+            </p>
+          ) : door === "enter" ? (
             <ButtonLink href={checkoutCompleteCopy.passReceived.enterHref} variant="gold" size="md">
               {checkoutCompleteCopy.passReceived.enterLabel}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={checkoutCompleteCopy.passReceived.signInHref} variant="gold" size="md">
+              {checkoutCompleteCopy.passReceived.signInLabel}
             </ButtonLink>
           )}
 
