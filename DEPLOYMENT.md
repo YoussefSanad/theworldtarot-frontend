@@ -119,3 +119,29 @@ handling beyond `not_found_handling`), add a `main` **and** write a handler
 whose fallthrough serves from the assets binding — `env.ASSETS.fetch(request)`.
 A handler that answers requests itself without that binding intercepts every
 request and serves nothing.
+
+## Cloudflare: branch builds need the same build variables
+
+Workers Builds builds every pushed branch, not only `staging`, and reports the
+result as the `Workers Builds: staging-theworldtarot` check on the commit and
+its PR. Nothing in this repository supplies `NEXT_PUBLIC_API_BASE_URL` or
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`.env*` is gitignored), so every build
+reads them from the Worker's build variables in the Cloudflare dashboard. A
+branch build that does not receive them stops at the first guard:
+
+```
+Error: NEXT_PUBLIC_API_BASE_URL is unset, so the export has no API to talk to ...
+    at assertDeployableApiBase (next.config.mjs:37:11)
+```
+
+That is the guard working, not a broken build. Until November 2026 every
+feature-branch build failed this way while the merge into `staging` passed
+with the identical tree
+([#166](https://github.com/YoussefSanad/theworldtarot-frontend/issues/166)).
+
+The fix is in the dashboard, never in the repo: give non-production branch
+builds the same two build variables staging has (the staging API host and the
+`pk_test_` key). Do not commit an `.env.production` or a fallback in the config
+to make the check green: it would turn a build that fails loudly into one
+that quietly targets the wrong API, which is the failure the guards are there
+to prevent.

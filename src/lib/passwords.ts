@@ -73,7 +73,9 @@ export type PasswordOutcome =
  * website and that backend can be deployed in either order. On that path it
  * signs in with the password just chosen only if a fresh session read confirms
  * nobody is signed in. If the read or sign in fails, the new password can still
- * be used to sign in later. Delete the fallback once #124 is in production.
+ * be used to sign in later. ~~Delete the fallback once #124 is in production.~~
+ * **14 November 2026:** backend #124 was dropped (PR #125 closed unmerged), so
+ * this fallback is the path every deployed backend takes. Keep it.
  */
 export async function claimAndSignIn(submission: PasswordSubmission): Promise<PasswordOutcome> {
   const signedInByClaim = await claimAccount(submission);
