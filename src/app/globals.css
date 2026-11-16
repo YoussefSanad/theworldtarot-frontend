@@ -805,6 +805,27 @@
     thing this whole block is for, which is more artwork showing around the
     content, not less.
   */
+
+  /*
+    **The suit pages are zoomed against the card pages.**
+
+    Her suit parchments are wider for their height than a card's, so left at the
+    card factor the sheet rendered smaller than the Major Arcana sheets beside
+    it. Fixing the sheet's width alone was tried and left the copy small on a
+    larger parchment; scaling the sheet and the content together keeps her
+    frame's proportions between the two.
+
+    This sits on the same element as `.library-card-page` and comes after it, so
+    it wins `--card-scale` there and every token that rule redeclares from it
+    (the measure, the type steps, the block rhythm) follows. The sheet is
+    height-led, so it grows with the content it backs: the whole page scales as
+    one, the paper included. `--suit-zoom` is the one dial, and 1.15 puts a suit
+    sheet at about the width a card sheet renders at.
+  */
+  .library-suit-page {
+    --suit-zoom: 1.15;
+    --card-scale: calc(0.85 * var(--suit-zoom));
+  }
 }
 
 /*
@@ -2004,8 +2025,7 @@
 
     - **`repeat-y` with `100% auto`.** Never bends the sheet, which is why it
       seemed right. But our page is always taller than her frame — we add a
-      masthead, the Library intro with its suit nav, and a footer, none of
-      which she draws — so the tile always came round, restating her torn top
+      masthead and a footer, neither of which she draws — so the tile always came round, restating her torn top
       deckle partway down and ending on a hard cut.
     - **The pinned-band construction**, borrowed from the card sheets' phone
       layout. That works where a sheet is a painted border around a quiet

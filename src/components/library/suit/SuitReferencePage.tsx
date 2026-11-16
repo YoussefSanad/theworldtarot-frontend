@@ -1,6 +1,5 @@
 import { LookFor } from "@/components/library/card/LookFor";
 import { SpheresCarousel } from "@/components/library/card/SpheresCarousel";
-import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { StillUnfolding } from "@/components/library/suit/StillUnfolding";
 import { SuitIntro } from "@/components/library/suit/SuitIntro";
 import { Container, Section } from "@/components/layout/Section";
@@ -21,13 +20,19 @@ import { suitPaper, suitPaperMobile } from "@/lib/assets";
  * in the same box. See `CardReferencePage` for why those exist; nothing about
  * them is re-derived here.
  *
- * **The sheet takes the card measure and its own aspect.** Her suit parchments
- * are ~1460x2850 where a card's is 1337x2995, and the page briefly gave them a
- * wider measure to match — which only made them read oversized beside the card
- * pages. The width is the card's again; what makes them undistorted is
- * `.suit-paper`, which sizes the box to the sheet's own proportions so there is
- * nothing for the picture to stretch into. See that rule for the two
- * constructions tried before it.
+ * **The sheet takes the card measure and its own aspect, zoomed.** Her suit
+ * parchments are ~1460x2850 where a card's is 1337x2995, so at the card factor
+ * they rendered narrower than the Major Arcana sheets. `.library-suit-page`
+ * scales the whole page by `--suit-zoom` — content and sheet together — rather
+ * than widening the sheet alone, which left the copy small on a larger
+ * parchment. What makes the sheets undistorted is `.suit-paper`, which sizes
+ * the box to the sheet's own proportions so there is nothing for the picture to
+ * stretch into. See that rule for the two constructions tried before it.
+ *
+ * **Nothing sits above the sheet.** The Library heading and suit navigation
+ * were removed so this page opens the way the card pages do, at the same top
+ * margin and centred on the same measure. A visitor reaches the other suits
+ * and the grid through the masthead's LIBRARY.
  *
  * All four sheets share one aspect, checked at conversion time
  * (`scripts/optimize-suit-assets.mjs`) because an export trimmed to layer
@@ -40,7 +45,7 @@ import { suitPaper, suitPaperMobile } from "@/lib/assets";
  */
 export function SuitReferencePage({ suit, content }: { suit: Suit; content: SuitContent }) {
   return (
-    <div className="library-card-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
+    <div className="library-card-page library-suit-page min-h-full pb-[clamp(calc(3rem*var(--card-scale)),calc(8.9vw*var(--card-scale)),calc(10.7rem*var(--card-scale)))]">
       {/*
         **Deliberately not `relative`** — see the note in `CardReferencePage`,
         which this page follows exactly: the atmosphere has to resolve against
@@ -48,15 +53,6 @@ export function SuitReferencePage({ suit, content }: { suit: Suit; content: Suit
         masthead.
       */}
       <PageAtmosphere variant="card-reference" />
-
-      {/*
-        The Library's own navigation, above the sheet and marking which suit
-        this is. Her frame draws neither it nor the masthead, the same way her
-        card frame draws no masthead: a visitor arriving here from a search has
-        to be able to reach the other three suits and the grid, and this strip
-        is how the rest of the Library already does that.
-      */}
-      <LibraryIntro current={suit.slug} />
 
       {/*
         `.card-paper` for the measure, the phone sheet and the rest of the
