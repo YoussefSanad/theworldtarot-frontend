@@ -24,15 +24,15 @@ import { tarotMap } from "@/content/learn";
 export function TarotMap() {
   return (
     <Section padding="none" className="bg-cream text-ink">
-      <Container className="flex flex-col items-center py-[clamp(2.5rem,6.25vw,7.5rem)] text-center">
+      <Container className="flex flex-col items-center py-[clamp(1.5rem,2.6vw,3rem)] text-center">
         <h2 className="font-serif text-h2 leading-[1.15] tracking-[0.04em]">{tarotMap.heading}</h2>
 
         {/* Same local clamp as `SeventyEight`'s intro — see the note there. */}
-        <p className="mt-[clamp(0.8rem,1.5vw,1.8rem)] max-w-4xl font-light text-[clamp(1.1875rem,1.5625vw,1.875rem)] leading-[1.35]">
+        <p className="mt-[clamp(0.6rem,1.1vw,1.3rem)] max-w-4xl font-light text-[clamp(1.1875rem,1.5625vw,1.875rem)] leading-[1.35]">
           {tarotMap.intro}
         </p>
 
-        <div className="mt-[clamp(1.8rem,4.2vw,5rem)] grid w-full grid-cols-1 gap-y-[2.75em] sm:grid-cols-3 sm:gap-y-0">
+        <div className="mt-[clamp(1.25rem,2.6vw,3rem)] grid w-full grid-cols-1 gap-y-[2.25em] sm:grid-cols-3 sm:gap-y-0">
           {tarotMap.groups.map((group) => (
             <article
               key={group.title}
@@ -52,8 +52,9 @@ export function TarotMap() {
                 {group.title}
               </h3>
 
-              {/* Same local clamp as `SeventyEight`'s captions — see the note there. */}
-              <p className="max-w-[20rem] font-light text-[clamp(1.0625rem,1.25vw,1.5rem)] leading-[1.35] sm:max-w-none">
+              {/* Same local clamp as `SeventyEight`'s captions, and `text-pretty` for
+                  the same widow ("journey", under Major Arcana) — see the note there. */}
+              <p className="max-w-[20rem] font-light text-pretty text-[clamp(1.0625rem,1.25vw,1.5rem)] leading-[1.35] sm:max-w-none">
                 {group.body}
               </p>
             </article>

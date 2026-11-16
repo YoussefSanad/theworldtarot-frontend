@@ -43,11 +43,16 @@ export function LearnHero() {
     <Section
       padding="none"
       /*
-        `lg:min-h-[53.9vw]` is her band, 1035/19.2. Above `lg` the laptop is out
-        of the flow and contributes no height, and the text alone is shorter
-        than she draws the band — so without a floor the section would close
-        above the artwork's top edge and crop it. The picture stands 49.6vw, or
-        92% of this, and hangs from the bottom.
+        `lg:min-h-[41.9vw]` is the laptop's own height (70vw at 960/1606).
+        Above `lg` the picture is out of the flow and contributes no height, so
+        without a floor the section would close above its top edge and crop it.
+
+        **Shorter than her band on purpose.** Her frame is 1035/19.2 = 53.9vw
+        with the laptop at 83vw, which left a screen of navy under the button;
+        the client asked for the section to tighten. At 70vw the picture fills
+        the band exactly — top-right corner and floor at once. Where the text
+        outgrows 41.9vw (narrow `lg` widths) it is a floor, not a height: the
+        section grows with the copy and the picture stays on the floor.
 
         **No bottom padding at any width**, which is what puts the artwork on
         the band's floor. Above `lg` the picture is absolute and padding would
@@ -55,7 +60,7 @@ export function LearnHero() {
         padding here would show as a strip of navy under the desk. The cream
         band that follows is what the image ends against.
       */
-      className="overflow-x-clip pt-5 pb-0 lg:min-h-[53.9vw] lg:pt-[clamp(2rem,5.2vw,6.25rem)]"
+      className="overflow-x-clip pt-5 pb-0 lg:min-h-[41.9vw] lg:pt-[clamp(2rem,5.2vw,6.25rem)]"
     >
       <Container width="hero" className="relative z-10">
         {/*
@@ -71,7 +76,7 @@ export function LearnHero() {
           x860. An earlier draft reserved the picture's height as padding here,
           which pushed it into a row of its own under a screen of empty navy.
         */}
-        <div className="flex flex-col items-center pb-[clamp(2rem,6vw,7rem)] text-center lg:max-w-[33vw] lg:items-start lg:pb-0 lg:text-left">
+        <div className="flex flex-col items-center pb-[clamp(2rem,6vw,7rem)] text-center lg:max-w-[33vw] lg:items-start lg:pb-[clamp(2rem,3.5vw,4rem)] lg:text-left">
           <h1 className="font-display text-hero-sm leading-[1.1] tracking-[0.01em] text-snow">{hero.title}</h1>
 
           <p className="mt-[0.35em] font-serif text-nav leading-tight tracking-[0.08em] text-cream">
@@ -130,10 +135,10 @@ export function LearnHero() {
         edge — the shell is 1537px centred and stops 192px short of it. Inside
         the container, `right-0` would land on that inner edge instead.
 
-        **It is drawn at very nearly native size: 83vw.** Measured against the
-        flat navy rather than by brightness, the artwork occupies x327..1920 and
-        y82..1034 of her frame — 1593x952, which is 0.99 of the file's own
-        1606x960. So it stands 49.6vw tall and fills the band top to bottom.
+        **70vw, down from her 83vw.** Measured against the flat navy, her frame
+        draws the artwork at x327..1920 — 1593px, 0.99 of the file's own 1606 —
+        so 83vw was very nearly native size. The client asked for a shorter band
+        and a smaller photo; 70vw stands 41.9vw tall, which is the band's floor.
 
         An earlier draft used 55vw, read off a brightness threshold that found
         only the lit laptop and missed the candlelit desk around it; at that
@@ -183,7 +188,7 @@ function HeroComputer() {
     src: learnArtwork.computer.src,
     width: learnArtwork.computer.width,
     height: learnArtwork.computer.height,
-    sizes: "83vw",
+    sizes: "70vw",
   });
   const { props: narrow } = getImageProps({
     ...shared,
@@ -198,14 +203,14 @@ function HeroComputer() {
       <source
         media="(width >= 64rem)"
         srcSet={wideProps.srcSet ?? wideProps.src}
-        sizes="83vw"
+        sizes="70vw"
         width={learnArtwork.computer.width}
         height={learnArtwork.computer.height}
       />
       <img
         {...narrow}
         alt={hero.imageAlt}
-        className="h-auto w-full lg:absolute lg:right-0 lg:bottom-0 lg:z-0 lg:w-[83vw]"
+        className="h-auto w-full lg:absolute lg:right-0 lg:bottom-0 lg:z-0 lg:w-[70vw]"
       />
     </picture>
   );
