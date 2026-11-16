@@ -1,4 +1,5 @@
-> **Written 30 October 2026. Status: built, Round 2 shipped 31 October 2026.**
+> **Written 30 October 2026. Status: built, Round 2 shipped 31 October 2026. Removed 16 November
+> 2026** at the client's request: "nice touch, but I don't want to introduce another symbolic system".
 
 # Viewing Room runes
 
