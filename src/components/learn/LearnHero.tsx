@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { getImageProps } from "next/image";
 
 import { Container, Section } from "@/components/layout/Section";
 import { Divider } from "@/components/ui/Divider";
@@ -25,9 +25,8 @@ import { JoinTheList } from "./JoinTheList";
  * to roughly half that and set the body in a ribbon. `lg:max-w-[33vw]` holds it
  * near her measure; the column is otherwise free.
  *
- * Below `lg` the laptop returns to the flow under the text, full width inside
- * the measure, because a photograph bleeding off a phone is just one with its
- * subject cut off.
+ * Below `lg` the laptop returns to the flow under the text as her separate
+ * tablet/mobile crop, running the screen's full width — see `HeroComputer`.
  *
  * The clip is `overflow-x-clip` rather than `hidden`, so nothing here can trap
  * the page's vertical scroll — the same choice `ValueProps` and `ArtistNote`
@@ -147,18 +146,67 @@ export function LearnHero() {
         under the text, but still runs the full width to the screen's edge and
         still sits on the band's floor — so it is `w-full` with no gutter, no
         centring cap, and the section drops its bottom padding (`max-lg:pb-0`)
-        rather than leaving a strip of navy beneath the desk. The alignment is
-        the same as the desktop reading; only the stacking changes.
+        rather than leaving a strip of navy beneath the desk.
+
+        **And below `lg` it is a different picture.** She delivered a second
+        crop for tablet and mobile — tight to the desk, opaque, no fade — since
+        the transparent two-fifths that lets the wide one slide behind the copy
+        is just empty navy once the image sits under it. A `<picture>` rather
+        than two `<Image>`s toggled by `hidden`, so each screen downloads only
+        its own file; see `HeroComputer`.
       */}
-      <Image
-        src={learnArtwork.computer.src}
-        alt={hero.imageAlt}
+      <HeroComputer />
+    </Section>
+  );
+}
+
+/**
+ * The laptop, art-directed: the wide transparent cut at `lg` and up, her
+ * full-bleed mobile crop below it.
+ *
+ * `getImageProps` is the art-direction route `next/image` documents — the
+ * component itself can only emit one `<img>`. Eager with high fetch priority
+ * stands in for `preload`, which on a `<picture>` would preload *both* sources
+ * and hand every phone the 267KB desktop file it never draws.
+ */
+function HeroComputer() {
+  const shared = { alt: hero.imageAlt, loading: "eager", fetchPriority: "high" } as const;
+
+  /*
+    `srcSet ?? src` because this site exports with `images.unoptimized`, and
+    unoptimized `getImageProps` returns a bare `src` with no `srcSet` — so a
+    `<source>` fed `srcSet` alone renders without one, the browser skips it,
+    and desktop falls through to the mobile crop.
+  */
+  const { props: wideProps } = getImageProps({
+    ...shared,
+    src: learnArtwork.computer.src,
+    width: learnArtwork.computer.width,
+    height: learnArtwork.computer.height,
+    sizes: "83vw",
+  });
+  const { props: narrow } = getImageProps({
+    ...shared,
+    src: learnArtwork.computerMobile.src,
+    width: learnArtwork.computerMobile.width,
+    height: learnArtwork.computerMobile.height,
+    sizes: "100vw",
+  });
+
+  return (
+    <picture>
+      <source
+        media="(width >= 64rem)"
+        srcSet={wideProps.srcSet ?? wideProps.src}
+        sizes="83vw"
         width={learnArtwork.computer.width}
         height={learnArtwork.computer.height}
-        sizes="(width >= 64rem) 83vw, 100vw"
-        className="h-auto w-full lg:absolute lg:right-0 lg:bottom-0 lg:z-0 lg:w-[83vw]"
-        priority
       />
-    </Section>
+      <img
+        {...narrow}
+        alt={hero.imageAlt}
+        className="h-auto w-full lg:absolute lg:right-0 lg:bottom-0 lg:z-0 lg:w-[83vw]"
+      />
+    </picture>
   );
 }

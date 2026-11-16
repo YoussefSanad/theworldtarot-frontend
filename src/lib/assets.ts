@@ -369,6 +369,11 @@ export const viewingRoomMarks = {
 export const learnArtwork = {
   /** The hero's laptop, bleeding off the right edge above `lg`. */
   computer: asset("/figma/learn-computer.webp", 1606, 960),
+  /**
+   * The same laptop below `lg`, where it runs the screen's full width under the
+   * text. Her own crop for that reading — opaque, no fade, tight to the desk.
+   */
+  computerMobile: asset("/figma/learn-computer-mobile.webp", 390, 304),
 
   /** The three course postcards, fanned beside "Discover. Explore. Understand." */
   postcardSun: asset("/figma/learn-postcard-sun.webp", 518, 341),
