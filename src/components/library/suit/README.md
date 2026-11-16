@@ -17,6 +17,20 @@ that section runs the sheet's full measure and passes over the emblem where it e
 sword and the torch run most of the sheet's height, the chalice and the pouch stop in the upper
 third.
 
+## Nothing above the sheet, and the page is zoomed
+
+A suit page opens on the parchment, the way a card page does: no Library heading, subtitle,
+intro or suit navigation, and the same top margin and centring. `SuitReferencePage` does not
+render `LibraryIntro`. The way to the other suits and the grid is the masthead's LIBRARY — the
+same as on a card page. `ComingSoonPage` still renders the intro, for a suit whose copy is
+pulled.
+
+The page is also zoomed. Her suit sheets are wider for their height than a card's, so at the
+card factor they rendered narrower than the Major Arcana sheets. `.library-suit-page`
+(globals.css, `lg` and up) multiplies `--card-scale` by `--suit-zoom`, 1.15, so the measure,
+the type, the spacing and the sheet all scale as one. Widening the sheet alone was tried and
+rejected: it left the copy small on a larger parchment. `--suit-zoom` is the one dial.
+
 ## What is shared with the card pages, and what is not
 
 **Shared, and a change to any of them lands on both page kinds:**

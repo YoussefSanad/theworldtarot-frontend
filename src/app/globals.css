@@ -805,6 +805,27 @@
     thing this whole block is for, which is more artwork showing around the
     content, not less.
   */
+
+  /*
+    **The suit pages are zoomed against the card pages.**
+
+    Her suit parchments are wider for their height than a card's, so left at the
+    card factor the sheet rendered smaller than the Major Arcana sheets beside
+    it. Fixing the sheet's width alone was tried and left the copy small on a
+    larger parchment; scaling the sheet and the content together keeps her
+    frame's proportions between the two.
+
+    This sits on the same element as `.library-card-page` and comes after it, so
+    it wins `--card-scale` there and every token that rule redeclares from it
+    (the measure, the type steps, the block rhythm) follows. The sheet is
+    height-led, so it grows with the content it backs: the whole page scales as
+    one, the paper included. `--suit-zoom` is the one dial, and 1.15 puts a suit
+    sheet at about the width a card sheet renders at.
+  */
+  .library-suit-page {
+    --suit-zoom: 1.15;
+    --card-scale: calc(0.85 * var(--suit-zoom));
+  }
 }
 
 /*
@@ -1520,9 +1541,20 @@
   }
 
   /*
-    The room itself, anchored to the floor like the parlour's, so
-    `--room-drop` carries the picture across the footer's margin rather than
-    leaving its last rows short of it.
+    The room itself. `cover` fills the whole box, `--room-drop` included, so
+    the picture still carries across the footer's margin.
+
+    **Anchored to the top, not the floor, so the arch stays put on a short
+    page.** While the page is taller than the artwork at its width, the
+    height sets the scale, the picture is exactly the box's height, and the
+    anchor makes no difference — which is every phone. Once the client asked
+    for the card and the gallery above the fold, the desktop page came out
+    *shorter* than the artwork (1599px at 1440), so the width set the scale
+    and the excess hung off one end. Anchored to the floor that end was the
+    top, and every pixel the page lost lifted the lit rim by a pixel until it
+    sat behind the masthead. Anchored to the top, the excess is floor cropped
+    under the footer, and the rim's lowest point sits at 272/1920 of the
+    viewport width — about 204px at 1440 — whatever the page's length.
 
     **It fills the box rather than being capped to its own aspect.** The
     parlour can write `min(171.51vw, 100%)` because its artwork is far taller
@@ -1567,7 +1599,7 @@
   */
   .page-atmosphere-viewing-room::after {
     background-image: url("/figma/viewing-room-bg.webp");
-    background-position: center bottom;
+    background-position: center top;
     background-repeat: no-repeat;
     background-size: cover;
     content: "";
@@ -2004,8 +2036,7 @@
 
     - **`repeat-y` with `100% auto`.** Never bends the sheet, which is why it
       seemed right. But our page is always taller than her frame — we add a
-      masthead, the Library intro with its suit nav, and a footer, none of
-      which she draws — so the tile always came round, restating her torn top
+      masthead and a footer, neither of which she draws — so the tile always came round, restating her torn top
       deckle partway down and ending on a hard cut.
     - **The pinned-band construction**, borrowed from the card sheets' phone
       layout. That works where a sheet is a painted border around a quiet
@@ -3179,34 +3210,6 @@
   */
   .pulse-glow:hover {
     animation: none;
-  }
-
-  @keyframes rune-pulse {
-    0%,
-    100% {
-      opacity: 0.12;
-    }
-    50% {
-      opacity: 0.7;
-    }
-  }
-
-  .rune-field {
-    --rune-base: clamp(14px, 1.6vw, 28px);
-  }
-
-  .rune-field__rune {
-    color: var(--color-champagne);
-    filter: drop-shadow(0 0 4px rgba(223, 200, 148, 0.55)); /* static */
-    opacity: 0.35;
-    animation: rune-pulse var(--dur, 5s) var(--ease-veil) var(--delay, 0s) infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .rune-field__rune {
-      animation: none;
-      opacity: 0.35;
-    }
   }
 
   /* Header selectors ------------------------------------------------------- */

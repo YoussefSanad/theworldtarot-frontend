@@ -26,13 +26,13 @@ import { seventyEight } from "@/content/learn";
  */
 export function SeventyEight() {
   return (
-    <Section padding="none" className="py-[clamp(2.5rem,6.25vw,7.5rem)]">
+    <Section padding="none" className="pt-[clamp(1.5rem,2.6vw,3rem)] pb-[clamp(2.25rem,4vw,4.5rem)]">
       <Container className="flex flex-col items-center text-center">
         <h2 className="font-serif text-h2 leading-[1.15] tracking-[0.04em] text-cream">{seventyEight.heading}</h2>
 
         {/* `w-full` is load-bearing: `.divider` has no intrinsic width, so
             `items-center` on the column would otherwise shrink it to nothing. */}
-        <Divider variant="heroWide" className="my-[clamp(0.9rem,1.8vw,2.2rem)] w-full" />
+        <Divider variant="heroWide" className="my-[clamp(0.75rem,1.4vw,1.6rem)] w-full" />
 
         {/* A local clamp, like the marks below it: `text-nav` floors at 15px, which
             put this lead line under the size of the captions it introduces. 19px
@@ -41,7 +41,7 @@ export function SeventyEight() {
           {seventyEight.intro}
         </p>
 
-        <div className="mt-[clamp(1.8rem,4.2vw,5rem)] grid w-full grid-cols-1 gap-y-[2.75em] sm:grid-cols-2 sm:gap-y-[3em] lg:grid-cols-4 lg:gap-y-0">
+        <div className="mt-[clamp(1.25rem,2.6vw,3rem)] grid w-full grid-cols-1 gap-y-[2.25em] sm:grid-cols-2 sm:gap-y-[2.5em] lg:grid-cols-4 lg:gap-y-0">
           {seventyEight.marks.map((mark, index) => (
             <article
               key={mark.title}
@@ -71,8 +71,13 @@ export function SeventyEight() {
                * below about 1360px sits on that floor. These captions are the only body copy
                * in these two bands and they take the full column on a phone, so 14px read as
                * fine print. The floor here is 17px instead; the 24px maximum and the 1.25vw
-               * ramp are the token's own, so nothing changes at desktop. */}
-              <p className="max-w-[18rem] font-light text-[clamp(1.0625rem,1.25vw,1.5rem)] leading-[1.35] text-mist lg:max-w-none">
+               * ramp are the token's own, so nothing changes at desktop.
+               *
+               * `text-pretty` because on tablet "pace" was falling to a line of its
+               * own. The 18rem cap, not the container, sets this measure there, so
+               * padding could not fix it — and any measure that fixes one width
+               * leaves a widow at another. Firefox ignores it and wraps as before. */}
+              <p className="max-w-[18rem] font-light text-pretty text-[clamp(1.0625rem,1.25vw,1.5rem)] leading-[1.35] text-mist lg:max-w-none">
                 {mark.body}
               </p>
             </article>

@@ -8,7 +8,6 @@ import { ButtonLink } from "@/components/ui/Button";
 import { FilmPlayer, PLAYER_WIDTH_CAP } from "@/components/viewing-room/FilmPlayer";
 import { PaymentPanel } from "@/components/viewing-room/PaymentPanel";
 import { PaywallModal, type PaywallScreen } from "@/components/viewing-room/PaywallModal";
-import { RuneField } from "@/components/viewing-room/RuneField";
 import { ThumbnailCarousel } from "@/components/viewing-room/ThumbnailCarousel";
 import { UnlockPanel } from "@/components/viewing-room/UnlockPanel";
 import { viewingRoom, type ViewingRoomCard } from "@/content/viewing-room";
@@ -127,19 +126,22 @@ export function ViewingRoom() {
         className={cn(modal && "pointer-events-none select-none")}
       >
         <Container className="flex flex-col items-center">
-          <header className="mt-[clamp(16px,2.2vw,40px)] text-center">
-            <h1 className="font-display text-[clamp(32px,4.5vw,58px)] leading-tight text-white">
-              {viewingRoom.title}
-            </h1>
-            {/*
-              Her own 0.0125em, not the 0.2em this carried. The frame sets
-              tracking 0.3 on a 24px line — small-caps spacing, not the wide
-              display tracking that was here, which pushed the line most of
-              the way across the player beneath it.
-            */}
-            <p className="mt-2 font-serif text-[clamp(13px,1.8vw,24px)] tracking-[0.0125em] text-[#f9f3d0]/80">
-              {viewingRoom.subtitle}
-            </p>
+          {/*
+            **The site's title and subheading, as `ReadingsIntro` draws them**
+            — `text-h1` in cream over `text-nav` in gold — rather than the
+            one-off clamps this carried. The client asked for the header to
+            match the other pages, and being tokens they also take the lg
+            `--content-scale`, which the clamps never did: about 38px and 19px
+            at 1440, where this drew 58px and 24px.
+
+            No rule between the two, unlike the other pages: every pixel here
+            is spent above the card, and the gallery has to reach the fold.
+            The top margin goes at `lg` for the same reason; the page's own
+            top padding is all the air left above the title there.
+          */}
+          <header className="mt-[clamp(16px,2.2vw,40px)] text-center lg:mt-0">
+            <h1 className="font-display text-h1 tracking-[0.01em] text-cream">{viewingRoom.title}</h1>
+            <p className="mt-2 font-serif text-nav text-gold">{viewingRoom.subtitle}</p>
           </header>
 
           {/*
@@ -184,14 +186,24 @@ export function ViewingRoom() {
             `clamp(80px, 6vw, 88px)` would hold 80px up to 1467px wide, well
             past where the fault stops, and `max(80px, …)` is the same mistake
             without the clamp. The overlap runs from 360 to 768 and is gone by
-            1280, so `lg` is where the old clamp comes back untouched. See the
-            arch check in `scripts/check-viewing-room.mjs`, which computes the
-            rim the way the browser does rather than trusting a page
-            coordinate.
+            1280. See the arch check in `scripts/check-viewing-room.mjs`, which
+            computes the rim the way the browser does rather than trusting a
+            page coordinate.
+
+            **Desktop is spaced against a rim that no longer moves.** Once the
+            client asked for the card and the gallery above the fold, the
+            desktop page came out shorter than the artwork, and the room is now
+            anchored to the top for it (see `.page-atmosphere-viewing-room::after`):
+            the rim's lowest point sits at 272/1920 of the viewport width, about
+            204px at 1440. The page's top padding sets the title block just
+            above the rim, and this gap is the rest: the strip from the
+            subheading down past the rim, plus about 24px of clear black above
+            the card. 40px at 1440, 49px at 1920. Both are written against the
+            rim, so they move together; estimated rather than measured, and
+            judged by eye. Phones are untouched, and the check still holds them.
           */}
-          <div className="relative mt-20 w-full lg:mt-[clamp(44px,6vw,88px)]">
-            <div data-rune-stage className={cn("relative isolate mx-auto w-full", PLAYER_WIDTH_CAP)}>
-              <RuneField />
+          <div className="relative mt-20 w-full lg:mt-[clamp(32px,calc(1.8vw+14px),56px)]">
+            <div className={cn("relative mx-auto w-full", PLAYER_WIDTH_CAP)}>
               {/*
                 **The player waits for a card and the room does not.** The
                 title, the atmosphere and the closing call to action are the
@@ -210,7 +222,8 @@ export function ViewingRoom() {
           </div>
         </Container>
 
-        <div className="mt-[clamp(32px,5vw,64px)] w-full bg-white/[0.03] py-[clamp(20px,3vw,46px)]">
+        {/* Tighter from `lg` so the first row of thumbnails reaches the fold; see `PLAYER_WIDTH_CAP`. */}
+        <div className="mt-[clamp(32px,5vw,64px)] w-full bg-white/[0.03] py-[clamp(20px,3vw,46px)] lg:mt-[clamp(16px,1.8vw,36px)] lg:py-[clamp(12px,1.4vw,28px)]">
           {selected ? (
             <ThumbnailCarousel
               cards={deck}

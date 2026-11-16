@@ -8,8 +8,9 @@ here. The plan this was built from is
 
 **The grid is the Library's default view, not a landing page in front of one.**
 The masthead nav's LIBRARY lands on the cards; MAJOR ARCANA in the suit
-navigation is the way back to them from a suit page, which is why it points at
-`/library/` rather than at a section.
+navigation is the way back to them from the grid's own page and from a suit's
+holding page, which is why it points at `/library/` rather than at a section.
+The suit reference pages carry no navigation of their own, like the card pages.
 
 ## The artwork is the whole card, plaque included
 

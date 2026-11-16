@@ -369,7 +369,7 @@ Listed here when it was still ahead, so the seam was not mistaken for the whole.
   `content/viewing-room.ts` and a retry on the last one only. An empty deck is the backend's
   considered answer and asking again will not finish a film.
 - **Later addition (30 October 2026):** [Viewing Room runes](viewing-room-runes.md) adds a
-  deterministic SVG rune field around the player.
+  deterministic SVG rune field around the player. Removed 16 November 2026 at the client's request.
 
 Two things deliberately **not** done, and they are the open items:
 

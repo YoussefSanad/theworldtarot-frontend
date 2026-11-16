@@ -45,6 +45,15 @@ const JOBS = [
   { from: "COMPUTER IMAGE.png", to: "learn-computer.webp", quality: 80 },
 
   /*
+    The laptop again, for tablet and mobile (390x304). A separate delivery, not
+    a replacement: cropped tight to the desk with no transparent left edge,
+    because below `lg` the picture sits under the text and runs the full width
+    of the screen rather than fading in behind the copy. A JPG with no alpha,
+    and it arrived loose in the dump rather than in `learn/`, hence the `..`.
+  */
+  { from: "../learn-computer-replacement.jpg", to: "learn-computer-mobile.webp", quality: 80 },
+
+  /*
     The three course postcards. Photographs too, but an order of magnitude
     smaller than the laptop and drawn at roughly their native width, so they keep
     the default quality — the fan is the one place on the page where a visitor

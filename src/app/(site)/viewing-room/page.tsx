@@ -64,7 +64,13 @@ export const metadata: Metadata = {
  */
 export default function ViewingRoomPage() {
   return (
-    <div data-page="viewing-room" className="relative isolate pt-[clamp(32px,5vw,102px)]">
+    // From `lg`, paced against the arch's rim rather than the old 5vw: it keeps the title block
+    // just above the rim, which sits at 272/1920 of the width (about 37px here at 1440, 74px at
+    // 1920). The card gap in `ViewingRoom` is the other half of the same arithmetic.
+    <div
+      data-page="viewing-room"
+      className="relative isolate pt-[clamp(32px,5vw,102px)] lg:pt-[clamp(12px,calc(7.7vw-74px),72px)]"
+    >
       <PageAtmosphere variant="viewing-room" />
       <ViewingRoom />
     </div>

@@ -38,18 +38,32 @@ import {
 
   `clamp` rather than a `vw` share: a share alone shrinks the card on
   a narrow screen, where the opposite is wanted — 34vw put it at
-  133px on a phone. So it is at least 300px, grows with the viewport,
-  and tops out at 640px.
+  133px on a phone. So it has a floor, grows with the viewport, and
+  tops out at 640px. The floor was 300px (300x496 on every phone) and
+  is 240px since the client asked for the card smaller: 240x397, so the
+  carousel comes up about 100px. It still fills two-thirds of a 360px
+  screen.
 
-  **The height cap is the one that actually binds on a desktop**, not
-  the width: a 3:5 card 640px wide wants 1059px of height, which no
-  laptop has. So 86dvh is what sets the size on most screens, and the
-  width clamp only takes over on a short, wide window. The carousel
-  is in its own band below and need not share the fold with the card.
+  **The height cap is the one that actually binds**, not the width: a
+  3:5 card 640px wide wants 1059px of height. So the dvh term is what
+  sets the size on most screens.
 */
-// The player, rune stage, and placeholder must match so the runes and
-// placeholder are as wide as the player.
-export const PLAYER_WIDTH_CAP = "max-w-[min(100%,clamp(300px,42vw,640px),calc(86dvh*509/842))]";
+/*
+  **From `lg` the card is held to 40dvh, so the carousel shares the
+  fold.** The client asked for the card nearly halved and for a visitor
+  to see it and part of the gallery without scrolling on a desktop; at
+  86dvh the card alone filled a laptop screen and the gallery started
+  below it. A height share rather than a pixel size, because the fold is
+  a height: 40dvh is about 320px on a 1440x800 window (from about 680),
+  which leaves room for the band's first row of thumbnails beneath it.
+  Tuned against 1440x800; tighten it if a 1366x768 laptop must hold too.
+
+  Phones keep the 86dvh cap and shrink through the width floor instead,
+  since 40dvh there would draw a card under 200px wide.
+*/
+// The player and placeholder must match so the carousel does not jump when the deck lands.
+export const PLAYER_WIDTH_CAP =
+  "max-w-[min(100%,clamp(240px,42vw,640px),calc(86dvh*509/842))] lg:max-w-[min(100%,calc(40dvh*509/842))]";
 
 /**
  * The featured player: one card's film, at the size the frame draws it

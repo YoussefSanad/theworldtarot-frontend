@@ -23,7 +23,7 @@ import { PostcardFan } from "./PostcardFan";
 export function StepInside() {
   return (
     <Section padding="none" className="bg-cream text-ink">
-      <Container className="py-[clamp(2.5rem,6.25vw,7.5rem)]">
+      <Container className="pt-[clamp(1rem,1.6vw,1.75rem)] pb-[clamp(1.5rem,2.6vw,3rem)]">
         {/*
           **`720fr 788fr` is the heading's width, not the paragraphs'.** Her copy
           block runs x235..795 (560px) but the heading overhangs it, reaching
