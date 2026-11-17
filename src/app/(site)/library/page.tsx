@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { MajorArcanaGrid } from "@/components/library/MajorArcanaGrid";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
@@ -100,9 +99,23 @@ export default function LibraryPage() {
       */}
       <PageAtmosphere variant="library" className="max-lg:-top-20" />
 
-      <LibraryIntro />
+      {/*
+        **No masthead on this page.** The client asked for everything above the
+        cards to go — title, rule, tagline, blurb and the suit strip — so the
+        grid opens the page. `LibraryIntro` stays on the suit and coming-soon
+        pages, which still draw it.
 
-      <Section padding="none" className="pb-[clamp(2rem,4.6vw,5.5rem)]">
+        Nothing is stranded by dropping the suit strip here: the header's
+        LIBRARY dropdown offers MAJOR ARCANA and all four suits (`content/site.ts`).
+
+        The title survives as a visually hidden `h1`, so the page still has a
+        heading for screen readers and search. The grid takes the masthead's own
+        106px lead-in (5.52vw of a 1920px frame) so the cards clear the header
+        the same way the title used to.
+      */}
+      <h1 className="sr-only">{library.title}</h1>
+
+      <Section padding="none" className="pt-[clamp(2rem,5.52vw,6.625rem)] pb-[clamp(2rem,4.6vw,5.5rem)]">
         <Container width="library">
           <MajorArcanaGrid />
         </Container>
