@@ -2,11 +2,13 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { forwardRef, useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import type { NavGroup, NavGroupLink } from "@/content/site";
 import { cn } from "@/lib/cn";
+import { navAriaCurrent } from "@/lib/nav-active";
 import { useReadingName } from "@/lib/reading-prices";
 
 const EASE_VEIL = [0.4, 0, 0.2, 1] as const;
@@ -52,6 +54,7 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
 
   const reducedMotion = useReducedMotion();
   const panelId = useId();
+  const pathname = usePathname();
 
   const cancelClose = () => {
     if (closeTimer.current === null) return;
@@ -139,6 +142,11 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
       }}
     >
       <span className="inline-flex items-center gap-[0.4em]">
+        {/*
+          **The label is not marked**, whatever page the visitor is on. The
+          current page is shown by its own row in the panel (see
+          `NavDropdownLink`), not by the group's name above it.
+        */}
         <Link
           href={group.href}
           className={cn(
@@ -193,7 +201,7 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: EASE_VEIL }}
           >
-            <NavDropdownRows links={group.children} onNavigate={() => setOpen(false)} />
+            <NavDropdownRows links={group.children} pathname={pathname} onNavigate={() => setOpen(false)} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -204,9 +212,11 @@ export function NavDropdown({ group, className }: { group: NavGroup; className?:
 /** The rows inside the panel — roving arrow-key focus, same as `LocaleGroup`'s options. */
 function NavDropdownRows({
   links,
+  pathname,
   onNavigate,
 }: {
   links: NavGroup["children"];
+  pathname: string | null;
   onNavigate: () => void;
 }) {
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -244,6 +254,7 @@ function NavDropdownRows({
         <NavDropdownLink
           key={link.href}
           link={link}
+          current={navAriaCurrent(pathname, link.href, { exact: true })}
           ref={(element) => {
             linkRefs.current[index] = element;
           }}
@@ -269,23 +280,28 @@ const NavDropdownLink = forwardRef<
   HTMLAnchorElement,
   {
     link: NavGroupLink;
+    /** Set on the row for the visitor's own page only — see `navAriaCurrent`. */
+    current: "page" | "true" | undefined;
     tabIndex: number;
     onFocus: () => void;
     onNavigate: () => void;
     onKeyDown: (event: ReactKeyboardEvent<HTMLAnchorElement>) => void;
   }
->(function NavDropdownLink({ link, tabIndex, onFocus, onNavigate, onKeyDown }, ref) {
+>(function NavDropdownLink({ link, current, tabIndex, onFocus, onNavigate, onKeyDown }, ref) {
   return (
     <Link
       ref={ref}
       href={link.href}
       role="menuitem"
+      aria-current={current}
       tabIndex={tabIndex}
       onFocus={onFocus}
       onClick={onNavigate}
       onKeyDown={onKeyDown}
-      className="menu-option nav-menu-option flex w-full items-center px-[1.1em] py-[0.42em]"
+      className="menu-option nav-menu-option flex w-full items-center gap-[0.6em] px-[1.1em] py-[0.42em]"
     >
+      {/* The localization rows' own mark: always in the row, only its opacity changes. */}
+      <span aria-hidden className="menu-option-dot shrink-0" />
       <NavGroupLinkLabel link={link} />
     </Link>
   );

@@ -3291,7 +3291,9 @@
     color: var(--color-champagne);
   }
 
-  .menu-option[aria-selected="true"] {
+  .menu-option[aria-selected="true"],
+  .menu-option[aria-current="page"],
+  .menu-option[aria-current="true"] {
     color: var(--color-gold);
   }
 
@@ -3310,7 +3312,37 @@
     width: 0.36em;
   }
 
-  .menu-option[aria-selected="true"] .menu-option-dot {
+  .menu-option[aria-selected="true"] .menu-option-dot,
+  .menu-option[aria-current="page"] .menu-option-dot,
+  .menu-option[aria-current="true"] .menu-option-dot {
+    box-shadow: var(--glow-gold);
+    opacity: 1;
+  }
+
+  /*
+    **The same mark on the primary nav's links**, which are plain words with no
+    slot for it. The point hangs in the space before the label instead of
+    taking room in the row, so nothing moves when it appears: 0.6em is the gap
+    the locale rows give it, and the 1.33em between nav items (or the drawer's
+    20px gutter) is wide enough to hold 0.36em + 0.6em without touching what is
+    beside it.
+
+    The text colour is set on the element in the markup, not here — it has to
+    beat the `--header-ink` utility, which this layer cannot.
+  */
+  .nav-mark-link {
+    position: relative;
+  }
+
+  .nav-mark-link > .menu-option-dot {
+    inset-block-start: 50%;
+    inset-inline-end: calc(100% + 0.6em);
+    position: absolute;
+    translate: 0 -50%;
+  }
+
+  .nav-mark-link[aria-current="page"] > .menu-option-dot,
+  .nav-mark-link[aria-current="true"] > .menu-option-dot {
     box-shadow: var(--glow-gold);
     opacity: 1;
   }
