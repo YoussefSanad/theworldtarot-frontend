@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { MajorArcanaGrid } from "@/components/library/MajorArcanaGrid";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
@@ -16,8 +15,7 @@ export const metadata: Metadata = {
 /**
  * The Library (Figma `344:98`), and **the Major Arcana grid is its default
  * view** rather than a landing page in front of one: the nav's LIBRARY lands
- * here on the cards, and MAJOR ARCANA in the suit navigation is the way back to
- * this page from a suit.
+ * here on the cards, and opens on them with no heading or suit navigation above.
  *
  * The closing block is `ClosingSaying` with this page's words. It already takes
  * the 538px rule this frame draws (`heroWide`, added for World Tarot) and the
@@ -100,9 +98,19 @@ export default function LibraryPage() {
       */}
       <PageAtmosphere variant="library" className="max-lg:-top-20" />
 
-      <LibraryIntro />
+      {/*
+        **No visible title, tagline, blurb or suit navigation above the grid** —
+        the cards open the page, as the reference pages open on their sheet. The
+        heading stays for the document outline and assistive tech, which would
+        otherwise find a page with no `<h1>`.
 
-      <Section padding="none" className="pb-[clamp(2rem,4.6vw,5.5rem)]">
+        The top padding is the masthead's old lead-in (`LibraryIntro` spent
+        5.52vw above its title), kept so the first row of cards still clears the
+        transparent header rather than starting flush under it.
+      */}
+      <h1 className="sr-only">{library.title}</h1>
+
+      <Section padding="none" className="pt-[clamp(2rem,5.52vw,6.625rem)] pb-[clamp(2rem,4.6vw,5.5rem)]">
         <Container width="library">
           <MajorArcanaGrid />
         </Container>
