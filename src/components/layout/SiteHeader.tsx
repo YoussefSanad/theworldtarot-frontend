@@ -10,6 +10,7 @@ import { AccountControl } from "@/components/account/AccountControl";
 import { AccountDrawerLine, AccountDrawerSection } from "@/components/account/AccountDrawerSection";
 import { LocaleControls, LocaleMenu, useLocaleSelection } from "@/components/layout/LocaleControls";
 import { NavDropdown, NavGroupLinkLabel } from "@/components/layout/NavDropdown";
+import { NavMarkLink } from "@/components/layout/NavMarkLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { headerActions, primaryNav, siteName } from "@/content/site";
 import { brand, surfaces } from "@/lib/assets";
@@ -260,13 +261,9 @@ export function SiteHeader() {
               "children" in item ? (
                 <NavDropdown key={item.label} group={item} />
               ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
-                >
+                <NavMarkLink key={item.href} href={item.href}>
                   {item.label}
-                </Link>
+                </NavMarkLink>
               ),
             )}
           </nav>
@@ -432,26 +429,27 @@ export function SiteHeader() {
                       </Link>
                       <div className="flex flex-col gap-1 border-l border-(--edge-gold) pl-5">
                         {item.children.map((child) => (
-                          <Link
+                          <NavMarkLink
                             key={child.href}
                             href={child.href}
-                            className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                            exact
+                            className="flex min-h-[44px] items-center"
                             onClick={closeMenu}
                           >
                             <NavGroupLinkLabel link={child} />
-                          </Link>
+                          </NavMarkLink>
                         ))}
                       </div>
                     </div>
                   ) : (
-                    <Link
+                    <NavMarkLink
                       key={item.href}
                       href={item.href}
-                      className="flex min-h-[44px] items-center text-(--header-ink) tracking-[0.01em] transition-colors hover:text-(--header-accent) focus-visible:text-(--header-accent)"
+                      className="flex min-h-[44px] items-center"
                       onClick={closeMenu}
                     >
                       {item.label}
-                    </Link>
+                    </NavMarkLink>
                   ),
                 )}
               </nav>

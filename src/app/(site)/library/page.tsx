@@ -15,8 +15,7 @@ export const metadata: Metadata = {
 /**
  * The Library (Figma `344:98`), and **the Major Arcana grid is its default
  * view** rather than a landing page in front of one: the nav's LIBRARY lands
- * here on the cards, and MAJOR ARCANA in the suit navigation is the way back to
- * this page from a suit.
+ * here on the cards, and opens on them with no heading or suit navigation above.
  *
  * The closing block is `ClosingSaying` with this page's words. It already takes
  * the 538px rule this frame draws (`heroWide`, added for World Tarot) and the
@@ -102,8 +101,8 @@ export default function LibraryPage() {
       {/*
         **No masthead on this page.** The client asked for everything above the
         cards to go — title, rule, tagline, blurb and the suit strip — so the
-        grid opens the page. `LibraryIntro` stays on the suit and coming-soon
-        pages, which still draw it.
+        grid opens the page. `LibraryIntro` stays on the coming-soon pages only;
+        the suit reference pages dropped it too.
 
         Nothing is stranded by dropping the suit strip here: the header's
         LIBRARY dropdown offers MAJOR ARCANA and all four suits (`content/site.ts`).
