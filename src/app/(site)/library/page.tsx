@@ -99,14 +99,18 @@ export default function LibraryPage() {
       <PageAtmosphere variant="library" className="max-lg:-top-20" />
 
       {/*
-        **No visible title, tagline, blurb or suit navigation above the grid** —
-        the cards open the page, as the reference pages open on their sheet. The
-        heading stays for the document outline and assistive tech, which would
-        otherwise find a page with no `<h1>`.
+        **No masthead on this page.** The client asked for everything above the
+        cards to go — title, rule, tagline, blurb and the suit strip — so the
+        grid opens the page. `LibraryIntro` stays on the coming-soon pages only;
+        the suit reference pages dropped it too.
 
-        The top padding is the masthead's old lead-in (`LibraryIntro` spent
-        5.52vw above its title), kept so the first row of cards still clears the
-        transparent header rather than starting flush under it.
+        Nothing is stranded by dropping the suit strip here: the header's
+        LIBRARY dropdown offers MAJOR ARCANA and all four suits (`content/site.ts`).
+
+        The title survives as a visually hidden `h1`, so the page still has a
+        heading for screen readers and search. The grid takes the masthead's own
+        106px lead-in (5.52vw of a 1920px frame) so the cards clear the header
+        the same way the title used to.
       */}
       <h1 className="sr-only">{library.title}</h1>
 
