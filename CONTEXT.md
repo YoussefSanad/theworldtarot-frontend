@@ -395,8 +395,8 @@ and after the **receipt**, carrying the **claim link**. **From 24 November
 password gets a set-password link and one who already has a password gets a
 reset link, under the same wording, because `/set-password/` refuses an account
 that already has a password. Both carry `next=/viewing-room/`, and the link
-lasts 60 minutes, after which the way in is "Forgot password" on the sign in
-page. A reading buyer is never sent one. Not ours, like the receipt; the pass
+lasts 60 minutes, after which the way in is "Forgotten your password?" on the
+sign in page (`login.forgotPrompt`, the words the email uses). A reading buyer is never sent one. Not ours, like the receipt; the pass
 confirmation's steps name it ("We have sent you a welcome email…").
 _Avoid_: claim mail, activation email, the receipt (it no longer carries the link)
 
