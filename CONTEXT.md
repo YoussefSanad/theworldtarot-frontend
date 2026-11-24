@@ -28,8 +28,9 @@ it. It is a credential: never in an address bar, a redirect, an analytics event
 or a log. **And never in a request path, from 11 November 2026** (#170): it
 goes to the backend only in request bodies, `/orders/pay` included, because a
 path lands in every access log and the token is briefly enough to ~~read a
-first-time pass buyer's claim link back~~ **sign a first-time pass buyer in,
-from 14 November 2026** (#185, backend #128; see **Entering after payment**).
+first-time pass buyer's claim link back~~ **sign a ~~first-time~~ pass buyer in,
+from 14 November 2026** (#185, backend #128; see **Entering after payment**),
+and any pass buyer from 24 November 2026 (backend #135).
 _Avoid_: order token, payment token, order id (ids are sequential integers and are not this)
 
 **Product key**:
@@ -376,6 +377,10 @@ _Avoid_: success page, thank you page, receipt
 
 **Receipt**:
 The email the backend sends when an order settles. Not a page and not ours.
+~~For a pass order it also carries the **claim link**.~~ **From 24 November
+2026** (backend `YoussefSanad/TheWorldTarot#135`, #192 here) a pass order's
+receipt carries no set or reset link: that moved to the **welcome email**, and
+the receipt's call to action is ENTER THE VIEWING ROOM again.
 _Avoid_: confirmation email — **in this vocabulary and in the code, not in what
 a customer reads**. The confirmation screen says "A confirmation email is on its
 way" because that is the client's line and the words a buyer knows the mail by;
@@ -383,10 +388,23 @@ nothing that names the thing in either repository moved. The two are allowed to
 differ here in a way the rest of this file's entries are not, and stating that
 is cheaper than the next person renaming one to match the other.
 
+**Welcome email**:
+The email the backend sends to every Viewing Room pass buyer, separately from
+and after the **receipt**, carrying the **claim link**. **From 24 November
+2026** (backend #135, the client's answer to #126's decision 6). A buyer with no
+password gets a set-password link and one who already has a password gets a
+reset link, under the same wording, because `/set-password/` refuses an account
+that already has a password. Both carry `next=/viewing-room/`, and the link
+lasts 60 minutes, after which the way in is "Forgot password" on the sign in
+page. A reading buyer is never sent one. Not ours, like the receipt; the pass
+confirmation's steps name it ("We have sent you a welcome email…").
+_Avoid_: claim mail, activation email, the receipt (it no longer carries the link)
+
 **Claim link**:
-The link in that email inviting a buyer with no password to set one. It points
-at our `/set-password/`, and it is the reason that page has to exist before the
-first real payment.
+The link ~~in that email~~ in the **welcome email** (from 24 November 2026,
+backend #135; in the receipt before it) inviting a buyer with no password to
+set one. It points at our `/set-password/`, and it is the reason that page has
+to exist before the first real payment.
 
 ~~**From 11 November 2026 (#170, backend #122) the confirmation can show it too**,
 as SET YOUR PASSWORD on the pass screen. It is the receipt's own link, the same
@@ -396,36 +414,49 @@ whole link arrives the pass screen is what it was. `lib/claim-link.ts` reads it.
 **Struck 14 November 2026** (#185, decided on backend #126): the confirmation
 no longer shows the claim link, and `lib/claim-link.ts` is gone. A first-time
 pass buyer goes straight into the room instead (**Entering after payment**).
-The link lives only in the receipt again, for later visits, and there is no
-separate welcome email. `POST /orders/status` keeps its `set_password_link`
-and `set_password_url` keys, answering `"none"` and `null` once backend #128
-retires the hand-over; this site reads neither.
-_Avoid_: activation link, welcome email, invite
+~~The link lives only in the receipt again, for later visits, and there is no
+separate welcome email.~~ **Struck 24 November 2026** (backend #135): the link
+lives only in the **welcome email**, for later visits. `POST /orders/status`
+keeps its `set_password_link` and `set_password_url` keys, answering `"none"`
+and `null` once backend #128 retires the hand-over; this site reads neither.
+_Avoid_: activation link, ~~welcome email~~ (the mail that carries it from
+24 November 2026, not the link), invite
 
 **Entering after payment**:
-A first-time Viewing Room pass buyer, signed in by having paid and taken from
+A ~~first-time~~ Viewing Room pass buyer, signed in by having paid and taken from
 the confirmation straight to `/viewing-room/`, with no password step. **From
 14 November 2026** (#185 here, `YoussefSanad/TheWorldTarot#128` there, decided
-on backend #126). The pass screen calls `POST /api/v1/orders/enter` with the
+on backend #126), for a first-time buyer; **for every pass buyer, an existing
+account included, from 24 November 2026** (backend #135, reversing #126's
+decision 1). The pass screen calls `POST /api/v1/orders/enter` with the
 **pay token** in the body, cookie credentials and CSRF, as `/login` is called,
 once the screen shows a received payment and the masthead knows nobody is
-signed in. Anybody already signed in means no call.
+signed in. Anybody already signed in means no call. Nothing on this site changed
+for #135: a repeat buyer now gets a 200, which the screen already follows.
 
 **The backend decides who enters, and this site cannot.** It starts a session
-only for a paid pass order whose account that payment made (no password, no
-other order), within fifteen minutes of settlement, for a token that never
-travelled in a path, and once. A 200 is that session: the masthead takes the
-customer it answered and the address is replaced with the room. A 409 is "not
-settled yet", asked again on `ENTRY_RETRY_DELAYS_MS` (one second first, thirty
-in all). Every other answer, and a 409 past thirty seconds, is SIGN IN TO
-ENTER, to `/login/?next=/viewing-room/`, under steps that point at the password
-link in the receipt. Until the answer the screen says "Taking you in" where the
-button goes, never the room's door and never the sign in.
+only for a paid pass order ~~whose account that payment made (no password, no
+other order)~~ with a customer, within fifteen minutes of settlement, for a
+token that never travelled in a path, and once. A 200 is that session: the
+masthead takes the customer it answered and the address is replaced with the
+room. A 409 is "not settled yet", asked again on `ENTRY_RETRY_DELAYS_MS` (one
+second first, thirty in all). Every other answer, and a 409 past thirty
+seconds, is SIGN IN TO ENTER, to `/login/?next=/viewing-room/`, under steps
+that point at the password link in the ~~receipt~~ **welcome email** (from
+24 November 2026, #192). Until the answer the screen says "Taking you in" where
+the button goes, never the room's door and never the sign in.
 `lib/enter-after-payment.ts`.
 
-**An existing account is never entered this way** (backend #126, decision 1):
+~~**An existing account is never entered this way** (backend #126, decision 1):
 the address typed at Stripe is unverified, so a buyer who already has a
-password or an earlier order signs in as anybody else does.
+password or an earlier order signs in as anybody else does.~~ **Reversed
+24 November 2026** (backend #135): an existing account is entered by
+`POST /orders/enter` within the same bounds as a new one. The address typed at
+Stripe is still unverified, so somebody paying with another person's address
+is signed in to that person's existing account; the backend's `CONTEXT.md`
+records that as an accepted risk, reopened by any new `auth:sanctum` route.
+The refusals that remain are a second browser, the fifteen minutes gone, a
+second call, a token that travelled in a path, and no pass line.
 _Avoid_: auto sign in, auto login, magic link (nothing is mailed), claim (that
 finishes an account; this does not)
 
@@ -454,8 +485,9 @@ by `safeReturnPath` (`src/lib/return-path.ts`), an allow-list of same-origin pat
 and anything else falls back to ~~`/readings/`~~ `landingFor`. ~~The claim link
 itself does not carry one yet: backend #102 is to add a single fixed value to
 it, and these pages already read it when it arrives.~~ The claim link carries
-`next=/viewing-room/` since backend #102, and a pass receipt's reset link does
-since backend #114.
+`next=/viewing-room/` since backend #102, and a pass ~~receipt's~~ reset link does
+since backend #114 (in the **welcome email** from 24 November 2026, backend
+#135).
 _Avoid_: redirect, callback URL, returnTo (`return_to` is the checkout's product
 key and means something else)
 

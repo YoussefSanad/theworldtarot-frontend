@@ -249,8 +249,9 @@ export type PaymentMethodName =
  * `/orders/{pay_token}/pay`, and a path lands in every access log between the
  * browser and the backend, Cloudflare's included. That stopped being tolerable
  * when the pay token became briefly enough to ~~read a first-time pass buyer's
- * claim link back~~ sign a first-time pass buyer in (#185, from 14 November
- * 2026; the claim link before it, #170): the backend never enters an order
+ * claim link back~~ sign a ~~first-time~~ pass buyer in (#185, from 14 November
+ * 2026; the claim link before it, #170; any pass buyer from 24 November 2026,
+ * backend #135): the backend never enters an order
  * whose token came in by the path, so staying on the old route would quietly
  * send every such buyer to "sign in to enter". The old route is deprecated in
  * `API_CONTRACT.md` and goes once this has deployed.

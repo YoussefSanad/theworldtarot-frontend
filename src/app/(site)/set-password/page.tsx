@@ -8,12 +8,14 @@ import { siteName } from "@/content/site";
 
 /**
  * Where somebody claims the account that was made for them when they bought
- * something. The receipt links here, by a path the backend holds as
- * configuration, so **this route existing is what stops that link being a 404**.
+ * something. ~~The receipt links here~~ The welcome email links here (from
+ * 24 November 2026, backend #135; the receipt before it), by a path the backend
+ * holds as configuration, so **this route existing is what stops that link
+ * being a 404**.
  *
  * `trailingSlash` in next.config.mjs means the export is `/set-password/`. The
- * backend's default is `/set-password`, which would cost every receipt a
- * redirect hop, so `FRONTEND_SET_PASSWORD_PATH` wants the slash.
+ * backend's default is `/set-password`, which would cost every ~~receipt~~
+ * welcome email a redirect hop, so `FRONTEND_SET_PASSWORD_PATH` wants the slash.
  *
  * A separate page from the reset, not a mode of it. Nothing is being reset for
  * a person who has never had a password.

@@ -19,7 +19,9 @@
  *   of the time nothing was
  * - `refused` sends an unclaimed account to `forgot`, which is the way out of
  *   that state: a reset link sets a first password just as well as a claim
- *   link, so somebody whose receipt link has died is not stranded
+ *   link, so somebody whose ~~receipt link~~ welcome email's link has died
+ *   (it lasts 60 minutes; the link moved out of the receipt on 24 November
+ *   2026, backend #135) is not stranded
  */
 
 export const loginCopy = {
