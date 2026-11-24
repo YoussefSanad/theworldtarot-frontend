@@ -25,7 +25,6 @@
 export const loginCopy = {
   title: "Sign in",
   heading: "Sign in",
-  intro: "For the account your readings are kept with.",
   emailLabel: "Your email",
   passwordLabel: "Your password",
   submitLabel: "Sign in",
