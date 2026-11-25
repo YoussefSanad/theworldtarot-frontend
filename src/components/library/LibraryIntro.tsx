@@ -53,8 +53,16 @@ import { library } from "@/content/library";
  * The navigation lives here because Figma draws it as part of this block, and
  * because on a suit page the masthead is what stays put while the grid below is
  * replaced.
+ *
+ * `suitNav={false}` drops the strip and keeps the rest. The Library index uses
+ * it: the client wanted the title, rule, tagline and blurb back above the grid,
+ * but not the strip, since the header's LIBRARY dropdown already lists MAJOR
+ * ARCANA and all four suits. Without the strip the section's 51px bottom
+ * padding (her nav-to-cards gap) sits right under the blurb, so the cards
+ * start the same distance below the last line of copy as they did below the
+ * strip.
  */
-export function LibraryIntro({ current }: { current?: string }) {
+export function LibraryIntro({ current, suitNav = true }: { current?: string; suitNav?: boolean }) {
   return (
     /*
       106px above, 51px below — 5.52vw and 2.656vw of a 1920px frame.
@@ -132,7 +140,7 @@ export function LibraryIntro({ current }: { current?: string }) {
           {library.blurb}
         </p>
 
-        <SuitNav current={current} />
+        {suitNav && <SuitNav current={current} />}
       </Container>
     </Section>
   );

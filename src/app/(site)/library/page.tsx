@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { LibraryIntro } from "@/components/library/LibraryIntro";
 import { MajorArcanaGrid } from "@/components/library/MajorArcanaGrid";
 import { Container, Section } from "@/components/layout/Section";
 import { PageAtmosphere } from "@/components/layout/PageAtmosphere";
@@ -99,22 +100,19 @@ export default function LibraryPage() {
       <PageAtmosphere variant="library" className="max-lg:-top-20" />
 
       {/*
-        **No masthead on this page.** The client asked for everything above the
-        cards to go — title, rule, tagline, blurb and the suit strip — so the
-        grid opens the page. `LibraryIntro` stays on the coming-soon pages only;
-        the suit reference pages dropped it too.
+        **The masthead is back, but the suit strip is not.** The client first
+        asked for everything above the cards to go, then asked for the title,
+        rule, tagline and blurb back. The strip (MAJOR ARCANA | SWORDS | CUPS |
+        WANDS | PENTACLES) stays off: the header's LIBRARY dropdown already
+        offers MAJOR ARCANA and all four suits (`content/site.ts`), so nothing
+        is stranded.
 
-        Nothing is stranded by dropping the suit strip here: the header's
-        LIBRARY dropdown offers MAJOR ARCANA and all four suits (`content/site.ts`).
-
-        The title survives as a visually hidden `h1`, so the page still has a
-        heading for screen readers and search. The grid takes the masthead's own
-        106px lead-in (5.52vw of a 1920px frame) so the cards clear the header
-        the same way the title used to.
+        `LibraryIntro` carries the 106px lead-in that clears the header, so the
+        grid below needs no top padding of its own.
       */}
-      <h1 className="sr-only">{library.title}</h1>
+      <LibraryIntro suitNav={false} />
 
-      <Section padding="none" className="pt-[clamp(2rem,5.52vw,6.625rem)] pb-[clamp(2rem,4.6vw,5.5rem)]">
+      <Section padding="none" className="pb-[clamp(2rem,4.6vw,5.5rem)]">
         <Container width="library">
           <MajorArcanaGrid />
         </Container>
