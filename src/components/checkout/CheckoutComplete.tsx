@@ -254,6 +254,10 @@ function enterOnce(payToken: string, signedIn: Customer | null): Promise<Entry |
  * link over~~ (#170, 11 November 2026). **From 14 November 2026** (#185,
  * backend #128, decided on backend #126): a first-time pass buyer is signed in
  * by having paid and taken straight to `/viewing-room/`, with no password step.
+ * **From 24 November 2026** (backend #135, reversing #126's decision 1) that is
+ * every pass buyer, an existing account included, within the same bounds.
+ * Nothing here changed for it: a repeat buyer now gets a 200 and the flow below
+ * already follows it.
  *
  * Once the pass screen is what stays up, and once the masthead knows who is
  * signed in, `lib/enter-after-payment.ts` asks `POST /orders/enter` with the
@@ -261,9 +265,9 @@ function enterOnce(payToken: string, signedIn: Customer | null): Promise<Entry |
  * THE VIEWING ROOM, as before. A 200 sets the masthead's customer and replaces
  * the address with the room. A 409 is "not settled yet" and is asked again on
  * `ENTRY_RETRY_DELAYS_MS`, thirty seconds in all; anything else, and a 409
- * past that, is SIGN IN TO ENTER, with the steps that point at ~~the receipt~~
- * the welcome email (struck 24 November 2026, #192, backend #135: the
- * set-password link left the receipt for a welcome email of its own).
+ * past that, is SIGN IN TO ENTER, with the steps that point at the ~~receipt~~
+ * welcome email, which carries the password link from 24 November 2026
+ * (backend #135).
  *
  * **"Taking you in" stands where the button goes until then**, which is the
  * one place this screen waits on purpose: ENTER THE VIEWING ROOM before the
@@ -449,8 +453,9 @@ export function CheckoutComplete() {
       }
 
       /*
-        **Whether this is a pass screen a first-time buyer could enter from**
-        (#185; the claim link's screen before it, #170). Read off the record's
+        **Whether this is a pass screen a ~~first-time~~ buyer could enter from**
+        (#185; the claim link's screen before it, #170; any pass buyer from
+        24 November 2026, backend #135). Read off the record's
         product key, as `isPass` below is, and never for a gift: a gift wins
         over a pass on screen, and the case cannot arise.
 
@@ -743,16 +748,18 @@ export function CheckoutComplete() {
       {/*
         **The steps, on the two screens that have a next step to give.**
 
-        A pass buyer's are the backend's own behaviour — the claim mail, then
-        the room — and a reading buyer's say where the reading will appear. The
+        A pass buyer's are the backend's own behaviour — ~~the claim mail, then
+        the room~~ the welcome email and its link, then signing in with it on
+        the next visit, from 24 November 2026 (#192, backend #135) — and a
+        reading buyer's say where the reading will appear. The
         six unfinished-money outcomes get none: their body already says the
         only thing to do, which is to try the payment again. A gift buyer gets
         none either, because the next move is the recipient's and not theirs.
       */}
       {/*
-        The pass buyer's steps, which point at the password link in ~~the
-        receipt~~ the welcome email, under either door (#185; struck 24
-        November 2026, #192, backend #135). **Not while "Taking you in"**: they
+        The pass buyer's steps, which point at the password link in the
+        ~~receipt~~ welcome email (from 24 November 2026, backend #135), under
+        either door (#185). **Not while "Taking you in"**: they
         say to sign in, which a buyer about to be taken in has no need to read,
         and they arrive with SIGN IN TO ENTER if that is how it ends.
       */}
@@ -971,8 +978,10 @@ function Panel({ children }: { children: React.ReactNode }) {
  * them.
  *
  * **Numbered, and an `<ol>` rather than two paragraphs**, because the order is
- * the content: a pass buyer must claim the account before the room will open
- * for them, and a list that could be read in either order would lose the one
+ * the content: ~~a pass buyer must claim the account before the room will open
+ * for them~~ a pass buyer needs the welcome email's link before they can sign
+ * in with it (24 November 2026, backend #135: the room itself opens after
+ * paying), and a list that could be read in either order would lose the one
  * thing these sentences are arranged to say.
  *
  * **Left aligned inside a centred panel.** Everything else on this screen is

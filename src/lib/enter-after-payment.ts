@@ -1,18 +1,19 @@
 /**
- * **Entering after payment**: a first-time Viewing Room pass buyer, signed in
- * by having paid, and taken straight into the room from the confirmation. #185,
- * against backend `YoussefSanad/TheWorldTarot#128`, decided in backend #126 on
- * 14 November 2026.
+ * **Entering after payment**: a ~~first-time~~ Viewing Room pass buyer, signed
+ * in by having paid, and taken straight into the room from the confirmation.
+ * #185, against backend `YoussefSanad/TheWorldTarot#128`, decided in backend
+ * #126 on 14 November 2026. **Every pass buyer, an existing account included,
+ * from 24 November 2026** (backend #135, reversing #126's decision 1); nothing
+ * in this module changed for it, because a repeat buyer now simply gets a 200.
  *
  * It replaces #170's SET YOUR PASSWORD button, and `lib/claim-link.ts` with it.
- * ~~The receipt still carries the set-password link for later visits~~; this
- * page no longer shows it. **Struck 24 November 2026** (#192, backend #135): a
- * separate welcome email carries the link now, and every pass buyer, an
- * existing account included, is entered after paying.
+ * ~~The receipt still carries the set-password link for later visits~~ The
+ * welcome email carries the set-password link for later visits, from
+ * 24 November 2026 (backend #135); this page no longer shows it.
  *
  * `API_CONTRACT.md` ("POST /api/v1/orders/enter", under "Orders") is the
  * authority. The backend decides who may enter, on every request: a paid pass
- * order, ~~an account that payment made~~ (any customer since backend #135),
+ * order, ~~an account that payment made~~ with a customer (backend #135),
  * fifteen minutes from settlement, once.
  * **Nothing here decides any of that**, and nothing here could: this module only
  * asks, and reads the answer as one of three things the screen can do.
@@ -28,9 +29,11 @@
  *
  * 403, 404, 429, a 422, a 500 or no network at all end in one place, "sign in to
  * enter", because the buyer can act on that and on nothing finer. The backend
- * answers one message for every refusal on purpose: telling them apart would
+ * answers one message for every refusal on purpose: ~~telling them apart would
  * tell whoever holds a pay token whether the address typed at Stripe already
- * has an account here.
+ * has an account here.~~ **Amended 24 November 2026** (backend #135): an
+ * existing account is no longer refused, so that reason is gone; the one
+ * message stays, and so does reading every refusal the same here.
  */
 
 import { ApiError, apiWriteSettled } from "./api-write.ts";

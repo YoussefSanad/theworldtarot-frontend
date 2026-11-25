@@ -100,8 +100,9 @@ test("paying returns the client secret, with the pay token in the body and never
 
   // ~~`/api/v1/orders/{pay_token}/pay`~~ until 11 November 2026 (#170, backend
   // #122): a path segment lands in every access log between the browser and
-  // the backend, and the pay token is briefly enough to sign a first-time pass
-  // buyer in (#185; to read their claim link back before it, #170). The backend
+  // the backend, and the pay token is briefly enough to sign a ~~first-time~~
+  // pass buyer in (#185; to read their claim link back before it, #170; any
+  // pass buyer from 24 November 2026, backend #135). The backend
   // never enters an order whose token came in by the path.
   assert.equal(calls[1].url, "https://staging-api.theworldtarot.com/api/v1/orders/pay");
   assert.equal(calls[1].url.includes("kQ3rN8xvT1sLb0Zy"), false);

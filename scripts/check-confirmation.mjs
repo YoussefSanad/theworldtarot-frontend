@@ -238,7 +238,8 @@ const refused = () => api({ message: "Sign in to enter." }, 403);
 /**
  * The pass screen once the backend will not take this buyer in: SIGN IN TO
  * ENTER as the one gold button, to `/login/` coming back to the room, under
- * the steps that point at the password link in the receipt. #185, branch 5.
+ * the steps that point at the password link in the ~~receipt~~ welcome email
+ * (from 24 November 2026, #192, backend #135). #185, branch 5.
  */
 function expectSignInToEnter(state, read) {
   expect(state, "says the pass is ready", /pass is ready/i.test(read.heading), true);
@@ -873,10 +874,11 @@ const runs = [
       expect("pass", "and never renders the key itself", /viewing-room-pass/i.test(shown.text), false);
       /*
         The next steps are the backend's own behaviour: `API_CONTRACT.md`
-        sends the set-password claim mail only for an order granting Viewing
-        Room access, so this is the one screen that can state it.
+        sends the set-password ~~claim mail~~ welcome email (from 24 November
+        2026, backend #135) only for an order granting Viewing Room access, so
+        this is the one screen that can state it.
       */
-      expect("pass", "tells them to expect the claim email", /choose a password/i.test(shown.text), true);
+      expect("pass", "tells them to expect the welcome email", /welcome email with a secure link to set your password/i.test(shown.text), true);
       // The door. A reading cannot be opened here and a pass can.
       expect("pass", "offers ENTER THE VIEWING ROOM as the one gold button", goldLinks(shown), ["/viewing-room/"]);
       expect("pass", "in the client's capitals", /ENTER THE VIEWING ROOM/.test(shown.text), true);

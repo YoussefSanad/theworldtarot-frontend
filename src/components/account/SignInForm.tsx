@@ -141,7 +141,11 @@ export function SignInForm({
   return (
     <Panel bare={compact}>
       <Heading compact={compact}>{copy.heading}</Heading>
-      <p className={cn("text-note text-ash", compact ? "mt-2" : "mt-4")}>{copy.intro}</p>
+      {asking && (
+        <p className={cn("text-note text-ash", compact ? "mt-2" : "mt-4")}>
+          {loginCopy.forgot.intro}
+        </p>
+      )}
 
       <form
         className={cn("flex flex-col", compact ? "mt-5 gap-4" : "mt-8 gap-6")}

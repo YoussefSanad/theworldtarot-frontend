@@ -188,17 +188,27 @@ export const checkoutCompleteCopy = {
    * practice this is a pass buyer choosing their first password". A reading
    * buyer is never sent one. So the one next step this screen can state is the
    * one the backend actually performs, and it is stated in the order it
-   * happens: the mail, then the password, then the room.
+   * happens: ~~the mail, then the password, then the room.~~ **From 24
+   * November 2026** (#192, backend #135) the mail is the **welcome email**,
+   * sent separately from the receipt to every pass buyer, and the steps are
+   * the client's: the welcome email and its link, then signing in with it on
+   * the next visit. The room is no longer a step, because the buyer is taken
+   * into it after paying (**Entering after payment**).
    *
-   * **`hasViewingRoomAccess` hangs off the account**, so a buyer who never
+   * ~~**`hasViewingRoomAccess` hangs off the account**, so a buyer who never
    * claims one cannot watch anything — which is why the mail is named first and
    * the room second, rather than a gold button on its own with the account step
-   * left for the buyer to discover at the paywall they just paid to pass.
+   * left for the buyer to discover at the paywall they just paid to pass.~~
+   * **Struck 24 November 2026:** every pass buyer, an existing account
+   * included, is entered by `POST /orders/enter` within its bounds (backend
+   * #135), so the password is for later visits and not the way into the room
+   * now. The link still comes first, because the second step uses it.
    *
    * A buyer who already had an account and was signed in when they bought skips
-   * all of that; the room simply opens. The wording is written to be true for
-   * them as well, which is why step one says what has been sent rather than
-   * instructing them to go and do something.
+   * ~~all of that; the room simply opens~~ the ask: the room simply opens. The
+   * wording is written to be true for them as well, which is why step one says
+   * what has been sent rather than instructing them to go and do something.
+   * They get the welcome email too (backend #135).
    */
   passReceived: {
     heading: "Your Viewing Room pass is ready",
@@ -219,6 +229,11 @@ export const checkoutCompleteCopy = {
      *
      * Copy rather than markup so the client can change the words without
      * touching a component, the way every other sentence on this screen can be.
+     *
+     * ~~"We have emailed you a link to choose a password and claim your
+     * account." "Sign in with it and the Viewing Room opens, on this device and
+     * any other."~~ **The client's words from 24 November 2026** (#192), naming
+     * the welcome email that carries the link since backend #135.
      */
     steps: [
       "We have sent you a welcome email with a secure link to set your password.",
@@ -230,8 +245,9 @@ export const checkoutCompleteCopy = {
       link to~~ (#170, 11 November 2026). **Removed 14 November 2026** (#185):
       that buyer is now signed in by having paid and taken straight to the
       room, so the screen never offers the link. ~~The receipt still carries
-      it.~~ **Struck 24 November 2026** (#192, backend #135): the link has left
-      the receipt for a welcome email of its own, sent to every pass buyer.
+      it.~~ **From 24 November 2026** (backend #135) the welcome email carries
+      it, sent separately from the receipt, and every pass buyer is signed in
+      this way, an existing account included.
     */
     /**
      * Where the gold button stands while the backend is asked whether this
@@ -242,13 +258,13 @@ export const checkoutCompleteCopy = {
     takingYouIn: "Taking you in…",
     /**
      * The gold button when the backend will not sign this buyer in: ~~a buyer
-     * who already had an account,~~ a second browser, the fifteen minutes
-     * gone, a token that travelled in a path, or no answer at all (#185).
-     * `steps` above sit over it, and they point at the password link in ~~the
-     * receipt~~ the welcome email, which is the way in for all of them.
-     * **Struck 24 November 2026** (#192, backend #135): an existing account is
-     * now entered after paying like a new one, and the link moved out of the
-     * receipt into its own welcome email.
+     * who already had an account,~~ a second browser, the fifteen minutes gone,
+     * a pay token that travelled in a path, or no answer at all (#185).
+     * `steps` above sit over it, and they point at the password link in the
+     * ~~receipt~~ welcome email, which is the way in for all of them.
+     * **Amended 24 November 2026** (backend #135): an existing account is
+     * entered by `POST /orders/enter` like a new one, and the link moved from
+     * the receipt to the welcome email.
      * In the client's capitals, like the other two buttons on this screen.
      */
     signInLabel: "SIGN IN TO ENTER",
