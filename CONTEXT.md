@@ -396,11 +396,18 @@ whole link arrives the pass screen is what it was. `lib/claim-link.ts` reads it.
 **Struck 14 November 2026** (#185, decided on backend #126): the confirmation
 no longer shows the claim link, and `lib/claim-link.ts` is gone. A first-time
 pass buyer goes straight into the room instead (**Entering after payment**).
-The link lives only in the receipt again, for later visits, and there is no
-separate welcome email. `POST /orders/status` keeps its `set_password_link`
+~~The link lives only in the receipt again, for later visits, and there is no
+separate welcome email.~~ `POST /orders/status` keeps its `set_password_link`
 and `set_password_url` keys, answering `"none"` and `null` once backend #128
 retires the hand-over; this site reads neither.
-_Avoid_: activation link, welcome email, invite
+**Struck 24 November 2026** (#192 here, backend #135, the client's answer to
+backend #126 decision 6): the link has left the receipt. A separate **welcome
+email**, queued after the receipt, carries it to every pass buyer, for later
+visits. A buyer who already has a password gets the same email with a reset
+link instead, since `/set-password/` refuses them. It lasts 60 minutes; after
+that, "Forgot password" on the sign in page. The receipt keeps its pass
+paragraph and ENTER THE VIEWING ROOM, and no token.
+_Avoid_: activation link, invite
 
 **Entering after payment**:
 A first-time Viewing Room pass buyer, signed in by having paid and taken from
@@ -412,21 +419,29 @@ once the screen shows a received payment and the masthead knows nobody is
 signed in. Anybody already signed in means no call.
 
 **The backend decides who enters, and this site cannot.** It starts a session
-only for a paid pass order whose account that payment made (no password, no
-other order), within fifteen minutes of settlement, for a token that never
-travelled in a path, and once. A 200 is that session: the masthead takes the
+only for a paid pass order ~~whose account that payment made (no password, no
+other order)~~ with a customer (since backend #135), within fifteen minutes of
+settlement, for a token that never travelled in a path, and once. A 200 is that session: the masthead takes the
 customer it answered and the address is replaced with the room. A 409 is "not
 settled yet", asked again on `ENTRY_RETRY_DELAYS_MS` (one second first, thirty
 in all). Every other answer, and a 409 past thirty seconds, is SIGN IN TO
 ENTER, to `/login/?next=/viewing-room/`, under steps that point at the password
-link in the receipt. Until the answer the screen says "Taking you in" where the
+link in ~~the receipt~~ the welcome email (24 November 2026). Until the answer the screen says "Taking you in" where the
 button goes, never the room's door and never the sign in.
 `lib/enter-after-payment.ts`.
 
-**An existing account is never entered this way** (backend #126, decision 1):
+~~**An existing account is never entered this way** (backend #126, decision 1):
 the address typed at Stripe is unverified, so a buyer who already has a
-password or an earlier order signs in as anybody else does.
-_Avoid_: auto sign in, auto login, magic link (nothing is mailed), claim (that
+password or an earlier order signs in as anybody else does.~~
+**Struck 24 November 2026** (#192 here, backend #135 reverses decision 1): a
+repeat buyer is treated exactly like a new one, signed in after paying and
+sent the same welcome email. The checkout address is still unverified, so
+somebody paying with another person's address is signed in to that person's
+existing account; the backend accepts that while the session exposes only
+`GET /me`, the card videos and logout, and any new signed-in-only feature
+reopens it. That is the backend's decision and its CONTEXT.md records it; this
+site still only follows the answer.
+_Avoid_: auto sign in, auto login, magic link (the link is not a sign in), claim (that
 finishes an account; this does not)
 
 **Return path**:

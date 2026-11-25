@@ -5,12 +5,15 @@
  * 14 November 2026.
  *
  * It replaces #170's SET YOUR PASSWORD button, and `lib/claim-link.ts` with it.
- * The receipt still carries the set-password link for later visits; this page
- * no longer shows it.
+ * ~~The receipt still carries the set-password link for later visits~~; this
+ * page no longer shows it. **Struck 24 November 2026** (#192, backend #135): a
+ * separate welcome email carries the link now, and every pass buyer, an
+ * existing account included, is entered after paying.
  *
  * `API_CONTRACT.md` ("POST /api/v1/orders/enter", under "Orders") is the
  * authority. The backend decides who may enter, on every request: a paid pass
- * order, an account that payment made, fifteen minutes from settlement, once.
+ * order, ~~an account that payment made~~ (any customer since backend #135),
+ * fifteen minutes from settlement, once.
  * **Nothing here decides any of that**, and nothing here could: this module only
  * asks, and reads the answer as one of three things the screen can do.
  *

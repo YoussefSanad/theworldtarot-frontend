@@ -245,7 +245,7 @@ function expectSignInToEnter(state, read) {
   expect(state, "offers SIGN IN TO ENTER as the one gold button", goldLinks(read), [SIGN_IN_HREF]);
   expect(state, "in the client's capitals", /SIGN IN TO ENTER/.test(read.text), true);
   expect(state, "and never ENTER THE VIEWING ROOM", /ENTER THE VIEWING ROOM/.test(read.text), false);
-  expect(state, "under the steps that point at the receipt's password link", /We have emailed you a link to choose a password/.test(read.text), true);
+  expect(state, "under the steps that point at the welcome email's password link", /We have sent you a welcome email with a secure link to set your password/.test(read.text), true);
   expect(state, "and no longer says it is taking them in", /Taking you in/i.test(read.text), false);
   expect(state, "and keeps readings as the quiet second", read.hrefs.includes("/readings/"), true);
 }

@@ -261,7 +261,9 @@ function enterOnce(payToken: string, signedIn: Customer | null): Promise<Entry |
  * THE VIEWING ROOM, as before. A 200 sets the masthead's customer and replaces
  * the address with the room. A 409 is "not settled yet" and is asked again on
  * `ENTRY_RETRY_DELAYS_MS`, thirty seconds in all; anything else, and a 409
- * past that, is SIGN IN TO ENTER, with the steps that point at the receipt.
+ * past that, is SIGN IN TO ENTER, with the steps that point at ~~the receipt~~
+ * the welcome email (struck 24 November 2026, #192, backend #135: the
+ * set-password link left the receipt for a welcome email of its own).
  *
  * **"Taking you in" stands where the button goes until then**, which is the
  * one place this screen waits on purpose: ENTER THE VIEWING ROOM before the
@@ -748,8 +750,9 @@ export function CheckoutComplete() {
         none either, because the next move is the recipient's and not theirs.
       */}
       {/*
-        The pass buyer's steps, which point at the password link in the
-        receipt, under either door (#185). **Not while "Taking you in"**: they
+        The pass buyer's steps, which point at the password link in ~~the
+        receipt~~ the welcome email, under either door (#185; struck 24
+        November 2026, #192, backend #135). **Not while "Taking you in"**: they
         say to sign in, which a buyer about to be taken in has no need to read,
         and they arrive with SIGN IN TO ENTER if that is how it ends.
       */}

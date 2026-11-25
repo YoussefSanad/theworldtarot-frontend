@@ -221,15 +221,17 @@ export const checkoutCompleteCopy = {
      * touching a component, the way every other sentence on this screen can be.
      */
     steps: [
-      "We have emailed you a link to choose a password and claim your account.",
-      "Sign in with it and the Viewing Room opens, on this device and any other.",
+      "We have sent you a welcome email with a secure link to set your password.",
+      "Use it to sign in on your next visit, on this device or any other.",
     ],
     /*
       ~~`claimSteps` and `setPasswordLabel`, the steps and the gold button
       SET YOUR PASSWORD for a first-time buyer the backend had handed the claim
       link to~~ (#170, 11 November 2026). **Removed 14 November 2026** (#185):
       that buyer is now signed in by having paid and taken straight to the
-      room, so the screen never offers the link. The receipt still carries it.
+      room, so the screen never offers the link. ~~The receipt still carries
+      it.~~ **Struck 24 November 2026** (#192, backend #135): the link has left
+      the receipt for a welcome email of its own, sent to every pass buyer.
     */
     /**
      * Where the gold button stands while the backend is asked whether this
@@ -239,10 +241,14 @@ export const checkoutCompleteCopy = {
      */
     takingYouIn: "Taking you in…",
     /**
-     * The gold button when the backend will not sign this buyer in: a buyer
-     * who already had an account, a second browser, the fifteen minutes gone,
-     * or no answer at all (#185). `steps` above sit over it, and they point at
-     * the password link in the receipt, which is the way in for all of them.
+     * The gold button when the backend will not sign this buyer in: ~~a buyer
+     * who already had an account,~~ a second browser, the fifteen minutes
+     * gone, a token that travelled in a path, or no answer at all (#185).
+     * `steps` above sit over it, and they point at the password link in ~~the
+     * receipt~~ the welcome email, which is the way in for all of them.
+     * **Struck 24 November 2026** (#192, backend #135): an existing account is
+     * now entered after paying like a new one, and the link moved out of the
+     * receipt into its own welcome email.
      * In the client's capitals, like the other two buttons on this screen.
      */
     signInLabel: "SIGN IN TO ENTER",
