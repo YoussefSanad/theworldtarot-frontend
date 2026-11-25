@@ -1,6 +1,6 @@
 "use client";
 
-import { SignOutConfirm } from "@/components/account/SignOutConfirm";
+import { SignOutButton } from "@/components/account/SignOutButton";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { type Customer, customerLabel } from "@/lib/session";
 
@@ -67,12 +67,12 @@ export function AccountLine({
         the whole line for a question when pressed — so the one thing this
         panel exists to show, *which* account is signed in, disappeared at the
         moment somebody was deciding whether to leave it. The control now sits
-        below and arms itself instead; the line never moves.
+        below and signs out on one press; the line never moves.
 
         `tone="panel"` because the paywall draws from the PSD's own champagne
-        and gold rather than the site tokens. See `SignOutConfirm`.
+        and gold rather than the site tokens. See `SignOutButton`.
       */}
-      <SignOutConfirm tone="panel" />
+      <SignOutButton tone="panel" />
     </div>
   );
 }

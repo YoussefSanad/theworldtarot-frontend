@@ -40,11 +40,10 @@ const SIGN_IN = "Sign in Here.";
   one thing that panel exists to show, *which* account is signed in,
   disappeared exactly when somebody was deciding whether to leave it.
 
-  Matched on `data-sign-out` because the button's words are one of three
-  stacked faces and are `opacity-0` in two of them.
+  Matched on `data-sign-out` because the button's words go `invisible` under
+  the spinner while it works, and a translation changes them.
 */
 const SIGN_OUT = "[data-sign-out]";
-const SIGN_OUT_ARMED = '[data-sign-out="armed"]';
 const HINT = "Click any card to experience the Living Tarot";
 const COMING_SOON = "coming soon";
 
@@ -626,16 +625,7 @@ for (const logoutWorks of [true, false]) {
   await page.goto(ROOM, { waitUntil: "networkidle" });
 
   const label = logoutWorks ? "logout succeeds" : "logout fails";
-  /*
-    **Two presses, because signing out asks first now.** The control sits one
-    slip away from the account's own name, in a panel opened to read it, so
-    `SignOutConfirm` stands between the two — and it replaces the line rather
-    than opening over it, since there is nothing above this panel to put a
-    dialog in.
-  */
-  /* Two presses: the first arms the button, the second signs out. */
-  await page.locator(SIGN_OUT).click();
-  await page.waitForSelector(SIGN_OUT_ARMED);
+  /* One press signs out; nothing asks first. */
   await page.locator(SIGN_OUT).click();
   await page.waitForTimeout(400);
 
