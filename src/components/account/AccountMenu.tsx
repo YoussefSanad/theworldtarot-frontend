@@ -6,7 +6,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { type MenuSurface, useAccountMenu } from "@/components/account/account-menu-store";
 import { SignInForm } from "@/components/account/SignInForm";
-import { SignOutConfirm } from "@/components/account/SignOutConfirm";
+import { SignOutButton } from "@/components/account/SignOutButton";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { loginCopy } from "@/content/login";
 import { cn } from "@/lib/cn";
@@ -70,8 +70,8 @@ export function AccountMenu({
     an effect closing over it before its initialiser runs would throw.
 
     It used to reset a confirmation panel on close. There is none now — the
-    sign-out control arms itself and disarms on a timer — so closing the panel
-    has nothing to remember.
+    sign-out control signs out on one press and holds no state of its own — so
+    closing the panel has nothing to remember.
   */
   const toggle = useCallback((next: boolean) => setOpen(next), [setOpen]);
 
@@ -244,7 +244,7 @@ export function AccountMenu({
                     {customerLabel(customer)}
                   </span>
                 </p>
-                <SignOutConfirm />
+                <SignOutButton />
               </div>
             ) : (
               /*

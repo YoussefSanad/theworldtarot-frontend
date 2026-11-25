@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { AccountIcon } from "@/components/account/AccountMenu";
-import { SignOutConfirm } from "@/components/account/SignOutConfirm";
+import { SignOutButton } from "@/components/account/SignOutButton";
 import { useSignedIn } from "@/components/account/useSignedIn";
 import { ButtonLink } from "@/components/ui/Button";
 import { loginCopy, signInPath } from "@/content/login";
@@ -71,7 +71,7 @@ export function AccountDrawerSection({ onNavigate }: { onNavigate?: () => void }
     /*
       **Matched to the button beside it rather than to the paywall's.**
 
-      `SignOutConfirm`'s own `min-h-11` is a 44px floor it carries for the
+      `SignOutButton`'s own `min-h-11` is a 44px floor it carries for the
       Viewing Room, where it stands alone in a height-capped panel. Here it
       stands next to a `min-h-[2.03em]` CTA — about 28px at the phone floor —
       and the two together read as a button and a bigger button. `fit` is what
@@ -81,7 +81,7 @@ export function AccountDrawerSection({ onNavigate }: { onNavigate?: () => void }
       `fit` carries the padding and the type as well, so the pair differ in
       their words and in nothing else.
     */
-    return <SignOutConfirm fit />;
+    return <SignOutButton fit />;
   }
 
   /*

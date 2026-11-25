@@ -226,20 +226,20 @@ const PAPER_WIDTH = 1337;
  * and a rule that guessed would eventually guess wrong on a card nobody is
  * looking at.
  *
- * **Justice is pinned to her original, deliberately.** Her `-2` revision drops
- * the gold scales from the lower left — the page draws that emblem itself, so
- * on the face of it the sheet should not carry a second one baked in, the same
- * correction `21-the-world-no-name.jpg` makes to the library card. It was
- * shipped on that reasoning and then reverted.
+ * **Justice is pinned to `11-JUSTICE-BKGRND-11_19.png`**, a full-size
+ * 1920x3237 sheet copied in from `asset dump/_replaced-backgrounds-2026-10-13/`
+ * (delivered there as `11-JUSTICE-11_19.png`). `BKGRND` was added to the name
+ * because the symbol scan treats every other PNG in a packet as a symbol and
+ * would count this one as a thirtieth.
  *
- * The reason to know about: **that file is 380x640 where hers are 1920x3237**,
- * so it upscales ~3.9x to the `PAPER_WIDTH` below and lands visibly softer in
- * the torches and pillars than the rest of the deck. If the scales are to come
- * off the paper, it wants a hi-res re-export rather than this file; changing
- * the value below and rerunning the script is the whole of the swap.
+ * It replaces her original `11-JUSTICE BKGRND.png`. The two older files stay
+ * in the folder: her `-2` revision dropped the gold scales but was only 380x640,
+ * so it upscaled ~3.9x to `PAPER_WIDTH` and came out visibly soft, and it was
+ * reverted. Changing the value below and rerunning the script is all a swap
+ * takes.
  */
 const REVISED_PAPER = {
-  "11 - Justice": "11-JUSTICE BKGRND.png",
+  "11 - Justice": "11-JUSTICE-BKGRND-11_19.png",
 };
 
 /**

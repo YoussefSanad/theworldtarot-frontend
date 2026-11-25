@@ -55,28 +55,14 @@ const ACCOUNT_TRIGGER = 'header [data-account-menu="row"]';
 */
 const SIGNED_IN_NAME = 'header [aria-labelledby] p span[title]';
 /*
-  Signing out, which is two presses now: the control, then the confirmation.
+  Signing out is one button, one press. It used to arm on the first press and
+  go on the second; that confirmation is gone.
 
-  **Both buttons read exactly "Sign out"** — `loginCopy.menu.signOut` and
-  `signOutConfirm.confirm` are the same two words, deliberately, because the
-  second is the first carried out. They are never on screen together, since the
-  confirmation replaces the contents it was opened from, so one text selector
-  would do for both; they are named apart here so a test reads as the two steps
-  a person takes. `text-is` rather than `has-text` to avoid also matching the
-  question above them, which contains the same words.
-*/
-/*
-  Signing out is one button that confirms itself: pressed once it arms —
-  the word fades to a door mark and the glow turns amber — and pressed again
-  it goes. There is no second control to cancel with; it disarms on a timer.
-
-  Matched on `data-sign-out` rather than on its text, because the text is one
-  of three stacked faces and is `opacity-0` in two of them. The attribute also
-  carries which face is showing, so the middle state can be asserted rather
-  than guessed at from a colour.
+  Matched on `data-sign-out` rather than on its text, because the words go
+  `invisible` under the spinner while it works and a translation changes them.
+  The attribute is there in both states, `idle` and `busy`.
 */
 const SIGN_OUT = "header [data-sign-out]";
-const SIGN_OUT_ARMED = 'header [data-sign-out="armed"]';
 
 /*
   Every one of these is scoped to `main`, and both scopes are load-bearing
@@ -304,25 +290,8 @@ console.log("\na claimed account signs in, and the masthead says so");
     signIn: 0, name: "Jane Doe", signOut: 1,
   });
 
-  /*
-    Signing out is three presses now: open the panel, ask, confirm. The
-    confirmation is deliberate — the control sits one slip away from a
-    customer's own name, in a panel they opened to read it.
-  */
+  /* Two presses: open the panel, then sign out. Nothing asks in between. */
   await page.click(ACCOUNT_TRIGGER);
-  await page.click(SIGN_OUT);
-  await page.waitForSelector(SIGN_OUT_ARMED);
-  /*
-    **The account line is still there, and that is the point.** The
-    confirmation used to replace it with a question, which took away the one
-    thing the panel exists to show — which account is signed in — at the exact
-    moment somebody was deciding whether to leave it. The button now carries
-    its own confirmation instead: it arms in place, the line never moves.
-  */
-  expect("signing out", "asks before it acts, without taking the account away", await masthead(page), {
-    signIn: 0, name: "Jane Doe", signOut: 1,
-  });
-
   await page.click(SIGN_OUT);
   await page.waitForFunction(
     (selector) => document.querySelector(selector)?.getAttribute("aria-label") === "Sign in",
@@ -379,7 +348,6 @@ console.log("\na buyer with no name is still somebody, and the masthead says who
   expect("no name", "and its title is the same string rather than empty", title, "jennifer@example.com");
   expect("no name", "the word null is nowhere in the panel", (await page.textContent("header")).includes("null"), false);
 
-  await page.click(SIGN_OUT);
   await page.click(SIGN_OUT);
   await page.waitForFunction(
     (selector) => document.querySelector(selector)?.getAttribute("aria-label") === "Sign in",

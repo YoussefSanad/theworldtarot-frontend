@@ -7,11 +7,12 @@ here. The plan this was built from is
 [`docs/plans/library-page.md`](../../../docs/plans/library-page.md).
 
 **The grid is the Library's default view, not a landing page in front of one.**
-The masthead nav's LIBRARY lands on the cards, and the grid opens on them with no
-visible heading or suit navigation above (a visually hidden `<h1>` keeps the
-outline). The suit reference pages and the card pages carry none either. Only
-`ComingSoonPage` still renders `LibraryIntro`, and there `MAJOR ARCANA` points at
-`/library/` rather than at a section.
+The masthead nav's LIBRARY lands on the cards. Above them sits `LibraryIntro` with
+`suitNav={false}`: the title, rule, tagline and blurb, but no suit strip, because
+the header's LIBRARY dropdown already covers the suits. The suit reference pages
+and the card pages carry no intro. `ComingSoonPage` renders the full
+`LibraryIntro`, strip included, and there `MAJOR ARCANA` points at `/library/`
+rather than at a section.
 
 ## The artwork is the whole card, plaque included
 
