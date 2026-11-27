@@ -61,8 +61,13 @@ export function SeventyEight() {
               {/* The title takes a local clamp for the same reason its caption does: at
                 `text-nav` it floors at 15px, which on a phone left the heading
                 *smaller* than the body under it. 19px floor keeps it above the
-                caption's 17px at every width; the 30px maximum is the token's. */}
-              <h3 className="font-serif text-[clamp(1.1875rem,1.5625vw,1.875rem)] font-bold tracking-[0.04em] text-cream">
+                caption's 17px at every width; the 30px maximum is the token's.
+
+                `leading-[1.15]` because an arbitrary size sets no line height, so
+                the title inherited the body's 1.5 and its two lines ("CINEMATIC /
+                VIDEOS") sat visibly apart; the client asked for them tightened.
+                1.15 is the `h1`/`h2` tokens' leading. */}
+              <h3 className="font-serif text-[clamp(1.1875rem,1.5625vw,1.875rem)] leading-[1.15] font-bold tracking-[0.04em] text-cream">
                 {mark.title}
               </h3>
 

@@ -48,7 +48,7 @@ export function TarotMap() {
               />
 
               {/* Same local clamp as `SeventyEight`'s titles — see the note there. */}
-              <h3 className="font-serif text-[clamp(1.1875rem,1.5625vw,1.875rem)] font-bold tracking-[0.04em]">
+              <h3 className="font-serif text-[clamp(1.1875rem,1.5625vw,1.875rem)] leading-[1.15] font-bold tracking-[0.04em]">
                 {group.title}
               </h3>
 

@@ -53,8 +53,14 @@ import { library } from "@/content/library";
  * The navigation lives here because Figma draws it as part of this block, and
  * because on a suit page the masthead is what stays put while the grid below is
  * replaced.
+ *
+ * **`suitNav={false}` is the Library page's own call.** The client had the suit
+ * strip removed there (the header's LIBRARY dropdown reaches every suit) but
+ * wants the title, rule, tagline and blurb above the cards. Without the strip the
+ * section's 51px foot sits under the blurb instead, so the cards keep the same
+ * distance from the last line of the masthead that they had from the strip.
  */
-export function LibraryIntro({ current }: { current?: string }) {
+export function LibraryIntro({ current, suitNav = true }: { current?: string; suitNav?: boolean }) {
   return (
     /*
       106px above, 51px below — 5.52vw and 2.656vw of a 1920px frame.
@@ -132,7 +138,7 @@ export function LibraryIntro({ current }: { current?: string }) {
           {library.blurb}
         </p>
 
-        <SuitNav current={current} />
+        {suitNav && <SuitNav current={current} />}
       </Container>
     </Section>
   );
