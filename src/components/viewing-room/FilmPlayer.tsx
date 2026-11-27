@@ -287,8 +287,13 @@ export function FilmPlayer({
       source.onFatalError(fail);
 
       source.release();
-      setState({ phase: "playing" });
 
+      /*
+        **No `playing` phase here.** The manifest is parsed but no frame has
+        been decoded yet, and on a slow line that gap is the longest part of
+        the wait. The `playing` event on the element flips the phase once the
+        film is actually moving, so the loading badge covers the whole wait.
+      */
       try {
         await video.play();
       } catch {
@@ -370,6 +375,8 @@ export function FilmPlayer({
         */
         onPause={() => setState((was) => (was.phase === "playing" ? { phase: "paused" } : was))}
         onPlaying={() => setState({ phase: "playing" })}
+        // A stall mid-film is the same wait as the first one, and gets the same badge.
+        onWaiting={() => setState((was) => (was.phase === "playing" ? { phase: "loading" } : was))}
         onClick={togglePlayback}
         className={cn(
           "absolute inset-0 size-full object-contain",
@@ -410,9 +417,10 @@ export function FilmPlayer({
       )}
 
       {state.phase === "loading" && (
-        <p role="status" className="absolute inset-x-0 bottom-6 text-center text-sm tracking-wide text-white/70">
-          {labels.loading}
-        </p>
+        <div role="status" className="absolute inset-0 grid place-items-center">
+          <LoadingBadge />
+          <span className="sr-only">{labels.loading}</span>
+        </div>
       )}
 
       {ended && <ReplayControl onReplay={() => void start()} label={labels.replay} />}
@@ -463,12 +471,17 @@ function readFailure(error: unknown): PlaybackFailure | null {
  * the button is the whole picture — a visitor's pointer is over the control
  * long before it is over the 88px disc.
  */
+/** The disc both badges sit on, so loading cannot drift from play in size or treatment. */
+const BADGE_DISC = cn(
+  "grid size-[88px] place-items-center rounded-full",
+  "border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/40 backdrop-blur-sm",
+);
+
 function PlayBadge({ showPauseAtRest = false }: { showPauseAtRest?: boolean }) {
   return (
     <span
       className={cn(
-        "grid size-[88px] place-items-center rounded-full",
-        "border border-[color:var(--gold-line,#d4b06a)]/70 bg-black/40 backdrop-blur-sm",
+        BADGE_DISC,
         "transition-[transform,background-color,border-color] duration-200 ease-out",
         "group-hover:scale-105 group-hover:border-[color:var(--gold,#d4b06a)] group-hover:bg-black/55",
         "group-focus-visible:scale-105 group-focus-visible:border-[color:var(--gold,#d4b06a)]",
@@ -495,6 +508,47 @@ function PlayBadge({ showPauseAtRest = false }: { showPauseAtRest?: boolean }) {
         ) : (
           <path d="M8 5v14l11-7z" />
         )}
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * The play badge, pressed and waiting.
+ *
+ * Same disc, same place, so pressing play reads as the control itself taking
+ * the request rather than being swapped for a caption. The arrow dims to say
+ * "already asked", and a gold arc travels the rim, glowing like the site's
+ * other gold edges.
+ *
+ * `motion-reduce:animate-none` leaves the arc still; the `role="status"` around
+ * it is what carries the meaning either way.
+ */
+function LoadingBadge() {
+  return (
+    <span className={cn(BADGE_DISC, "relative")} aria-hidden="true">
+      <svg
+        viewBox="0 0 88 88"
+        fill="none"
+        className={cn(
+          "absolute -inset-px size-[calc(100%+2px)]",
+          "animate-spin [animation-duration:1.6s] motion-reduce:animate-none",
+          "drop-shadow-[0_0_6px_rgba(212,176,106,0.55)]",
+        )}
+      >
+        <circle
+          cx="44"
+          cy="44"
+          r="43.25"
+          pathLength={100}
+          strokeDasharray="24 76"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          className="stroke-[color:var(--gold,#d4b06a)]"
+        />
+      </svg>
+      <svg viewBox="0 0 24 24" className="ml-1 size-8 fill-[color:var(--gold,#d4b06a)] opacity-40">
+        <path d="M8 5v14l11-7z" />
       </svg>
     </span>
   );
