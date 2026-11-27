@@ -30,16 +30,21 @@ import { cn } from "@/lib/cn";
  *
  * `exact` is for dropdown children, active only on their own page; top-level
  * items are active for their whole section. See `lib/nav-active.ts`.
+ *
+ * `dot={false}` drops the point and leaves the gold text as the only mark —
+ * the desktop bar's links use it; the drawer's rows keep the point.
  */
 export function NavMarkLink({
   href,
   exact,
+  dot = true,
   className,
   onClick,
   children,
 }: {
   href: string;
   exact?: boolean;
+  dot?: boolean;
   className?: string;
   onClick?: () => void;
   children: ReactNode;
@@ -57,7 +62,7 @@ export function NavMarkLink({
         className,
       )}
     >
-      <span aria-hidden className="menu-option-dot" />
+      {dot && <span aria-hidden className="menu-option-dot" />}
       {children}
     </Link>
   );

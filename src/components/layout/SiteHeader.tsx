@@ -261,7 +261,7 @@ export function SiteHeader() {
               "children" in item ? (
                 <NavDropdown key={item.label} group={item} />
               ) : (
-                <NavMarkLink key={item.href} href={item.href}>
+                <NavMarkLink key={item.href} href={item.href} dot={false}>
                   {item.label}
                 </NavMarkLink>
               ),

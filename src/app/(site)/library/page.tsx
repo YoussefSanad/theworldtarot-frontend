@@ -16,7 +16,8 @@ export const metadata: Metadata = {
 /**
  * The Library (Figma `344:98`), and **the Major Arcana grid is its default
  * view** rather than a landing page in front of one: the nav's LIBRARY lands
- * here on the cards, and opens on them with no heading or suit navigation above.
+ * here on the cards, under the masthead's title, tagline and blurb but with no
+ * suit navigation above them.
  *
  * The closing block is `ClosingSaying` with this page's words. It already takes
  * the 538px rule this frame draws (`heroWide`, added for World Tarot) and the
