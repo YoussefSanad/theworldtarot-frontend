@@ -19,7 +19,9 @@
  *   of the time nothing was
  * - `refused` sends an unclaimed account to `forgot`, which is the way out of
  *   that state: a reset link sets a first password just as well as a claim
- *   link, so somebody whose receipt link has died is not stranded
+ *   link, so somebody whose ~~receipt link~~ welcome email's link has died
+ *   (it lasts 60 minutes; the link moved out of the receipt on 24 November
+ *   2026, backend #135) is not stranded
  */
 
 export const loginCopy = {
@@ -114,12 +116,11 @@ export const loginCopy = {
   },
 
   /**
-   * The sign out button, which carries its own confirmation.
+   * The sign out button, which signs out on one press.
    *
-   * **It shows one word and two pictures**, and the two pictures are why there
-   * are only three strings here: armed, it is a door mark and a warmer glow;
-   * working, a spinner. Neither is text, so neither changes the button's width
-   * — see `SignOutConfirm`, where that is the whole point of the arrangement.
+   * The key keeps its old name from when the button asked for a second press
+   * to confirm; renaming it would only churn the locale files. See
+   * `SignOutButton` for why it no longer asks.
    *
    * **No warning language, deliberately.** Signing out of this site costs
    * nothing: no unsaved work, no member area to be thrown out of, and the way
@@ -128,27 +129,11 @@ export const loginCopy = {
    */
   signOutConfirm: {
     /**
-     * The button at rest.
-     *
-     * The only words this control ever shows. Armed, it swaps them for a door
-     * mark and a warmer glow; working, for a spinner. Both of those are
-     * pictures, so both are announced through the two strings below rather
-     * than drawn as text — which is also what lets the button hold one width
-     * through the whole journey.
+     * The button at rest, and the only words it ever shows. While it works a
+     * spinner is laid over them, which keeps the button one width; the string
+     * below is what a screen reader hears in the meantime.
      */
     idle: "Sign out",
-    /**
-     * What a screen reader hears once the button is armed, in place of the
-     * amber it cannot see.
-     *
-     * The confirmation is a second press rather than a question, because
-     * signing out of this site costs nothing — no unsaved work, and the way
-     * back in is two fields. A sentence putting the question to them, with a
-     * "stay signed in" to decline, dressed a harmless action up as a dangerous
-     * one. It is guarded at all because the control sits one slip away from a
-     * signed-in customer's own name.
-     */
-    armedHint: "Press again to confirm signing out",
     /** Announced while the sign out is in flight; the button shows a spinner. */
     busyLabel: "Signing out…",
   },

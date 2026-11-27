@@ -54,11 +54,13 @@ import { library } from "@/content/library";
  * because on a suit page the masthead is what stays put while the grid below is
  * replaced.
  *
- * **`suitNav={false}` is the Library page's own call.** The client had the suit
- * strip removed there (the header's LIBRARY dropdown reaches every suit) but
- * wants the title, rule, tagline and blurb above the cards. Without the strip the
- * section's 51px foot sits under the blurb instead, so the cards keep the same
- * distance from the last line of the masthead that they had from the strip.
+ * `suitNav={false}` drops the strip and keeps the rest. The Library index uses
+ * it: the client wanted the title, rule, tagline and blurb back above the grid,
+ * but not the strip, since the header's LIBRARY dropdown already lists MAJOR
+ * ARCANA and all four suits. Without the strip the section's 51px bottom
+ * padding (her nav-to-cards gap) sits right under the blurb, so the cards
+ * start the same distance below the last line of copy as they did below the
+ * strip.
  */
 export function LibraryIntro({ current, suitNav = true }: { current?: string; suitNav?: boolean }) {
   return (

@@ -101,13 +101,15 @@ export default function LibraryPage() {
       <PageAtmosphere variant="library" className="max-lg:-top-20" />
 
       {/*
-        **The masthead's copy, without its suit strip.** The client had
-        everything above the cards removed (17 Nov) and then asked for the
-        introductory text back (24 Nov): title, rule, tagline and blurb return,
-        the suit navigation stays gone. Nothing is stranded by that — the
-        header's LIBRARY dropdown offers MAJOR ARCANA and all four suits
-        (`content/site.ts`). The masthead's own 106px lead-in clears the header,
-        so the grid below no longer carries one.
+        **The masthead is back, but the suit strip is not.** The client first
+        asked for everything above the cards to go, then asked for the title,
+        rule, tagline and blurb back. The strip (MAJOR ARCANA | SWORDS | CUPS |
+        WANDS | PENTACLES) stays off: the header's LIBRARY dropdown already
+        offers MAJOR ARCANA and all four suits (`content/site.ts`), so nothing
+        is stranded.
+
+        `LibraryIntro` carries the 106px lead-in that clears the header, so the
+        grid below needs no top padding of its own.
       */}
       <LibraryIntro suitNav={false} />
 

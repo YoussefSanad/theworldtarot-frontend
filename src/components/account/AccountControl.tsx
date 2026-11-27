@@ -10,7 +10,7 @@ import { AccountMenu } from "@/components/account/AccountMenu";
  * icon linking to `/login/` when signed out, and a name beside a sign-out link
  * when signed in. Both of those now live in `AccountMenu`, together with the
  * panel that opens under them — the icon is a trigger rather than a link, and
- * signing out asks first.
+ * the sign out is a button inside it (`SignOutButton`).
  *
  * Kept as its own component rather than folded away because `SiteHeader` calls
  * it twice, in the desktop row and in the mobile drawer, and `surface` is how

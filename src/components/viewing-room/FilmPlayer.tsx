@@ -29,7 +29,8 @@ import {
   from it. The player then narrows on a short screen rather than
   spreading, which is what `docs/plans/viewing-room.md` asks for.
 
-  509/842 is the reciprocal of the aspect; 86dvh is the height cap.
+  509/842 is the reciprocal of the aspect; 103.2dvh is the height cap
+  below `lg` and 48dvh from it.
 */
 /*
   **Bigger than her 509px, which is a measurement off a 1920 artboard
@@ -39,31 +40,42 @@ import {
   `clamp` rather than a `vw` share: a share alone shrinks the card on
   a narrow screen, where the opposite is wanted — 34vw put it at
   133px on a phone. So it has a floor, grows with the viewport, and
-  tops out at 640px. The floor was 300px (300x496 on every phone) and
-  is 240px since the client asked for the card smaller: 240x397, so the
-  carousel comes up about 100px. It still fills two-thirds of a 360px
-  screen.
+  tops out at 768px. The floor was 300px (300x496 on every phone), then
+  240px when the client asked for the card smaller, and is 288px since
+  they asked for it 20% bigger: 288x476 on every phone, 90% of the
+  320px container on a 360px screen. `100%` only binds below a 328px
+  viewport.
 
-  **The height cap is the one that actually binds**, not the width: a
-  3:5 card 640px wide wants 1059px of height. So the dvh term is what
-  sets the size on most screens.
+  **Every term is the previous one times 1.2** (240/42vw/640/86dvh
+  became 288/50.4vw/768/103.2dvh, and 40dvh from `lg` became 48dvh),
+  so the card is 20% bigger at every viewport rather than at some.
+
+  **Below `lg` the width clamp binds on phones and portrait tablets**;
+  the dvh term takes over on short landscape screens. At 103.2dvh it no
+  longer stops the card at the screen edge: there the card is taller
+  than the viewport (243x402 on an 844x390 phone held sideways) and its
+  bottom sits below the fold until the visitor scrolls. That is the
+  cost of the 20%.
 */
 /*
-  **From `lg` the card is held to 40dvh, so the carousel shares the
+  **From `lg` the card is held to 48dvh, so the carousel shares the
   fold.** The client asked for the card nearly halved and for a visitor
   to see it and part of the gallery without scrolling on a desktop; at
   86dvh the card alone filled a laptop screen and the gallery started
   below it. A height share rather than a pixel size, because the fold is
-  a height: 40dvh is about 320px on a 1440x800 window (from about 680),
-  which leaves room for the band's first row of thumbnails beneath it.
-  Tuned against 1440x800; tighten it if a 1366x768 laptop must hold too.
+  a height. It was tuned at 40dvh (about 320px tall on a 1440x800
+  window) and is 48dvh since the 20% increase: about 384px, so the band
+  starts about 64px lower and its first row of thumbnails may no longer
+  clear the fold at 1440x800. On desktop this cap, not the width clamp,
+  sets the size, and the card itself stays well inside the screen.
 
-  Phones keep the 86dvh cap and shrink through the width floor instead,
-  since 40dvh there would draw a card under 200px wide.
+  Below `lg` the 103.2dvh cap applies and the width floor carries
+  phones, since 48dvh there would draw a card about 240px wide on a
+  short screen.
 */
 // The player and placeholder must match so the carousel does not jump when the deck lands.
 export const PLAYER_WIDTH_CAP =
-  "max-w-[min(100%,clamp(240px,42vw,640px),calc(86dvh*509/842))] lg:max-w-[min(100%,calc(40dvh*509/842))]";
+  "max-w-[min(100%,clamp(288px,50.4vw,768px),calc(103.2dvh*509/842))] lg:max-w-[min(100%,calc(48dvh*509/842))]";
 
 /**
  * The featured player: one card's film, at the size the frame draws it
